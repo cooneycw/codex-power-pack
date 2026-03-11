@@ -1,0 +1,89 @@
+# Codex Power Pack - Woodpecker CI Pipeline
+# Runs quality gates, builds Docker containers, and deploys MCP servers
+#
+# Pipeline:
+#   PR/push   -> validate (lint+test+typecheck), dry-run builds
+#   main push -> above + deploy-mcp (rebuild + restart containers)
+
+when:
+  - event: [push, pull_request]
+
+steps:
+  validate:
+    image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
+    commands:
+      - uv sync --extra dev --frozen
+      - uv run ruff check .
+      - uv run pytest
+      - uv run mypy .
+
+  build-second-opinion:
+    image: woodpeckerci/plugin-docker-buildx
+    settings:
+      repo: mcp-second-opinion
+      dockerfile: mcp-second-opinion/deploy/Dockerfile
+      context: mcp-second-opinion
+      tags: latest
+      dry_run: true
+    when:
+      - event: [push, pull_request]
+        path: "mcp-second-opinion/**"
+
+  build-playwright:
+    image: woodpeckerci/plugin-docker-buildx
+    settings:
+      repo: mcp-playwright-persistent
+      dockerfile: mcp-playwright-persistent/deploy/Dockerfile
+      context: mcp-playwright-persistent
+      tags: latest
+      dry_run: true
+    when:
+      - event: [push, pull_request]
+        path: "mcp-playwright-persistent/**"
+
+  build-nano-banana:
+    image: woodpeckerci/plugin-docker-buildx
+    settings:
+      repo: mcp-nano-banana
+      dockerfile: mcp-nano-banana/deploy/Dockerfile
+      context: mcp-nano-banana
+      tags: latest
+      dry_run: true
+    when:
+      - event: [push, pull_request]
+        path: "mcp-nano-banana/**"
+
+  build-woodpecker-ci:
+    image: woodpeckerci/plugin-docker-buildx
+    settings:
+      repo: mcp-woodpecker-ci
+      dockerfile: mcp-woodpecker-ci/deploy/Dockerfile
+      context: mcp-woodpecker-ci
+      tags: latest
+      dry_run: true
+    when:
+      - event: [push, pull_request]
+        path: "mcp-woodpecker-ci/**"
+
+  # mcp-evaluate removed - deprecated, absorbed into /evaluate:issue skill
+
+  deploy-mcp:
+    image: docker:cli
+    commands:
+      - apk add --no-cache docker-compose
+      - echo "Deploying MCP containers..."
+      - docker compose --profile core --profile browser --profile cicd up -d --build --wait
+      - docker compose --profile core --profile browser --profile cicd ps
+      - docker image prune -f
+      - echo "Deploy complete."
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    when:
+      - event: push
+        branch: main
+        path:
+          - "mcp-second-opinion/**"
+          - "mcp-playwright-persistent/**"
+          - "mcp-nano-banana/**"
+          - "mcp-woodpecker-ci/**"
+          - "docker-compose.yml"

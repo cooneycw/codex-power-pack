@@ -1,0 +1,22 @@
+# Woodpecker CI - Server Only (runs on dedicated VM)
+# Agents connect from local VMs via gRPC port 9001
+# Secrets pulled from AWS Secrets Manager via bootstrap-secrets.py -> docker.env
+
+services:
+  woodpecker-server:
+    image: woodpeckerci/woodpecker-server:v3.13.0
+    container_name: woodpecker-server
+    ports:
+      - "9000:8000"
+      - "9001:9000"
+    volumes:
+      - woodpecker-server-data:/var/lib/woodpecker/
+    env_file: docker.env
+    environment:
+      - WOODPECKER_OPEN=true
+      - WOODPECKER_GITHUB=true
+      - WOODPECKER_ADMIN=cooneycw
+    restart: unless-stopped
+
+volumes:
+  woodpecker-server-data:

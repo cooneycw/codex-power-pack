@@ -1,0 +1,27 @@
+[project]
+name = "codex-power-pack"
+version = "5.2.0"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["mypy>=1.10", "pydantic>=2.0", "pytest>=8.0", "pyyaml>=6.0", "ruff>=0.4", "types-PyYAML>=6.0", "types-requests>=2.31"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "mcp-nano-banana/src"]
+
+[tool.mypy]
+python_version = "3.11"
+exclude = ["mcp-second-opinion", "mcp-playwright-persistent", "mcp-nano-banana", "mcp-evaluate", "mcp-coordination"]
+ignore_missing_imports = true
+explicit_package_bases = true
+mypy_path = "."
+disable_error_code = ["var-annotated", "assignment", "arg-type", "attr-defined"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]

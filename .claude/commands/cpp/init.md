@@ -1,0 +1,1104 @@
+---
+description: Interactive setup wizard for Codex Power Pack
+allowed-tools: Bash(mkdir:*), Bash(ln:*), Bash(ls:*), Bash(test:*), Bash(readlink:*), Bash(cat:*), Bash(cp:*), Bash(uv:*), Bash(python3:*), Bash(PYTHONPATH=*), Bash(claude mcp list:*), Bash(claude mcp add:*), Bash(sudo systemctl:*), Bash(systemctl:*), Bash(command -v:*)
+---
+
+# Codex Power Pack Setup Wizard
+
+Interactive wizard to install and configure Codex Power Pack components.
+
+---
+
+## Step 1: Locate CPP Source
+
+Find where codex-power-pack is installed:
+
+```bash
+CPP_DIR=""
+for dir in ~/Projects/codex-power-pack /opt/codex-power-pack ~/.codex-power-pack; do
+  if [ -d "$dir" ] && [ -f "$dir/AGENTS.md" ]; then
+    CPP_DIR="$dir"
+    break
+  fi
+done
+
+if [ -z "$CPP_DIR" ]; then
+  echo "ERROR: codex-power-pack not found"
+  echo "Please clone it first:"
+  echo "  git clone https://github.com/cooneycw/codex-power-pack ~/Projects/codex-power-pack"
+  exit 1
+fi
+
+echo "Found codex-power-pack at: $CPP_DIR"
+```
+
+---
+
+## Step 2: Detect Current State
+
+Check what's already installed (same logic as `/cpp:status`):
+
+```bash
+# Tier 1 checks
+COMMANDS_INSTALLED=false
+SKILLS_INSTALLED=false
+[ -L ".codex/commands" ] || [ -d ".codex/commands" ] && COMMANDS_INSTALLED=true
+[ -L ".codex/skills" ] || [ -d ".codex/skills" ] && SKILLS_INSTALLED=true
+
+# Tier 2 checks
+SCRIPTS_COUNT=$(ls ~/.codex/scripts/*.sh 2>/dev/null | wc -l)
+HOOKS_EXIST=false
+[ -f ".codex/hooks.json" ] && HOOKS_EXIST=true
+
+# Tier 3 checks
+UV_INSTALLED=false
+command -v uv &>/dev/null && UV_INSTALLED=true
+
+# Check for pyproject.toml in each MCP server
+MCP_PROJECTS=""
+for server in mcp-second-opinion mcp-playwright-persistent; do
+  [ -f "$CPP_DIR/$server/pyproject.toml" ] && MCP_PROJECTS="$MCP_PROJECTS $server"
+done
+
+MCP_SERVERS=""
+MCP_LIST=$(claude mcp list 2>/dev/null || echo "")
+for server in second-opinion playwright-persistent; do
+  echo "$MCP_LIST" | grep -q "$server" && MCP_SERVERS="$MCP_SERVERS $server"
+done
+```
+
+Report current state to user.
+
+---
+
+## Step 3: Select Installation Tier
+
+Ask the user which tier they want to install using the AskUserQuestion tool:
+
+**Options:**
+
+| Tier | Name | Description |
+|------|------|-------------|
+| 1 | **Minimal** | Commands + Skills symlinks only |
+| 2 | **Standard** | + Scripts, hooks, shell prompt |
+| 3 | **Full** | + MCP servers (uv, API keys) |
+| 4 | **CI/CD** | + Build system, health checks, pipelines, containers |
+
+Default recommendation: **Standard** for most users, **Full** for MCP-powered workflows, **CI/CD** for projects needing build automation.
+
+---
+
+## Step 3b: Permission Profile (Tier 2+)
+
+**Only show this step if user selected Tier 2 or Tier 3.**
+
+Codex prompts "Allow?" before running tools. You can auto-approve safe operations to reduce interruptions while blocking dangerous commands.
+
+Ask the user which permission profile they want using AskUserQuestion:
+
+**Options:**
+
+| Profile | Description | Best For |
+|---------|-------------|----------|
+| **Cautious** | Minimal auto-approvals (Read only) | New users, shared machines |
+| **Standard** | Common dev tools auto-approved (Recommended) | Most developers |
+| **Trusted** | Broad auto-approvals, rely on hooks for safety | Solo developers, power users |
+| **Custom** | Choose individual permission categories | Fine-grained control |
+
+### Profile Definitions
+
+**Cautious Profile:**
+```json
+{
+  "permissions": {
+    "allow": ["Read", "Glob", "Grep"],
+    "deny": ["Bash(rm -rf:*)", "Bash(git push --force:*)"]
+  }
+}
+```
+
+**Standard Profile (Default):**
+```json
+{
+  "permissions": {
+    "allow": [
+      "Read", "Glob", "Grep",
+      "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)",
+      "Bash(git add:*)", "Bash(git commit:*)", "Bash(git branch:*)",
+      "Bash(git checkout:*)", "Bash(git stash:*)", "Bash(git fetch:*)",
+      "Bash(ls:*)", "Bash(pwd)", "Bash(cat:*)", "Bash(head:*)", "Bash(tail:*)",
+      "Bash(npm:*)", "Bash(npx:*)", "Bash(uv:*)", "Bash(pip:*)", "Bash(yarn:*)",
+      "Bash(python:*)", "Bash(node:*)",
+      "Bash(gh issue:*)", "Bash(gh pr list:*)", "Bash(gh pr view:*)",
+      "WebFetch(domain:github.com)", "WebFetch(domain:docs.python.org)",
+      "Skill(project-next)", "Skill(project-lite)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)", "Bash(git push --force:*)", "Bash(git reset --hard:*)",
+      "Bash(sudo:*)", "Bash(chmod -R:*)"
+    ]
+  }
+}
+```
+
+**Trusted Profile:**
+```json
+{
+  "permissions": {
+    "allow": [
+      "Read", "Glob", "Grep", "Write",
+      "Bash(git:*)", "Bash(gh:*)",
+      "Bash(npm:*)", "Bash(npx:*)", "Bash(uv:*)", "Bash(pip:*)", "Bash(yarn:*)",
+      "Bash(python:*)", "Bash(node:*)",
+      "Bash(ls:*)", "Bash(cat:*)", "Bash(mkdir:*)", "Bash(cp:*)", "Bash(mv:*)",
+      "Bash(curl:*)", "Bash(wget:*)",
+      "WebFetch", "WebSearch",
+      "Skill(*)",
+      "mcp__second-opinion__*", "mcp__playwright-persistent__*"
+    ],
+    "deny": [
+      "Bash(rm -rf /:*)", "Bash(rm -rf ~:*)", "Bash(rm -rf /home:*)",
+      "Bash(git push --force origin main:*)", "Bash(git push --force origin master:*)",
+      "Bash(sudo rm:*)", "Bash(mkfs:*)", "Bash(dd if=:*)"
+    ]
+  }
+}
+```
+
+### Custom Mode Categories
+
+If user selects "Custom", ask which categories to enable using multi-select:
+
+| Category | Permissions | Default |
+|----------|-------------|---------|
+| **File Reading** | Read, Glob, Grep | ✓ Enabled |
+| **Git (safe)** | git status/diff/log/add/commit/branch/checkout/stash/fetch | ✓ Enabled |
+| **Git (all)** | git push/pull/merge/rebase | ○ Disabled |
+| **Package Managers** | npm, npx, uv, pip, yarn | ✓ Enabled |
+| **Runtimes** | python, node | ✓ Enabled |
+| **GitHub CLI (read)** | gh issue, gh pr list, gh pr view | ✓ Enabled |
+| **GitHub CLI (write)** | gh pr create, gh pr merge | ○ Disabled |
+| **File Writing** | Write tool | ○ Disabled |
+| **Web Access** | WebFetch, WebSearch | ○ Disabled |
+| **MCP Tools** | All installed MCP servers | ○ Disabled |
+| **Skills** | Auto-activate all skills | ✓ Enabled |
+
+### Security Notes
+
+- **Deny rules are always enforced** - Dangerous patterns blocked regardless of profile
+- **Hooks provide second layer** - PreToolUse hook validates commands even if auto-approved
+- **Trusted profile requires Tier 2** - Won't offer Trusted unless hooks are enabled
+
+---
+
+## Step 4: Show Disclosure
+
+**CRITICAL**: Before making ANY changes, show the user exactly what will be modified.
+
+### Tier 1 Disclosure (Minimal)
+
+```
+=== Tier 1: Minimal Installation ===
+
+This will create the following symlinks in your project:
+
+  Symlinks:
+    • .codex/commands → {CPP_DIR}/.codex/commands
+    • .codex/skills → {CPP_DIR}/.codex/skills
+
+  Disk usage: ~0 MB (symlinks only)
+
+  To undo:
+    rm .codex/commands .codex/skills
+
+Proceed? [y/N]
+```
+
+### Tier 2 Disclosure (Standard)
+
+```
+=== Tier 2: Standard Installation ===
+
+This will make the following changes:
+
+  [Tier 1 - Symlinks]
+    • .codex/commands → {CPP_DIR}/.codex/commands
+    • .codex/skills → {CPP_DIR}/.codex/skills
+
+  [Tier 2 - Scripts] (~/.codex/scripts/)
+    • prompt-context.sh       - Shell prompt worktree context
+    • worktree-remove.sh      - Safe worktree cleanup
+    • secrets-mask.sh         - Output masking filter
+    • hook-mask-output.sh     - PostToolUse secret masking
+    • hook-validate-command.sh - PreToolUse safety checks
+
+  [Tier 2 - Hooks] (.codex/hooks.json)
+    • PreToolUse: block dangerous commands
+    • PostToolUse: mask secrets in output
+
+  [Tier 2 - Shell Prompt] (optional)
+    • Add worktree context to PS1: [CPP #42] ~/project $
+
+  [Tier 2 - Makefile] (optional)
+    • Create starter Makefile with lint, test, deploy targets
+    • Used by /flow:finish and /flow:deploy
+
+  Disk usage: ~50 KB
+
+  To undo:
+    rm .codex/commands .codex/skills
+    rm ~/.codex/scripts/*.sh
+    rm .codex/hooks.json
+    # Remove PS1 line from ~/.bashrc or ~/.zshrc
+
+Proceed? [y/N]
+```
+
+### Tier 3 Disclosure (Full)
+
+```
+=== Tier 3: Full Installation ===
+
+This will make the following changes:
+
+  [Tier 1 + 2 - All Standard components]
+    (see above)
+
+  [Tier 3 - Python Virtual Environments (uv)] (~150 MB total)
+    • mcp-second-opinion/.venv  - Gemini/OpenAI code review (~80 MB)
+    • mcp-playwright-persistent/.venv - Browser automation (~70 MB)
+
+  [Tier 3 - Playwright Browsers]
+    • Chromium (~150 MB, installed via `uv run playwright install chromium`)
+
+  [Tier 3 - API Keys Required]
+    • GEMINI_API_KEY - For mcp-second-opinion (get from https://aistudio.google.com/apikey)
+    • OPENAI_API_KEY - Optional, for multi-model comparison
+
+  [Tier 3 - MCP Servers] (added to Codex)
+    • second-opinion        - port 8080
+    • playwright-persistent - port 8081
+
+  [Tier 3 - Configuration Files]
+    • mcp-second-opinion/.env
+
+  Disk usage: ~150 MB (venvs) + 150 MB (Chromium)
+  Ports used: 8080, 8081
+
+  To undo:
+    # Tier 1+2 cleanup (see above)
+    rm -rf {CPP_DIR}/mcp-second-opinion/.venv
+    rm -rf {CPP_DIR}/mcp-playwright-persistent/.venv
+    claude mcp remove second-opinion
+    claude mcp remove playwright-persistent
+
+Proceed? [y/N]
+```
+
+### Tier 4 Disclosure (CI/CD)
+
+```
+=== Tier 4: CI/CD Installation ===
+
+This will make the following changes:
+
+  [Tier 1 + 2 + 3 - All Full components]
+    (see above)
+
+  [Tier 4A - Build System]
+    • Detect project framework and package manager
+    • Generate/validate Makefile with standard targets
+    • Create .codex/cicd.yml configuration
+
+  [Tier 4B - Health Checks] (optional)
+    • Configure endpoint health checks in cicd.yml
+    • Configure process port checks
+
+  [Tier 4C - CI/CD Pipeline] (optional)
+    • Generate .github/workflows/ci.yml from Makefile targets
+    • Include caching, matrix builds, secrets references
+
+  [Tier 4D - Container] (optional)
+    • Generate Dockerfile (multi-stage, framework-specific)
+    • Generate docker-compose.yml
+    • Generate .dockerignore
+
+  [Tier 4E - Woodpecker CI MCP] (optional)
+    • Install woodpecker-mcp Go binary
+    • Configure from AWS Secrets Manager or manual URL/token
+    • Register as MCP server (stdio transport)
+
+  Disk usage: ~0 MB (generated files only)
+
+  To undo:
+    # Tier 1+2+3 cleanup (see above)
+    rm .codex/cicd.yml
+    rm .github/workflows/ci.yml
+    rm Dockerfile docker-compose.yml .dockerignore
+    claude mcp remove woodpecker-ci
+
+Proceed? [y/N]
+```
+
+---
+
+## Step 5: Execute Installation
+
+Execute only the components that aren't already installed.
+
+### Tier 1 Execution
+
+```bash
+# Create .codex directory if needed
+mkdir -p .codex
+
+# Symlink commands (skip if exists)
+if [ ! -L ".codex/commands" ] && [ ! -d ".codex/commands" ]; then
+  ln -sf "$CPP_DIR/.codex/commands" .codex/commands
+  echo "✓ Commands symlinked"
+else
+  echo "→ Commands already installed (skipped)"
+fi
+
+# Symlink skills (skip if exists)
+if [ ! -L ".codex/skills" ] && [ ! -d ".codex/skills" ]; then
+  ln -sf "$CPP_DIR/.codex/skills" .codex/skills
+  echo "✓ Skills symlinked"
+else
+  echo "→ Skills already installed (skipped)"
+fi
+```
+
+### Tier 2 Execution
+
+```bash
+# Create scripts directory
+mkdir -p ~/.codex/scripts
+
+# Symlink all scripts
+for script in "$CPP_DIR"/scripts/*.sh; do
+  name=$(basename "$script")
+  if [ ! -L ~/.codex/scripts/"$name" ]; then
+    ln -sf "$script" ~/.codex/scripts/"$name"
+    echo "✓ $name installed"
+  else
+    echo "→ $name already installed (skipped)"
+  fi
+done
+
+# Copy hooks.json if not exists
+if [ ! -f ".codex/hooks.json" ]; then
+  cp "$CPP_DIR/.codex/hooks.json" .codex/hooks.json
+  echo "✓ Hooks configured"
+else
+  echo "→ Hooks already configured (skipped)"
+  echo "  Note: You may want to merge with $CPP_DIR/.codex/hooks.json"
+fi
+```
+
+**Permission Profile Configuration**
+
+Based on the profile selected in Step 3b, generate `.codex/settings.local.json`:
+
+```bash
+# Generate settings.local.json based on selected profile
+# (The profile JSON content is determined by user selection in Step 3b)
+
+if [ ! -f ".codex/settings.local.json" ]; then
+  # Write the selected profile to settings.local.json
+  cat > .codex/settings.local.json << 'SETTINGS_EOF'
+{PROFILE_JSON_CONTENT}
+SETTINGS_EOF
+  echo "✓ Permission profile configured: {PROFILE_NAME}"
+else
+  echo "→ settings.local.json exists (skipped)"
+  echo "  To reconfigure, delete .codex/settings.local.json and run /cpp:init"
+fi
+
+# Add settings.local.json to .gitignore if not already there
+if [ -f ".gitignore" ]; then
+  if ! grep -q "settings.local.json" .gitignore; then
+    echo "" >> .gitignore
+    echo "# Codex local settings (contains user-specific permissions)" >> .gitignore
+    echo ".codex/settings.local.json" >> .gitignore
+    echo "✓ Added settings.local.json to .gitignore"
+  fi
+fi
+```
+
+**Profile JSON Templates:**
+
+- **Cautious**: `{"permissions":{"allow":["Read","Glob","Grep"],"deny":["Bash(rm -rf:*)","Bash(git push --force:*)"]}}`
+
+- **Standard**: See Step 3b for full JSON
+
+- **Trusted**: See Step 3b for full JSON
+
+- **Custom**: Build JSON from selected categories
+
+**Shell Prompt Integration (Optional)**
+
+Ask the user if they want shell prompt integration:
+
+```
+Would you like to add worktree context to your shell prompt?
+
+This shows [PREFIX #ISSUE] before your prompt, e.g.:
+  [CPP #42] ~/Projects/codex-power-pack-issue-42 $
+
+Add to ~/.bashrc? [y/N]
+```
+
+If yes:
+```bash
+# Add to bashrc
+echo '' >> ~/.bashrc
+echo '# Codex Power Pack - worktree context in prompt' >> ~/.bashrc
+echo 'export PS1='\''$(~/.codex/scripts/prompt-context.sh)\w $ '\''' >> ~/.bashrc
+echo "✓ Shell prompt configured (restart shell or source ~/.bashrc)"
+```
+
+**Makefile Setup (Optional)**
+
+If no Makefile exists in the project root, offer to create one from the template:
+
+```
+=== Optional: Makefile ===
+
+The /flow commands use Makefile targets for quality gates and deployment:
+  /flow:finish  → runs `make lint` and `make test`
+  /flow:deploy  → runs `make deploy`
+
+Create a starter Makefile? [y/N]
+```
+
+If yes:
+```bash
+if [ ! -f "Makefile" ]; then
+  cp "$CPP_DIR/templates/Makefile.example" Makefile
+  echo "✓ Makefile created from template"
+  echo "  Edit targets to match your project's commands"
+else
+  echo "→ Makefile already exists (skipped)"
+fi
+```
+
+If no:
+```bash
+echo "→ Makefile creation skipped"
+echo "  You can copy it later: cp $CPP_DIR/templates/Makefile.example Makefile"
+```
+
+**Happy CLI Installation (Optional)**
+
+Ask the user if they want to install happy-cli:
+
+```
+=== Optional: Happy CLI ===
+
+Happy CLI is an AI coding assistant that complements Codex.
+https://github.com/slopus/happy-cli
+
+Install happy-cli? [y/N]
+```
+
+If yes:
+```bash
+# Check if already installed
+if command -v happy &>/dev/null; then
+  echo "→ happy-cli already installed (skipped)"
+  happy --version 2>&1 | head -1
+else
+  echo "Installing happy-cli..."
+  npm install -g happy-coder
+  if command -v happy &>/dev/null; then
+    echo "✓ happy-cli installed"
+    echo "  Run 'happy' to complete onboarding"
+  else
+    echo "⚠ Installation failed - check npm permissions"
+    echo "  Try: sudo npm install -g happy-coder"
+  fi
+fi
+echo "✓ /happy-check command available (verify version updates)"
+```
+
+If no:
+```bash
+echo "→ Happy CLI installation skipped"
+```
+
+### Tier 3 Execution
+
+#### 3a. Install uv and Sync Dependencies
+
+```bash
+# Check if uv is installed
+if ! command -v uv &>/dev/null; then
+  echo "Installing uv..."
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  export PATH="$HOME/.local/bin:$PATH"
+  echo "✓ uv installed"
+else
+  echo "→ uv already installed ($(uv --version))"
+fi
+
+# Sync dependencies for each MCP server
+for server in mcp-second-opinion mcp-playwright-persistent; do
+  if [ ! -d "$CPP_DIR/$server/.venv" ]; then
+    echo "Creating virtual environment for $server..."
+    cd "$CPP_DIR/$server"
+    uv sync
+    echo "✓ $server venv created"
+  else
+    echo "→ $server venv exists (skipped)"
+  fi
+done
+```
+
+#### 3b. Playwright Browser
+
+```bash
+# Install Chromium for Playwright
+echo "Installing Playwright Chromium browser..."
+cd "$CPP_DIR/mcp-playwright-persistent"
+uv run playwright install chromium
+echo "✓ Chromium browser installed"
+```
+
+#### 3c. API Key Configuration
+
+**First, detect the deployment mode:**
+
+```bash
+# Detect deployment mode
+DEPLOY_MODE="native"
+if [ -f "$CPP_DIR/docker-compose.yml" ]; then
+  # Check if Docker containers are running for MCP servers
+  if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "mcp-second-opinion"; then
+    DEPLOY_MODE="docker"
+  elif sg docker -c "docker ps --format '{{.Names}}'" 2>/dev/null | grep -q "mcp-second-opinion"; then
+    DEPLOY_MODE="docker"
+  fi
+  # Also check if .mcp.json points to SSE (Docker-hosted)
+  if [ -f "$CPP_DIR/../.mcp.json" ] || [ -f "$(git rev-parse --show-toplevel 2>/dev/null)/.mcp.json" ]; then
+    for mcp_json in "$CPP_DIR/../.mcp.json" "$(git rev-parse --show-toplevel 2>/dev/null)/.mcp.json"; do
+      if [ -f "$mcp_json" ] && grep -q '"type": "sse"' "$mcp_json" 2>/dev/null && grep -q '8080' "$mcp_json" 2>/dev/null; then
+        DEPLOY_MODE="docker"
+        break
+      fi
+    done
+  fi
+fi
+echo "Deployment mode detected: $DEPLOY_MODE"
+```
+
+Prompt the user for API keys:
+
+```
+=== API Key Configuration ===
+
+MCP Second Opinion requires at least one LLM API key for code review.
+
+Supported providers:
+  - GEMINI_API_KEY   (free from https://aistudio.google.com/apikey)
+  - OPENAI_API_KEY   (from https://platform.openai.com/api-keys)
+  - ANTHROPIC_API_KEY (from https://console.anthropic.com/settings/keys)
+
+Enter your GEMINI_API_KEY (or press Enter to skip):
+```
+
+**Write keys to the correct location based on deployment mode:**
+
+```bash
+# For Docker: write to root .env (docker-compose.yml reads env_file from here)
+# For native: write to mcp-second-opinion/.env (local server reads from here)
+if [ "$DEPLOY_MODE" = "docker" ]; then
+  ENV_FILE="$CPP_DIR/.env"
+  echo "Docker deployment detected - writing keys to $ENV_FILE"
+else
+  ENV_FILE="$CPP_DIR/mcp-second-opinion/.env"
+fi
+
+# Build .env content (only include keys that were provided)
+{
+  [ -n "$GEMINI_API_KEY" ] && echo "GEMINI_API_KEY=$GEMINI_API_KEY"
+  [ -n "$OPENAI_API_KEY" ] && echo "OPENAI_API_KEY=$OPENAI_API_KEY"
+  [ -n "$ANTHROPIC_API_KEY" ] && echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY"
+  if [ "$DEPLOY_MODE" != "docker" ]; then
+    echo "MCP_SERVER_HOST=127.0.0.1"
+    echo "MCP_SERVER_PORT=8080"
+    echo "ENABLE_CONTEXT_CACHING=true"
+    echo "CACHE_TTL_MINUTES=60"
+  fi
+} > "$ENV_FILE"
+
+echo "✓ API keys written to $ENV_FILE"
+
+# For Docker: also write to mcp-second-opinion/.env for native fallback
+if [ "$DEPLOY_MODE" = "docker" ]; then
+  {
+    [ -n "$GEMINI_API_KEY" ] && echo "GEMINI_API_KEY=$GEMINI_API_KEY"
+    [ -n "$OPENAI_API_KEY" ] && echo "OPENAI_API_KEY=$OPENAI_API_KEY"
+    [ -n "$ANTHROPIC_API_KEY" ] && echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY"
+    echo "MCP_SERVER_HOST=127.0.0.1"
+    echo "MCP_SERVER_PORT=8080"
+    echo "ENABLE_CONTEXT_CACHING=true"
+    echo "CACHE_TTL_MINUTES=60"
+  } > "$CPP_DIR/mcp-second-opinion/.env"
+  echo "✓ Also wrote to mcp-second-opinion/.env (native fallback)"
+fi
+```
+
+**If Docker mode, offer to restart containers to pick up new keys:**
+
+```
+API keys configured. Docker containers need to be restarted to pick up the new keys.
+
+Restart MCP containers now? [Y/n]
+```
+
+If yes:
+```bash
+cd "$CPP_DIR"
+make docker-down && make docker-up PROFILE=core
+echo "✓ Docker containers restarted with new API keys"
+```
+
+Optional: Ask for OPENAI_API_KEY and ANTHROPIC_API_KEY for multi-model comparison.
+
+#### 3d. Register MCP Servers
+
+```bash
+# Add MCP servers to Codex
+MCP_LIST=$(claude mcp list 2>/dev/null || echo "")
+
+if ! echo "$MCP_LIST" | grep -q "second-opinion"; then
+  claude mcp add second-opinion --transport sse --url http://127.0.0.1:8080/sse --scope user
+  echo "✓ second-opinion MCP registered"
+else
+  echo "→ second-opinion MCP already registered (skipped)"
+fi
+
+if ! echo "$MCP_LIST" | grep -q "playwright-persistent"; then
+  claude mcp add playwright-persistent --transport sse --url http://127.0.0.1:8081/sse --scope user
+  echo "✓ playwright-persistent MCP registered"
+else
+  echo "→ playwright-persistent MCP already registered (skipped)"
+fi
+```
+
+### Tier 4 Execution (CI/CD)
+
+#### 4a. Framework Detection and Makefile
+
+```bash
+# Detect framework
+echo "Detecting project framework..."
+DETECT_JSON=$(PYTHONPATH="$CPP_DIR/lib:$PYTHONPATH" python3 -m lib.cicd detect --json 2>/dev/null || echo "{}")
+FRAMEWORK=$(echo "$DETECT_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin).get('framework','unknown'))" 2>/dev/null || echo "unknown")
+PKG_MGR=$(echo "$DETECT_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin).get('package_manager','unknown'))" 2>/dev/null || echo "unknown")
+echo "Detected: $FRAMEWORK ($PKG_MGR)"
+```
+
+If no Makefile exists, offer to generate one:
+
+```bash
+if [ ! -f "Makefile" ]; then
+  echo ""
+  echo "No Makefile found. Generate one from the detected framework template?"
+  # Use AskUserQuestion to confirm
+  # If yes:
+  PYTHONPATH="$CPP_DIR/lib:$PYTHONPATH" python3 -m lib.cicd detect --generate-makefile
+  echo "✓ Makefile generated"
+else
+  echo "→ Makefile already exists"
+  echo "  Run /cicd:check to validate targets"
+fi
+```
+
+If Makefile exists, run a quick check:
+
+```bash
+if [ -f "Makefile" ]; then
+  echo ""
+  echo "Validating Makefile..."
+  PYTHONPATH="$CPP_DIR/lib:$PYTHONPATH" python3 -m lib.cicd check --summary 2>/dev/null || echo "  (validation skipped)"
+fi
+```
+
+#### 4b. Generate cicd.yml
+
+```bash
+if [ ! -f ".codex/cicd.yml" ]; then
+  mkdir -p .codex
+  # Generate cicd.yml with detected defaults
+  if [ -f "$CPP_DIR/templates/cicd.yml.example" ]; then
+    cp "$CPP_DIR/templates/cicd.yml.example" .codex/cicd.yml
+    echo "✓ .codex/cicd.yml created from template"
+    echo "  Edit to configure health checks and smoke tests"
+  else
+    cat > .codex/cicd.yml << 'CICD_EOF'
+build:
+  framework: auto
+  package_manager: auto
+  required_targets: [lint, test]
+  recommended_targets: [format, typecheck, build, deploy, clean, verify]
+
+health:
+  endpoints: []
+  processes: []
+  smoke_tests: []
+  post_deploy: false
+CICD_EOF
+    echo "✓ .codex/cicd.yml created with defaults"
+  fi
+else
+  echo "→ .codex/cicd.yml already exists (skipped)"
+fi
+```
+
+#### 4c. Health Check Configuration (Optional)
+
+Ask the user if they want to configure health checks:
+
+```
+=== Optional: Health Checks ===
+
+Configure endpoint health checks for post-deploy verification?
+
+This lets /cicd:health and /flow:deploy verify your services are running.
+
+Example:
+  health:
+    endpoints:
+      - url: http://localhost:8000/health
+        name: API Server
+
+Configure health checks? [y/N]
+```
+
+If yes, use AskUserQuestion to get endpoint URLs, then update `.codex/cicd.yml`.
+
+#### 4d. CI Pipeline Generation (Optional)
+
+Ask the user if they want to generate a CI pipeline:
+
+```
+=== Optional: CI Pipeline ===
+
+Generate a GitHub Actions CI workflow from your Makefile targets?
+
+This creates .github/workflows/ci.yml using `make lint`, `make test`, etc.
+
+Generate CI pipeline? [y/N]
+```
+
+If yes:
+
+```bash
+PYTHONPATH="$CPP_DIR/lib:$PYTHONPATH" python3 -m lib.cicd pipeline --write 2>/dev/null
+if [ -f ".github/workflows/ci.yml" ]; then
+  echo "✓ .github/workflows/ci.yml generated"
+else
+  echo "⚠ Pipeline generation failed"
+fi
+```
+
+#### 4e. Container Generation (Optional)
+
+Ask the user if they want to generate container files:
+
+```
+=== Optional: Container Files ===
+
+Generate Dockerfile and docker-compose.yml for your project?
+
+Uses multi-stage builds with framework-specific optimization.
+
+Generate container files? [y/N]
+```
+
+If yes:
+
+```bash
+PYTHONPATH="$CPP_DIR/lib:$PYTHONPATH" python3 -m lib.cicd container --write 2>/dev/null
+echo "✓ Container files generated"
+```
+
+#### 4e. Woodpecker CI MCP (Optional)
+
+Ask the user if they want to install the Woodpecker CI MCP server:
+
+```
+=== Optional: Woodpecker CI MCP Server ===
+
+Install the Woodpecker CI MCP server for pipeline management?
+
+This gives Codex native access to:
+  - List and monitor pipelines
+  - Trigger, cancel, and approve builds
+  - View build logs
+
+Requires:
+  - Go 1.24+ (or will be installed)
+  - Woodpecker CI server URL and API token
+    (auto-detected from AWS Secrets Manager if configured)
+
+Install Woodpecker CI MCP? [y/N]
+```
+
+If yes:
+
+```bash
+# Check/install Go
+if ! command -v go &>/dev/null; then
+  if [ -x /usr/local/go/bin/go ]; then
+    export PATH="/usr/local/go/bin:$PATH"
+  else
+    echo "Go not found. Install from https://go.dev/dl/ and re-run."
+    exit 1
+  fi
+fi
+
+# Install binary
+export PATH="$HOME/go/bin:$PATH"
+go install github.com/denysvitali/woodpecker-ci-mcp/cmd/woodpecker-mcp@latest
+BINARY="$HOME/go/bin/woodpecker-mcp"
+
+# Configure credentials
+if [ -f "$CPP_DIR/mcp-woodpecker-ci/scripts/setup-go-binary.sh" ]; then
+  bash "$CPP_DIR/mcp-woodpecker-ci/scripts/setup-go-binary.sh"
+else
+  # Manual: prompt for URL and token
+  echo "Enter Woodpecker CI URL (e.g. https://woodpecker.example.com):"
+  read -r WP_URL
+  echo "Enter Woodpecker API token:"
+  read -rs WP_TOKEN
+  mkdir -p ~/.config/woodpecker-mcp
+  cat > ~/.config/woodpecker-mcp/config.yaml << EOF
+woodpecker:
+  url: $WP_URL
+  token: $WP_TOKEN
+EOF
+  chmod 600 ~/.config/woodpecker-mcp/config.yaml
+fi
+
+# Test connection
+"$BINARY" test
+
+# Register with Codex
+claude mcp add --transport stdio -s user woodpecker-ci -- "$BINARY" serve
+echo "✓ Woodpecker CI MCP server installed and registered"
+```
+
+---
+
+## Step 6: Systemd Services (Optional)
+
+After Tier 3 completes, offer systemd setup:
+
+```
+=== Optional: Systemd Services ===
+
+Would you like to install systemd services for auto-start on boot?
+
+This will:
+  • Create /etc/systemd/system/mcp-second-opinion.service
+  • Enable service to start automatically on boot
+
+Note: You'll need to manually start MCP servers until reboot,
+or run: sudo systemctl start mcp-second-opinion
+
+Install systemd services? [y/N]
+```
+
+If yes:
+```bash
+# Copy service files
+sudo cp "$CPP_DIR/mcp-second-opinion/deploy/mcp-second-opinion.service" /etc/systemd/system/
+
+# Update paths in service files (replace placeholder user)
+CURRENT_USER=$(whoami)
+sudo sed -i "s/cooneycw/$CURRENT_USER/g" /etc/systemd/system/mcp-second-opinion.service
+
+# Reload and enable
+sudo systemctl daemon-reload
+sudo systemctl enable mcp-second-opinion
+
+echo "✓ Systemd services installed and enabled"
+echo ""
+echo "To start now: sudo systemctl start mcp-second-opinion"
+echo "To check status: systemctl status mcp-second-opinion"
+```
+
+---
+
+## Step 7: Installation Summary
+
+```
+=================================
+CPP Installation Complete!
+=================================
+
+Installed:
+  ✓ Tier 1: Commands + Skills symlinked
+  ✓ Tier 2: Scripts, hooks, shell prompt
+  ✓ Tier 3: uv, MCP servers, API keys
+  ✓ Tier 4: CI/CD build system, health checks, pipeline, containers
+
+Permission Profile: {PROFILE_NAME}
+  Auto-approved: {AUTO_APPROVE_SUMMARY}
+  Blocked: rm -rf, git push --force, sudo (destructive)
+  Settings: .codex/settings.local.json
+
+MCP Servers:
+  • second-opinion (port 8080) - Gemini/OpenAI code review
+  • playwright-persistent (port 8081) - Browser automation
+  • woodpecker-ci (stdio) - Woodpecker CI pipeline management
+
+Next Steps:
+  1. Start MCP servers (if not using systemd):
+     cd {CPP_DIR}/mcp-second-opinion && ./start-server.sh &
+     cd {CPP_DIR}/mcp-playwright-persistent && ./start-server.sh &
+
+  2. Restart your shell to apply prompt changes:
+     source ~/.bashrc
+
+  3. Verify installation:
+     /cpp:status
+
+  4. Try the commands:
+     /project-next    - See what to work on
+     /spec:help       - Spec-driven development
+     /github:help     - Issue management
+     /cicd:help       - CI/CD build & verification
+
+Change Permissions Later:
+  • Edit .codex/settings.local.json directly
+  • Or delete it and run /cpp:init to reconfigure
+
+Documentation:
+  • AGENTS.md - Full reference
+  • ISSUE_DRIVEN_DEVELOPMENT.md - IDD workflow
+  • /load-best-practices - Community tips
+
+=================================
+```
+
+---
+
+## Error Handling
+
+### uv Not Installed
+```
+⚠ uv not found. Tier 3 requires uv for MCP server environments.
+
+Installing uv automatically...
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+
+If automatic installation fails:
+  1. Install manually: https://docs.astral.sh/uv/
+  2. Or skip Tier 3 and use Standard tier only
+
+Skip Tier 3 components? [Y/n]
+```
+
+### API Key Not Provided
+```
+⚠ No GEMINI_API_KEY provided.
+
+MCP Second Opinion will not work without an API key.
+You can configure it later by editing: {CPP_DIR}/mcp-second-opinion/.env
+
+Continue? [Y/n]
+```
+
+---
+
+## Step 8: Optional Extras
+
+After the main installation completes, offer optional extras.
+
+### 8a. Sequential Thinking
+
+```
+=== Optional: Sequential Thinking MCP ===
+
+Adds a `sequentialthinking` tool for structured, step-by-step reasoning
+with revision and branching. Useful for complex debugging and architecture decisions.
+
+Requires: Node.js 18+ (for npx)
+No API keys needed. Runs as stdio subprocess (no port).
+
+Install Sequential Thinking? [y/N]
+```
+
+If yes:
+
+```bash
+# Check if Node.js is available
+if ! command -v npx &>/dev/null; then
+  echo "⚠ npx not found. Sequential Thinking requires Node.js 18+."
+  echo "  Install Node.js: https://nodejs.org/"
+  echo "  Skipping Sequential Thinking."
+else
+  MCP_LIST=$(claude mcp list 2>/dev/null || echo "")
+  if echo "$MCP_LIST" | grep -q "sequential-thinking"; then
+    echo "→ sequential-thinking MCP already registered (skipped)"
+  else
+    claude mcp add --transport stdio --scope user sequential-thinking -- npx -y @modelcontextprotocol/server-sequential-thinking
+    echo "✓ Sequential Thinking MCP registered (stdio, user scope)"
+  fi
+fi
+```
+
+If no:
+```bash
+echo "→ Sequential Thinking skipped"
+echo "  Install later: claude mcp add --transport stdio --scope user sequential-thinking -- npx -y @modelcontextprotocol/server-sequential-thinking"
+```
+
+### 8b. Workstation Tuning (bash-prep)
+
+```
+=== Optional: Workstation Tuning ===
+
+Linux workstation tuning for optimal Codex performance:
+  • Swap (min(RAM, 4GB)) - prevent OOM kills during heavy sessions
+  • vm.swappiness=10 - keep active data in RAM
+  • vm.vfs_cache_pressure=50 - cache filesystem metadata
+  • fs.inotify.max_user_watches=524288 - prevent watcher failures
+  • fs.inotify.max_user_instances=512 - headroom for multiple watchers
+
+Requires sudo. Safe to run multiple times (idempotent).
+Persists across reboots via /etc/sysctl.d/ and /etc/fstab.
+
+Apply workstation tuning? [y/N]
+```
+
+If yes:
+
+```bash
+# Run bash-prep script
+if [ -f "$CPP_DIR/scripts/bash-prep.sh" ]; then
+  bash "$CPP_DIR/scripts/bash-prep.sh" --apply
+else
+  echo "⚠ bash-prep.sh not found at $CPP_DIR/scripts/bash-prep.sh"
+fi
+```
+
+If no:
+```bash
+echo "→ Workstation tuning skipped"
+echo "  Run later: bash ~/.codex/scripts/bash-prep.sh"
+echo "  Or check current values: bash ~/.codex/scripts/bash-prep.sh --check"
+```
+
+---
+
+## Notes
+
+- This wizard is **idempotent** - safe to run multiple times
+- Already-installed components are skipped with a message
+- Symlinks are preferred over copies for easier updates
+- Run `/cpp:status` anytime to check installation state
