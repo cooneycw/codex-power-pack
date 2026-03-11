@@ -13,13 +13,12 @@ if ! command -v uv &>/dev/null; then
     exit 1
 fi
 
-# Pre-flight: check .env or environment variables
-if [[ ! -f .env ]] && [[ -z "${GEMINI_API_KEY:-}" ]] && [[ -z "${OPENAI_API_KEY:-}" ]] && [[ -z "${ANTHROPIC_API_KEY:-}" ]]; then
-    echo "WARNING: No .env file and no API keys in environment." >&2
-    echo "  The server will start but all tool calls will fail." >&2
-    echo "  Copy .env.example to .env and add at least one API key:" >&2
-    echo "    cp .env.example .env" >&2
-    echo "    # Edit .env with your API keys" >&2
+# Pre-flight: check local env, process env, or AWS secret wiring
+if [[ ! -f ../.env ]] && [[ ! -f .env ]] && [[ -z "${GEMINI_API_KEY:-}" ]] && [[ -z "${OPENAI_API_KEY:-}" ]] && [[ -z "${ANTHROPIC_API_KEY:-}" ]] && [[ -z "${AWS_SECRET_NAME:-}" ]]; then
+    echo "WARNING: No local env, no API keys in process env, and no AWS secret configured." >&2
+    echo "  The server will start but model calls will fail." >&2
+    echo "  Preferred: set AWS_SECRET_NAME=codex-power-pack in ../.env with AWS credentials." >&2
+    echo "  Fallback: copy .env.example to .env and add API keys directly." >&2
     echo "" >&2
 fi
 

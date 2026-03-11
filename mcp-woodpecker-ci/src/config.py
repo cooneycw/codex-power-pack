@@ -9,9 +9,12 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-_env_path = Path(__file__).parent.parent / ".env"
-if _env_path.exists():
-    load_dotenv(_env_path)
+_local_env_path = Path(__file__).parent.parent / ".env"
+_root_env_path = Path(__file__).parent.parent.parent / ".env"
+if _root_env_path.exists():
+    load_dotenv(_root_env_path)
+if _local_env_path.exists():
+    load_dotenv(_local_env_path, override=True)
 
 
 def _get_int_env(name: str, default: int) -> int:

@@ -30,6 +30,11 @@ services:
         required: false
     environment:
       - MCP_SERVER_HOST=0.0.0.0
+      - AWS_SECRET_NAME=${AWS_SECRET_NAME:-codex-power-pack}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/')"]
       interval: 10s
@@ -118,6 +123,9 @@ services:
       - MCP_SERVER_HOST=0.0.0.0
       - AWS_SECRET_NAME=${AWS_SECRET_NAME:-codex-power-pack}
       - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8085/')"]
       interval: 10s
