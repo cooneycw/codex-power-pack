@@ -1,9 +1,8 @@
 # Codex Power Pack - Woodpecker CI Pipeline
-# Runs quality gates, builds Docker containers, and deploys MCP servers
-#
-# Pipeline:
-#   PR/push   -> validate (lint+test+typecheck), dry-run builds
-#   main push -> above + deploy-mcp (rebuild + restart containers)
+# Purpose:
+# - run the same verification entrypoint used locally
+# - dry-run Docker builds only for changed MCP services
+# - deploy MCP services only from main when service-level files changed
 
 when:
   - event: [push, pull_request]
@@ -13,9 +12,7 @@ steps:
     image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
     commands:
       - uv sync --extra dev --frozen
-      - uv run ruff check .
-      - uv run pytest
-      - uv run mypy .
+      - make verify
 
   build-second-opinion:
     image: woodpeckerci/plugin-docker-buildx
@@ -27,7 +24,10 @@ steps:
       dry_run: true
     when:
       - event: [push, pull_request]
-        path: "mcp-second-opinion/**"
+        path:
+          - "mcp-second-opinion/**"
+          - "docker-compose.yml"
+          - ".woodpecker.yml"
 
   build-playwright:
     image: woodpeckerci/plugin-docker-buildx
@@ -39,7 +39,10 @@ steps:
       dry_run: true
     when:
       - event: [push, pull_request]
-        path: "mcp-playwright-persistent/**"
+        path:
+          - "mcp-playwright-persistent/**"
+          - "docker-compose.yml"
+          - ".woodpecker.yml"
 
   build-nano-banana:
     image: woodpeckerci/plugin-docker-buildx
@@ -51,7 +54,10 @@ steps:
       dry_run: true
     when:
       - event: [push, pull_request]
-        path: "mcp-nano-banana/**"
+        path:
+          - "mcp-nano-banana/**"
+          - "docker-compose.yml"
+          - ".woodpecker.yml"
 
   build-woodpecker-ci:
     image: woodpeckerci/plugin-docker-buildx
@@ -63,15 +69,18 @@ steps:
       dry_run: true
     when:
       - event: [push, pull_request]
-        path: "mcp-woodpecker-ci/**"
+        path:
+          - "mcp-woodpecker-ci/**"
+          - "docker-compose.yml"
+          - ".woodpecker.yml"
 
   # mcp-evaluate removed - deprecated, absorbed into /evaluate:issue skill
 
   deploy-mcp:
-    image: docker:cli
+    image: docker:27-cli
     commands:
-      - apk add --no-cache docker-compose
-      - echo "Deploying MCP containers..."
+      - echo "Deploying MCP containers from main..."
+      - docker compose version
       - docker compose --profile core --profile browser --profile cicd up -d --build --wait
       - docker compose --profile core --profile browser --profile cicd ps
       - docker image prune -f
@@ -87,3 +96,4 @@ steps:
           - "mcp-nano-banana/**"
           - "mcp-woodpecker-ci/**"
           - "docker-compose.yml"
+          - ".woodpecker.yml"
