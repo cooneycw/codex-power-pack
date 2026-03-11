@@ -31,6 +31,7 @@ services:
     environment:
       - MCP_SERVER_HOST=0.0.0.0
       - AWS_SECRET_NAME=${AWS_SECRET_NAME:-codex-power-pack}
+      - AWS_API_KEYS_SECRET_NAME=${AWS_API_KEYS_SECRET_NAME:-intake}
       - AWS_REGION=${AWS_REGION:-us-east-1}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}

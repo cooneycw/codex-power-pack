@@ -65,9 +65,10 @@ Copy `.env.example` to `.env` and configure:
 | `OPENAI_API_KEY` | No | OpenAI API key (for multi-model) |
 | `ANTHROPIC_API_KEY` | No | Anthropic API key (for Claude models) |
 
-The server also supports AWS Secrets Manager. If `AWS_SECRET_NAME` is set, it
-will read `GEMINI_API_KEY`, `OPENAI_API_KEY`, and `ANTHROPIC_API_KEY` from that
-JSON secret when direct environment variables are absent.
+The server also supports AWS Secrets Manager. If `AWS_API_KEYS_SECRET_NAME` is
+set, it will read `GEMINI_API_KEY`, `OPENAI_API_KEY`, and `ANTHROPIC_API_KEY`
+from that JSON secret when direct environment variables are absent. It falls
+back to `AWS_SECRET_NAME` if the dedicated API-key secret name is not set.
 
 ## MCP Tools
 
