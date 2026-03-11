@@ -109,7 +109,7 @@ def _resolve_secret_env(name: str, aws_values: Dict[str, str]) -> Optional[str]:
 
 # Load API keys at module level (before class definition)
 # This avoids the @classmethod @property pattern which is broken in Python 3.14
-_aws_secret_name = os.getenv("AWS_API_KEYS_SECRET_NAME", os.getenv("AWS_SECRET_NAME", "intake"))
+_aws_secret_name = os.getenv("AWS_API_KEYS_SECRET_NAME", os.getenv("AWS_SECRET_NAME", "codex_llm_apikeys"))
 _aws_region = os.getenv("AWS_REGION", "us-east-1")
 _aws_secret_values = _resolve_aws_secret(_aws_secret_name, _aws_region)
 

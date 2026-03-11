@@ -17,7 +17,7 @@ fi
 if [[ ! -f ../.env ]] && [[ ! -f .env ]] && [[ -z "${GEMINI_API_KEY:-}" ]] && [[ -z "${OPENAI_API_KEY:-}" ]] && [[ -z "${ANTHROPIC_API_KEY:-}" ]] && [[ -z "${AWS_API_KEYS_SECRET_NAME:-}" ]] && [[ -z "${AWS_SECRET_NAME:-}" ]]; then
     echo "WARNING: No local env, no API keys in process env, and no AWS secret configured." >&2
     echo "  The server will start but model calls will fail." >&2
-    echo "  Preferred: set AWS_API_KEYS_SECRET_NAME=intake in ../.env with AWS credentials." >&2
+    echo "  Preferred: set AWS_API_KEYS_SECRET_NAME=codex_llm_apikeys in ../.env with AWS credentials." >&2
     echo "  Fallback: copy .env.example to .env and add API keys directly." >&2
     echo "" >&2
 fi

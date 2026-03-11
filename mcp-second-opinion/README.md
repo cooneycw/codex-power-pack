@@ -70,6 +70,8 @@ set, it will read `GEMINI_API_KEY`, `OPENAI_API_KEY`, and `ANTHROPIC_API_KEY`
 from that JSON secret when direct environment variables are absent. It falls
 back to `AWS_SECRET_NAME` if the dedicated API-key secret name is not set.
 
+Recommended dedicated API-key secret: `codex_llm_apikeys`.
+
 ## MCP Tools
 
 | Tool | Description |
