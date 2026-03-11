@@ -29,6 +29,11 @@ The server resolves credentials in this order:
    - `AWS_REGION` - Region (default: `us-east-1`)
    - Reads `WOODPECKER_HOST` and `WOODPECKER_API_TOKEN` keys from the secret
 
+Recommended setup:
+
+- Use AWS Secrets Manager with `AWS_SECRET_NAME=codex-power-pack`
+- Avoid mounting or injecting raw `WOODPECKER_*` credentials into the container environment unless you intentionally want a local override
+
 ## Running
 
 ### Docker (recommended)

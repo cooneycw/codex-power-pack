@@ -117,9 +117,6 @@ services:
     container_name: mcp-woodpecker-ci
     ports:
       - "8085:8085"
-    env_file:
-      - path: .env
-        required: false
     environment:
       - MCP_SERVER_HOST=0.0.0.0
       - AWS_SECRET_NAME=${AWS_SECRET_NAME:-codex-power-pack}
