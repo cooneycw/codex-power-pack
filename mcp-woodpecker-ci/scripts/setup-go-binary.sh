@@ -13,7 +13,7 @@
 
 set -euo pipefail
 
-SECRET_NAME="${1:-essent-ai}"
+SECRET_NAME="${1:-${AWS_SECRET_NAME:-codex-power-pack}}"
 AWS_REGION="${2:-us-east-1}"
 
 echo "=== Woodpecker CI MCP Server Setup ==="
@@ -83,6 +83,6 @@ echo '    "args": ["serve"]'
 echo '  }'
 echo ""
 echo "Or run:"
-echo "  claude mcp add --transport stdio -s user woodpecker-ci -- $BINARY serve"
+echo "  codex mcp add woodpecker-ci -- $BINARY serve"
 echo ""
 echo "=== Setup complete ==="

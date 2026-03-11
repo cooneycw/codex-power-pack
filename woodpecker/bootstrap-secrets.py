@@ -7,13 +7,14 @@ import boto3
 
 
 def main():
+    secret_name = os.environ.get("AWS_SECRET_NAME", "codex-power-pack")
     session = boto3.Session(
         aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID"),
         aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY"),
         region_name=os.environ.get("AWS_DEFAULT_REGION", "us-east-1"),
     )
     client = session.client("secretsmanager")
-    resp = client.get_secret_value(SecretId="essent-ai")
+    resp = client.get_secret_value(SecretId=secret_name)
     secrets = json.loads(resp["SecretString"])
 
     env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "docker.env")
@@ -26,7 +27,7 @@ def main():
         ]:
             if key in secrets:
                 f.write(f"{key}={secrets[key]}\n")
-    print(f"Wrote {env_path} with secrets from essent-ai")
+    print(f"Wrote {env_path} with secrets from {secret_name}")
 
 
 if __name__ == "__main__":
