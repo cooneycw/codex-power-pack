@@ -46,7 +46,7 @@ def _resolve_woodpecker_config() -> tuple[str, str]:
 
     Priority:
     1. Direct environment variables (WOODPECKER_URL / WOODPECKER_API_TOKEN)
-    2. AWS Secrets Manager (AWS_SECRET_NAME env var, default: essent-ai)
+    2. AWS Secrets Manager (AWS_SECRET_NAME env var, default: codex-power-pack)
     """
     url = os.getenv("WOODPECKER_URL", "")
     token = os.getenv("WOODPECKER_API_TOKEN", "")
@@ -55,7 +55,7 @@ def _resolve_woodpecker_config() -> tuple[str, str]:
         return url, token
 
     # Try AWS Secrets Manager
-    secret_name = os.getenv("AWS_SECRET_NAME", "essent-ai")
+    secret_name = os.getenv("AWS_SECRET_NAME", "codex-power-pack")
     region = os.getenv("AWS_REGION", "us-east-1")
 
     secrets = _resolve_from_aws(secret_name, region)

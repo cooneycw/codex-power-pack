@@ -11,8 +11,10 @@
 #   GEMINI_API_KEY=...
 #   OPENAI_API_KEY=...
 #   ANTHROPIC_API_KEY=...
-#   WOODPECKER_URL=...          (or auto-fetched from AWS via AWS_SECRET_NAME)
-#   WOODPECKER_API_TOKEN=...    (or auto-fetched from AWS via AWS_SECRET_NAME)
+#   AWS_SECRET_NAME=codex-power-pack
+#   AWS_REGION=us-east-1
+#   WOODPECKER_URL=...          (optional local override)
+#   WOODPECKER_API_TOKEN=...    (optional local override)
 
 services:
   mcp-second-opinion:
@@ -114,6 +116,8 @@ services:
         required: false
     environment:
       - MCP_SERVER_HOST=0.0.0.0
+      - AWS_SECRET_NAME=${AWS_SECRET_NAME:-codex-power-pack}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8085/')"]
       interval: 10s

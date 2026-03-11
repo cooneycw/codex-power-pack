@@ -33,7 +33,7 @@ def _get_client() -> WoodpeckerClient:
     if not Config.WOODPECKER_URL or not Config.WOODPECKER_API_TOKEN:
         raise ValueError(
             "Woodpecker not configured. Set WOODPECKER_URL and WOODPECKER_API_TOKEN "
-            "environment variables, or set AWS_SECRET_NAME (default: essent-ai) to "
+            "environment variables, or set AWS_SECRET_NAME (default: codex-power-pack) to "
             "auto-fetch from AWS Secrets Manager."
         )
     return WoodpeckerClient(Config.WOODPECKER_URL, Config.WOODPECKER_API_TOKEN)

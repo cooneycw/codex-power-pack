@@ -25,7 +25,7 @@ The server resolves credentials in this order:
    - `WOODPECKER_API_TOKEN` - API token from Woodpecker UI
 
 2. **AWS Secrets Manager** (auto-fetch):
-   - `AWS_SECRET_NAME` - Secret name (default: `essent-ai`)
+   - `AWS_SECRET_NAME` - Secret name (default: `codex-power-pack`)
    - `AWS_REGION` - Region (default: `us-east-1`)
    - Reads `WOODPECKER_HOST` and `WOODPECKER_API_TOKEN` keys from the secret
 
