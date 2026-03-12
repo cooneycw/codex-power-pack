@@ -1,4 +1,4 @@
-.PHONY: test lint format typecheck verify update_docs clean \
+.PHONY: test lint format typecheck verify build update_docs clean help \
        docker-build docker-check-env docker-up docker-down docker-logs docker-ps deploy
 
 ## Quality gates (used by /flow:finish)
@@ -14,6 +14,9 @@ test:
 
 typecheck:
 	uv run --extra dev mypy .
+
+build:
+	uv build
 
 ## Pre-deploy gate (runs all quality checks)
 
@@ -76,3 +79,24 @@ deploy: docker-build docker-up
 
 clean:
 	rm -rf .pytest_cache __pycache__ .ruff_cache .mypy_cache dist build *.egg-info
+
+## Help
+
+help:
+	@echo "Quality gates:"
+	@echo "  make lint        - Run ruff linter"
+	@echo "  make format      - Run ruff formatter"
+	@echo "  make test        - Run pytest"
+	@echo "  make typecheck   - Run mypy"
+	@echo "  make build       - Build distribution packages"
+	@echo "  make verify      - Run all quality checks"
+	@echo ""
+	@echo "Docker:"
+	@echo "  make docker-up   - Start containers (PROFILE=core)"
+	@echo "  make docker-down - Stop all containers"
+	@echo "  make docker-ps   - Show container status"
+	@echo "  make docker-logs - Tail container logs"
+	@echo ""
+	@echo "Deployment:"
+	@echo "  make deploy      - Build and start containers"
+	@echo "  make clean       - Remove build artifacts"
