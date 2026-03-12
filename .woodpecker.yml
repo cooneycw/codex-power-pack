@@ -11,6 +11,7 @@ steps:
   validate:
     image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
     commands:
+      - apt-get update && apt-get install -y --no-install-recommends make > /dev/null 2>&1
       - uv sync --extra dev --frozen
       - make verify
 
