@@ -187,6 +187,41 @@ wheels = [
 ]
 
 [[package]]
+name = "codex-woodpecker"
+version = "1.0.0"
+source = { editable = "." }
+dependencies = [
+    { name = "boto3" },
+    { name = "fastmcp" },
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "boto3", specifier = ">=1.34.0" },
+    { name = "fastmcp", specifier = ">=3.0.0" },
+    { name = "httpx", specifier = ">=0.27.0" },
+    { name = "pydantic", specifier = ">=2.6.0" },
+    { name = "python-dotenv", specifier = ">=1.0.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=8.0" },
+    { name = "pytest-asyncio", specifier = ">=0.23" },
+    { name = "ruff", specifier = ">=0.4" },
+]
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -572,41 +607,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/fc/6d/62e76bbb8144d6ed86e202b5edd8a4cb631e7c8130f3f4893c3f90262b10/mcp-1.26.0.tar.gz", hash = "sha256:db6e2ef491eecc1a0d93711a76f28dec2e05999f93afd48795da1c1137142c66", size = 608005, upload-time = "2026-01-24T19:40:32.468Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/fd/d9/eaa1f80170d2b7c5ba23f3b59f766f3a0bb41155fbc32a69adfa1adaaef9/mcp-1.26.0-py3-none-any.whl", hash = "sha256:904a21c33c25aa98ddbeb47273033c435e595bbacfdb177f4bd87f6dceebe1ca", size = 233615, upload-time = "2026-01-24T19:40:30.652Z" },
-]
-
-[[package]]
-name = "mcp-woodpecker-ci"
-version = "1.0.0"
-source = { editable = "." }
-dependencies = [
-    { name = "boto3" },
-    { name = "fastmcp" },
-    { name = "httpx" },
-    { name = "pydantic" },
-    { name = "python-dotenv" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "boto3", specifier = ">=1.34.0" },
-    { name = "fastmcp", specifier = ">=3.0.0" },
-    { name = "httpx", specifier = ">=0.27.0" },
-    { name = "pydantic", specifier = ">=2.6.0" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "pytest", specifier = ">=8.0" },
-    { name = "pytest-asyncio", specifier = ">=0.23" },
-    { name = "ruff", specifier = ">=0.4" },
 ]
 
 [[package]]
