@@ -4,7 +4,7 @@
 
 - Never print secrets, tokens, passwords, connection strings, or raw `.env` contents.
 - Use `make` targets as the canonical interface for lint, test, verify, deploy, and Docker operations.
-- Prefer `.codex/` assets over legacy `.claude/` assets.
+- Use `.codex/` assets as the canonical workflow surface.
 - Read topic-specific docs from `docs/skills/` only when they are relevant.
 - After code changes, run `make verify` unless the environment blocks it.
 
@@ -12,6 +12,7 @@
 
 - `AGENTS.md` - canonical Codex instructions
 - `.codex/prompts/` - Codex prompt entrypoints ported from the source repo
+- `.codex/skills/` - Codex skill packages backing slash-style command workflows
 - `.codex/cicd.yml` - CI/CD config
 - `.codex/cicd_tasks.yml` - deterministic CI/CD task manifest
 - `mcp-second-opinion/` - external review server
@@ -33,5 +34,4 @@
 
 ## Notes
 
-- `CLAUDE.md` is retained only as a migrated source artifact.
-- If both `.codex/` and `.claude/` variants exist, treat `.codex/` as authoritative.
+- CI/CD slash trigger parity is mapped in `docs/skills/cicd-command-skill-map.md`.

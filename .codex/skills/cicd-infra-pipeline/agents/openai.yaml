@@ -1,0 +1,4 @@
+interface:
+  display_name: "cicd:infra-pipeline"
+  short_description: "Trigger /cicd:infra-pipeline"
+  default_prompt: "/cicd:infra-pipeline"

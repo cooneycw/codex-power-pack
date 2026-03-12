@@ -1,0 +1,4 @@
+interface:
+  display_name: "cicd:pipeline"
+  short_description: "Trigger /cicd:pipeline"
+  default_prompt: "/cicd:pipeline"

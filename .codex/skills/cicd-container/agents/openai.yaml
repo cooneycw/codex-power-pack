@@ -1,0 +1,4 @@
+interface:
+  display_name: "cicd:container"
+  short_description: "Trigger /cicd:container"
+  default_prompt: "/cicd:container"

@@ -1,0 +1,4 @@
+interface:
+  display_name: "cicd:health"
+  short_description: "Trigger /cicd:health"
+  default_prompt: "/cicd:health"

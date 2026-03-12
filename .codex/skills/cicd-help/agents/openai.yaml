@@ -1,0 +1,4 @@
+interface:
+  display_name: "cicd:help"
+  short_description: "Trigger /cicd:help"
+  default_prompt: "/cicd:help"
