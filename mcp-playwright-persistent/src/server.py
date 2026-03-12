@@ -44,7 +44,7 @@ SESSION_TIMEOUT = int(os.getenv("SESSION_TIMEOUT", "3600"))  # 1 hour default
 
 # Initialize FastMCP
 mcp = FastMCP(
-    "MCP Playwright Persistent",
+    "codex-playwright",
     instructions="""Persistent browser automation with session management.
 
     Create a session first with create_session(), then use session_id for all operations.
@@ -70,7 +70,7 @@ async def root_health_check(request: Request) -> JSONResponse:
     """Health check endpoint for Codex MCP connection verification."""
     return JSONResponse({
         "status": "healthy",
-        "server": "MCP Playwright Persistent",
+        "server": "codex-playwright",
         "port": SERVER_PORT,
         "sessions": len(sessions),
     })
@@ -716,7 +716,7 @@ async def health_check() -> dict:
     """Check MCP server health and browser status."""
     return {
         "status": "healthy",
-        "server": "MCP Playwright Persistent",
+        "server": "codex-playwright",
         "port": SERVER_PORT,
         "sessions": len(sessions),
         "browser_running": browser_instance is not None
@@ -729,7 +729,7 @@ async def health_check() -> dict:
 
 def main():
     """Main entry point for the MCP server."""
-    parser = argparse.ArgumentParser(description="MCP Playwright Persistent")
+    parser = argparse.ArgumentParser(description="codex-playwright")
     parser.add_argument(
         "--stdio",
         action="store_true",

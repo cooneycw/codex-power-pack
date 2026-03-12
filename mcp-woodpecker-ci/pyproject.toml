@@ -1,5 +1,5 @@
 [project]
-name = "mcp-woodpecker-ci"
+name = "codex-woodpecker"
 version = "1.0.0"
 description = "Woodpecker CI MCP server - pipeline management and monitoring for Codex"
 readme = "README.md"

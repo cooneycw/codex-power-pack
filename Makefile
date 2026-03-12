@@ -28,7 +28,7 @@ update_docs:
 ## Docker (MCP server containers)
 ## Usage: make docker-up PROFILE=core
 ##        make docker-up PROFILE="core browser"
-## Profiles: core (second-opinion + nano-banana), browser, coord
+## Profiles: core (codex-second-opinion + codex-nano-banana), browser, cicd
 
 PROFILE ?= core
 
@@ -58,13 +58,13 @@ docker-up: docker-check-env
 	$(foreach p,$(PROFILE),docker compose --profile $(p) up -d;)
 
 docker-down:
-	docker compose --profile core --profile browser --profile cicd --profile coord down
+	docker compose --profile core --profile browser --profile cicd down
 
 docker-logs:
-	docker compose --profile core --profile browser --profile cicd --profile coord logs -f
+	docker compose --profile core --profile browser --profile cicd logs -f
 
 docker-ps:
-	docker compose --profile core --profile browser --profile cicd --profile coord ps
+	docker compose --profile core --profile browser --profile cicd ps
 
 ## Deploy (used by Woodpecker CI and /flow:deploy)
 

@@ -17,12 +17,12 @@
 #   WOODPECKER_API_TOKEN=...    (optional local override)
 
 services:
-  mcp-second-opinion:
+  codex-second-opinion:
     build:
-      context: ./mcp-second-opinion
+      context: ./codex-second-opinion
       dockerfile: deploy/Dockerfile
-    image: mcp-second-opinion:latest
-    container_name: mcp-second-opinion
+    image: codex-second-opinion:latest
+    container_name: codex-second-opinion
     ports:
       - "8080:8080"
     env_file:
@@ -53,12 +53,12 @@ services:
           cpus: "0.5"
           memory: 256M
 
-  mcp-nano-banana:
+  codex-nano-banana:
     build:
-      context: ./mcp-nano-banana
+      context: ./codex-nano-banana
       dockerfile: deploy/Dockerfile
-    image: mcp-nano-banana:latest
-    container_name: mcp-nano-banana
+    image: codex-nano-banana:latest
+    container_name: codex-nano-banana
     ports:
       - "8084:8084"
     environment:
@@ -80,12 +80,12 @@ services:
           cpus: "0.25"
           memory: 128M
 
-  mcp-woodpecker-ci:
+  codex-woodpecker:
     build:
-      context: ./mcp-woodpecker-ci
+      context: ./codex-woodpecker
       dockerfile: deploy/Dockerfile
-    image: mcp-woodpecker-ci:latest
-    container_name: mcp-woodpecker-ci
+    image: codex-woodpecker:latest
+    container_name: codex-woodpecker
     ports:
       - "8085:8085"
     environment:
@@ -112,12 +112,12 @@ services:
           cpus: "0.25"
           memory: 128M
 
-  mcp-playwright-persistent:
+  codex-playwright:
     build:
-      context: ./mcp-playwright-persistent
+      context: ./codex-playwright
       dockerfile: deploy/Dockerfile
-    image: mcp-playwright-persistent:latest
-    container_name: mcp-playwright-persistent
+    image: codex-playwright:latest
+    container_name: codex-playwright
     ports:
       - "8081:8081"
     shm_size: "2gb"
@@ -142,4 +142,4 @@ services:
 
 networks:
   default:
-    name: mcp-net
+    name: codex-mcp-net

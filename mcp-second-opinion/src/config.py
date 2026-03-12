@@ -372,7 +372,7 @@ class Config:
     RETRY_MAX_WAIT: int = 10  # seconds
 
     # Server Configuration
-    SERVER_NAME: str = "second-opinion-server"
+    SERVER_NAME: str = "codex-second-opinion"
     SERVER_VERSION: str = "2.1.0"  # FastMCP 3.x, SSE transport
 
     # HTTP/SSE Transport Configuration (with safe parsing)

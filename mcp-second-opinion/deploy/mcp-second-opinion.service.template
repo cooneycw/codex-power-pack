@@ -27,7 +27,7 @@ StartLimitIntervalSec=300
 # Logging
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=mcp-second-opinion
+SyslogIdentifier=codex-second-opinion
 
 # Security hardening
 NoNewPrivileges=true

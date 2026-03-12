@@ -106,8 +106,8 @@ claude mcp add playwright -- npx -y @playwright/mcp@latest
 ## Related Resources
 
 - `MCP_TOKEN_AUDIT_CHECKLIST.md` - Token audit checklist
-- `mcp-second-opinion/` - Gemini-powered code review MCP
-- `mcp-playwright-persistent/` - Persistent browser automation MCP
+- `codex-second-opinion/` - Gemini-powered code review MCP
+- `codex-playwright/` - Persistent browser automation MCP
 
 ---
 

@@ -21,7 +21,7 @@ playwright._impl._errors.Error: Executable doesn't exist at /home/user/.cache/ms
 
 **Solution**: Install Playwright browsers:
 ```bash
-cd mcp-playwright-persistent
+cd mcp-playwright-persistent  # codex-playwright service
 uv run playwright install chromium
 ```
 
@@ -38,7 +38,7 @@ Missing API key: GEMINI_API_KEY or OPENAI_API_KEY
 
 **Solution**: Copy the .env.example and add your keys:
 ```bash
-cd mcp-second-opinion
+cd mcp-second-opinion  # codex-second-opinion service
 cp .env.example .env
 # Edit .env with your API keys
 ```

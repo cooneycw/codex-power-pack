@@ -1,25 +1,25 @@
-# Install as a user service: systemctl --user enable mcp-playwright
-# Copy to: ~/.config/systemd/user/mcp-playwright.service
+# Install as a user service: systemctl --user enable codex-playwright
+# Copy to: ~/.config/systemd/user/codex-playwright.service
 # %h expands to the user's home directory in user services.
 
 [Unit]
-Description=MCP Playwright Persistent Server (SSE Transport)
+Description=codex-playwright server (SSE Transport)
 After=network.target
 Documentation=https://github.com/cooneycw/codex-power-pack
 
 [Service]
 Type=simple
-WorkingDirectory=%h/Projects/codex-power-pack/mcp-playwright-persistent
+WorkingDirectory=%h/Projects/codex-power-pack/codex-playwright-persistent
 
 # Load environment variables from .env file (if exists)
-EnvironmentFile=-%h/Projects/codex-power-pack/mcp-playwright-persistent/.env
+EnvironmentFile=-%h/Projects/codex-power-pack/codex-playwright-persistent/.env
 
 # Explicit port configuration
 Environment="SERVER_PORT=8081"
 Environment="SERVER_HOST=127.0.0.1"
 
 # Use uv to run in the project environment
-ExecStart=%h/.local/bin/uv run --project %h/Projects/codex-power-pack/mcp-playwright-persistent python src/server.py
+ExecStart=%h/.local/bin/uv run --project %h/Projects/codex-power-pack/codex-playwright-persistent python src/server.py
 
 # Restart policy
 Restart=on-failure
@@ -30,7 +30,7 @@ StartLimitIntervalSec=300
 # Logging
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=mcp-playwright
+SyslogIdentifier=codex-playwright
 
 # Security hardening
 NoNewPrivileges=true

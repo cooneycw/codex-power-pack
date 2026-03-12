@@ -12,7 +12,7 @@ wheels = [
 ]
 
 [[package]]
-name = "claude-power-pack"
+name = "codex-power-pack"
 version = "5.2.0"
 source = { virtual = "." }
 

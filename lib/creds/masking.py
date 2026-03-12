@@ -18,7 +18,7 @@ Usage:
     safe = masker.mask(some_output)
 
 Pattern sources:
-    mcp-second-opinion/src/prompts.py:7-30
+    codex-second-opinion/src/prompts.py:7-30
 """
 
 from __future__ import annotations
