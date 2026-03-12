@@ -1,0 +1,4 @@
+interface:
+  display_name: "flow:doctor"
+  short_description: "Trigger /flow:doctor"
+  default_prompt: "/flow:doctor"

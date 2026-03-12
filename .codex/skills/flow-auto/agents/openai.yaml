@@ -1,0 +1,4 @@
+interface:
+  display_name: "flow:auto"
+  short_description: "Trigger /flow:auto"
+  default_prompt: "/flow:auto"

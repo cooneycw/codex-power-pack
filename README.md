@@ -54,6 +54,15 @@ The `/cicd:*` namespace is available through:
 - `.codex/skills/cicd-*/` - backing Codex skill packages
 - `docs/skills/cicd-command-skill-map.md` - trigger-to-skill inventory
 
+## Flow Trigger Parity
+
+The `/flow:*` namespace is available through:
+
+- `.claude/commands/flow/*.md` - source command inventory
+- `.codex/prompts/flow/*.md` - slash-compatible entrypoints
+- `.codex/skills/flow-*/` - backing Codex skill packages
+- `docs/skills/flow-command-skill-map.md` - trigger-to-skill inventory
+
 ## AGENTS.md Trigger Parity
 
 The `/agents-md:*` namespace is available through:

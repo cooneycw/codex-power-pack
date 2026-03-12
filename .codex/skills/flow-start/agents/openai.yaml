@@ -1,0 +1,4 @@
+interface:
+  display_name: "flow:start"
+  short_description: "Trigger /flow:start"
+  default_prompt: "/flow:start"
