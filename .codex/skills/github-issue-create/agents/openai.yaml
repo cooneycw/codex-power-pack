@@ -1,0 +1,4 @@
+interface:
+  display_name: "github:issue-create"
+  short_description: "Trigger /github:issue-create"
+  default_prompt: "/github:issue-create"

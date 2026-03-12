@@ -1,0 +1,4 @@
+interface:
+  display_name: "github:issue-view"
+  short_description: "Trigger /github:issue-view"
+  default_prompt: "/github:issue-view"
