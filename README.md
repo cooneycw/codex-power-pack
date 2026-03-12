@@ -72,6 +72,15 @@ The `/github:*` namespace is available through:
 - `.codex/skills/github-*/` - backing Codex skill packages
 - `docs/skills/github-command-skill-map.md` - trigger-to-skill inventory
 
+## QA Trigger Parity
+
+The `/qa:*` namespace is available through:
+
+- `.claude/commands/qa/*.md` - source command inventory
+- `.codex/prompts/qa/*.md` - slash-compatible entrypoints
+- `.codex/skills/qa-*/` - backing Codex skill packages
+- `docs/skills/qa-command-skill-map.md` - trigger-to-skill inventory
+
 ## Project Trigger Parity
 
 The `/project:*` namespace is available through:

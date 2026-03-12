@@ -1,0 +1,4 @@
+interface:
+  display_name: "qa:help"
+  short_description: "Trigger /qa:help"
+  default_prompt: "/qa:help"
