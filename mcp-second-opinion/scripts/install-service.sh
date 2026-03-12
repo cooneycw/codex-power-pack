@@ -108,8 +108,8 @@ fi
 echo
 
 # Read template and substitute variables
-TEMPLATE_FILE="$MCP_SERVER_DIR/deploy/mcp-second-opinion.service.template"
-OUTPUT_FILE="$MCP_SERVER_DIR/deploy/mcp-second-opinion.service"
+TEMPLATE_FILE="$MCP_SERVER_DIR/deploy/codex-second-opinion.service.template"
+OUTPUT_FILE="$MCP_SERVER_DIR/deploy/codex-second-opinion.service"
 
 if [[ ! -f "$TEMPLATE_FILE" ]]; then
     echo -e "${RED}Error: Template file not found: $TEMPLATE_FILE${NC}"
@@ -140,13 +140,13 @@ if $GENERATE_ONLY; then
         echo "  mkdir -p ~/.config/systemd/user"
         echo "  cp $OUTPUT_FILE ~/.config/systemd/user/"
         echo "  systemctl --user daemon-reload"
-        echo "  systemctl --user enable mcp-second-opinion"
-        echo "  systemctl --user start mcp-second-opinion"
+        echo "  systemctl --user enable codex-second-opinion"
+        echo "  systemctl --user start codex-second-opinion"
     else
         echo "  sudo cp $OUTPUT_FILE /etc/systemd/system/"
         echo "  sudo systemctl daemon-reload"
-        echo "  sudo systemctl enable mcp-second-opinion"
-        echo "  sudo systemctl start mcp-second-opinion"
+        echo "  sudo systemctl enable codex-second-opinion"
+        echo "  sudo systemctl start codex-second-opinion"
     fi
     exit 0
 fi
@@ -162,10 +162,10 @@ if [[ "$INSTALL_MODE" == "user" ]]; then
     echo -e "${GREEN}Service installed successfully!${NC}"
     echo
     echo "Commands:"
-    echo "  systemctl --user enable mcp-second-opinion  # Enable on login"
-    echo "  systemctl --user start mcp-second-opinion   # Start now"
-    echo "  systemctl --user status mcp-second-opinion  # Check status"
-    echo "  journalctl --user -u mcp-second-opinion -f  # View logs"
+    echo "  systemctl --user enable codex-second-opinion  # Enable on login"
+    echo "  systemctl --user start codex-second-opinion   # Start now"
+    echo "  systemctl --user status codex-second-opinion  # Check status"
+    echo "  journalctl --user -u codex-second-opinion -f  # View logs"
 else
     echo "Installing as system service (requires sudo)..."
     sudo cp "$OUTPUT_FILE" /etc/systemd/system/
@@ -174,10 +174,10 @@ else
     echo -e "${GREEN}Service installed successfully!${NC}"
     echo
     echo "Commands:"
-    echo "  sudo systemctl enable mcp-second-opinion  # Enable on boot"
-    echo "  sudo systemctl start mcp-second-opinion   # Start now"
-    echo "  sudo systemctl status mcp-second-opinion  # Check status"
-    echo "  sudo journalctl -u mcp-second-opinion -f  # View logs"
+    echo "  sudo systemctl enable codex-second-opinion  # Enable on boot"
+    echo "  sudo systemctl start codex-second-opinion   # Start now"
+    echo "  sudo systemctl status codex-second-opinion  # Check status"
+    echo "  sudo journalctl -u codex-second-opinion -f  # View logs"
 fi
 
 echo

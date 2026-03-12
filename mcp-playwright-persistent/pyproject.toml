@@ -1,5 +1,5 @@
 [project]
-name = "mcp-playwright-persistent"
+name = "codex-playwright"
 version = "1.0.0"
 description = "Persistent browser automation MCP server for Codex"
 readme = "README.md"

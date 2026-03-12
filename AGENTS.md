@@ -15,10 +15,10 @@
 - `.codex/skills/` - Codex skill packages backing slash-style command workflows
 - `.codex/cicd.yml` - CI/CD config
 - `.codex/cicd_tasks.yml` - deterministic CI/CD task manifest
-- `mcp-second-opinion/` - external review server
-- `mcp-playwright-persistent/` - browser automation server
-- `mcp-nano-banana/` - diagram and PowerPoint server
-- `mcp-woodpecker-ci/` - Woodpecker CI server
+- `codex-second-opinion/` - external review server
+- `codex-playwright/` - browser automation server
+- `codex-nano-banana/` - diagram and PowerPoint server
+- `codex-woodpecker/` - Woodpecker CI server
 - `lib/` - reusable Python libraries for creds, security, CI/CD, and spec sync
 - `templates/` - starter Makefiles and workflow templates
 - `scripts/` - shell helpers

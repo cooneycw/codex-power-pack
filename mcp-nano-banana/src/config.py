@@ -24,7 +24,7 @@ def _get_int_env(name: str, default: int) -> int:
 class Config:
     """Server configuration."""
 
-    SERVER_NAME: str = "mcp-nano-banana"
+    SERVER_NAME: str = "codex-nano-banana"
     SERVER_VERSION: str = "1.0.0"
     SERVER_HOST: str = os.getenv("MCP_SERVER_HOST", "127.0.0.1")
     SERVER_PORT: int = _get_int_env("MCP_SERVER_PORT", 8084)

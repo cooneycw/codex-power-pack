@@ -113,8 +113,8 @@ fi
 echo
 
 # Read template and substitute variables
-TEMPLATE_FILE="$MCP_SERVER_DIR/deploy/mcp-playwright.service.template"
-OUTPUT_FILE="$MCP_SERVER_DIR/deploy/mcp-playwright.service"
+TEMPLATE_FILE="$MCP_SERVER_DIR/deploy/codex-playwright.service.template"
+OUTPUT_FILE="$MCP_SERVER_DIR/deploy/codex-playwright.service"
 
 if [[ ! -f "$TEMPLATE_FILE" ]]; then
     echo -e "${RED}Error: Template file not found: $TEMPLATE_FILE${NC}"
@@ -145,13 +145,13 @@ if $GENERATE_ONLY; then
         echo "  mkdir -p ~/.config/systemd/user"
         echo "  cp $OUTPUT_FILE ~/.config/systemd/user/"
         echo "  systemctl --user daemon-reload"
-        echo "  systemctl --user enable mcp-playwright"
-        echo "  systemctl --user start mcp-playwright"
+        echo "  systemctl --user enable codex-playwright"
+        echo "  systemctl --user start codex-playwright"
     else
         echo "  sudo cp $OUTPUT_FILE /etc/systemd/system/"
         echo "  sudo systemctl daemon-reload"
-        echo "  sudo systemctl enable mcp-playwright"
-        echo "  sudo systemctl start mcp-playwright"
+        echo "  sudo systemctl enable codex-playwright"
+        echo "  sudo systemctl start codex-playwright"
     fi
     exit 0
 fi
@@ -167,10 +167,10 @@ if [[ "$INSTALL_MODE" == "user" ]]; then
     echo -e "${GREEN}Service installed successfully!${NC}"
     echo
     echo "Commands:"
-    echo "  systemctl --user enable mcp-playwright  # Enable on login"
-    echo "  systemctl --user start mcp-playwright   # Start now"
-    echo "  systemctl --user status mcp-playwright  # Check status"
-    echo "  journalctl --user -u mcp-playwright -f  # View logs"
+    echo "  systemctl --user enable codex-playwright  # Enable on login"
+    echo "  systemctl --user start codex-playwright   # Start now"
+    echo "  systemctl --user status codex-playwright  # Check status"
+    echo "  journalctl --user -u codex-playwright -f  # View logs"
 else
     echo "Installing as system service (requires sudo)..."
     sudo cp "$OUTPUT_FILE" /etc/systemd/system/
@@ -179,10 +179,10 @@ else
     echo -e "${GREEN}Service installed successfully!${NC}"
     echo
     echo "Commands:"
-    echo "  sudo systemctl enable mcp-playwright  # Enable on boot"
-    echo "  sudo systemctl start mcp-playwright   # Start now"
-    echo "  sudo systemctl status mcp-playwright  # Check status"
-    echo "  sudo journalctl -u mcp-playwright -f  # View logs"
+    echo "  sudo systemctl enable codex-playwright  # Enable on boot"
+    echo "  sudo systemctl start codex-playwright   # Start now"
+    echo "  sudo systemctl status codex-playwright  # Check status"
+    echo "  sudo journalctl -u codex-playwright -f  # View logs"
 fi
 
 echo

@@ -77,7 +77,7 @@ _wp_url, _wp_token = _resolve_woodpecker_config()
 class Config:
     """Server configuration."""
 
-    SERVER_NAME: str = "mcp-woodpecker-ci"
+    SERVER_NAME: str = "codex-woodpecker"
     SERVER_VERSION: str = "1.0.0"
     SERVER_HOST: str = os.getenv("MCP_SERVER_HOST", "127.0.0.1")
     SERVER_PORT: int = _get_int_env("MCP_SERVER_PORT", 8085)

@@ -10,10 +10,10 @@ management, templates, and tests for Codex-centric workflows.
 - `.codex/skills/` - Codex skill packages that back slash-style trigger workflows
 - `.codex/cicd.yml` and `.codex/cicd_tasks.yml` - Codex-local CI/CD manifests
 - `AGENTS.md` - the canonical repo instructions for Codex
-- `mcp-second-opinion/` - external LLM code review server
-- `mcp-playwright-persistent/` - persistent browser automation server
-- `mcp-nano-banana/` - diagram and PowerPoint generation server
-- `mcp-woodpecker-ci/` - Woodpecker CI monitoring and control server
+- `codex-second-opinion/` - external LLM code review server
+- `codex-playwright/` - browser automation server
+- `codex-nano-banana/` - diagram and PowerPoint generation server
+- `codex-woodpecker/` - Woodpecker CI monitoring and control server
 - `lib/creds/`, `lib/security/`, `lib/cicd/`, `lib/spec_bridge/` - reusable Python libraries
 - `templates/`, `scripts/`, `docs/skills/`, `tests/` - supporting workflow assets
 
@@ -29,8 +29,8 @@ make docker-up PROFILE=core
 
 The default Docker profile starts:
 
-- `mcp-second-opinion` on `127.0.0.1:8080`
-- `mcp-nano-banana` on `127.0.0.1:8084`
+- `codex-second-opinion` on `127.0.0.1:8080`
+- `codex-nano-banana` on `127.0.0.1:8084`
 
 Add the browser profile for Playwright:
 

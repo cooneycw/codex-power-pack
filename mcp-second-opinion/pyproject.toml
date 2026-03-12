@@ -1,5 +1,5 @@
 [project]
-name = "mcp-second-opinion"
+name = "codex-second-opinion"
 version = "1.0.0"
 description = "Gemini-powered code review MCP server for Codex"
 readme = "README.md"

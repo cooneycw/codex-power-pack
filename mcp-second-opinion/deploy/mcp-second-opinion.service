@@ -1,5 +1,5 @@
-# Install as a user service: systemctl --user enable mcp-second-opinion
-# Copy to: ~/.config/systemd/user/mcp-second-opinion.service
+# Install as a user service: systemctl --user enable codex-second-opinion
+# Copy to: ~/.config/systemd/user/codex-second-opinion.service
 # %h expands to the user's home directory in user services.
 
 [Unit]
@@ -9,17 +9,17 @@ Documentation=https://github.com/cooneycw/codex-power-pack
 
 [Service]
 Type=simple
-WorkingDirectory=%h/Projects/codex-power-pack/mcp-second-opinion
+WorkingDirectory=%h/Projects/codex-power-pack/codex-second-opinion
 
 # Load environment variables from .env file
-EnvironmentFile=%h/Projects/codex-power-pack/mcp-second-opinion/.env
+EnvironmentFile=%h/Projects/codex-power-pack/codex-second-opinion/.env
 
 # Explicit port configuration (won't conflict with web servers on 80/443)
 Environment="MCP_SERVER_PORT=8080"
 Environment="MCP_SERVER_HOST=127.0.0.1"
 
 # Use uv to run in the project environment
-ExecStart=%h/.local/bin/uv run --project %h/Projects/codex-power-pack/mcp-second-opinion python src/server.py
+ExecStart=%h/.local/bin/uv run --project %h/Projects/codex-power-pack/codex-second-opinion python src/server.py
 
 # Restart policy
 Restart=on-failure
@@ -30,7 +30,7 @@ StartLimitIntervalSec=300
 # Logging
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=mcp-second-opinion
+SyslogIdentifier=codex-second-opinion
 
 # Security hardening
 NoNewPrivileges=true

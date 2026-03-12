@@ -1,5 +1,5 @@
 [Unit]
-Description=MCP Playwright Persistent Server (SSE Transport)
+Description=codex-playwright server (SSE Transport)
 After=network.target
 Documentation=https://github.com/cooneycw/codex-power-pack
 
@@ -27,7 +27,7 @@ StartLimitIntervalSec=300
 # Logging
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=mcp-playwright
+SyslogIdentifier=codex-playwright
 
 # Security hardening
 NoNewPrivileges=true
