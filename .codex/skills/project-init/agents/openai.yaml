@@ -1,0 +1,4 @@
+interface:
+  display_name: "project:init"
+  short_description: "Trigger /project:init"
+  default_prompt: "/project:init"

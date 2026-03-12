@@ -1,0 +1,4 @@
+interface:
+  display_name: "project:help"
+  short_description: "Trigger /project:help"
+  default_prompt: "/project:help"
