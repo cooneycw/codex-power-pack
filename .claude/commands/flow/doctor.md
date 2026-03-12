@@ -165,7 +165,7 @@ grep -q "endpoints:" .codex/cicd.yml 2>/dev/null && echo "PASS health endpoints"
 grep -q "smoke_tests:" .codex/cicd.yml 2>/dev/null && echo "PASS smoke tests" || echo "MISSING smoke tests"
 
 # 5. CI pipeline files
-[ -f ".github/workflows/ci.yml" ] || [ -f ".woodpecker.yml" ] && echo "PASS CI pipeline" || echo "MISSING CI pipeline"
+[ -f ".woodpecker.yml" ] || [ -d ".woodpecker" ] && echo "PASS CI pipeline" || echo "MISSING CI pipeline"
 
 # 6. Dockerfile (optional)
 [ -f "Dockerfile" ] && echo "PASS Dockerfile" || echo "OPTIONAL Dockerfile"
@@ -275,7 +275,7 @@ Output a single diagnostic report in this format:
 | Makefile completeness | ✅/⚠️ | 6/7 targets (typecheck missing) |
 | Health endpoints | ✅/⚠️ | 2 configured / Not configured |
 | Smoke tests | ✅/⚠️ | 3 configured / Not configured |
-| CI pipeline | ✅/❌ | .github/workflows/ci.yml / Not found |
+| CI pipeline | ✅/❌ | .woodpecker.yml / Not found |
 | Dockerfile | ⚠️ | Not configured (optional) |
 
 ### Actions Needed
@@ -295,7 +295,7 @@ Output a single diagnostic report in this format:
 3. ⚠️ **uv not installed** - Install: `curl -LsSf https://astral.sh/uv/install.sh | sh`
 4. ❌ **cicd.yml missing** - Run `/cicd:init` to auto-detect framework and generate configuration
 5. ⚠️ **Makefile gaps** - Run `/cicd:check` for details or `/cicd:init` to add missing targets
-6. ❌ **No CI pipeline** - Run `/cicd:pipeline` to generate GitHub Actions or Woodpecker CI config
+6. ❌ **No CI pipeline** - Run `/cicd:pipeline` to generate Woodpecker CI config
 7. ⚠️ **No health endpoints** - Add `health.endpoints` to `.codex/cicd.yml` for post-deploy verification
 8. ⚠️ **No smoke tests** - Add `health.smoke_tests` to `.codex/cicd.yml` for post-deploy testing
 9. ⚠️ **MCP server(s) not reachable** - Start servers: `cd mcp-second-opinion && ./start-server.sh` (or use stdio transport)

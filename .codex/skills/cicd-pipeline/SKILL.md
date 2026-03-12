@@ -1,6 +1,6 @@
 ---
 name: cicd-pipeline
-description: Trigger `/cicd:pipeline`. Generate GitHub Actions CI/CD workflows
+description: Trigger `/cicd:pipeline`. Generate Woodpecker CI pipelines
 ---
 
 # cicd-pipeline

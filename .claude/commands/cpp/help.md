@@ -57,7 +57,7 @@ CPP uses a tiered installation model:
 - **Build System**: Framework detection, Makefile generation/validation (`/cicd:init`, `/cicd:check`)
 - **Health Checks**: Endpoint and process verification (`/cicd:health`)
 - **Smoke Tests**: Post-deploy command verification (`/cicd:smoke`)
-- **CI/CD Pipelines**: GitHub Actions workflow generation (`/cicd:pipeline`)
+- **CI/CD Pipelines**: Woodpecker CI pipeline generation (`/cicd:pipeline`)
 - **Containers**: Dockerfile and docker-compose generation (`/cicd:container`)
 
 ## CI/CD Commands (Tier 4)
@@ -68,7 +68,7 @@ CPP uses a tiered installation model:
 | `/cicd:check` | Validate Makefile against CPP standards |
 | `/cicd:health` | Run health checks (endpoints + processes) |
 | `/cicd:smoke` | Run smoke tests from cicd.yml |
-| `/cicd:pipeline` | Generate GitHub Actions CI/CD workflows |
+| `/cicd:pipeline` | Generate Woodpecker CI pipelines |
 | `/cicd:container` | Generate Dockerfile and docker-compose.yml |
 | `/cicd:help` | CI/CD command overview |
 

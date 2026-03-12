@@ -315,13 +315,10 @@ else
 fi
 
 # Check CI workflow
-if [ -f ".github/workflows/ci.yml" ] || [ -f ".github/workflows/ci.yaml" ]; then
-  echo "  [x] CI pipeline: .github/workflows/ci.yml"
-elif ls .github/workflows/*.yml 2>/dev/null | head -1 > /dev/null 2>&1; then
-  WF_COUNT=$(ls .github/workflows/*.yml 2>/dev/null | wc -l)
-  echo "  [~] CI pipeline: $WF_COUNT workflow(s) found (no ci.yml)"
+if [ -f ".woodpecker.yml" ] || [ -d ".woodpecker" ]; then
+  echo "  [x] CI pipeline: Woodpecker CI configured"
 else
-  echo "  [ ] CI pipeline: no workflows found"
+  echo "  [ ] CI pipeline: no .woodpecker.yml found"
 fi
 
 # Check Dockerfile

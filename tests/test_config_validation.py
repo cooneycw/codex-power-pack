@@ -29,7 +29,7 @@ class TestPydanticMigration:
         assert config.build.framework == "auto"
         assert config.build.package_manager == "auto"
         assert config.build.required_targets == ["lint", "test"]
-        assert config.pipeline.provider == "github-actions"
+        assert config.pipeline.provider == "woodpecker"
         assert config.health.post_deploy is False
         assert config.container.enabled is False
         assert config.infrastructure.provider == "terraform"
@@ -150,7 +150,7 @@ class TestYamlLoading:
     def test_load_defaults_no_file(self, tmp_path):
         config = CICDConfig.load(str(tmp_path))
         assert config.build.framework == "auto"
-        assert config.pipeline.provider == "github-actions"
+        assert config.pipeline.provider == "woodpecker"
 
     def test_load_from_yaml(self, tmp_path):
         claude_dir = tmp_path / ".codex"
@@ -193,7 +193,7 @@ build:
   framework: python
   new_future_field: true
 pipeline:
-  provider: github-actions
+  provider: woodpecker
   experimental: true
 brand_new_section:
   key: value
@@ -201,7 +201,7 @@ brand_new_section:
         )
         config = CICDConfig.load(str(tmp_path))
         assert config.build.framework == "python"
-        assert config.pipeline.provider == "github-actions"
+        assert config.pipeline.provider == "woodpecker"
 
     def test_load_yaml_with_tagging_managed_by(self, tmp_path):
         """Test managed-by -> managed_by mapping."""
@@ -236,7 +236,7 @@ class TestValidation:
 build:
   framework: python
 pipeline:
-  provider: github-actions
+  provider: woodpecker
 """
         )
         issues = CICDConfig.validate_file(config_file)
@@ -307,7 +307,7 @@ health:
             """
 build:
   framework: python
-  provider: github-actions
+  provider: woodpecker
 """
         )
         issues = CICDConfig.validate_file(config_file)

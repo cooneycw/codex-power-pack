@@ -75,7 +75,7 @@ deploy:
 # Pipeline Configuration (used by /cicd:pipeline)
 # -------------------------------------------------------------------
 # pipeline:
-#   provider: github-actions   # github-actions | woodpecker | both
+#   provider: woodpecker
 #   branches:
 #     main: [lint, test, typecheck, build, deploy]
 #     pr: [lint, test, typecheck]

@@ -1,11 +1,11 @@
 ---
-description: Generate GitHub Actions CI/CD workflows
+description: Generate Woodpecker CI pipelines
 allowed-tools: Bash(python3:*), Bash(PYTHONPATH=*), Bash(cat:*), Bash(ls:*), Bash(test:*), Bash(mkdir:*), Read, Write
 ---
 
 # CI/CD Pipeline Generation
 
-Generate GitHub Actions CI/CD workflows from your Makefile targets.
+Generate Woodpecker CI pipelines from your Makefile targets.
 
 ## Steps
 
@@ -40,7 +40,7 @@ PYTHONPATH="$PWD/lib:$HOME/Projects/codex-power-pack/lib:$PYTHONPATH" python3 -m
 4. **Review output** with the user. Show the generated workflow YAML.
 
 5. **Check for existing files** before writing:
-   - If `.github/workflows/ci.yml` exists, ask before overwriting
+   - If `.woodpecker.yml` exists, ask before overwriting
 
 6. **Write files** if approved:
 
@@ -56,12 +56,12 @@ PYTHONPATH="$PWD/lib:$HOME/Projects/codex-power-pack/lib:$PYTHONPATH" python3 -m
 Framework: {framework} ({package_manager})
 
 Files created:
-  .github/workflows/ci.yml - CI pipeline with lint, test, build
+  .woodpecker.yml - Woodpecker CI pipeline with lint, test, build
 
 Triggers: push to main, pull requests
 Targets:  make lint, make test, make typecheck (if available)
 
-To view: cat .github/workflows/ci.yml
+To view: cat .woodpecker.yml
 ```
 
 ## Notes
@@ -73,7 +73,7 @@ To view: cat .github/workflows/ci.yml
 - Configure pipeline settings in `.codex/cicd.yml`:
   ```yaml
   pipeline:
-    provider: github-actions
+    provider: woodpecker
     branches:
       main: [lint, test, typecheck, build, deploy]
       pr: [lint, test, typecheck]

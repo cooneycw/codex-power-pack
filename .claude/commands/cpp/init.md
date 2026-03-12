@@ -315,7 +315,7 @@ This will make the following changes:
     • Configure process port checks
 
   [Tier 4C - CI/CD Pipeline] (optional)
-    • Generate .github/workflows/ci.yml from Makefile targets
+    • Generate .woodpecker.yml from Makefile targets
     • Include caching, matrix builds, secrets references
 
   [Tier 4D - Container] (optional)
@@ -333,7 +333,7 @@ This will make the following changes:
   To undo:
     # Tier 1+2+3 cleanup (see above)
     rm .codex/cicd.yml
-    rm .github/workflows/ci.yml
+    rm .woodpecker.yml
     rm Dockerfile docker-compose.yml .dockerignore
     claude mcp remove woodpecker-ci
 
@@ -786,9 +786,9 @@ Ask the user if they want to generate a CI pipeline:
 ```
 === Optional: CI Pipeline ===
 
-Generate a GitHub Actions CI workflow from your Makefile targets?
+Generate a Woodpecker CI pipeline from your Makefile targets?
 
-This creates .github/workflows/ci.yml using `make lint`, `make test`, etc.
+This creates .woodpecker.yml using `make lint`, `make test`, etc.
 
 Generate CI pipeline? [y/N]
 ```
@@ -797,8 +797,8 @@ If yes:
 
 ```bash
 PYTHONPATH="$CPP_DIR/lib:$PYTHONPATH" python3 -m lib.cicd pipeline --write 2>/dev/null
-if [ -f ".github/workflows/ci.yml" ]; then
-  echo "✓ .github/workflows/ci.yml generated"
+if [ -f ".woodpecker.yml" ]; then
+  echo "✓ .woodpecker.yml generated"
 else
   echo "⚠ Pipeline generation failed"
 fi

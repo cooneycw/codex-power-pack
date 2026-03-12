@@ -89,7 +89,7 @@ class PipelineConfig(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    provider: str = "github-actions"  # github-actions | woodpecker | both
+    provider: str = "woodpecker"
     branches: dict[str, list[str]] = Field(
         default_factory=lambda: {
             "main": ["lint", "test", "typecheck", "build"],
@@ -279,7 +279,7 @@ class CICDConfig(BaseModel):
         pipeline_data = data.get("pipeline", {})
         if pipeline_data and isinstance(pipeline_data, dict):
             provider = pipeline_data.get("provider", "")
-            valid_providers = {"github-actions", "woodpecker", "both"}
+            valid_providers = {"woodpecker"}
             if provider and provider not in valid_providers:
                 issues.append(
                     f"pipeline.provider '{provider}' is invalid. "
