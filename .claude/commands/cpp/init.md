@@ -56,7 +56,7 @@ command -v uv &>/dev/null && UV_INSTALLED=true
 
 # Check for pyproject.toml in each MCP server
 MCP_PROJECTS=""
-for server in mcp-second-opinion mcp-playwright-persistent; do
+for server in codex-second-opinion codex-playwright; do
   [ -f "$CPP_DIR/$server/pyproject.toml" ] && MCP_PROJECTS="$MCP_PROJECTS $server"
 done
 
@@ -265,14 +265,14 @@ This will make the following changes:
     (see above)
 
   [Tier 3 - Python Virtual Environments (uv)] (~150 MB total)
-    • mcp-second-opinion/.venv  - Gemini/OpenAI code review (~80 MB)
-    • mcp-playwright-persistent/.venv - Browser automation (~70 MB)
+    • codex-second-opinion/.venv  - Gemini/OpenAI code review (~80 MB)
+    • codex-playwright/.venv - Browser automation (~70 MB)
 
   [Tier 3 - Playwright Browsers]
     • Chromium (~150 MB, installed via `uv run playwright install chromium`)
 
   [Tier 3 - API Keys Required]
-    • GEMINI_API_KEY - For mcp-second-opinion (get from https://aistudio.google.com/apikey)
+    • GEMINI_API_KEY - For codex-second-opinion (get from https://aistudio.google.com/apikey)
     • OPENAI_API_KEY - Optional, for multi-model comparison
 
   [Tier 3 - MCP Servers] (added to Codex)
@@ -280,15 +280,15 @@ This will make the following changes:
     • playwright-persistent - port 8081
 
   [Tier 3 - Configuration Files]
-    • mcp-second-opinion/.env
+    • codex-second-opinion/.env
 
   Disk usage: ~150 MB (venvs) + 150 MB (Chromium)
   Ports used: 8080, 8081
 
   To undo:
     # Tier 1+2 cleanup (see above)
-    rm -rf {CPP_DIR}/mcp-second-opinion/.venv
-    rm -rf {CPP_DIR}/mcp-playwright-persistent/.venv
+    rm -rf {CPP_DIR}/codex-second-opinion/.venv
+    rm -rf {CPP_DIR}/codex-playwright/.venv
     claude mcp remove second-opinion
     claude mcp remove playwright-persistent
 
@@ -543,7 +543,7 @@ else
 fi
 
 # Sync dependencies for each MCP server
-for server in mcp-second-opinion mcp-playwright-persistent; do
+for server in codex-second-opinion codex-playwright; do
   if [ ! -d "$CPP_DIR/$server/.venv" ]; then
     echo "Creating virtual environment for $server..."
     cd "$CPP_DIR/$server"
@@ -560,7 +560,7 @@ done
 ```bash
 # Install Chromium for Playwright
 echo "Installing Playwright Chromium browser..."
-cd "$CPP_DIR/mcp-playwright-persistent"
+cd "$CPP_DIR/codex-playwright"
 uv run playwright install chromium
 echo "✓ Chromium browser installed"
 ```
@@ -574,9 +574,9 @@ echo "✓ Chromium browser installed"
 DEPLOY_MODE="native"
 if [ -f "$CPP_DIR/docker-compose.yml" ]; then
   # Check if Docker containers are running for MCP servers
-  if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "mcp-second-opinion"; then
+  if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "codex-second-opinion"; then
     DEPLOY_MODE="docker"
-  elif sg docker -c "docker ps --format '{{.Names}}'" 2>/dev/null | grep -q "mcp-second-opinion"; then
+  elif sg docker -c "docker ps --format '{{.Names}}'" 2>/dev/null | grep -q "codex-second-opinion"; then
     DEPLOY_MODE="docker"
   fi
   # Also check if .mcp.json points to SSE (Docker-hosted)
@@ -611,12 +611,12 @@ Enter your GEMINI_API_KEY (or press Enter to skip):
 
 ```bash
 # For Docker: write to root .env (docker-compose.yml reads env_file from here)
-# For native: write to mcp-second-opinion/.env (local server reads from here)
+# For native: write to codex-second-opinion/.env (local server reads from here)
 if [ "$DEPLOY_MODE" = "docker" ]; then
   ENV_FILE="$CPP_DIR/.env"
   echo "Docker deployment detected - writing keys to $ENV_FILE"
 else
-  ENV_FILE="$CPP_DIR/mcp-second-opinion/.env"
+  ENV_FILE="$CPP_DIR/codex-second-opinion/.env"
 fi
 
 # Build .env content (only include keys that were provided)
@@ -634,7 +634,7 @@ fi
 
 echo "✓ API keys written to $ENV_FILE"
 
-# For Docker: also write to mcp-second-opinion/.env for native fallback
+# For Docker: also write to codex-second-opinion/.env for native fallback
 if [ "$DEPLOY_MODE" = "docker" ]; then
   {
     [ -n "$GEMINI_API_KEY" ] && echo "GEMINI_API_KEY=$GEMINI_API_KEY"
@@ -644,8 +644,8 @@ if [ "$DEPLOY_MODE" = "docker" ]; then
     echo "MCP_SERVER_PORT=8080"
     echo "ENABLE_CONTEXT_CACHING=true"
     echo "CACHE_TTL_MINUTES=60"
-  } > "$CPP_DIR/mcp-second-opinion/.env"
-  echo "✓ Also wrote to mcp-second-opinion/.env (native fallback)"
+  } > "$CPP_DIR/codex-second-opinion/.env"
+  echo "✓ Also wrote to codex-second-opinion/.env (native fallback)"
 fi
 ```
 
@@ -866,8 +866,8 @@ go install github.com/denysvitali/woodpecker-ci-mcp/cmd/woodpecker-mcp@latest
 BINARY="$HOME/go/bin/woodpecker-mcp"
 
 # Configure credentials
-if [ -f "$CPP_DIR/mcp-woodpecker-ci/scripts/setup-go-binary.sh" ]; then
-  bash "$CPP_DIR/mcp-woodpecker-ci/scripts/setup-go-binary.sh"
+if [ -f "$CPP_DIR/codex-woodpecker/scripts/setup-go-binary.sh" ]; then
+  bash "$CPP_DIR/codex-woodpecker/scripts/setup-go-binary.sh"
 else
   # Manual: prompt for URL and token
   echo "Enter Woodpecker CI URL (e.g. https://woodpecker.example.com):"
@@ -903,11 +903,11 @@ After Tier 3 completes, offer systemd setup:
 Would you like to install systemd services for auto-start on boot?
 
 This will:
-  • Create /etc/systemd/system/mcp-second-opinion.service
+  • Create /etc/systemd/system/codex-second-opinion.service
   • Enable service to start automatically on boot
 
 Note: You'll need to manually start MCP servers until reboot,
-or run: sudo systemctl start mcp-second-opinion
+or run: sudo systemctl start codex-second-opinion
 
 Install systemd services? [y/N]
 ```
@@ -915,20 +915,20 @@ Install systemd services? [y/N]
 If yes:
 ```bash
 # Copy service files
-sudo cp "$CPP_DIR/mcp-second-opinion/deploy/mcp-second-opinion.service" /etc/systemd/system/
+sudo cp "$CPP_DIR/codex-second-opinion/deploy/codex-second-opinion.service" /etc/systemd/system/
 
 # Update paths in service files (replace placeholder user)
 CURRENT_USER=$(whoami)
-sudo sed -i "s/cooneycw/$CURRENT_USER/g" /etc/systemd/system/mcp-second-opinion.service
+sudo sed -i "s/cooneycw/$CURRENT_USER/g" /etc/systemd/system/codex-second-opinion.service
 
 # Reload and enable
 sudo systemctl daemon-reload
-sudo systemctl enable mcp-second-opinion
+sudo systemctl enable codex-second-opinion
 
 echo "✓ Systemd services installed and enabled"
 echo ""
-echo "To start now: sudo systemctl start mcp-second-opinion"
-echo "To check status: systemctl status mcp-second-opinion"
+echo "To start now: sudo systemctl start codex-second-opinion"
+echo "To check status: systemctl status codex-second-opinion"
 ```
 
 ---
@@ -958,8 +958,8 @@ MCP Servers:
 
 Next Steps:
   1. Start MCP servers (if not using systemd):
-     cd {CPP_DIR}/mcp-second-opinion && ./start-server.sh &
-     cd {CPP_DIR}/mcp-playwright-persistent && ./start-server.sh &
+     cd {CPP_DIR}/codex-second-opinion && ./start-server.sh &
+     cd {CPP_DIR}/codex-playwright && ./start-server.sh &
 
   2. Restart your shell to apply prompt changes:
      source ~/.bashrc
@@ -1008,7 +1008,7 @@ Skip Tier 3 components? [Y/n]
 ⚠ No GEMINI_API_KEY provided.
 
 MCP Second Opinion will not work without an API key.
-You can configure it later by editing: {CPP_DIR}/mcp-second-opinion/.env
+You can configure it later by editing: {CPP_DIR}/codex-second-opinion/.env
 
 Continue? [Y/n]
 ```

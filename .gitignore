@@ -66,10 +66,10 @@ docs/_templates/
 .ipynb_checkpoints
 
 # MCP specific
-mcp-second-opinion/.env
-mcp-second-opinion/__pycache__/
-mcp-second-opinion/src/__pycache__/
-mcp-second-opinion/src/tools/__pycache__/
+codex-second-opinion/.env
+codex-second-opinion/__pycache__/
+codex-second-opinion/src/__pycache__/
+codex-second-opinion/src/tools/__pycache__/
 
 # Generated diagram outputs
 /diagrams/

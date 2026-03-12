@@ -15,7 +15,7 @@ Persistent browser automation with session management for Codex.
 ## Quick Start
 
 ```bash
-cd mcp-playwright-persistent
+cd codex-playwright
 
 # 1. Install uv if not already installed
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -34,7 +34,7 @@ uv run playwright install chromium
 #       "args": [
 #         "run",
 #         "--directory",
-#         "/path/to/codex-power-pack/mcp-playwright-persistent",
+#         "/path/to/codex-power-pack/codex-playwright",
 #         "python",
 #         "src/server.py",
 #         "--stdio"
@@ -578,7 +578,7 @@ close_session(sid)
 
 ```bash
 # Generate and install service
-cd mcp-playwright-persistent
+cd codex-playwright
 ./deploy/install-service.sh --user
 
 # Enable and start
@@ -593,14 +593,14 @@ journalctl --user -u mcp-playwright -f
 ### Docker
 
 ```bash
-cd mcp-playwright-persistent/deploy
+cd codex-playwright/deploy
 docker-compose up -d
 ```
 
 ### Manual
 
 ```bash
-cd mcp-playwright-persistent
+cd codex-playwright
 uv run python src/server.py
 ```
 

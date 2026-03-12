@@ -22,7 +22,7 @@
 
 ### US2: Nano-Banana Diagram MCP Server
 
-- [x] **T001** [US2] Scaffold `mcp-nano-banana/` with pyproject.toml, start-server.sh, README stub `mcp-nano-banana/`
+- [x] **T001** [US2] Scaffold `codex-nano-banana/` with pyproject.toml, start-server.sh, README stub `codex-nano-banana/`
 - [x] **T002** [US2] Implement base diagram class + 1920x1080 HTML template `src/diagrams/base.py`, `src/templates/base.html` (depends on T001)
 - [x] **T003** [P] [US3] Implement architecture diagram type `src/diagrams/architecture.py` (depends on T002)
 - [x] **T004** [P] [US3] Implement flowchart diagram type `src/diagrams/flowchart.py` (depends on T002)
@@ -59,7 +59,7 @@
 
 ### Documentation & Tests
 
-- [x] **T017** [US1,US2] Documentation: README, /pptx:help, update AGENTS.md `mcp-nano-banana/README.md`, `AGENTS.md` (depends on T010)
+- [x] **T017** [US1,US2] Documentation: README, /pptx:help, update AGENTS.md `codex-nano-banana/README.md`, `AGENTS.md` (depends on T010)
 - [x] **T018** [P] [US2,US3] Unit tests for diagram generation + MCP tools `tests/test_diagrams.py`, `tests/test_server.py` (depends on T006)
 - [x] **T019** [US4] Integration test: full pipeline prompt -> .pptx with diagrams `tests/test_pipeline.py` (depends on T011)
 

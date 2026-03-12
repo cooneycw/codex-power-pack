@@ -206,7 +206,7 @@ fi
 # Check MCP server pyproject.toml files
 echo ""
 echo "MCP Server Projects:"
-for server in mcp-second-opinion mcp-playwright-persistent mcp-woodpecker-ci; do
+for server in codex-second-opinion codex-playwright codex-woodpecker; do
   if [ -f "$CPP_DIR/$server/pyproject.toml" ]; then
     echo "  [x] $server: pyproject.toml found"
   else
@@ -270,7 +270,7 @@ fi
 # Check systemd services
 echo ""
 echo "Systemd Services:"
-for service in mcp-second-opinion mcp-playwright-persistent mcp-woodpecker-ci; do
+for service in codex-second-opinion codex-playwright codex-woodpecker; do
   if systemctl is-enabled $service &>/dev/null; then
     if systemctl is-active $service &>/dev/null; then
       echo "  [x] $service: enabled, running"
@@ -366,8 +366,8 @@ Tier 2 (Standard):
 
 Tier 3 (Full):
   [x] uv: 0.5.x
-  [x] mcp-second-opinion: pyproject.toml + registered
-  [ ] mcp-playwright-persistent: not configured
+  [x] codex-second-opinion: pyproject.toml + registered
+  [ ] codex-playwright: not configured
   MCP Connectivity:
     [x] second-opinion (port 8080): reachable
     [ ] playwright-persistent (port 8081): not reachable
@@ -384,7 +384,7 @@ Tier 4 (CI/CD):
 
 ---------------------------------
 Current Level: Tier 2 (Standard)
-Missing: Shell prompt, mcp-playwright-persistent, systemd, CI pipeline, Dockerfile
+Missing: Shell prompt, codex-playwright, systemd, CI pipeline, Dockerfile
 
 Run /cpp:init to complete setup
 =================================

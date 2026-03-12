@@ -95,6 +95,6 @@ test_areas:
 
 ## Requirements
 
-- Playwright MCP server running (`mcp-playwright-persistent`)
+- Playwright MCP server running (`codex-playwright`)
 - GitHub CLI authenticated (`gh auth status`)
 - Repository access for issue creation

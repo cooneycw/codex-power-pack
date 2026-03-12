@@ -33,7 +33,7 @@ Register the server in your Codex MCP configuration.
       "args": [
         "run",
         "--directory",
-        "/path/to/codex-power-pack/mcp-second-opinion",
+        "/path/to/codex-power-pack/codex-second-opinion",
         "python",
         "src/server.py",
         "--stdio"
@@ -125,7 +125,7 @@ session timeouts or disconnection issues. Update your `.mcp.json`:
 curl -s http://127.0.0.1:8080/ | jq .
 
 # Start if not running
-cd /path/to/codex-power-pack/mcp-second-opinion
+cd /path/to/codex-power-pack/codex-second-opinion
 ./start-server.sh
 ```
 

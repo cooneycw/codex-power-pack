@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=simple
 User=%i
-WorkingDirectory=/home/%i/Projects/codex-power-pack/mcp-nano-banana
+WorkingDirectory=/home/%i/Projects/codex-power-pack/codex-nano-banana
 ExecStart=/home/%i/.local/bin/uv run python src/server.py
 Restart=on-failure
 RestartSec=5
