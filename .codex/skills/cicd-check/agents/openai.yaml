@@ -1,0 +1,4 @@
+interface:
+  display_name: "cicd:check"
+  short_description: "Trigger /cicd:check"
+  default_prompt: "/cicd:check"

@@ -1,0 +1,4 @@
+interface:
+  display_name: "cicd:infra-init"
+  short_description: "Trigger /cicd:infra-init"
+  default_prompt: "/cicd:infra-init"

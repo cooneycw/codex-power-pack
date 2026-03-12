@@ -1,0 +1,4 @@
+interface:
+  display_name: "cicd:smoke"
+  short_description: "Trigger /cicd:smoke"
+  default_prompt: "/cicd:smoke"

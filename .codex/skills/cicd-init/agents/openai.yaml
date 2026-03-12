@@ -1,0 +1,4 @@
+interface:
+  display_name: "cicd:init"
+  short_description: "Trigger /cicd:init"
+  default_prompt: "/cicd:init"
