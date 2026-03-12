@@ -1,0 +1,4 @@
+interface:
+  display_name: "qa:test"
+  short_description: "Trigger /qa:test"
+  default_prompt: "/qa:test"
