@@ -18,60 +18,60 @@ steps:
   build-second-opinion:
     image: woodpeckerci/plugin-docker-buildx
     settings:
-      repo: mcp-second-opinion
-      dockerfile: mcp-second-opinion/deploy/Dockerfile
-      context: mcp-second-opinion
+      repo: codex-second-opinion
+      dockerfile: codex-second-opinion/deploy/Dockerfile
+      context: codex-second-opinion
       tags: latest
       dry_run: true
     when:
       - event: [push, pull_request]
         path:
-          - "mcp-second-opinion/**"
+          - "codex-second-opinion/**"
           - "docker-compose.yml"
           - ".woodpecker.yml"
 
   build-playwright:
     image: woodpeckerci/plugin-docker-buildx
     settings:
-      repo: mcp-playwright-persistent
-      dockerfile: mcp-playwright-persistent/deploy/Dockerfile
-      context: mcp-playwright-persistent
+      repo: codex-playwright
+      dockerfile: codex-playwright/deploy/Dockerfile
+      context: codex-playwright
       tags: latest
       dry_run: true
     when:
       - event: [push, pull_request]
         path:
-          - "mcp-playwright-persistent/**"
+          - "codex-playwright/**"
           - "docker-compose.yml"
           - ".woodpecker.yml"
 
   build-nano-banana:
     image: woodpeckerci/plugin-docker-buildx
     settings:
-      repo: mcp-nano-banana
-      dockerfile: mcp-nano-banana/deploy/Dockerfile
-      context: mcp-nano-banana
+      repo: codex-nano-banana
+      dockerfile: codex-nano-banana/deploy/Dockerfile
+      context: codex-nano-banana
       tags: latest
       dry_run: true
     when:
       - event: [push, pull_request]
         path:
-          - "mcp-nano-banana/**"
+          - "codex-nano-banana/**"
           - "docker-compose.yml"
           - ".woodpecker.yml"
 
   build-woodpecker-ci:
     image: woodpeckerci/plugin-docker-buildx
     settings:
-      repo: mcp-woodpecker-ci
-      dockerfile: mcp-woodpecker-ci/deploy/Dockerfile
-      context: mcp-woodpecker-ci
+      repo: codex-woodpecker
+      dockerfile: codex-woodpecker/deploy/Dockerfile
+      context: codex-woodpecker
       tags: latest
       dry_run: true
     when:
       - event: [push, pull_request]
         path:
-          - "mcp-woodpecker-ci/**"
+          - "codex-woodpecker/**"
           - "docker-compose.yml"
           - ".woodpecker.yml"
 
@@ -92,9 +92,9 @@ steps:
       - event: push
         branch: main
         path:
-          - "mcp-second-opinion/**"
-          - "mcp-playwright-persistent/**"
-          - "mcp-nano-banana/**"
-          - "mcp-woodpecker-ci/**"
+          - "codex-second-opinion/**"
+          - "codex-playwright/**"
+          - "codex-nano-banana/**"
+          - "codex-woodpecker/**"
           - "docker-compose.yml"
           - ".woodpecker.yml"

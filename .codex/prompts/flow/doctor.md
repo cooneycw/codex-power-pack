@@ -302,7 +302,7 @@ Output a single diagnostic report in this format:
 6. ❌ **No CI pipeline** - Run `/cicd:pipeline` to generate Woodpecker CI config
 7. ⚠️ **No health endpoints** - Add `health.endpoints` to `.codex/cicd.yml` for post-deploy verification
 8. ⚠️ **No smoke tests** - Add `health.smoke_tests` to `.codex/cicd.yml` for post-deploy testing
-9. ⚠️ **MCP server(s) not reachable** - Start servers: `cd mcp-second-opinion && ./start-server.sh` (or use stdio transport)
+9. ⚠️ **MCP server(s) not reachable** - Start servers: `cd codex-second-opinion && ./start-server.sh` (or use stdio transport)
 
 *All checks passed!* → "Environment is ready for `/flow` workflow."
 ```

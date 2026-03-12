@@ -25,7 +25,7 @@ Best-in-class diagram generation MCP server for Codex. Generates professional 19
 #       "args": [
 #         "run",
 #         "--directory",
-#         "/path/to/codex-power-pack/mcp-nano-banana",
+#         "/path/to/codex-power-pack/codex-nano-banana",
 #         "python",
 #         "src/server.py",
 #         "--stdio"

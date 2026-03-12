@@ -101,7 +101,7 @@ output.pptx
 
 | Module | Purpose |
 |--------|---------|
-| `mcp-playwright-persistent` | PNG rendering of HTML diagrams |
+| `codex-playwright` | PNG rendering of HTML diagrams |
 | `.codex/skills/` | Skill registration |
 | `.codex/commands/` | Command registration |
 
@@ -110,7 +110,7 @@ output.pptx
 ## File Structure
 
 ```
-mcp-nano-banana/
+codex-nano-banana/
 ├── pyproject.toml
 ├── start-server.sh
 ├── README.md
@@ -154,7 +154,7 @@ mcp-nano-banana/
 
 | Task ID | Description | Files | Dependencies |
 |---------|-------------|-------|--------------|
-| T001 | Scaffold mcp-nano-banana with pyproject.toml, start-server.sh | `mcp-nano-banana/` | - |
+| T001 | Scaffold codex-nano-banana with pyproject.toml, start-server.sh | `codex-nano-banana/` | - |
 | T002 | Implement base diagram class and HTML template (1920x1080) | `src/diagrams/base.py`, `src/templates/` | T001 |
 | T003 | Implement architecture diagram type | `src/diagrams/architecture.py` | T002 |
 | T004 | Implement flowchart diagram type | `src/diagrams/flowchart.py` | T002 |

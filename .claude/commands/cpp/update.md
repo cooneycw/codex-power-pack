@@ -111,7 +111,7 @@ If MCP server venvs exist, sync dependencies to pick up any new packages:
 ```bash
 cd "$CPP_DIR"
 
-for server_dir in mcp-second-opinion mcp-playwright-persistent mcp-nano-banana; do
+for server_dir in codex-second-opinion codex-playwright codex-nano-banana; do
   if [ -d "$server_dir/.venv" ]; then
     echo ""
     echo "Syncing dependencies for $server_dir..."
@@ -127,7 +127,7 @@ done
 ## Step 5: Restart MCP Servers (if running via systemd)
 
 ```bash
-for service in mcp-second-opinion mcp-playwright nano-banana; do
+for service in codex-second-opinion codex-playwright nano-banana; do
   if systemctl is-active $service &>/dev/null; then
     echo ""
     echo "Restarting $service..."
@@ -196,9 +196,9 @@ ss -tlnp 2>/dev/null | grep -E ':(808[0-9]|8084)' || echo "  (none)"
 Compare the inventories and classify each finding. Use the following logic:
 
 **Known repo servers** (from docker-compose.yml, not commented out):
-- `mcp-second-opinion` (port 8080, profile: core)
-- `mcp-nano-banana` (port 8084, profile: core)
-- `mcp-playwright-persistent` (port 8081, profile: browser)
+- `codex-second-opinion` (port 8080, profile: core)
+- `codex-nano-banana` (port 8084, profile: core)
+- `codex-playwright` (port 8081, profile: browser)
 
 **For each known repo server**, check:
 1. Is there a systemd service installed? (`systemctl is-enabled <name>`)
@@ -218,9 +218,9 @@ MCP Server Drift Report
 
 Server                    Repo    Systemd   MCP Reg   Port    Status
 ---------------------------------------------------------------------
-mcp-second-opinion        yes     active    yes       8080    OK / STALE SERVICE
-mcp-nano-banana           yes     none      no        --      NEW - NOT INSTALLED
-mcp-playwright-persistent yes     active    yes       8081    OK / STALE SERVICE
+codex-second-opinion      yes     active    yes       8080    OK / STALE SERVICE
+codex-nano-banana         yes     none      no        --      NEW - NOT INSTALLED
+codex-playwright          yes     active    yes       8081    OK / STALE SERVICE
 mcp-coordination          no      active    yes       8082    ORPHANED
 ```
 
@@ -262,7 +262,7 @@ For each drift finding, offer the user actionable options using AskUserQuestion.
 Ask the user per server:
 
 ```
-mcp-nano-banana is available in the repo but not installed.
+codex-nano-banana is available in the repo but not installed.
   - Port: 8084
   - Docker profile: core
   - Purpose: Diagram generation + PowerPoint creation
@@ -286,7 +286,7 @@ If they choose systemd:
 Ask the user per service:
 
 ```
-mcp-coordination is running but has been removed from the repo.
+mcp-coordination is running but has been removed from the repo (legacy name).
 ```
 
 Options:
@@ -305,7 +305,7 @@ If they choose remove:
 Show the meaningful differences (ignore comment-only changes). Ask:
 
 ```
-mcp-second-opinion service file differs from repo version.
+codex-second-opinion service file differs from repo version.
 Key differences:
   - Installed uses hardcoded paths, repo uses %h placeholders
   - Installed has ProtectHome/ProtectSystem sandboxing, repo does not
@@ -326,7 +326,7 @@ If they choose update:
 ### For NOT REGISTERED servers (running but not in claude mcp list):
 
 ```
-mcp-nano-banana is running on port 8084 but not registered with Codex.
+codex-nano-banana is running on port 8084 but not registered with Codex.
 ```
 
 Options:
