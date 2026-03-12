@@ -1,0 +1,4 @@
+interface:
+  display_name: "agents-md:help"
+  short_description: "Trigger /agents-md:help"
+  default_prompt: "/agents-md:help"

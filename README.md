@@ -54,6 +54,14 @@ The `/cicd:*` namespace is available through:
 - `.codex/skills/cicd-*/` - backing Codex skill packages
 - `docs/skills/cicd-command-skill-map.md` - trigger-to-skill inventory
 
+## AGENTS.md Trigger Parity
+
+The `/agents-md:*` namespace is available through:
+
+- `.codex/prompts/agents-md/*.md` - slash-compatible entrypoints
+- `.codex/skills/agents-md-*/` - backing Codex skill packages
+- `docs/skills/agents-md-command-skill-map.md` - trigger-to-skill inventory
+
 ## Verification
 
 ```bash
