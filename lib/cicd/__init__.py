@@ -69,7 +69,7 @@ from .models import (
     SmokeTestEntry,
     SmokeTestResult,
 )
-from .pipeline import generate_github_actions, generate_pipeline, generate_woodpecker
+from .pipeline import generate_pipeline, generate_woodpecker
 from .runner import DeterministicRunner, RunResult, resume_run, run_plan
 from .smoke import run_smoke_tests
 from .state import RunState, StepRecord, StepStatus
@@ -98,7 +98,6 @@ __all__ = [
     "parse_makefile",
     # Pipeline
     "generate_pipeline",
-    "generate_github_actions",
     "generate_woodpecker",
     # Infrastructure
     "scaffold_infrastructure",

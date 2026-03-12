@@ -132,33 +132,40 @@ smoke_tests:
 
 ## CI/CD Pipeline Patterns
 
-### GitHub Actions
+### Woodpecker CI
 
 Generated via `/cicd:pipeline` using templates in `templates/workflows/`:
 
 ```yaml
-# .github/workflows/ci.yml (generated)
-name: CI
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v4
-      - run: make lint
-      - run: make test
+# .woodpecker.yml (generated)
+when:
+  branch: [main]
+  event: [push, pull_request]
+
+steps:
+  - name: lint
+    image: python:3.12
+    commands:
+      - pip install uv
+      - uv sync
+      - make lint
+
+  - name: test
+    image: python:3.12
+    commands:
+      - pip install uv
+      - uv sync
+      - make test
 ```
 
 ### Template Selection
 
 Templates match detected framework:
-- `python-uv.yml` - Python with uv
-- `python-pip.yml` - Python with pip
-- `node-npm.yml` - Node.js with npm
-- `node-yarn.yml` - Node.js with yarn
-- `go.yml` - Go
-- `rust.yml` - Rust
+- `woodpecker-python.yml` - Python
+- `woodpecker-node.yml` - Node.js
+- `woodpecker-go.yml` - Go
+- `woodpecker-rust.yml` - Rust
+- `woodpecker-powershell.yml` - PowerShell
 
 ## Container Best Practices
 

@@ -724,14 +724,14 @@ def create_parser() -> argparse.ArgumentParser:
     # 'pipeline' subcommand
     pipeline_parser = subparsers.add_parser(
         "pipeline",
-        help="Generate CI/CD pipeline files (GitHub Actions, Woodpecker)",
+        help="Generate Woodpecker CI pipeline files",
     )
     _add_common_args(pipeline_parser)
     pipeline_parser.add_argument(
         "--provider",
-        choices=["github-actions", "woodpecker", "both"],
+        choices=["woodpecker"],
         default=None,
-        help="Pipeline provider (overrides cicd.yml)",
+        help="Pipeline provider",
     )
     pipeline_parser.add_argument(
         "--write",
@@ -777,9 +777,9 @@ def create_parser() -> argparse.ArgumentParser:
     )
     _add_common_args(infra_pipeline_parser)
     infra_pipeline_parser.add_argument(
-        "--provider", choices=["github-actions", "woodpecker"],
+        "--provider", choices=["woodpecker"],
         default=None,
-        help="Pipeline provider (overrides cicd.yml)",
+        help="Pipeline provider",
     )
     infra_pipeline_parser.add_argument(
         "--write", "-w", action="store_true",

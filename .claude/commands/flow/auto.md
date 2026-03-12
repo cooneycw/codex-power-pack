@@ -381,47 +381,9 @@ if [[ -n "$WOODPECKER_API_TOKEN" ]]; then
 fi
 ```
 
-3. **Check GitHub Actions** (fallback if no Woodpecker token):
+3. **No CI detected:**
 
-```bash
-if [[ -z "$WOODPECKER_API_TOKEN" ]]; then
-    echo "Polling GitHub Actions for commit $SHORT_SHA..."
-
-    for i in $(seq 1 60); do
-        RUN_JSON=$(gh run list --commit "$COMMIT_SHA" --json status,conclusion,databaseId,name --jq '.[0]' 2>/dev/null)
-
-        if [[ -n "$RUN_JSON" && "$RUN_JSON" != "null" ]]; then
-            GH_STATUS=$(echo "$RUN_JSON" | jq -r '.status')
-            GH_CONCLUSION=$(echo "$RUN_JSON" | jq -r '.conclusion')
-            RUN_ID=$(echo "$RUN_JSON" | jq -r '.databaseId')
-
-            if [[ "$GH_STATUS" == "completed" ]]; then
-                if [[ "$GH_CONCLUSION" == "success" ]]; then
-                    echo "GitHub Actions run #$RUN_ID passed."
-                    break
-                else
-                    echo "GitHub Actions run #$RUN_ID FAILED (conclusion: $GH_CONCLUSION)."
-                    echo "View: gh run view $RUN_ID"
-                    exit 1
-                fi
-            else
-                echo "Run #$RUN_ID status: $GH_STATUS (attempt $i/60)..."
-                sleep 10
-            fi
-        else
-            if [[ $i -ge 60 ]]; then
-                echo "WARNING: No GitHub Actions run found for $SHORT_SHA after 10 minutes."
-                break
-            fi
-            sleep 10
-        fi
-    done
-fi
-```
-
-4. **No CI detected:**
-
-If neither `WOODPECKER_API_TOKEN` is set nor GitHub Actions runs are found, skip with a warning:
+If `WOODPECKER_API_TOKEN` is not set, skip with a warning:
 
 ```
 WARNING: No CI system detected. Skipping verification.
@@ -466,7 +428,7 @@ Flow Auto Complete
   PR:       #78 (squash-merged)
   Branch:   issue-42-fix-login (deleted)
   Worktree: ../my-project-issue-42 (removed)
-  CI:       Woodpecker pipeline #5 passed | GitHub Actions run #123 passed | skipped
+  CI:       Woodpecker pipeline #5 passed | skipped
   Deploy:   make deploy (success) | skipped
   Location: /home/user/Projects/my-project (main)
 ```

@@ -26,16 +26,13 @@ PYTHONPATH="$CPP_DIR/lib:$PYTHONPATH" python3 -m lib.cicd infra-pipeline --path 
 
 Each tier gets its own workflow file, triggered only by changes to that tier's directory:
 
-- `.github/workflows/infra-foundation.yml` - Manual approval required
-- `.github/workflows/infra-platform.yml` - Auto-deploy (configurable)
-- `.github/workflows/infra-app.yml` - Auto-deploy
+- `.woodpecker/infra-foundation.yml` - Manual approval required
+- `.woodpecker/infra-platform.yml` - Auto-deploy (configurable)
+- `.woodpecker/infra-app.yml` - Auto-deploy
 
 ### Approval Gates
 
-Foundation tier uses GitHub Environments with required reviewers. Set up:
-1. Go to repo Settings > Environments
-2. Create `infra-foundation` environment
-3. Add required reviewers
+Foundation tier uses Woodpecker manual approval steps to gate deployments.
 
 ## Related
 

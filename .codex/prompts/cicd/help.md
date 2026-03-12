@@ -13,7 +13,7 @@ Build, verify, and deploy automation for Codex projects.
 | `/cicd:check` | Validate Makefile against CPP standards |
 | `/cicd:health` | Run health checks (endpoints + processes) |
 | `/cicd:smoke` | Run smoke tests from cicd.yml |
-| `/cicd:pipeline` | Generate GitHub Actions CI/CD workflows |
+| `/cicd:pipeline` | Generate Woodpecker CI pipelines |
 | `/cicd:container` | Generate Dockerfile and docker-compose.yml |
 | `/cicd:infra-init` | Scaffold IaC directory with tiered structure (foundation/platform/app) |
 | `/cicd:infra-discover` | Generate cloud resource discovery script for IaC import |
@@ -33,7 +33,7 @@ Build, verify, and deploy automation for Codex projects.
 /cicd:health    →  Check endpoints  →  Check processes  →  Report status
 /cicd:smoke     →  Run smoke tests  →  Check results    →  Report pass/fail
                                               ↓
-/cicd:pipeline  →  Read Makefile targets  →  Generate .github/workflows/ci.yml
+/cicd:pipeline  →  Read Makefile targets  →  Generate .woodpecker.yml
 /cicd:container →  Detect framework       →  Generate Dockerfile + docker-compose.yml
 ```
 

@@ -392,8 +392,8 @@ Effort: 0.5 day each (2 days total).
 1. Keep prompt-only but introduce “prompt checkpoints”  
    + zero new tooling, – still stochastic.
 
-2. Use GitHub Actions Matrix instead of Woodpecker  
-   + ecosystem size, – on-prem docker-socket harder.
+2. Use Woodpecker CI matrix builds
+   + on-prem docker-socket native, consistent with project CI.
 
 3. Bazel build system replacing Makefiles  
    + hermetic builds, – steep learning curve.
@@ -516,7 +516,7 @@ Feel free to copy-paste the class skeletons—each file is deliberately self-con
    - Teams add custom logic inside Makefiles; pipelines assume uniform behavior.
 
 3. **Weak CI resilience**  
-   - No retries, no readiness/health‐check loops, no rollback hooks in generated Woodpecker or GitHub Actions.  
+   - No retries, no readiness/health‐check loops, no rollback hooks in generated Woodpecker pipelines.  
    - Failures require manual intervention or costly rollbacks.
 
 4. **Unvalidated YAML config**  
@@ -801,9 +801,9 @@ def sync_repo(path):
 
 ## 4. Alternative Approaches
 
-1. **Full GitHub Actions reuse**  
-   - Leverage GH’s state machine, concurrency primitives, reusable workflows.  
-   - Pros: mature ecosystem; cons: vendor lock-in.
+1. **Woodpecker CI advanced features**
+   - Leverage Woodpecker’s matrix builds, services, and plugin ecosystem.
+   - Pros: self-hosted, Docker-native; cons: smaller ecosystem than hosted CI.
 2. **Use a dedicated runner framework (e.g., Prefect, Airflow)**  
    - Pros: rich orchestration; cons: heavy infra, steep learning curve.
 3. **Bash/Python hybrid**  

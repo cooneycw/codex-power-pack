@@ -68,7 +68,7 @@
   - `makefile.py` - Parse, validate, and generate Makefiles from templates
   - `health.py` - HTTP endpoint and process port health checks
   - `smoke.py` - Shell command smoke tests with exit code/output assertions
-  - `pipeline.py` - GitHub Actions and Woodpecker CI pipeline generation
+  - `pipeline.py` - Woodpecker CI pipeline generation
   - `container.py` - Dockerfile and docker-compose.yml generation
   - `config.py` - `.codex/cicd.yml` configuration schema
   - `models.py` - Framework, PackageManager, MakefileTarget, HealthCheckResult data models
@@ -77,9 +77,9 @@
 - **Tier 4 in `/cpp:init`** wizard - CI/CD tier added to installation flow (#152)
 - **Post-deploy verification** - `/flow:deploy` and `/flow:finish` run health/smoke checks when configured (#147)
 - **CI/CD diagnostics** in `/flow:doctor` (#153)
-- **Woodpecker CI** local pipeline support alongside GitHub Actions (#155)
+- **Woodpecker CI** pipeline generation and local pipeline support (#155)
 - **`/cicd-verification` skill** and updated AGENTS.md (#154)
-- **GitHub Actions workflow templates** in `templates/workflows/`
+- **Woodpecker CI workflow templates** in `templates/workflows/`
 - **Container templates** in `templates/containers/`
 
 ### Added - Wave 7: Evaluate Flow
