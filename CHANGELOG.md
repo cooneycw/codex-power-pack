@@ -82,17 +82,6 @@
 - **Woodpecker CI workflow templates** in `templates/workflows/`
 - **Container templates** in `templates/containers/`
 
-### Added - Wave 7: Evaluate Flow
-
-- **`/evaluate:issue` command** - 4-phase multi-model evaluation pipeline (#133-#135):
-  - Phase 1: Multi-model divergence scan
-  - Phase 2: Sequential reasoning (uses Sequential Thinking MCP if available)
-  - Phase 3: Multi-model validation
-  - Phase 4: Spec output to `.specify/specs/`
-- **MCP Evaluate server** (`mcp-evaluate/`, port 8083) - Composite server with domain-aware prompting (#135)
-  - 3 tools: `evaluate_start`, `evaluate_validate`, `evaluate_produce_spec`
-  - Supports 5 domains: architecture, concept, algorithm, ui-design, workflow
-
 ### Added - Project Scaffolding
 
 - **`/project:init` command** - Zero-to-GitHub-repo in one command (#156):

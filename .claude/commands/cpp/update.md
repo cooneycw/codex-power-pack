@@ -200,9 +200,6 @@ Compare the inventories and classify each finding. Use the following logic:
 - `mcp-nano-banana` (port 8084, profile: core)
 - `mcp-playwright-persistent` (port 8081, profile: browser)
 
-**Deprecated servers** (commented out in docker-compose.yml):
-- `mcp-evaluate` (deprecated - absorbed into /evaluate:issue skill)
-
 **For each known repo server**, check:
 1. Is there a systemd service installed? (`systemctl is-enabled <name>`)
 2. Is it registered in `claude mcp list`?
@@ -225,7 +222,6 @@ mcp-second-opinion        yes     active    yes       8080    OK / STALE SERVICE
 mcp-nano-banana           yes     none      no        --      NEW - NOT INSTALLED
 mcp-playwright-persistent yes     active    yes       8081    OK / STALE SERVICE
 mcp-coordination          no      active    yes       8082    ORPHANED
-mcp-evaluate              depr.   none      no        --      OK (deprecated)
 ```
 
 Status classifications:
@@ -440,5 +436,4 @@ Run /cpp:status for full installation details.
 - Orphaned services (removed from repo) are flagged for cleanup
 - New servers are offered for installation via systemd or Docker
 - Stale service files are diffed and can be updated with backup
-- mcp-evaluate is recognized as deprecated and not flagged as missing
 - Use `/cpp:init` instead if you need the full interactive setup wizard
