@@ -1,0 +1,4 @@
+interface:
+  display_name: "flow:help"
+  short_description: "Trigger /flow:help"
+  default_prompt: "/flow:help"

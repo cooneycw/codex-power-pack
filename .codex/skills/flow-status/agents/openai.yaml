@@ -1,0 +1,4 @@
+interface:
+  display_name: "flow:status"
+  short_description: "Trigger /flow:status"
+  default_prompt: "/flow:status"

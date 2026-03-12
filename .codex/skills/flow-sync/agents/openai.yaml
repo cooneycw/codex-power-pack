@@ -1,0 +1,4 @@
+interface:
+  display_name: "flow:sync"
+  short_description: "Trigger /flow:sync"
+  default_prompt: "/flow:sync"

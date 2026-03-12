@@ -1,0 +1,4 @@
+interface:
+  display_name: "flow:cleanup"
+  short_description: "Trigger /flow:cleanup"
+  default_prompt: "/flow:cleanup"

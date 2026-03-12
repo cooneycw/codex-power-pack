@@ -1,0 +1,4 @@
+interface:
+  display_name: "flow:merge"
+  short_description: "Trigger /flow:merge"
+  default_prompt: "/flow:merge"
