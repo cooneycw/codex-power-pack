@@ -1,0 +1,4 @@
+interface:
+  display_name: "github:issue-close"
+  short_description: "Trigger /github:issue-close"
+  default_prompt: "/github:issue-close"

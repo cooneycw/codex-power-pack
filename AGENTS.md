@@ -36,4 +36,5 @@
 
 - CI/CD slash trigger parity is mapped in `docs/skills/cicd-command-skill-map.md`.
 - Flow slash trigger parity is mapped in `docs/skills/flow-command-skill-map.md`.
+- GitHub slash trigger parity is mapped in `docs/skills/github-command-skill-map.md`.
 - AGENTS.md governance trigger parity is mapped in `docs/skills/agents-md-command-skill-map.md`.

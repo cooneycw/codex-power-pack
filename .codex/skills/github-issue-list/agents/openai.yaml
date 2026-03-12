@@ -1,0 +1,4 @@
+interface:
+  display_name: "github:issue-list"
+  short_description: "Trigger /github:issue-list"
+  default_prompt: "/github:issue-list"
