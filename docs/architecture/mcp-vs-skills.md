@@ -68,7 +68,6 @@ Moving functionality from MCP to Skill (or vice versa):
 | Code review via Gemini | MCP | Calls external Gemini API |
 | Browser screenshots | MCP | Controls Chromium process |
 | Diagram generation | MCP | Renders HTML, captures images |
-| `/evaluate:issue` workflow | Skill | Orchestrates existing MCP tools |
 | Best practices loading | Skill | Loads reference docs on demand |
 | Security scanning | Skill + lib | Runs local Python modules |
 | `/flow:auto` lifecycle | Skill | Composes git + gh + make commands |
