@@ -1,0 +1,4 @@
+interface:
+  display_name: "agents-md:lint"
+  short_description: "Trigger /agents-md:lint"
+  default_prompt: "/agents-md:lint"
