@@ -30,6 +30,7 @@ services:
         required: false
     environment:
       - MCP_SERVER_HOST=0.0.0.0
+      - MCP_SERVER_PORT=9100
       - AWS_SECRET_NAME=${AWS_SECRET_NAME:-codex-power-pack}
       - AWS_API_KEYS_SECRET_NAME=${AWS_API_KEYS_SECRET_NAME:-codex_llm_apikeys}
       - AWS_REGION=${AWS_REGION:-us-east-1}
@@ -63,6 +64,7 @@ services:
       - "9102:9102"
     environment:
       - MCP_SERVER_HOST=0.0.0.0
+      - MCP_SERVER_PORT=9102
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9102/')"]
       interval: 10s
@@ -90,6 +92,7 @@ services:
       - "9103:9103"
     environment:
       - MCP_SERVER_HOST=0.0.0.0
+      - MCP_SERVER_PORT=9103
       - AWS_SECRET_NAME=${AWS_SECRET_NAME:-codex-power-pack}
       - AWS_REGION=${AWS_REGION:-us-east-1}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
@@ -123,6 +126,7 @@ services:
     shm_size: "2gb"
     environment:
       - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=9101
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9101/')"]
       interval: 10s
