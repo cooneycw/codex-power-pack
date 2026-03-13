@@ -1,4 +1,5 @@
 .PHONY: test lint format typecheck verify build update_docs clean help \
+       skills-install-codex skills-doctor \
        mcp-install-codex mcp-doctor mcp-smoke \
        docker-build docker-check-env docker-up docker-down docker-logs docker-ps deploy
 
@@ -32,6 +33,14 @@ update_docs:
 ## MCP operations
 
 CODEX_CONFIG ?= $(HOME)/.codex/config.toml
+CODEX_SKILLS_DIR ?= $(HOME)/.codex/skills
+SKILLS_OVERWRITE ?= 0
+
+skills-install-codex:
+	python3 scripts/skills_install_codex.py --codex-skills-dir "$(CODEX_SKILLS_DIR)" $(if $(filter 1,$(SKILLS_OVERWRITE)),--overwrite,)
+
+skills-doctor:
+	python3 scripts/skills_install_codex.py --doctor --codex-skills-dir "$(CODEX_SKILLS_DIR)"
 
 mcp-install-codex:
 	python3 scripts/mcp_install_codex.py --codex-config "$(CODEX_CONFIG)"
@@ -104,6 +113,10 @@ help:
 	@echo "  make typecheck   - Run mypy"
 	@echo "  make build       - Build distribution packages"
 	@echo "  make verify      - Run all quality checks"
+	@echo ""
+	@echo "Skills:"
+	@echo "  make skills-install-codex - Install/update Codex skill links under ~/.codex/skills"
+	@echo "  make skills-doctor        - Validate Codex skill registration drift/missing links"
 	@echo ""
 	@echo "MCP:"
 	@echo "  make mcp-install-codex - Install/update Codex MCP registrations"
