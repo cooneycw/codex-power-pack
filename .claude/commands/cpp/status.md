@@ -229,7 +229,7 @@ done
 # Check MCP server connectivity and API key status
 echo ""
 echo "MCP Server Connectivity:"
-for entry in "8080:second-opinion" "8081:playwright-persistent" "8085:woodpecker-ci"; do
+for entry in "9100:second-opinion" "9101:playwright-persistent" "9103:woodpecker-ci"; do
   PORT="${entry%%:*}"
   NAME="${entry#*:}"
   HEALTH_RESPONSE=$(curl -sf --max-time 2 "http://127.0.0.1:${PORT}/" 2>/dev/null)
@@ -369,8 +369,8 @@ Tier 3 (Full):
   [x] codex-second-opinion: pyproject.toml + registered
   [ ] codex-playwright: not configured
   MCP Connectivity:
-    [x] second-opinion (port 8080): reachable
-    [ ] playwright-persistent (port 8081): not reachable
+    [x] second-opinion (port 9100): reachable
+    [ ] playwright-persistent (port 9101): not reachable
   [ ] Systemd: not installed
   Status: Partial
 

@@ -53,11 +53,11 @@ RUN playwright install chromium
 COPY --chown=mcpuser:mcpuser src/server.py ./
 
 # Expose SSE port
-EXPOSE 8081
+EXPOSE 9101
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/')" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9101/')" || exit 1
 
 # Run the MCP server
 ENTRYPOINT ["python", "server.py"]

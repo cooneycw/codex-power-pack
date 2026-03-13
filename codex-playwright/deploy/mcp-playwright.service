@@ -15,7 +15,7 @@ WorkingDirectory=%h/Projects/codex-power-pack/codex-playwright-persistent
 EnvironmentFile=-%h/Projects/codex-power-pack/codex-playwright-persistent/.env
 
 # Explicit port configuration
-Environment="SERVER_PORT=8081"
+Environment="SERVER_PORT=9101"
 Environment="SERVER_HOST=127.0.0.1"
 
 # Use uv to run in the project environment

@@ -3,7 +3,7 @@
 MCP Playwright Persistent Server
 
 A persistent browser automation server with session management.
-Port: 8081
+Port: 9101
 Transport: SSE
 
 Features:
@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 # Server configuration
 SERVER_HOST = os.getenv("SERVER_HOST", "127.0.0.1")
-SERVER_PORT = int(os.getenv("SERVER_PORT", "8081"))
+SERVER_PORT = int(os.getenv("SERVER_PORT", "9101"))
 SESSION_TIMEOUT = int(os.getenv("SESSION_TIMEOUT", "3600"))  # 1 hour default
 
 # Initialize FastMCP

@@ -53,7 +53,7 @@ make docker-up PROFILE=cicd
 
 ## Port
 
-- Default: `8085`
-- Override: `MCP_SERVER_PORT=8085`
-- SSE endpoint: `http://127.0.0.1:8085/sse`
-- Health check: `http://127.0.0.1:8085/`
+- Default: `9103`
+- Override: `MCP_SERVER_PORT=9103`
+- SSE endpoint: `http://127.0.0.1:9103/sse`
+- Health check: `http://127.0.0.1:9103/`

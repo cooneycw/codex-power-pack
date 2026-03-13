@@ -36,7 +36,7 @@ Best-in-class diagram generation MCP server for Codex. Generates professional 19
 #
 # SSE mode (manual start)
 ./start-server.sh
-# Then point Codex at http://127.0.0.1:8084/sse
+# Then point Codex at http://127.0.0.1:9102/sse
 ```
 
 ## MCP Tools
@@ -79,7 +79,7 @@ Or use `diagram_to_pptx` for a quick text-based PPTX.
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `MCP_SERVER_HOST` | `127.0.0.1` | Server bind address |
-| `MCP_SERVER_PORT` | `8084` | Server port |
+| `MCP_SERVER_PORT` | `9102` | Server port |
 | `DIAGRAM_WIDTH` | `1920` | Default diagram width |
 | `DIAGRAM_HEIGHT` | `1080` | Default diagram height |
 

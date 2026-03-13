@@ -80,7 +80,7 @@ class Config:
     SERVER_NAME: str = "codex-woodpecker"
     SERVER_VERSION: str = "1.0.0"
     SERVER_HOST: str = os.getenv("MCP_SERVER_HOST", "127.0.0.1")
-    SERVER_PORT: int = _get_int_env("MCP_SERVER_PORT", 8085)
+    SERVER_PORT: int = _get_int_env("MCP_SERVER_PORT", 9103)
 
     WOODPECKER_URL: str = _wp_url
     WOODPECKER_API_TOKEN: str = _wp_token

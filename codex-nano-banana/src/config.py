@@ -27,7 +27,7 @@ class Config:
     SERVER_NAME: str = "codex-nano-banana"
     SERVER_VERSION: str = "1.0.0"
     SERVER_HOST: str = os.getenv("MCP_SERVER_HOST", "127.0.0.1")
-    SERVER_PORT: int = _get_int_env("MCP_SERVER_PORT", 8084)
+    SERVER_PORT: int = _get_int_env("MCP_SERVER_PORT", 9102)
 
     # Default diagram dimensions (16:9 widescreen)
     DIAGRAM_WIDTH: int = _get_int_env("DIAGRAM_WIDTH", 1920)

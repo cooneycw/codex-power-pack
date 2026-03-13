@@ -12,7 +12,7 @@ WorkingDirectory=${MCP_SERVER_DIR}
 EnvironmentFile=-${MCP_SERVER_DIR}/.env
 
 # Explicit port configuration
-Environment="SERVER_PORT=8081"
+Environment="SERVER_PORT=9101"
 Environment="SERVER_HOST=127.0.0.1"
 
 # Use uv to run in the project environment
