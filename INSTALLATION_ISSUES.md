@@ -45,5 +45,27 @@ cp .env.example .env
 
 ---
 
+## Issue 3: Skills Not Found Outside Repository Root
+
+**Problem**: Codex cannot resolve slash-style workflows from unrelated directories.
+
+**Symptoms**:
+- First-run command invocations fail with "skill not found"
+- Running from `~/Projects/<some-other-repo>/` does not see codex-power-pack workflows
+
+**Solution**: Install repository skill packages into `~/.codex/skills` and run doctor checks:
+```bash
+cd codex-power-pack
+make skills-install-codex
+make skills-doctor
+```
+
+If doctor reports drift/conflicts:
+```bash
+make skills-install-codex SKILLS_OVERWRITE=1
+```
+
+---
+
 *Generated: 2025-12-20*
-*Updated: 2026-02-16 - Modernized for uv-first workflow*
+*Updated: 2026-03-13 - Added Codex skill discovery/install troubleshooting*

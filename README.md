@@ -23,9 +23,16 @@ management, templates, and tests for Codex-centric workflows.
 git clone https://github.com/cooneycw/codex-power-pack.git
 cd codex-power-pack
 uv sync --extra dev
+make skills-install-codex
 make verify
 make docker-up PROFILE=core
 make mcp-smoke PROFILE=core
+```
+
+Confirm skill registration health:
+
+```bash
+make skills-doctor
 ```
 
 The default Docker profile starts:
@@ -72,6 +79,28 @@ Canonical transport matrix:
 - Skill packages live in `.codex/skills/`
 - Runtime config targets `.codex/` paths
 - Secrets storage uses `~/.config/codex-power-pack/`
+
+## Workspace-Wide Skill Discovery
+
+Codex command discovery is driven by installed skill packages under
+`~/.codex/skills`, not by walking parent `.claude/commands` symlinks.
+
+Use the deterministic installer to register this repository's skills globally:
+
+```bash
+make skills-install-codex
+make skills-doctor
+```
+
+If `skills-doctor` reports drift, replace conflicting registrations:
+
+```bash
+make skills-install-codex SKILLS_OVERWRITE=1
+```
+
+The `/project:*` namespace in this repository currently includes:
+- `/project:help`
+- `/project:init`
 
 ## CI/CD Trigger Parity
 
