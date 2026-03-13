@@ -51,6 +51,7 @@ Defaults are set in each service's `src/config.py` and can be overridden via `MC
 - CI/CD slash trigger parity is mapped in `docs/skills/cicd-command-skill-map.md`.
 - Flow slash trigger parity is mapped in `docs/skills/flow-command-skill-map.md`.
 - GitHub slash trigger parity is mapped in `docs/skills/github-command-skill-map.md`.
+- Documentation slash trigger parity is mapped in `docs/skills/documentation-command-skill-map.md`.
 - Second-opinion slash trigger parity is mapped in `docs/skills/second-opinion-command-skill-map.md`.
 - QA slash trigger parity is mapped in `docs/skills/qa-command-skill-map.md`.
 - Project slash trigger parity is mapped in `docs/skills/project-command-skill-map.md`.

@@ -99,6 +99,15 @@ The `/github:*` namespace is available through:
 - `.codex/skills/github-*/` - backing Codex skill packages
 - `docs/skills/github-command-skill-map.md` - trigger-to-skill inventory
 
+## Documentation Trigger Parity
+
+The `/documentation:*` namespace is available through:
+
+- `.claude/commands/documentation/*.md` - source command inventory
+- `.codex/prompts/documentation/*.md` - slash-compatible entrypoints
+- `.codex/skills/documentation-*/` - backing Codex skill packages
+- `docs/skills/documentation-command-skill-map.md` - trigger-to-skill inventory
+
 ## Second-Opinion Trigger Parity
 
 The `/second-opinion:*` namespace is available through:
