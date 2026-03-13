@@ -53,4 +53,5 @@ Defaults are set in each service's `src/config.py` and can be overridden via `MC
 - Second-opinion slash trigger parity is mapped in `docs/skills/second-opinion-command-skill-map.md`.
 - QA slash trigger parity is mapped in `docs/skills/qa-command-skill-map.md`.
 - Project slash trigger parity is mapped in `docs/skills/project-command-skill-map.md`.
+- Spec slash trigger parity is mapped in `docs/skills/spec-command-skill-map.md`.
 - AGENTS.md governance trigger parity is mapped in `docs/skills/agents-md-command-skill-map.md`.

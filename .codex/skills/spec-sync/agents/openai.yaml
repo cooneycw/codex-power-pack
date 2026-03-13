@@ -1,0 +1,4 @@
+interface:
+  display_name: "spec:sync"
+  short_description: "Trigger /spec:sync"
+  default_prompt: "/spec:sync"

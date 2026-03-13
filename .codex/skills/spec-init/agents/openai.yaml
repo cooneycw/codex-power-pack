@@ -1,0 +1,4 @@
+interface:
+  display_name: "spec:init"
+  short_description: "Trigger /spec:init"
+  default_prompt: "/spec:init"
