@@ -72,6 +72,9 @@ Canonical transport matrix:
 | `codex-nano-banana` | `core` | `http://127.0.0.1:9102/sse` | `uv run --directory .../codex-nano-banana python src/server.py --stdio` |
 | `codex-woodpecker` | `cicd` | `http://127.0.0.1:9103/sse` | `uv run --directory .../codex-woodpecker python src/server.py --stdio` |
 
+The Woodpecker Docker container remains available only as a legacy profile:
+`make docker-up PROFILE=legacy-cicd`. Primary usage is stdio transport.
+
 ## Codex Architecture
 
 - Codex instructions live in `AGENTS.md`
