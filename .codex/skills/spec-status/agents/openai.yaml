@@ -1,0 +1,4 @@
+interface:
+  display_name: "spec:status"
+  short_description: "Trigger /spec:status"
+  default_prompt: "/spec:status"

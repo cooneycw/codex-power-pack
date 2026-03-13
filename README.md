@@ -99,6 +99,15 @@ The `/project:*` namespace is available through:
 - `.codex/skills/project-*/` - backing Codex skill packages
 - `docs/skills/project-command-skill-map.md` - trigger-to-skill inventory
 
+## Spec Trigger Parity
+
+The `/spec:*` namespace is available through:
+
+- `.claude/commands/spec/*.md` - source command inventory
+- `.codex/prompts/spec/*.md` - slash-compatible entrypoints
+- `.codex/skills/spec-*/` - backing Codex skill packages
+- `docs/skills/spec-command-skill-map.md` - trigger-to-skill inventory
+
 ## AGENTS.md Trigger Parity
 
 The `/agents-md:*` namespace is available through:

@@ -1,0 +1,4 @@
+interface:
+  display_name: "spec:help"
+  short_description: "Trigger /spec:help"
+  default_prompt: "/spec:help"

@@ -1,0 +1,4 @@
+interface:
+  display_name: "spec:create"
+  short_description: "Trigger /spec:create"
+  default_prompt: "/spec:create"
