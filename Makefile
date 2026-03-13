@@ -94,8 +94,20 @@ docker-ps:
 
 ## Deploy (used by Woodpecker CI and /flow:deploy)
 
-deploy: docker-build docker-up mcp-smoke
-	@sleep 5
+deploy: docker-build docker-up
+	@attempt=1; max=10; \
+	while [ $$attempt -le $$max ]; do \
+		if $(MAKE) mcp-smoke PROFILE="$(PROFILE)"; then \
+			break; \
+		fi; \
+		if [ $$attempt -eq $$max ]; then \
+			echo "mcp-smoke failed after $$max attempts"; \
+			exit 2; \
+		fi; \
+		echo "mcp-smoke not ready yet (attempt $$attempt/$$max), retrying in 1s..."; \
+		attempt=$$((attempt + 1)); \
+		sleep 1; \
+	done
 	@$(MAKE) docker-ps
 
 ## Utilities
