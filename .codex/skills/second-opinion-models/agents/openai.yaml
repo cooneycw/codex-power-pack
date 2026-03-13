@@ -1,0 +1,4 @@
+interface:
+  display_name: "second-opinion:models"
+  short_description: "Trigger /second-opinion:models"
+  default_prompt: "/second-opinion:models"

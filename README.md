@@ -72,6 +72,15 @@ The `/github:*` namespace is available through:
 - `.codex/skills/github-*/` - backing Codex skill packages
 - `docs/skills/github-command-skill-map.md` - trigger-to-skill inventory
 
+## Second-Opinion Trigger Parity
+
+The `/second-opinion:*` namespace is available through:
+
+- `.claude/commands/second-opinion/*.md` - source command inventory
+- `.codex/prompts/second-opinion/*.md` - slash-compatible entrypoints
+- `.codex/skills/second-opinion-*/` - backing Codex skill packages
+- `docs/skills/second-opinion-command-skill-map.md` - trigger-to-skill inventory
+
 ## QA Trigger Parity
 
 The `/qa:*` namespace is available through:
