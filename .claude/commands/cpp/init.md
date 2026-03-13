@@ -276,14 +276,14 @@ This will make the following changes:
     • OPENAI_API_KEY - Optional, for multi-model comparison
 
   [Tier 3 - MCP Servers] (added to Codex)
-    • second-opinion        - port 8080
-    • playwright-persistent - port 8081
+    • second-opinion        - port 9100
+    • playwright-persistent - port 9101
 
   [Tier 3 - Configuration Files]
     • codex-second-opinion/.env
 
   Disk usage: ~150 MB (venvs) + 150 MB (Chromium)
-  Ports used: 8080, 8081
+  Ports used: 9100, 9101
 
   To undo:
     # Tier 1+2 cleanup (see above)
@@ -582,7 +582,7 @@ if [ -f "$CPP_DIR/docker-compose.yml" ]; then
   # Also check if .mcp.json points to SSE (Docker-hosted)
   if [ -f "$CPP_DIR/../.mcp.json" ] || [ -f "$(git rev-parse --show-toplevel 2>/dev/null)/.mcp.json" ]; then
     for mcp_json in "$CPP_DIR/../.mcp.json" "$(git rev-parse --show-toplevel 2>/dev/null)/.mcp.json"; do
-      if [ -f "$mcp_json" ] && grep -q '"type": "sse"' "$mcp_json" 2>/dev/null && grep -q '8080' "$mcp_json" 2>/dev/null; then
+      if [ -f "$mcp_json" ] && grep -q '"type": "sse"' "$mcp_json" 2>/dev/null && grep -q '9100' "$mcp_json" 2>/dev/null; then
         DEPLOY_MODE="docker"
         break
       fi
@@ -626,7 +626,7 @@ fi
   [ -n "$ANTHROPIC_API_KEY" ] && echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY"
   if [ "$DEPLOY_MODE" != "docker" ]; then
     echo "MCP_SERVER_HOST=127.0.0.1"
-    echo "MCP_SERVER_PORT=8080"
+    echo "MCP_SERVER_PORT=9100"
     echo "ENABLE_CONTEXT_CACHING=true"
     echo "CACHE_TTL_MINUTES=60"
   fi
@@ -641,7 +641,7 @@ if [ "$DEPLOY_MODE" = "docker" ]; then
     [ -n "$OPENAI_API_KEY" ] && echo "OPENAI_API_KEY=$OPENAI_API_KEY"
     [ -n "$ANTHROPIC_API_KEY" ] && echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY"
     echo "MCP_SERVER_HOST=127.0.0.1"
-    echo "MCP_SERVER_PORT=8080"
+    echo "MCP_SERVER_PORT=9100"
     echo "ENABLE_CONTEXT_CACHING=true"
     echo "CACHE_TTL_MINUTES=60"
   } > "$CPP_DIR/codex-second-opinion/.env"
@@ -673,14 +673,14 @@ Optional: Ask for OPENAI_API_KEY and ANTHROPIC_API_KEY for multi-model compariso
 MCP_LIST=$(claude mcp list 2>/dev/null || echo "")
 
 if ! echo "$MCP_LIST" | grep -q "second-opinion"; then
-  claude mcp add second-opinion --transport sse --url http://127.0.0.1:8080/sse --scope user
+  claude mcp add second-opinion --transport sse --url http://127.0.0.1:9100/sse --scope user
   echo "✓ second-opinion MCP registered"
 else
   echo "→ second-opinion MCP already registered (skipped)"
 fi
 
 if ! echo "$MCP_LIST" | grep -q "playwright-persistent"; then
-  claude mcp add playwright-persistent --transport sse --url http://127.0.0.1:8081/sse --scope user
+  claude mcp add playwright-persistent --transport sse --url http://127.0.0.1:9101/sse --scope user
   echo "✓ playwright-persistent MCP registered"
 else
   echo "→ playwright-persistent MCP already registered (skipped)"
@@ -952,8 +952,8 @@ Permission Profile: {PROFILE_NAME}
   Settings: .codex/settings.local.json
 
 MCP Servers:
-  • second-opinion (port 8080) - Gemini/OpenAI code review
-  • playwright-persistent (port 8081) - Browser automation
+  • second-opinion (port 9100) - Gemini/OpenAI code review
+  • playwright-persistent (port 9101) - Browser automation
   • woodpecker-ci (stdio) - Woodpecker CI pipeline management
 
 Next Steps:

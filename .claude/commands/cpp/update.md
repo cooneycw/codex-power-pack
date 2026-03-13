@@ -187,8 +187,8 @@ echo "Claude MCP registrations:"
 claude mcp list 2>/dev/null || echo "  (unavailable)"
 
 echo ""
-echo "Listening ports (8080-8089):"
-ss -tlnp 2>/dev/null | grep -E ':(808[0-9]|8084)' || echo "  (none)"
+echo "Listening ports (9100-9103):"
+ss -tlnp 2>/dev/null | grep -E ':(910[0-3])' || echo "  (none)"
 ```
 
 ### 6b: Detect Drift
@@ -196,9 +196,9 @@ ss -tlnp 2>/dev/null | grep -E ':(808[0-9]|8084)' || echo "  (none)"
 Compare the inventories and classify each finding. Use the following logic:
 
 **Known repo servers** (from docker-compose.yml, not commented out):
-- `codex-second-opinion` (port 8080, profile: core)
-- `codex-nano-banana` (port 8084, profile: core)
-- `codex-playwright` (port 8081, profile: browser)
+- `codex-second-opinion` (port 9100, profile: core)
+- `codex-nano-banana` (port 9102, profile: core)
+- `codex-playwright` (port 9101, profile: browser)
 
 **For each known repo server**, check:
 1. Is there a systemd service installed? (`systemctl is-enabled <name>`)
@@ -218,9 +218,9 @@ MCP Server Drift Report
 
 Server                    Repo    Systemd   MCP Reg   Port    Status
 ---------------------------------------------------------------------
-codex-second-opinion      yes     active    yes       8080    OK / STALE SERVICE
+codex-second-opinion      yes     active    yes       9100    OK / STALE SERVICE
 codex-nano-banana         yes     none      no        --      NEW - NOT INSTALLED
-codex-playwright          yes     active    yes       8081    OK / STALE SERVICE
+codex-playwright          yes     active    yes       9101    OK / STALE SERVICE
 mcp-coordination          no      active    yes       8082    ORPHANED
 ```
 
@@ -263,7 +263,7 @@ Ask the user per server:
 
 ```
 codex-nano-banana is available in the repo but not installed.
-  - Port: 8084
+  - Port: 9102
   - Docker profile: core
   - Purpose: Diagram generation + PowerPoint creation
 ```
@@ -326,7 +326,7 @@ If they choose update:
 ### For NOT REGISTERED servers (running but not in claude mcp list):
 
 ```
-codex-nano-banana is running on port 8084 but not registered with Codex.
+codex-nano-banana is running on port 9102 but not registered with Codex.
 ```
 
 Options:

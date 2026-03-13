@@ -24,6 +24,19 @@
 - `scripts/` - shell helpers
 - `docs/skills/` - focused reference docs
 
+## MCP Server Ports
+
+All MCP servers bind to the `9100-9199` range to avoid conflicts with application ports (8000-8100).
+
+| Service | Port | Profile |
+|---------|------|---------|
+| `codex-second-opinion` | 9100 | core |
+| `codex-playwright` | 9101 | browser |
+| `codex-nano-banana` | 9102 | core |
+| `codex-woodpecker` | 9103 | cicd |
+
+Defaults are set in each service's `src/config.py` and can be overridden via `MCP_SERVER_PORT` env var.
+
 ## Conventions
 
 - Python 3.11+

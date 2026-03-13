@@ -29,8 +29,8 @@ make docker-up PROFILE=core
 
 The default Docker profile starts:
 
-- `codex-second-opinion` on `127.0.0.1:8080`
-- `codex-nano-banana` on `127.0.0.1:8084`
+- `codex-second-opinion` on `127.0.0.1:9100`
+- `codex-nano-banana` on `127.0.0.1:9102`
 
 Add the browser profile for Playwright:
 

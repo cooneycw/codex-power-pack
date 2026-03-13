@@ -377,7 +377,7 @@ class Config:
 
     # HTTP/SSE Transport Configuration (with safe parsing)
     SERVER_HOST: str = os.getenv("MCP_SERVER_HOST", "127.0.0.1")
-    SERVER_PORT: int = _get_int_env("MCP_SERVER_PORT", 8080)
+    SERVER_PORT: int = _get_int_env("MCP_SERVER_PORT", 9100)
 
     # Context Caching Configuration
     # Enable Gemini context caching for repeated prompt patterns

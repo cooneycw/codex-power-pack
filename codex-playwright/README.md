@@ -57,7 +57,7 @@ cp .env.example .env
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `SERVER_HOST` | `127.0.0.1` | Server bind address |
-| `SERVER_PORT` | `8081` | Server port |
+| `SERVER_PORT` | `9101` | Server port |
 | `SESSION_TIMEOUT` | `3600` | Session timeout in seconds (1 hour) |
 
 ## Tools Reference (29 total)
@@ -647,11 +647,11 @@ pdf = browser_pdf(session["session_id"])  # Error!
 ### Port already in use
 
 ```bash
-# Check what's using port 8081
-lsof -i :8081
+# Check what's using port 9101
+lsof -i :9101
 
 # Change port in .env
-echo "SERVER_PORT=8083" >> .env
+echo "SERVER_PORT=9105" >> .env
 ```
 
 ---
@@ -687,7 +687,7 @@ echo "SERVER_PORT=8083" >> .env
 
 ## Related
 
-- **MCP Second Opinion**: Port 8080 - Code review with Gemini
+- **MCP Second Opinion**: Port 9100 - Code review with Gemini
 - **Playwright Documentation**: https://playwright.dev/python/
 
 ---

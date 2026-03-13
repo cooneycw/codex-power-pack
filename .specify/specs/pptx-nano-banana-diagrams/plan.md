@@ -23,7 +23,7 @@ Build two interconnected components: (1) a `/pptx` CPP skill that wraps Anthropi
 | PNG Export | Playwright MCP | Already installed in CPP, persistent sessions |
 | Slide Generation | python-pptx | Industry standard, Anthropic's native skill uses it |
 | Package Manager | uv | CPP standard |
-| Port | 8084 | Next available after 8080/8081 |
+| Port | 9102 | Next available after 9100/9101 |
 
 ---
 

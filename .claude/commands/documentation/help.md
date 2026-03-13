@@ -16,7 +16,7 @@ Generate architecture documentation and professional presentations using the Nan
 
 ## MCP Server: Nano-Banana
 
-The Nano-Banana MCP server (`codex-nano-banana/`, port 8084) provides diagram generation and PPTX creation tools.
+The Nano-Banana MCP server (`codex-nano-banana/`, port 9102) provides diagram generation and PPTX creation tools.
 
 ### Setup
 
@@ -26,7 +26,7 @@ claude mcp add nano-banana --transport stdio -- uv run --directory ~/Projects/co
 
 # SSE
 cd ~/Projects/codex-power-pack/codex-nano-banana && ./start-server.sh
-claude mcp add nano-banana --transport sse --url http://127.0.0.1:8084/sse
+claude mcp add nano-banana --transport sse --url http://127.0.0.1:9102/sse
 ```
 
 ### Available MCP Tools

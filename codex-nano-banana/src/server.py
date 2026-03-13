@@ -4,7 +4,7 @@ MCP Nano-Banana - Diagram generation and PowerPoint creation server.
 Generates best-in-class HTML/SVG diagrams at 1920x1080 for professional
 presentations. Includes PowerPoint builder for embedding diagrams into slides.
 
-Port: 8084 (default)
+Port: 9102 (default)
 Transport: SSE or stdio
 """
 

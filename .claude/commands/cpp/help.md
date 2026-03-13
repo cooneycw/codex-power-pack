@@ -49,8 +49,8 @@ CPP uses a tiered installation model:
 - **Workstation tuning**: Optional swap, sysctl, inotify optimization
 
 ### Tier 3 - Full
-- **MCP Second Opinion** (port 8080): Gemini/OpenAI code review
-- **MCP Playwright** (port 8081): Persistent browser automation
+- **MCP Second Opinion** (port 9100): Gemini/OpenAI code review
+- **MCP Playwright** (port 9101): Persistent browser automation
 - **Systemd services**: Auto-start on boot (optional)
 
 ### Tier 4 - CI/CD

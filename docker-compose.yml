@@ -24,7 +24,7 @@ services:
     image: codex-second-opinion:latest
     container_name: codex-second-opinion
     ports:
-      - "8080:8080"
+      - "9100:9100"
     env_file:
       - path: .env
         required: false
@@ -37,7 +37,7 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
       - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9100/')"]
       interval: 10s
       timeout: 5s
       start_period: 10s
@@ -60,11 +60,11 @@ services:
     image: codex-nano-banana:latest
     container_name: codex-nano-banana
     ports:
-      - "8084:8084"
+      - "9102:9102"
     environment:
       - MCP_SERVER_HOST=0.0.0.0
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8084/')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9102/')"]
       interval: 10s
       timeout: 5s
       start_period: 10s
@@ -87,7 +87,7 @@ services:
     image: codex-woodpecker:latest
     container_name: codex-woodpecker
     ports:
-      - "8085:8085"
+      - "9103:9103"
     environment:
       - MCP_SERVER_HOST=0.0.0.0
       - AWS_SECRET_NAME=${AWS_SECRET_NAME:-codex-power-pack}
@@ -96,7 +96,7 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
       - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8085/')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9103/')"]
       interval: 10s
       timeout: 5s
       start_period: 10s
@@ -119,12 +119,12 @@ services:
     image: codex-playwright:latest
     container_name: codex-playwright
     ports:
-      - "8081:8081"
+      - "9101:9101"
     shm_size: "2gb"
     environment:
       - SERVER_HOST=0.0.0.0
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9101/')"]
       interval: 10s
       timeout: 5s
       start_period: 15s

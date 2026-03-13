@@ -49,7 +49,7 @@ Register the server in your Codex MCP configuration.
   "mcpServers": {
     "second-opinion": {
       "type": "streamable-http",
-      "url": "http://127.0.0.1:8080/mcp"
+      "url": "http://127.0.0.1:9100/mcp"
     }
   }
 }
@@ -105,7 +105,7 @@ session timeouts or disconnection issues. Update your `.mcp.json`:
   "mcpServers": {
     "second-opinion": {
       "type": "streamable-http",
-      "url": "http://127.0.0.1:8080/mcp"
+      "url": "http://127.0.0.1:9100/mcp"
     }
   }
 }
@@ -122,7 +122,7 @@ session timeouts or disconnection issues. Update your `.mcp.json`:
 
 ```bash
 # Check if server is running
-curl -s http://127.0.0.1:8080/ | jq .
+curl -s http://127.0.0.1:9100/ | jq .
 
 # Start if not running
 cd /path/to/codex-power-pack/codex-second-opinion

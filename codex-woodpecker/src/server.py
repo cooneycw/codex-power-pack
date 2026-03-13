@@ -4,7 +4,7 @@ MCP Woodpecker CI - Pipeline management and monitoring server.
 Provides Codex with native access to Woodpecker CI:
 list repos, trigger/cancel/approve pipelines, view logs.
 
-Port: 8085 (default)
+Port: 9103 (default)
 Transport: SSE or stdio
 """
 

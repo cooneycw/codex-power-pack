@@ -51,7 +51,7 @@ You can also invoke the MCP tools directly without commands:
 
 ## Requirements
 
-- MCP Second Opinion server configured (stdio recommended, or SSE on port 8080)
+- MCP Second Opinion server configured (stdio recommended, or SSE on port 9100)
 - At least one API key configured (GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY)
 - All three recommended for cross-provider comparison
 

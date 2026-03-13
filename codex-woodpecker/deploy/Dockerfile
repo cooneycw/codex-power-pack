@@ -42,11 +42,11 @@ USER mcpuser
 ENV PATH="/app/.venv/bin:$PATH"
 
 # Expose SSE port
-EXPOSE 8085
+EXPOSE 9103
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8085/')" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9103/')" || exit 1
 
 # Run the MCP server
 ENTRYPOINT ["python", "server.py"]
