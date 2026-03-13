@@ -1,4 +1,5 @@
 .PHONY: test lint format typecheck verify build update_docs clean help \
+       mcp-install-codex mcp-doctor mcp-smoke \
        docker-build docker-check-env docker-up docker-down docker-logs docker-ps deploy
 
 ## Quality gates (used by /flow:finish)
@@ -27,6 +28,19 @@ verify: lint test typecheck
 update_docs:
 	@echo "Run /documentation:c4 to regenerate C4 architecture diagrams"
 	@echo "Review AGENTS.md and README.md for accuracy"
+
+## MCP operations
+
+CODEX_CONFIG ?= $(HOME)/.codex/config.toml
+
+mcp-install-codex:
+	python3 scripts/mcp_install_codex.py --codex-config "$(CODEX_CONFIG)"
+
+mcp-doctor:
+	python3 scripts/mcp_doctor.py --codex-config "$(CODEX_CONFIG)" --profiles "$(PROFILE)"
+
+mcp-smoke:
+	python3 scripts/mcp_smoke.py --profiles "$(PROFILE)"
 
 ## Docker (MCP server containers)
 ## Usage: make docker-up PROFILE=core
@@ -71,7 +85,7 @@ docker-ps:
 
 ## Deploy (used by Woodpecker CI and /flow:deploy)
 
-deploy: docker-build docker-up
+deploy: docker-build docker-up mcp-smoke
 	@sleep 5
 	@$(MAKE) docker-ps
 
@@ -90,6 +104,11 @@ help:
 	@echo "  make typecheck   - Run mypy"
 	@echo "  make build       - Build distribution packages"
 	@echo "  make verify      - Run all quality checks"
+	@echo ""
+	@echo "MCP:"
+	@echo "  make mcp-install-codex - Install/update Codex MCP registrations"
+	@echo "  make mcp-doctor        - Validate Codex MCP config and endpoint health"
+	@echo "  make mcp-smoke         - Run MCP initialize smoke tests for active PROFILE"
 	@echo ""
 	@echo "Docker:"
 	@echo "  make docker-up   - Start containers (PROFILE=core)"

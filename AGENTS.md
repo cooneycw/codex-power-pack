@@ -42,6 +42,7 @@ Defaults are set in each service's `src/config.py` and can be overridden via `MC
 - Python 3.11+
 - `uv` for dependency management
 - `make lint`, `make test`, `make typecheck`, `make verify` for quality gates
+- `make mcp-install-codex`, `make mcp-doctor`, `make mcp-smoke` for MCP setup/validation
 - Docker entrypoints go through `make docker-*`
 - prefer `rg` for repo search
 
