@@ -54,7 +54,7 @@ mcp-smoke:
 ## Docker (MCP server containers)
 ## Usage: make docker-up PROFILE=core
 ##        make docker-up PROFILE="core browser"
-## Profiles: core (codex-second-opinion + codex-nano-banana), browser, cicd
+## Profiles: core (codex-second-opinion + codex-nano-banana), browser, legacy-cicd
 
 PROFILE ?= core
 
@@ -84,13 +84,13 @@ docker-up: docker-check-env
 	$(foreach p,$(PROFILE),docker compose --profile $(p) up -d;)
 
 docker-down:
-	docker compose --profile core --profile browser --profile cicd down
+	docker compose --profile core --profile browser --profile legacy-cicd down
 
 docker-logs:
-	docker compose --profile core --profile browser --profile cicd logs -f
+	docker compose --profile core --profile browser --profile legacy-cicd logs -f
 
 docker-ps:
-	docker compose --profile core --profile browser --profile cicd ps
+	docker compose --profile core --profile browser --profile legacy-cicd ps
 
 ## Deploy (used by Woodpecker CI and /flow:deploy)
 

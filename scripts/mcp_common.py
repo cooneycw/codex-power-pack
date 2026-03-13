@@ -4,7 +4,10 @@
 from __future__ import annotations
 
 import json
+import os
 import socket
+import subprocess
+import time
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
@@ -274,6 +277,80 @@ def probe_sse_server(spec: ServerSpec, timeout_seconds: float = 8.0, check_tools
             stage="handshake",
             error=str(exc),
         )
+
+
+def probe_stdio_server(
+    spec: ServerSpec,
+    startup_seconds: float = 2.0,
+    shutdown_timeout: float = 5.0,
+) -> ProbeResult:
+    """Smoke-test stdio transport by launching and cleanly stopping the server."""
+    repo_root = Path(__file__).resolve().parents[1]
+    command = ["uv", *spec.stdio_args]
+    process: subprocess.Popen[str] | None = None
+
+    try:
+        process = subprocess.Popen(
+            command,
+            cwd=repo_root,
+            env={**os.environ, "PYTHONUNBUFFERED": "1"},
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+    except FileNotFoundError as exc:
+        return ProbeResult(
+            config_name=spec.config_name,
+            sse_url=f"stdio://{spec.config_name}",
+            ok=False,
+            stage="startup",
+            error=f"Failed to launch stdio command: {exc}",
+            endpoint=" ".join(command),
+        )
+    except Exception as exc:  # pragma: no cover - defensive guard
+        return ProbeResult(
+            config_name=spec.config_name,
+            sse_url=f"stdio://{spec.config_name}",
+            ok=False,
+            stage="startup",
+            error=str(exc),
+            endpoint=" ".join(command),
+        )
+
+    time.sleep(startup_seconds)
+    return_code = process.poll()
+    if return_code is not None:
+        stderr_output = ""
+        if process.stderr is not None:
+            stderr_output = process.stderr.read().strip()
+        detail = f"stdio server exited early with code {return_code}"
+        if stderr_output:
+            detail = f"{detail}: {stderr_output[:400]}"
+        return ProbeResult(
+            config_name=spec.config_name,
+            sse_url=f"stdio://{spec.config_name}",
+            ok=False,
+            stage="startup",
+            error=detail,
+            endpoint=" ".join(command),
+        )
+
+    process.terminate()
+    try:
+        process.wait(timeout=shutdown_timeout)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=shutdown_timeout)
+
+    return ProbeResult(
+        config_name=spec.config_name,
+        sse_url=f"stdio://{spec.config_name}",
+        ok=True,
+        stage="ok",
+        endpoint=" ".join(command),
+        server_name=spec.config_name,
+    )
 
 
 def load_mcp_servers_from_toml(config_path: Path) -> dict[str, dict[str, Any]]:

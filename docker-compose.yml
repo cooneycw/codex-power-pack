@@ -2,7 +2,7 @@
 # Usage (prefer Makefile targets - see Deployment Conventions in AGENTS.md):
 #   make docker-up PROFILE=core                      # Second Opinion + Nano-Banana
 #   make docker-up PROFILE="core browser"            # + Playwright
-#   make docker-up PROFILE="core cicd"               # + Woodpecker CI
+#   make docker-up PROFILE="core legacy-cicd"        # + legacy Woodpecker CI container
 #   make docker-build PROFILE=core                   # Build images only
 #   make docker-down                                 # Stop all services
 #   make docker-ps                                   # Show container status
@@ -105,7 +105,8 @@ services:
       start_period: 10s
       retries: 3
     restart: unless-stopped
-    profiles: ["cicd"]
+    # Legacy-only container profile. Primary Codex usage is stdio transport.
+    profiles: ["legacy-cicd"]
     deploy:
       resources:
         limits:

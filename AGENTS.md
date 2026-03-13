@@ -36,6 +36,7 @@ All MCP servers bind to the `9100-9199` range to avoid conflicts with applicatio
 | `codex-woodpecker` | 9103 | cicd |
 
 Defaults are set in each service's `src/config.py` and can be overridden via `MCP_SERVER_PORT` env var.
+For Docker Compose, the Woodpecker container is intentionally legacy-only under profile `legacy-cicd`; primary usage is stdio.
 
 ## Conventions
 

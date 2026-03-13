@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+from io import StringIO
 from pathlib import Path
 
 # Import from scripts/ to test operational helpers without packaging changes.
@@ -11,9 +12,11 @@ if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
 from mcp_common import (  # type: ignore[import-not-found]  # noqa: E402
+    ServerSpec,
     extract_directory_from_args,
     load_mcp_servers_from_toml,
     parse_profiles,
+    probe_stdio_server,
     selected_servers,
 )
 
@@ -57,3 +60,77 @@ PYTHONUNBUFFERED = "1"
     servers = load_mcp_servers_from_toml(config)
     assert "codex-second-opinion" in servers
     assert servers["codex-second-opinion"]["command"] == "uv"
+
+
+def test_probe_stdio_server_success(monkeypatch) -> None:
+    class _FakeProcess:
+        def __init__(self) -> None:
+            self.stderr = StringIO("")
+            self.terminated = False
+
+        def poll(self) -> None:
+            return None
+
+        def terminate(self) -> None:
+            self.terminated = True
+
+        def wait(self, timeout: float | None = None) -> int:
+            assert self.terminated is True
+            return 0
+
+    fake_process = _FakeProcess()
+
+    def _fake_popen(*args, **kwargs):  # type: ignore[no-untyped-def]
+        return fake_process
+
+    monkeypatch.setattr("mcp_common.subprocess.Popen", _fake_popen)
+    monkeypatch.setattr("mcp_common.time.sleep", lambda _: None)
+
+    result = probe_stdio_server(
+        ServerSpec(
+            config_name="codex-woodpecker",
+            profile="cicd",
+            sse_url="http://127.0.0.1:9103/sse",
+            repo_subdir="codex-woodpecker",
+        )
+    )
+
+    assert result.ok is True
+    assert result.stage == "ok"
+    assert result.endpoint is not None
+    assert "--stdio" in result.endpoint
+
+
+def test_probe_stdio_server_early_exit(monkeypatch) -> None:
+    class _FakeProcess:
+        def __init__(self) -> None:
+            self.stderr = StringIO("boom")
+
+        def poll(self) -> int:
+            return 1
+
+        def terminate(self) -> None:
+            return None
+
+        def wait(self, timeout: float | None = None) -> int:
+            return 1
+
+    def _fake_popen(*args, **kwargs):  # type: ignore[no-untyped-def]
+        return _FakeProcess()
+
+    monkeypatch.setattr("mcp_common.subprocess.Popen", _fake_popen)
+    monkeypatch.setattr("mcp_common.time.sleep", lambda _: None)
+
+    result = probe_stdio_server(
+        ServerSpec(
+            config_name="codex-woodpecker",
+            profile="cicd",
+            sse_url="http://127.0.0.1:9103/sse",
+            repo_subdir="codex-woodpecker",
+        )
+    )
+
+    assert result.ok is False
+    assert result.stage == "startup"
+    assert result.error is not None
+    assert "exited early" in result.error

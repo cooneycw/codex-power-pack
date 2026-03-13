@@ -61,21 +61,6 @@ steps:
           - "docker-compose.yml"
           - ".woodpecker.yml"
 
-  build-woodpecker-ci:
-    image: woodpeckerci/plugin-docker-buildx
-    settings:
-      repo: codex-woodpecker
-      dockerfile: codex-woodpecker/deploy/Dockerfile
-      context: codex-woodpecker
-      tags: latest
-      dry_run: true
-    when:
-      - event: [push, pull_request]
-        path:
-          - "codex-woodpecker/**"
-          - "docker-compose.yml"
-          - ".woodpecker.yml"
-
   # mcp-evaluate removed - deprecated, absorbed into /evaluate:issue skill
 
   deploy-mcp:
@@ -83,8 +68,8 @@ steps:
     commands:
       - echo "Deploying MCP containers from main..."
       - docker compose version
-      - docker compose --profile core --profile browser --profile cicd up -d --build --wait
-      - docker compose --profile core --profile browser --profile cicd ps
+      - docker compose --profile core --profile browser up -d --build --wait
+      - docker compose --profile core --profile browser ps
       - docker image prune -f
       - echo "Deploy complete."
     volumes:
@@ -96,6 +81,5 @@ steps:
           - "codex-second-opinion/**"
           - "codex-playwright/**"
           - "codex-nano-banana/**"
-          - "codex-woodpecker/**"
           - "docker-compose.yml"
           - ".woodpecker.yml"

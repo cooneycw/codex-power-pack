@@ -1,16 +1,13 @@
-"""
-MCP Woodpecker CI - Pipeline management and monitoring server.
+"""MCP Woodpecker CI server.
 
-Provides Codex with native access to Woodpecker CI:
-list repos, trigger/cancel/approve pipelines, view logs.
-
-Port: 9103 (default)
-Transport: SSE or stdio
+Provides Codex-facing pipeline controls and a Go-compatible compatibility layer
+for users migrating from the upstream `woodpecker-mcp` binary.
 """
 
 import argparse
 import logging
-from typing import Optional
+from pathlib import Path
+from typing import Any, Optional
 
 from fastmcp import FastMCP
 from starlette.requests import Request
@@ -37,6 +34,48 @@ def _get_client() -> WoodpeckerClient:
             "auto-fetch from AWS Secrets Manager."
         )
     return WoodpeckerClient(Config.WOODPECKER_URL, Config.WOODPECKER_API_TOKEN)
+
+
+def _extract_pipeline_steps(pipeline: dict[str, Any]) -> list[dict[str, Any]]:
+    """Extract flattened workflow step metadata from a pipeline payload."""
+    steps: list[dict[str, Any]] = []
+    for wf in pipeline.get("workflows", []):
+        for child in wf.get("children", []):
+            steps.append({
+                "id": child.get("id"),
+                "name": child.get("name"),
+                "state": child.get("state"),
+                "exit_code": child.get("exit_code"),
+            })
+    return steps
+
+
+def _pipeline_payload(pipeline: dict[str, Any]) -> dict[str, Any]:
+    """Normalize Woodpecker pipeline details for MCP responses."""
+    return {
+        "number": pipeline.get("number"),
+        "status": pipeline.get("status"),
+        "event": pipeline.get("event"),
+        "branch": pipeline.get("branch"),
+        "commit": pipeline.get("commit", "")[:12],
+        "message": (pipeline.get("message") or "")[:120],
+        "author": pipeline.get("author"),
+        "started_at": pipeline.get("started_at"),
+        "finished_at": pipeline.get("finished_at"),
+        "steps": _extract_pipeline_steps(pipeline),
+    }
+
+
+def _default_config_candidates() -> list[Path]:
+    """Return likely locations for .woodpecker.yml when lint_config is called."""
+    cwd = Path.cwd()
+    repo_root = Path(__file__).resolve().parents[2]
+    service_root = Path(__file__).resolve().parents[1]
+    return [
+        cwd / ".woodpecker.yml",
+        repo_root / ".woodpecker.yml",
+        service_root / ".woodpecker.yml",
+    ]
 
 
 @mcp.custom_route("/", methods=["GET"])
@@ -183,29 +222,8 @@ async def get_pipeline(repo_id: int, pipeline_number: int) -> dict:
     """
     try:
         client = _get_client()
-        p = await client.get_pipeline(repo_id, pipeline_number)
-        # Extract step info from workflows
-        steps = []
-        for wf in p.get("workflows", []):
-            for child in wf.get("children", []):
-                steps.append({
-                    "id": child.get("id"),
-                    "name": child.get("name"),
-                    "state": child.get("state"),
-                    "exit_code": child.get("exit_code"),
-                })
-        return {
-            "number": p.get("number"),
-            "status": p.get("status"),
-            "event": p.get("event"),
-            "branch": p.get("branch"),
-            "commit": p.get("commit", "")[:12],
-            "message": (p.get("message") or "")[:120],
-            "author": p.get("author"),
-            "started_at": p.get("started_at"),
-            "finished_at": p.get("finished_at"),
-            "steps": steps,
-        }
+        pipeline = await client.get_pipeline(repo_id, pipeline_number)
+        return _pipeline_payload(pipeline)
     except Exception as exc:
         return {"error": str(exc)}
 
@@ -306,6 +324,202 @@ async def get_pipeline_logs(
         }
     except Exception as exc:
         return {"error": str(exc)}
+
+
+@mcp.tool()
+async def get_pipeline_status(
+    repo_id: int,
+    pipeline_number: Optional[int] = None,
+    latest: bool = False,
+) -> dict:
+    """Compatibility alias for the Go `get_pipeline_status` tool.
+
+    Args:
+        repo_id: Numeric repo ID.
+        pipeline_number: Pipeline number. Required unless `latest` is true.
+        latest: If true, fetch the latest pipeline for this repo.
+    """
+    try:
+        client = _get_client()
+
+        selected_number = pipeline_number
+        if latest:
+            pipelines = await client.list_pipelines(repo_id, page=1, per_page=1)
+            if not pipelines:
+                return {"error": f"No pipelines found for repo_id={repo_id}"}
+            selected_number = pipelines[0].get("number")
+
+        if selected_number is None:
+            return {"error": "pipeline_number is required when latest=false"}
+
+        pipeline = await client.get_pipeline(repo_id, int(selected_number))
+        payload = _pipeline_payload(pipeline)
+        payload["latest"] = latest
+        return payload
+    except Exception as exc:
+        return {"error": str(exc)}
+
+
+@mcp.tool()
+async def start_pipeline(
+    repo_id: int,
+    branch: str = "main",
+    variables: Optional[dict[str, str]] = None,
+) -> dict:
+    """Compatibility alias for the Go `start_pipeline` tool."""
+    return await create_pipeline(repo_id=repo_id, branch=branch, variables=variables)
+
+
+@mcp.tool()
+async def stop_pipeline(repo_id: int, pipeline_number: int) -> dict:
+    """Compatibility alias for the Go `stop_pipeline` tool."""
+    return await cancel_pipeline(repo_id=repo_id, pipeline_number=pipeline_number)
+
+
+@mcp.tool()
+async def get_repository(
+    repo_id: Optional[int] = None,
+    owner: Optional[str] = None,
+    name: Optional[str] = None,
+) -> dict:
+    """Compatibility alias for the Go `get_repository` tool.
+
+    Supports lookup by numeric `repo_id` or by `owner` + `name`.
+    """
+    try:
+        client = _get_client()
+        if repo_id is not None:
+            repo = await client.get_repo(repo_id)
+        elif owner and name:
+            repo = await client.lookup_repo(owner, name)
+        else:
+            return {"error": "Provide repo_id or owner+name"}
+
+        return {
+            "id": repo.get("id"),
+            "full_name": repo.get("full_name", f"{repo.get('owner', '?')}/{repo.get('name', '?')}"),
+            "active": repo.get("active", False),
+            "default_branch": repo.get("default_branch", "main"),
+        }
+    except Exception as exc:
+        return {"error": str(exc)}
+
+
+@mcp.tool()
+async def list_repositories() -> dict:
+    """Compatibility alias for the Go `list_repositories` tool."""
+    return await list_repos()
+
+
+@mcp.tool()
+async def get_logs(
+    repo_id: int,
+    pipeline_number: int,
+    step_id: int,
+    format: str = "text",
+    lines: Optional[int] = None,
+    tail: bool = True,
+) -> dict:
+    """Compatibility alias for the Go `get_logs` tool.
+
+    Args:
+        repo_id: Numeric repo ID.
+        pipeline_number: Pipeline number.
+        step_id: Workflow step ID.
+        format: `text` (default) or `list`.
+        lines: Optional line cap.
+        tail: If line cap is set, return last N lines when true, else first N.
+    """
+    try:
+        base = await get_pipeline_logs(repo_id=repo_id, pipeline_number=pipeline_number, step_id=step_id)
+        if "error" in base:
+            return base
+
+        log_text = base.get("log", "")
+        parts = log_text.splitlines()
+        total_lines = len(parts)
+
+        if lines is not None and lines > 0 and total_lines > lines:
+            parts = parts[-lines:] if tail else parts[:lines]
+
+        if format.lower() == "list":
+            log_value: Any = parts
+        else:
+            log_value = "\n".join(parts)
+            if log_text.endswith("\n") and log_value:
+                log_value += "\n"
+
+        return {
+            "pipeline_number": pipeline_number,
+            "step_id": step_id,
+            "format": format,
+            "tail": tail,
+            "line_count": len(parts),
+            "total_lines": total_lines,
+            "log": log_value,
+        }
+    except Exception as exc:
+        return {"error": str(exc)}
+
+
+@mcp.tool()
+async def lint_config(config: Optional[str] = None) -> dict:
+    """Compatibility shim for Go `lint_config`.
+
+    If `config` is omitted, attempts to locate `.woodpecker.yml` in common
+    repository paths.
+    """
+    raw = ""
+    source = "inline"
+    if config is not None:
+        raw = config
+    else:
+        for candidate in _default_config_candidates():
+            if candidate.exists():
+                raw = candidate.read_text(encoding="utf-8")
+                source = str(candidate)
+                break
+
+    if not raw.strip():
+        return {
+            "ok": False,
+            "source": source,
+            "errors": ["No config content provided and no .woodpecker.yml found."],
+            "warnings": [],
+        }
+
+    errors: list[str] = []
+    warnings: list[str] = []
+
+    try:
+        import yaml  # type: ignore[import-not-found]
+
+        parsed = yaml.safe_load(raw)
+        if not isinstance(parsed, dict):
+            errors.append("Config is not a YAML mapping.")
+        else:
+            if "steps" not in parsed:
+                errors.append("Missing top-level 'steps' key.")
+            elif not isinstance(parsed["steps"], dict) or not parsed["steps"]:
+                errors.append("'steps' must be a non-empty mapping.")
+            if "when" not in parsed:
+                warnings.append("No top-level 'when' condition set.")
+    except Exception:
+        # Minimal fallback when YAML parser is unavailable.
+        stripped = raw.strip()
+        if not stripped:
+            errors.append("Config is empty.")
+        if "steps:" not in raw:
+            errors.append("Missing 'steps:' block.")
+        if "when:" not in raw:
+            warnings.append("No 'when:' block found.")
+
+    return {
+        "ok": not errors,
+        "source": source,
+        "errors": errors,
+        "warnings": warnings,
+    }
 
 
 def main():
