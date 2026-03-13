@@ -11,9 +11,10 @@ steps:
   validate:
     image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
     commands:
-      - apt-get update && apt-get install -y --no-install-recommends make > /dev/null 2>&1
       - uv sync --extra dev --frozen
-      - make verify
+      - uv run --extra dev ruff check .
+      - uv run --extra dev pytest
+      - uv run --extra dev mypy .
 
   build-second-opinion:
     image: woodpeckerci/plugin-docker-buildx
