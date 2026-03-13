@@ -43,7 +43,15 @@ uv run playwright install chromium
 #   }
 # }
 #
-# Or use SSE / streamable transport for systemd or Docker deployments.
+# Or use SSE transport for systemd or Docker deployments:
+#   {
+#     "mcpServers": {
+#       "playwright-persistent": {
+#         "type": "sse",
+#         "url": "http://127.0.0.1:9101/sse"
+#       }
+#     }
+#   }
 ```
 
 ## Configuration

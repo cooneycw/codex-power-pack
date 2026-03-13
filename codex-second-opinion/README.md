@@ -8,7 +8,7 @@ Multi-model code review MCP server for Codex.
 - **Multi-Model Support**: Consult multiple LLMs (Gemini 3.1, Claude Sonnet/Haiku/Opus, GPT-5.3 Codex, o4-mini)
 - **Session-Based**: Interactive multi-turn conversations for deeper analysis
 - **Visual Analysis**: Support for screenshot/image analysis (Playwright integration)
-- **Streamable HTTP**: Stateless transport - no persistent connection, resilient to disconnects
+- **SSE Transport**: Remote-friendly transport for Docker and service deployments
 
 ## Quick Start
 
@@ -43,13 +43,13 @@ Register the server in your Codex MCP configuration.
 }
 ```
 
-**Streamable HTTP:**
+**SSE transport:**
 ```json
 {
   "mcpServers": {
     "second-opinion": {
-      "type": "streamable-http",
-      "url": "http://127.0.0.1:9100/mcp"
+      "type": "sse",
+      "url": "http://127.0.0.1:9100/sse"
     }
   }
 }
@@ -93,19 +93,18 @@ Recommended dedicated API-key secret: `codex_llm_apikeys`.
 
 ### Error: `-32602: Invalid request parameters`
 
-This usually means Codex cannot reach the server or the SSE session expired.
+This usually means Codex cannot reach the server or your MCP registration points to the wrong endpoint.
 
-**Fix 1: Upgrade to streamable-http transport (recommended)**
+**Fix 1: Use the canonical SSE endpoint**
 
-The streamable-http transport is stateless - each request is independent, so there are no
-session timeouts or disconnection issues. Update your `.mcp.json`:
+Update your MCP config to:
 
 ```json
 {
   "mcpServers": {
     "second-opinion": {
-      "type": "streamable-http",
-      "url": "http://127.0.0.1:9100/mcp"
+      "type": "sse",
+      "url": "http://127.0.0.1:9100/sse"
     }
   }
 }
@@ -118,7 +117,7 @@ session timeouts or disconnection issues. Update your `.mcp.json`:
 # and point it at src/server.py --stdio
 ```
 
-**If using HTTP transport:** Ensure the server is running before starting Codex:
+**If using SSE transport:** Ensure the server is running before starting Codex:
 
 ```bash
 # Check if server is running

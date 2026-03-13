@@ -25,6 +25,7 @@ cd codex-power-pack
 uv sync --extra dev
 make verify
 make docker-up PROFILE=core
+make mcp-smoke PROFILE=core
 ```
 
 The default Docker profile starts:
@@ -37,6 +38,32 @@ Add the browser profile for Playwright:
 ```bash
 make docker-up PROFILE="core browser"
 ```
+
+## Codex MCP Setup
+
+Install deterministic Codex MCP registrations from this repository path:
+
+```bash
+make mcp-install-codex
+```
+
+Validate local config drift and live endpoint health:
+
+```bash
+make mcp-doctor PROFILE="core browser cicd"
+```
+
+`mcp-install-codex` automatically replaces legacy Woodpecker entries such as
+`voice-bot-acs/codex-power-pack/mcp-woodpecker-ci` with repo-local paths.
+
+Canonical transport matrix:
+
+| Server | Profile | Canonical endpoint | Alternate transport |
+|--------|---------|--------------------|---------------------|
+| `codex-second-opinion` | `core` | `http://127.0.0.1:9100/sse` | `uv run --directory .../codex-second-opinion python src/server.py --stdio` |
+| `codex-playwright` | `browser` | `http://127.0.0.1:9101/sse` | `uv run --directory .../codex-playwright python src/server.py --stdio` |
+| `codex-nano-banana` | `core` | `http://127.0.0.1:9102/sse` | `uv run --directory .../codex-nano-banana python src/server.py --stdio` |
+| `codex-woodpecker` | `cicd` | `http://127.0.0.1:9103/sse` | `uv run --directory .../codex-woodpecker python src/server.py --stdio` |
 
 ## Codex Architecture
 
