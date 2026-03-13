@@ -1,0 +1,4 @@
+interface:
+  display_name: "second-opinion:help"
+  short_description: "Trigger /second-opinion:help"
+  default_prompt: "/second-opinion:help"
