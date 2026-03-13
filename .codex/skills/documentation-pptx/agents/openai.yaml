@@ -1,0 +1,4 @@
+interface:
+  display_name: "documentation:pptx"
+  short_description: "Trigger /documentation:pptx"
+  default_prompt: "/documentation:pptx"

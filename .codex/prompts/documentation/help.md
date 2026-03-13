@@ -1,0 +1,79 @@
+---
+description: Overview of documentation and diagram commands
+---
+
+> Trigger parity entrypoint for `/documentation:help`.
+> Backing skill: `documentation-help` (`.codex/skills/documentation-help/SKILL.md`).
+
+
+# Documentation & Diagram Commands
+
+Generate architecture documentation and professional presentations using the Nano-Banana MCP server.
+
+## Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/documentation:c4` | Generate C4 architecture diagrams (all 4 levels) |
+| `/documentation:pptx` | Create PowerPoint presentations with optional diagrams |
+| `/documentation:help` | This help overview |
+
+## MCP Server: Nano-Banana
+
+The Nano-Banana MCP server (`codex-nano-banana/`, port 9102) provides diagram generation and PPTX creation tools.
+
+### Setup
+
+```bash
+# stdio (recommended)
+codex mcp add nano-banana --transport stdio -- uv run --directory ~/Projects/codex-power-pack/codex-nano-banana python src/server.py --stdio
+
+# SSE
+cd ~/Projects/codex-power-pack/codex-nano-banana && ./start-server.sh
+codex mcp add nano-banana --transport sse --url http://127.0.0.1:9102/sse
+```
+
+### Available MCP Tools
+
+| Tool | Purpose |
+|------|---------|
+| `list_diagram_types` | List supported diagram types |
+| `generate_diagram` | Generate HTML diagram at 1920x1080 |
+| `create_pptx` | Create PowerPoint from slide definitions |
+| `diagram_to_pptx` | Combined: diagram + PPTX in one step |
+
+### Diagram Types
+
+- **architecture** - System component grid layout
+- **c4** - C4 model with boundary groupings (Context, Container, Component, Code)
+- **flowchart** - Sequential process steps with arrows
+- **sequence** - Participant message exchange (UML-style)
+- **orgchart** - Tree hierarchy visualization
+- **timeline** - Milestone roadmap on horizontal track
+- **mindmap** - Central topic with radiating branches
+
+### C4 Node Types
+
+| Type | C4 Concept | Color |
+|------|-----------|-------|
+| `person` | Actor / User | Dark blue (pill shape) |
+| `system` | External System | Grey |
+| `system-focus` | System of Interest | Blue |
+| `container` | Container (app, DB, service) | Green |
+| `component` | Component within container | Purple |
+| `code` | Class / module / interface | Amber |
+
+### End-to-End Best Quality
+
+1. `generate_diagram` -> save HTML file
+2. Playwright screenshot at 1920x1080
+3. `create_pptx` with image_base64 on "diagram" layout
+
+### Makefile Integration
+
+Add an `update_docs` target to your Makefile to run C4 diagram generation and doc review as part of `/flow:auto` and `/flow:finish`.
+
+### Related
+
+- `/load-mcp-docs` - Load all MCP server documentation
+- MCP Playwright - Browser automation for screenshots

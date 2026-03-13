@@ -1,0 +1,4 @@
+interface:
+  display_name: "documentation:help"
+  short_description: "Trigger /documentation:help"
+  default_prompt: "/documentation:help"

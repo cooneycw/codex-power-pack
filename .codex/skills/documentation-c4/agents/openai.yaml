@@ -1,0 +1,4 @@
+interface:
+  display_name: "documentation:c4"
+  short_description: "Trigger /documentation:c4"
+  default_prompt: "/documentation:c4"
