@@ -15,6 +15,7 @@ from lib.cicd.config import (
     HealthConfig,
     HealthEndpoint,
     InfrastructureConfig,
+    PipelineAWSSecretsConfig,
     PipelineConfig,
     ProcessCheck,
     SmokeTest,
@@ -63,7 +64,16 @@ class TestPydanticMigration:
         pipeline = PipelineConfig()
         assert "main" in pipeline.branches
         assert "pr" in pipeline.branches
+        assert pipeline.aws_secrets.provider == "aws-secrets-manager"
+        assert pipeline.aws_secrets.required is True
         assert pipeline.woodpecker.local is True
+
+    def test_pipeline_aws_secrets_defaults(self):
+        aws_secrets = PipelineAWSSecretsConfig()
+        assert aws_secrets.provider == "aws-secrets-manager"
+        assert aws_secrets.bundle_prefix == "codex-power-pack"
+        assert aws_secrets.project_id == ""
+        assert aws_secrets.region == "us-east-1"
 
     def test_infrastructure_tiers_defaults(self):
         infra = InfrastructureConfig()
@@ -123,7 +133,11 @@ class TestBackwardsCompatibility:
             },
             "pipeline": {
                 "provider": "woodpecker",
-                "branches": {"main": ["lint", "test"]},
+                "branches": {"main": ["lint", "test", "deploy"]},
+                "aws_secrets": {
+                    "project_id": "codex-power-pack",
+                    "region": "ca-central-1",
+                },
             },
             "container": {"enabled": True, "expose_ports": [8000]},
             "infrastructure": {
@@ -140,6 +154,8 @@ class TestBackwardsCompatibility:
         assert len(config.health.endpoints) == 1
         assert config.health.endpoints[0].url == "http://localhost:8000/health"
         assert config.pipeline.provider == "woodpecker"
+        assert config.pipeline.aws_secrets.project_id == "codex-power-pack"
+        assert config.pipeline.aws_secrets.region == "ca-central-1"
         assert config.container.enabled is True
         assert config.infrastructure.tiers["foundation"].approval_required is True
 
@@ -167,6 +183,9 @@ build:
     - typecheck
 pipeline:
   provider: woodpecker
+  aws_secrets:
+    project_id: codex-power-pack
+    region: us-east-1
 health:
   post_deploy: true
   endpoints:
@@ -178,6 +197,7 @@ health:
         assert config.build.framework == "python"
         assert config.build.package_manager == "uv"
         assert config.pipeline.provider == "woodpecker"
+        assert config.pipeline.aws_secrets.project_id == "codex-power-pack"
         assert config.health.post_deploy is True
         assert len(config.health.endpoints) == 1
         assert config.health.endpoints[0].name == "API Server"
@@ -237,6 +257,10 @@ build:
   framework: python
 pipeline:
   provider: woodpecker
+  branches:
+    main: [lint, test, deploy]
+  aws_secrets:
+    project_id: codex-power-pack
 """
         )
         issues = CICDConfig.validate_file(config_file)
@@ -276,6 +300,50 @@ pipeline:
         )
         issues = CICDConfig.validate_file(config_file)
         assert any("jenkins" in i and "invalid" in i for i in issues)
+
+    def test_validate_missing_aws_secrets_for_deploy(self, tmp_path):
+        config_file = tmp_path / "cicd.yml"
+        config_file.write_text(
+            """
+pipeline:
+  provider: woodpecker
+  branches:
+    main: [lint, deploy]
+"""
+        )
+        issues = CICDConfig.validate_file(config_file)
+        assert any("pipeline.aws_secrets" in i for i in issues)
+
+    def test_validate_missing_aws_project_id_for_deploy(self, tmp_path):
+        config_file = tmp_path / "cicd.yml"
+        config_file.write_text(
+            """
+pipeline:
+  provider: woodpecker
+  branches:
+    main: [lint, deploy]
+  aws_secrets:
+    provider: aws-secrets-manager
+"""
+        )
+        issues = CICDConfig.validate_file(config_file)
+        assert any("project_id" in i for i in issues)
+
+    def test_validate_invalid_aws_secrets_provider(self, tmp_path):
+        config_file = tmp_path / "cicd.yml"
+        config_file.write_text(
+            """
+pipeline:
+  provider: woodpecker
+  branches:
+    main: [deploy]
+  aws_secrets:
+    provider: vault
+    project_id: codex-power-pack
+"""
+        )
+        issues = CICDConfig.validate_file(config_file)
+        assert any("pipeline.aws_secrets.provider" in i for i in issues)
 
     def test_validate_missing_endpoint_url(self, tmp_path):
         config_file = tmp_path / "cicd.yml"

@@ -31,6 +31,10 @@ def _make_config(**overrides: object) -> CICDConfig:
     """Build a CICDConfig with optional pipeline overrides."""
     config = CICDConfig()
     for key, value in overrides.items():
+        if key == "aws_secrets" and isinstance(value, dict):
+            for nested_key, nested_value in value.items():
+                setattr(config.pipeline.aws_secrets, nested_key, nested_value)
+            continue
         setattr(config.pipeline, key, value)
     return config
 
@@ -112,16 +116,24 @@ class TestWoodpecker:
         assert "PSScriptAnalyzer" in output
         assert "make lint" in output
 
-    def test_woodpecker_deploy_with_secrets(self) -> None:
+    def test_woodpecker_deploy_requires_aws_secrets_manager(self) -> None:
         info = _make_info(Framework.PYTHON, PackageManager.UV)
         config = _make_config(
             branches={"main": ["lint", "test", "deploy"], "pr": ["lint", "test"]},
+            aws_secrets={"project_id": "codex-power-pack", "region": "ca-central-1"},
             secrets_needed=["DEPLOY_KEY"],
         )
         output = generate_woodpecker(info, config)
+        assert "aws-secretsmanager-preflight" in output
         assert "- name: deploy" in output
+        assert 'CPP_SECRETS_PROVIDER: "aws-secrets-manager"' in output
+        assert 'CPP_AWS_SECRET_ID: "codex-power-pack/codex-power-pack"' in output
+        assert 'AWS_REGION: "ca-central-1"' in output
+        assert 'CPP_AWS_REQUIRED_KEYS: "DEPLOY_KEY"' in output
         assert "event: push" in output
-        assert "deploy_key" in output  # secrets lowercased in woodpecker
+        assert "aws secretsmanager describe-secret" in output
+        assert "Expected AWS keys" in output
+        assert "    secrets:" not in output
 
     def test_woodpecker_branch_filtering(self) -> None:
         info = _make_info()
@@ -129,6 +141,12 @@ class TestWoodpecker:
         output = generate_woodpecker(info, config)
         assert "branch: [main]" in output
         assert "event: [push, pull_request]" in output
+
+    def test_woodpecker_default_deploy_secret_ref_uses_placeholder(self) -> None:
+        info = _make_info(Framework.PYTHON, PackageManager.UV)
+        config = _make_config(branches={"main": ["deploy"], "pr": []})
+        output = generate_woodpecker(info, config)
+        assert 'CPP_AWS_SECRET_ID: "codex-power-pack/${CI_REPO_NAME:-change-me}"' in output
 
     def test_woodpecker_uses_makefile_targets(self) -> None:
         info = _make_info(Framework.PYTHON, PackageManager.UV)

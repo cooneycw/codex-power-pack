@@ -84,6 +84,18 @@ class WoodpeckerConfig(BaseModel):
     local: bool = True  # Use woodpecker exec for local runs
 
 
+class PipelineAWSSecretsConfig(BaseModel):
+    """AWS Secrets Manager settings for deploy pipelines."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    provider: str = "aws-secrets-manager"
+    required: bool = True
+    bundle_prefix: str = "codex-power-pack"
+    project_id: str = ""
+    region: str = "us-east-1"
+
+
 class PipelineConfig(BaseModel):
     """CI/CD pipeline configuration."""
 
@@ -98,6 +110,9 @@ class PipelineConfig(BaseModel):
     )
     matrix: dict[str, list[str]] = Field(default_factory=dict)
     secrets_needed: list[str] = Field(default_factory=list)
+    aws_secrets: PipelineAWSSecretsConfig = Field(
+        default_factory=PipelineAWSSecretsConfig
+    )
     woodpecker: WoodpeckerConfig = Field(default_factory=WoodpeckerConfig)
 
 
@@ -286,6 +301,16 @@ class CICDConfig(BaseModel):
                     f"Valid values: {', '.join(sorted(valid_providers))}"
                 )
 
+            aws_secrets_data = pipeline_data.get("aws_secrets", {})
+            if aws_secrets_data and isinstance(aws_secrets_data, dict):
+                aws_provider = aws_secrets_data.get("provider", "")
+                valid_secret_providers = {"aws-secrets-manager"}
+                if aws_provider and aws_provider not in valid_secret_providers:
+                    issues.append(
+                        f"pipeline.aws_secrets.provider '{aws_provider}' is invalid. "
+                        f"Valid values: {', '.join(sorted(valid_secret_providers))}"
+                    )
+
         # Validate health section
         health_data = data.get("health", {})
         if health_data and isinstance(health_data, dict):
@@ -327,6 +352,7 @@ class CICDConfig(BaseModel):
                 )
 
         # Try Pydantic validation for type errors
+        config: CICDConfig | None = None
         try:
             # Handle tagging mapping
             if infra_data:
@@ -343,9 +369,39 @@ class CICDConfig(BaseModel):
                     data = dict(data)
                     data["infrastructure"] = dict(data["infrastructure"])
                     data["infrastructure"]["tagging"] = tagging_data
-            cls.model_validate(data)
+            config = cls.model_validate(data)
         except Exception as e:
             issues.append(f"Validation error: {e}")
+
+        if config is not None:
+            main_targets = set(config.pipeline.branches.get("main", []))
+            if "deploy" in main_targets:
+                aws_secrets_data = pipeline_data.get("aws_secrets")
+                if not isinstance(aws_secrets_data, dict):
+                    issues.append(
+                        "Deploy pipelines must declare pipeline.aws_secrets with "
+                        "provider, project_id, and region so the AWS Secrets Manager "
+                        "path is explicit."
+                    )
+                else:
+                    if not aws_secrets_data.get("required", True):
+                        issues.append(
+                            "pipeline.aws_secrets.required must stay true when "
+                            "main includes deploy."
+                        )
+                    project_id = str(aws_secrets_data.get("project_id", "")).strip()
+                    if not project_id:
+                        issues.append(
+                            "pipeline.aws_secrets.project_id is required when "
+                            "main includes deploy."
+                        )
+
+                if config.pipeline.secrets_needed and not isinstance(aws_secrets_data, dict):
+                    issues.append(
+                        "pipeline.secrets_needed now models keys resolved from AWS "
+                        "Secrets Manager. Add a pipeline.aws_secrets block to declare "
+                        "the bundle source explicitly."
+                    )
 
         return issues
 

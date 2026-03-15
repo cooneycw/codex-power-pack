@@ -81,7 +81,11 @@ deploy:
 #     pr: [lint, test, typecheck]
 #   matrix:
 #     python-version: ["3.11", "3.12"]
-#   secrets_needed: [DEPLOY_KEY]
+#   aws_secrets:
+#     provider: aws-secrets-manager
+#     project_id: codex-power-pack
+#     region: us-east-1
+#   secrets_needed: [DEPLOY_KEY]  # expected keys inside the AWS secret bundle
 #   woodpecker:
 #     local: true              # Use 'woodpecker exec' for local runs
 
