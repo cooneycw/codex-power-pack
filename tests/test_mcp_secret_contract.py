@@ -69,6 +69,7 @@ def test_root_compose_uses_agent_sidecars_for_secret_consumers() -> None:
     assert second_env["AWS_SECRETSMANAGER_AGENT_ENDPOINT"] == "http://127.0.0.1:2773"
     assert second_env["AWS_SECRETSMANAGER_AGENT_ATTEMPTS"] == "${AWS_SECRETSMANAGER_AGENT_ATTEMPTS:-30}"
     assert second_env["AWS_SECRETSMANAGER_AGENT_RETRY_DELAY"] == "${AWS_SECRETSMANAGER_AGENT_RETRY_DELAY:-1}"
+    assert second_env["AWS_SECRETSMANAGER_TOKEN"] == "${AWS_SECRETSMANAGER_TOKEN:-}"
     assert second_env["AWS_API_KEYS_SECRET_NAME"] == "${AWS_API_KEYS_SECRET_NAME:-codex_llm_apikeys}"
     assert "AWS_ACCESS_KEY_ID" not in second_env
     assert "AWS_SECRET_ACCESS_KEY" not in second_env
@@ -78,6 +79,7 @@ def test_root_compose_uses_agent_sidecars_for_secret_consumers() -> None:
     assert woodpecker_env["AWS_SECRETSMANAGER_AGENT_ENDPOINT"] == "http://127.0.0.1:2773"
     assert woodpecker_env["AWS_SECRETSMANAGER_AGENT_ATTEMPTS"] == "${AWS_SECRETSMANAGER_AGENT_ATTEMPTS:-30}"
     assert woodpecker_env["AWS_SECRETSMANAGER_AGENT_RETRY_DELAY"] == "${AWS_SECRETSMANAGER_AGENT_RETRY_DELAY:-1}"
+    assert woodpecker_env["AWS_SECRETSMANAGER_TOKEN"] == "${AWS_SECRETSMANAGER_TOKEN:-}"
     assert "AWS_ACCESS_KEY_ID" not in woodpecker_env
     assert "AWS_SECRET_ACCESS_KEY" not in woodpecker_env
     assert "AWS_SESSION_TOKEN" not in woodpecker_env
@@ -115,6 +117,7 @@ def test_second_opinion_service_compose_uses_agent_sidecar() -> None:
     assert app_env["AWS_SECRETSMANAGER_AGENT_ENDPOINT"] == "http://127.0.0.1:2773"
     assert app_env["AWS_SECRETSMANAGER_AGENT_ATTEMPTS"] == "${AWS_SECRETSMANAGER_AGENT_ATTEMPTS:-30}"
     assert app_env["AWS_SECRETSMANAGER_AGENT_RETRY_DELAY"] == "${AWS_SECRETSMANAGER_AGENT_RETRY_DELAY:-1}"
+    assert app_env["AWS_SECRETSMANAGER_TOKEN"] == "${AWS_SECRETSMANAGER_TOKEN:-}"
     assert services["second-opinion-secrets"]["network_mode"] == "service:second-opinion-mcp"
     assert sidecar_env["AWS_TOKEN"].startswith("${AWS_SECRETSMANAGER_TOKEN:")
     assert sidecar_env["HOME"] == "/root"
@@ -170,3 +173,35 @@ def test_agent_loader_and_contract_constants(
     assert module.DEFAULT_SECRET_NAME == default_secret_name
     assert module.SECRET_CONTRACT_KEYS == contract_keys
     assert resolved == expected_payload
+
+
+@pytest.mark.parametrize(
+    "module_path",
+    [
+        ROOT / "codex-second-opinion" / "src" / "aws_secrets.py",
+        ROOT / "codex-woodpecker" / "src" / "aws_secrets.py",
+    ],
+)
+def test_agent_loader_returns_empty_without_token(
+    monkeypatch: pytest.MonkeyPatch,
+    module_path: Path,
+) -> None:
+    module = _load_module(module_path.stem, module_path)
+
+    monkeypatch.setenv("AWS_SECRET_SOURCE", "aws-secretsmanager-agent")
+    monkeypatch.delenv("AWS_SECRETSMANAGER_TOKEN", raising=False)
+    monkeypatch.delenv("AWS_TOKEN", raising=False)
+
+    def fail_urlopen(*args, **kwargs):
+        raise AssertionError("urlopen should not run when the sidecar token is absent")
+
+    monkeypatch.setattr(module.urllib.request, "urlopen", fail_urlopen)
+
+    if getattr(module, "boto3", None) is not None:
+        class _UnexpectedClient:
+            def get_secret_value(self, **kwargs):
+                raise AssertionError("boto3 should not be used for explicit agent mode without a token")
+
+        monkeypatch.setattr(module.boto3, "client", lambda *args, **kwargs: _UnexpectedClient())
+
+    assert module.resolve_secret(module.DEFAULT_SECRET_NAME, "us-east-1") == {}
