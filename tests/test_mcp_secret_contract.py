@@ -67,6 +67,8 @@ def test_root_compose_uses_agent_sidecars_for_secret_consumers() -> None:
 
     assert second_env["AWS_SECRET_SOURCE"] == "aws-secretsmanager-agent"
     assert second_env["AWS_SECRETSMANAGER_AGENT_ENDPOINT"] == "http://127.0.0.1:2773"
+    assert second_env["AWS_SECRETSMANAGER_AGENT_ATTEMPTS"] == "${AWS_SECRETSMANAGER_AGENT_ATTEMPTS:-30}"
+    assert second_env["AWS_SECRETSMANAGER_AGENT_RETRY_DELAY"] == "${AWS_SECRETSMANAGER_AGENT_RETRY_DELAY:-1}"
     assert second_env["AWS_API_KEYS_SECRET_NAME"] == "${AWS_API_KEYS_SECRET_NAME:-codex_llm_apikeys}"
     assert "AWS_ACCESS_KEY_ID" not in second_env
     assert "AWS_SECRET_ACCESS_KEY" not in second_env
@@ -74,6 +76,8 @@ def test_root_compose_uses_agent_sidecars_for_secret_consumers() -> None:
 
     assert woodpecker_env["AWS_SECRET_SOURCE"] == "aws-secretsmanager-agent"
     assert woodpecker_env["AWS_SECRETSMANAGER_AGENT_ENDPOINT"] == "http://127.0.0.1:2773"
+    assert woodpecker_env["AWS_SECRETSMANAGER_AGENT_ATTEMPTS"] == "${AWS_SECRETSMANAGER_AGENT_ATTEMPTS:-30}"
+    assert woodpecker_env["AWS_SECRETSMANAGER_AGENT_RETRY_DELAY"] == "${AWS_SECRETSMANAGER_AGENT_RETRY_DELAY:-1}"
     assert "AWS_ACCESS_KEY_ID" not in woodpecker_env
     assert "AWS_SECRET_ACCESS_KEY" not in woodpecker_env
     assert "AWS_SESSION_TOKEN" not in woodpecker_env
@@ -109,6 +113,8 @@ def test_second_opinion_service_compose_uses_agent_sidecar() -> None:
 
     assert app_env["AWS_SECRET_SOURCE"] == "aws-secretsmanager-agent"
     assert app_env["AWS_SECRETSMANAGER_AGENT_ENDPOINT"] == "http://127.0.0.1:2773"
+    assert app_env["AWS_SECRETSMANAGER_AGENT_ATTEMPTS"] == "${AWS_SECRETSMANAGER_AGENT_ATTEMPTS:-30}"
+    assert app_env["AWS_SECRETSMANAGER_AGENT_RETRY_DELAY"] == "${AWS_SECRETSMANAGER_AGENT_RETRY_DELAY:-1}"
     assert services["second-opinion-secrets"]["network_mode"] == "service:second-opinion-mcp"
     assert sidecar_env["AWS_TOKEN"].startswith("${AWS_SECRETSMANAGER_TOKEN:")
     assert sidecar_env["HOME"] == "/root"
