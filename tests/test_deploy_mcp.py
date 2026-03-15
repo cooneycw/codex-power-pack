@@ -60,6 +60,9 @@ case "$1" in
     logs)
         printf '%s\\n' "${FAKE_DOCKER_LOG_OUTPUT:-CredentialsNotLoaded}"
         ;;
+    run)
+        exit "${FAKE_DOCKER_RUN_EXIT:-0}"
+        ;;
     image)
         exit 0
         ;;
@@ -150,3 +153,35 @@ def test_deploy_mcp_uses_script_dir_when_git_is_unavailable(tmp_path: Path) -> N
 
     assert result.returncode == 0
     assert "Deploy complete." in result.stdout
+
+
+def test_deploy_mcp_can_run_smoke_via_docker_helper(tmp_path: Path) -> None:
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_log = tmp_path / "docker.log"
+
+    _write_executable(fake_bin / "docker", _fake_docker_script())
+
+    env = os.environ.copy()
+    env["PATH"] = f"{fake_bin}:{env['PATH']}"
+    env["PROFILE"] = "core browser"
+    env["SIDECAR_GRACE_SECONDS"] = "0"
+    env["FAKE_DOCKER_LOG"] = str(fake_log)
+    env["FAKE_SECOND_OPINION_STATUS"] = "running"
+    env["MCP_SMOKE_MODE"] = "docker"
+
+    result = subprocess.run(
+        [str(SCRIPT)],
+        cwd=ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert "Running mcp-smoke via Docker helper" in result.stdout
+    log_output = fake_log.read_text(encoding="utf-8")
+    assert "run --rm --network codex-mcp-net" in log_output
+    assert "MCP_SSE_HOST_MODE=service" in log_output
+    assert "python3 scripts/mcp_smoke.py --profiles core browser" in log_output

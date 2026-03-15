@@ -16,6 +16,7 @@ Environment:
   PROFILE          Space-delimited profile list (default: "core")
   MAX_ATTEMPTS     Retry count for mcp-smoke (default: 10)
   SLEEP_SECONDS    Delay between smoke retries (default: 1)
+  MCP_SMOKE_MODE   host|docker|auto (default: "auto")
 EOF
 }
 
@@ -24,6 +25,10 @@ profile_spec="${PROFILE:-core}"
 max_attempts="${MAX_ATTEMPTS:-10}"
 sleep_seconds="${SLEEP_SECONDS:-1}"
 sidecar_grace_seconds="${SIDECAR_GRACE_SECONDS:-3}"
+smoke_mode="${MCP_SMOKE_MODE:-auto}"
+smoke_helper_image="${MCP_SMOKE_HELPER_IMAGE:-python:3.11-alpine}"
+smoke_network="${MCP_SMOKE_NETWORK:-codex-mcp-net}"
+smoke_workdir="${MCP_SMOKE_WORKDIR:-/workspace}"
 skip_smoke=0
 
 while [ "$#" -gt 0 ]; do
@@ -127,6 +132,14 @@ done
     exit 1
 }
 
+case "$smoke_mode" in
+    auto|host|docker) ;;
+    *)
+        echo "ERROR: MCP_SMOKE_MODE must be one of: auto, host, docker" >&2
+        exit 1
+        ;;
+esac
+
 log() {
     printf '[deploy_mcp] %s\n' "$*"
 }
@@ -134,6 +147,48 @@ log() {
 run_compose() {
     # shellcheck disable=SC2086
     docker compose $compose_args "$@"
+}
+
+is_ci_runtime() {
+    [ -n "${CI:-}" ] || [ -n "${CI_WORKSPACE:-}" ] || [ -n "${CI_PIPELINE_NUMBER:-}" ] || [ -n "${WOODPECKER_REPO:-}" ]
+}
+
+use_docker_smoke() {
+    case "$smoke_mode" in
+        docker) return 0 ;;
+        host) return 1 ;;
+        auto)
+            is_ci_runtime
+            return $?
+            ;;
+    esac
+    return 1
+}
+
+run_host_smoke() {
+    command -v make >/dev/null 2>&1 || {
+        echo "ERROR: make is required for host mcp-smoke checks" >&2
+        exit 1
+    }
+    make mcp-smoke PROFILE="$profile_spec"
+}
+
+run_docker_smoke() {
+    docker run --rm \
+        --network "$smoke_network" \
+        -v "$repo_root:$smoke_workdir:ro" \
+        -w "$smoke_workdir" \
+        -e MCP_SSE_HOST_MODE=service \
+        "$smoke_helper_image" \
+        python3 scripts/mcp_smoke.py --profiles "$profile_spec"
+}
+
+run_smoke() {
+    if use_docker_smoke; then
+        run_docker_smoke
+    else
+        run_host_smoke
+    fi
 }
 
 expected_sidecars() {
@@ -175,13 +230,6 @@ if [ "$mode" = "check" ]; then
     exit 0
 fi
 
-if [ "$skip_smoke" -ne 1 ]; then
-    command -v make >/dev/null 2>&1 || {
-        echo "ERROR: make is required for deploy_mcp.sh when smoke checks are enabled" >&2
-        exit 1
-    }
-fi
-
 log "Deploying MCP services from repo-owned entrypoint"
 docker compose version
 run_compose up -d --build --wait
@@ -189,9 +237,14 @@ run_compose ps
 assert_sidecars_running
 
 if [ "$skip_smoke" -ne 1 ]; then
+    if use_docker_smoke; then
+        log "Running mcp-smoke via Docker helper on network: $smoke_network"
+    else
+        log "Running mcp-smoke from the host workspace"
+    fi
     attempt=1
     while :; do
-        if make mcp-smoke PROFILE="$profile_spec"; then
+        if run_smoke; then
             break
         fi
 
