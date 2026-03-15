@@ -19,7 +19,7 @@ steps:
   secret-scan:
     image: zricethezav/gitleaks:v8.18.4
     commands:
-      - gitleaks detect --source . --verbose
+      - gitleaks detect --source . --config .gitleaks.toml --verbose
 
   dependency-audit:
     image: python:3.11-slim-bookworm

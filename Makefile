@@ -107,7 +107,7 @@ deploy-doctor:
 ## Security scanning
 
 secret-scan:
-	gitleaks detect --source . --verbose
+	gitleaks detect --source . --config .gitleaks.toml --verbose
 
 dep-audit:
 	uv export --format requirements-txt --no-hashes > /tmp/requirements.txt
