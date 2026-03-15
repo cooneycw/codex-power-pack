@@ -198,6 +198,12 @@ pipeline:
 bundle. It is no longer the preferred source for raw Woodpecker secret
 injection.
 
+For dockerized MCP services in this repo, the runtime path is tighter: the
+containerized servers consume secrets through a local AWS Secrets Manager agent
+sidecar on `127.0.0.1:2773`, and the sidecar owns the AWS credentials and
+session token. The contract tests for that runtime boundary live in
+`tests/test_mcp_secret_contract.py`.
+
 ### Template Selection
 
 Templates match detected framework:

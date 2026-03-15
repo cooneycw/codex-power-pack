@@ -8,8 +8,12 @@ services:
     image: second-opinion-mcp:latest
     container_name: second-opinion-mcp
     environment:
-      # Pass GEMINI_API_KEY from host environment or .env file
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - AWS_SECRET_SOURCE=aws-secretsmanager-agent
+      - AWS_SECRETSMANAGER_AGENT_ENDPOINT=http://127.0.0.1:2773
+      - AWS_SECRETSMANAGER_TOKEN=${AWS_SECRETSMANAGER_TOKEN:-codex-local-sidecar-token}
+      - AWS_SECRET_NAME=${AWS_SECRET_NAME:-codex-power-pack}
+      - AWS_API_KEYS_SECRET_NAME=${AWS_API_KEYS_SECRET_NAME:-codex_llm_apikeys}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
     # MCP servers use stdin/stdout, no ports needed
     stdin_open: true
     tty: true
@@ -23,3 +27,23 @@ services:
         reservations:
           cpus: '0.5'
           memory: 256M
+
+  second-opinion-secrets:
+    build:
+      context: ../../aws-secretsmanager-agent
+      dockerfile: Dockerfile
+      args:
+        AWS_SECRETSMANAGER_AGENT_VERSION: ${AWS_SECRETSMANAGER_AGENT_VERSION:-v2.0.0}
+    image: codex-aws-secretsmanager-agent:latest
+    container_name: second-opinion-secrets
+    network_mode: "service:second-opinion-mcp"
+    depends_on:
+      - second-opinion-mcp
+    environment:
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_DEFAULT_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
+      - AWS_TOKEN=${AWS_SECRETSMANAGER_TOKEN:-codex-local-sidecar-token}
+    restart: unless-stopped

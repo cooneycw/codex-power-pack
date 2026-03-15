@@ -1,11 +1,11 @@
 """Configuration management for the Second Opinion MCP Server."""
 
-import json
 import logging
 import os
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from aws_secrets import DEFAULT_SECRET_NAME, resolve_secret
 from dotenv import load_dotenv
 
 # Load root .env first for shared AWS credentials, then service-local .env overrides.
@@ -17,12 +17,6 @@ if _local_env_path.exists():
     load_dotenv(_local_env_path, override=True)
 
 logger = logging.getLogger(__name__)
-
-try:
-    import boto3
-except ImportError:
-    boto3 = None  # type: ignore[assignment]
-
 
 def _get_int_env(name: str, default: int) -> int:
     """Safely get integer from environment variable with validation."""
@@ -81,27 +75,6 @@ class _SecretStr:
         return bool(self._secret_value)
 
 
-def _resolve_aws_secret(secret_name: str, region: str) -> Dict[str, str]:
-    """Fetch a JSON secret from AWS Secrets Manager.
-
-    Returns an empty dict when boto3 is unavailable or the secret cannot be read.
-    """
-    if not secret_name or boto3 is None:
-        return {}
-
-    try:
-        client = boto3.client("secretsmanager", region_name=region)
-        response = client.get_secret_value(SecretId=secret_name)
-        payload = response.get("SecretString", "{}")
-        data = json.loads(payload)
-        if isinstance(data, dict):
-            return {str(k): str(v) for k, v in data.items() if v is not None}
-    except Exception as exc:
-        logger.warning(f"Could not fetch AWS secret '{secret_name}': {exc}")
-
-    return {}
-
-
 def _resolve_secret_env(name: str, aws_values: Dict[str, str]) -> Optional[str]:
     """Prefer direct env vars, otherwise fall back to AWS secret values."""
     return os.getenv(name) or aws_values.get(name)
@@ -109,9 +82,12 @@ def _resolve_secret_env(name: str, aws_values: Dict[str, str]) -> Optional[str]:
 
 # Load API keys at module level (before class definition)
 # This avoids the @classmethod @property pattern which is broken in Python 3.14
-_aws_secret_name = os.getenv("AWS_API_KEYS_SECRET_NAME", os.getenv("AWS_SECRET_NAME", "codex_llm_apikeys"))
+_aws_secret_name = os.getenv(
+    "AWS_API_KEYS_SECRET_NAME",
+    os.getenv("AWS_SECRET_NAME", DEFAULT_SECRET_NAME),
+)
 _aws_region = os.getenv("AWS_REGION", "us-east-1")
-_aws_secret_values = _resolve_aws_secret(_aws_secret_name, _aws_region)
+_aws_secret_values = resolve_secret(_aws_secret_name, _aws_region)
 
 _gemini_api_key_secret = _SecretStr(_resolve_secret_env("GEMINI_API_KEY", _aws_secret_values))
 _openai_api_key_secret = _SecretStr(_resolve_secret_env("OPENAI_API_KEY", _aws_secret_values))

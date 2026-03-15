@@ -7,14 +7,21 @@
 #   make docker-down                                 # Stop all services
 #   make docker-ps                                   # Show container status
 #
-# Secrets: Create a root .env file with API keys (never commit this):
+# Secrets: Create a root .env file with AWS metadata and sidecar auth (never commit real values):
+#   AWS_SECRET_NAME=codex-power-pack
+#   AWS_API_KEYS_SECRET_NAME=codex_llm_apikeys
+#   AWS_REGION=us-east-1
+#   AWS_SECRETSMANAGER_TOKEN=change-me-sidecar-token
+#   AWS_ACCESS_KEY_ID=...       (if no IAM role/profile is available)
+#   AWS_SECRET_ACCESS_KEY=...
+#   AWS_SESSION_TOKEN=...
+#
+# Optional native/local overrides:
 #   GEMINI_API_KEY=...
 #   OPENAI_API_KEY=...
 #   ANTHROPIC_API_KEY=...
-#   AWS_SECRET_NAME=codex-power-pack
-#   AWS_REGION=us-east-1
-#   WOODPECKER_URL=...          (optional local override)
-#   WOODPECKER_API_TOKEN=...    (optional local override)
+#   WOODPECKER_URL=...
+#   WOODPECKER_API_TOKEN=...
 
 services:
   codex-second-opinion:
@@ -25,18 +32,15 @@ services:
     container_name: codex-second-opinion
     ports:
       - "9100:9100"
-    env_file:
-      - path: .env
-        required: false
     environment:
       - MCP_SERVER_HOST=0.0.0.0
       - MCP_SERVER_PORT=9100
+      - AWS_SECRET_SOURCE=aws-secretsmanager-agent
+      - AWS_SECRETSMANAGER_AGENT_ENDPOINT=http://127.0.0.1:2773
+      - AWS_SECRETSMANAGER_TOKEN=${AWS_SECRETSMANAGER_TOKEN:-codex-local-sidecar-token}
       - AWS_SECRET_NAME=${AWS_SECRET_NAME:-codex-power-pack}
       - AWS_API_KEYS_SECRET_NAME=${AWS_API_KEYS_SECRET_NAME:-codex_llm_apikeys}
       - AWS_REGION=${AWS_REGION:-us-east-1}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
-      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9100/')"]
       interval: 10s
@@ -53,6 +57,27 @@ services:
         reservations:
           cpus: "0.5"
           memory: 256M
+
+  codex-second-opinion-secrets:
+    build:
+      context: ./aws-secretsmanager-agent
+      dockerfile: Dockerfile
+      args:
+        AWS_SECRETSMANAGER_AGENT_VERSION: ${AWS_SECRETSMANAGER_AGENT_VERSION:-v2.0.0}
+    image: codex-aws-secretsmanager-agent:latest
+    container_name: codex-second-opinion-secrets
+    network_mode: "service:codex-second-opinion"
+    depends_on:
+      - codex-second-opinion
+    environment:
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_DEFAULT_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
+      - AWS_TOKEN=${AWS_SECRETSMANAGER_TOKEN:-codex-local-sidecar-token}
+    restart: unless-stopped
+    profiles: ["core"]
 
   codex-nano-banana:
     build:
@@ -93,11 +118,11 @@ services:
     environment:
       - MCP_SERVER_HOST=0.0.0.0
       - MCP_SERVER_PORT=9103
+      - AWS_SECRET_SOURCE=aws-secretsmanager-agent
+      - AWS_SECRETSMANAGER_AGENT_ENDPOINT=http://127.0.0.1:2773
+      - AWS_SECRETSMANAGER_TOKEN=${AWS_SECRETSMANAGER_TOKEN:-codex-local-sidecar-token}
       - AWS_SECRET_NAME=${AWS_SECRET_NAME:-codex-power-pack}
       - AWS_REGION=${AWS_REGION:-us-east-1}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
-      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9103/')"]
       interval: 10s
@@ -115,6 +140,28 @@ services:
         reservations:
           cpus: "0.25"
           memory: 128M
+
+  codex-woodpecker-secrets:
+    build:
+      context: ./aws-secretsmanager-agent
+      dockerfile: Dockerfile
+      args:
+        AWS_SECRETSMANAGER_AGENT_VERSION: ${AWS_SECRETSMANAGER_AGENT_VERSION:-v2.0.0}
+    image: codex-aws-secretsmanager-agent:latest
+    container_name: codex-woodpecker-secrets
+    network_mode: "service:codex-woodpecker"
+    depends_on:
+      - codex-woodpecker
+    environment:
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_DEFAULT_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
+      - AWS_TOKEN=${AWS_SECRETSMANAGER_TOKEN:-codex-local-sidecar-token}
+    restart: unless-stopped
+    # Legacy-only container profile. Primary Codex usage is stdio transport.
+    profiles: ["legacy-cicd"]
 
   codex-playwright:
     build:

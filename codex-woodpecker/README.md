@@ -57,6 +57,10 @@ The server resolves credentials in this order:
    - `AWS_SECRET_NAME` - Secret name (default: `codex-power-pack`)
    - `AWS_REGION` - Region (default: `us-east-1`)
    - Reads `WOODPECKER_HOST` and `WOODPECKER_API_TOKEN` keys from the secret
+   - Docker deployments prefer the AWS Secrets Manager agent sidecar with
+     `AWS_SECRET_SOURCE=aws-secretsmanager-agent`,
+     `AWS_SECRETSMANAGER_AGENT_ENDPOINT=http://127.0.0.1:2773`, and
+     `AWS_SECRETSMANAGER_TOKEN`
 
 Upstream Go defaults differ:
 
@@ -66,7 +70,9 @@ Upstream Go defaults differ:
 Recommended setup:
 
 - Use AWS Secrets Manager with `AWS_SECRET_NAME=codex-power-pack`
-- Avoid mounting or injecting raw `WOODPECKER_*` credentials into the container environment unless you intentionally want a local override
+- For Docker, prefer the bundled sidecar agent over injecting raw `WOODPECKER_*`
+  credentials into the container environment
+- Keep direct `WOODPECKER_*` environment variables only for intentional local overrides
 
 ## Running
 

@@ -16,8 +16,9 @@ fi
 # Pre-flight: check Woodpecker credentials
 if [[ -z "${WOODPECKER_URL:-}" ]] && [[ -z "${WOODPECKER_API_TOKEN:-}" ]] && [[ -z "${AWS_SECRET_NAME:-}" ]]; then
     echo "WARNING: No Woodpecker credentials detected." >&2
-    echo "  Set WOODPECKER_URL and WOODPECKER_API_TOKEN, or" >&2
-    echo "  set AWS_SECRET_NAME (default: codex-power-pack) for auto-fetch from AWS." >&2
+    echo "  Preferred Docker path: use the AWS Secrets Manager agent sidecar." >&2
+    echo "  Native fallback: set AWS_SECRET_NAME (default: codex-power-pack) for auto-fetch from AWS." >&2
+    echo "  Direct WOODPECKER_URL and WOODPECKER_API_TOKEN overrides remain supported." >&2
     echo "" >&2
 fi
 

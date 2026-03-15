@@ -1,9 +1,9 @@
 """Configuration for the MCP Woodpecker CI server."""
 
-import json
 import logging
 import os
 
+from aws_secrets import DEFAULT_SECRET_NAME, resolve_secret
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -28,22 +28,6 @@ def _get_int_env(name: str, default: int) -> int:
         return default
 
 
-def _resolve_from_aws(secret_name: str, region: str = "us-east-1") -> dict:
-    """Fetch secrets from AWS Secrets Manager.
-
-    Returns a dict of key-value pairs, or empty dict on failure.
-    """
-    try:
-        import boto3
-
-        client = boto3.client("secretsmanager", region_name=region)
-        response = client.get_secret_value(SecretId=secret_name)
-        return json.loads(response["SecretString"])
-    except Exception as exc:
-        logger.warning(f"Could not fetch AWS secret '{secret_name}': {exc}")
-        return {}
-
-
 def _resolve_woodpecker_config() -> tuple[str, str]:
     """Resolve Woodpecker URL and API token from environment or AWS Secrets Manager.
 
@@ -58,10 +42,10 @@ def _resolve_woodpecker_config() -> tuple[str, str]:
         return url, token
 
     # Try AWS Secrets Manager
-    secret_name = os.getenv("AWS_SECRET_NAME", "codex-power-pack")
+    secret_name = os.getenv("AWS_SECRET_NAME", DEFAULT_SECRET_NAME)
     region = os.getenv("AWS_REGION", "us-east-1")
 
-    secrets = _resolve_from_aws(secret_name, region)
+    secrets = resolve_secret(secret_name, region)
     if secrets:
         if not url:
             url = secrets.get("WOODPECKER_HOST", "")
