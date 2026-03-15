@@ -316,6 +316,28 @@ def probe_server(name, sse_url, timeout_seconds=8.0):
         return {"ok": False, "stage": "handshake", "target": sse_url, "error": str(exc)}
 
 
+HEALTH_ENDPOINTS = {
+    "codex-second-opinion": "http://codex-second-opinion:9100/",
+}
+
+
+def check_health(name, timeout_seconds=5.0):
+    url = HEALTH_ENDPOINTS.get(name)
+    if not url:
+        return None
+    try:
+        with urlopen(Request(url, method="GET"), timeout=timeout_seconds) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            status = data.get("status", "unknown")
+            providers = []
+            for p in ("gemini", "openai", "anthropic"):
+                if data.get(f"{p}_configured"):
+                    providers.append(p)
+            return {"ok": status == "healthy", "status": status, "providers": providers}
+    except Exception as exc:
+        return {"ok": False, "status": "error", "providers": [], "error": str(exc)}
+
+
 profiles = parse_profiles(os.environ.get("MCP_SMOKE_PROFILES", "core"))
 results = [probe_server(name, sse_url) for name, _, sse_url in selected_servers(profiles)]
 
@@ -334,6 +356,21 @@ if not all(result["ok"] for result in results):
     if any(result["stage"] == "endpoint" for result in results if not result["ok"]):
         raise SystemExit(2)
     raise SystemExit(3)
+
+print("\nAPI Key Verification")
+api_ok = True
+for name, _, _ in selected_servers(profiles):
+    health = check_health(name)
+    if health is None:
+        continue
+    if health["ok"]:
+        print(f"- [PASS] {name}: status={health['status']} providers={','.join(health['providers'])}")
+    else:
+        print(f"- [FAIL] {name}: status={health['status']} (no API keys loaded)")
+        api_ok = False
+
+if not api_ok:
+    raise SystemExit(4)
 PY
 }
 
