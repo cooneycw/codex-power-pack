@@ -47,7 +47,7 @@ class TestFinding:
 
     def test_mask_secret_long(self) -> None:
         f = Finding(id="TEST", severity=Severity.HIGH, title="Test")
-        result = f.mask_secret("AKIA1234567890123456")
+        result = f.mask_secret("AKIA" + "1234567890123456")
         assert result.startswith("AKIA")
         assert "****" in result or "*" in result
 

@@ -16,6 +16,22 @@ steps:
       - uv run --extra dev pytest
       - uv run --extra dev mypy .
 
+  deploy-entrypoint-check:
+    image: docker:27-cli
+    commands:
+      - PROFILE="core browser" ./scripts/deploy_mcp.sh --check
+    when:
+      - event: [push, pull_request]
+        path:
+          - "codex-second-opinion/**"
+          - "codex-playwright/**"
+          - "codex-nano-banana/**"
+          - "docker-compose.yml"
+          - "Makefile"
+          - "scripts/deploy_mcp.sh"
+          - "scripts/deploy_doctor.py"
+          - ".woodpecker.yml"
+
   build-second-opinion:
     image: woodpeckerci/plugin-docker-buildx
     settings:
@@ -67,11 +83,7 @@ steps:
     image: docker:27-cli
     commands:
       - echo "Deploying MCP containers from main..."
-      - docker compose version
-      - docker compose --profile core --profile browser up -d --build --wait
-      - docker compose --profile core --profile browser ps
-      - docker image prune -f
-      - echo "Deploy complete."
+      - PROFILE="core browser" make deploy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     when:
@@ -82,4 +94,7 @@ steps:
           - "codex-playwright/**"
           - "codex-nano-banana/**"
           - "docker-compose.yml"
+          - "Makefile"
+          - "scripts/deploy_mcp.sh"
+          - "scripts/deploy_doctor.py"
           - ".woodpecker.yml"

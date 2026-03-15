@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
 Fetch posts from r/ClaudeCode subreddit about Claude best practices.
-This script uses PRAW in read-only mode (no authentication required).
+This script uses PRAW in read-only mode with app credentials from env vars.
 """
 
 import json
+import os
 from datetime import datetime
 
 import praw
@@ -17,11 +18,18 @@ def fetch_claudecode_posts(limit=25):
     Args:
         limit: Number of posts to fetch (default: 25)
     """
-    # Create a read-only Reddit instance (no authentication needed)
+    client_id = os.environ.get("REDDIT_CLIENT_ID")
+    client_secret = os.environ.get("REDDIT_CLIENT_SECRET")
+    user_agent = os.environ.get("REDDIT_USER_AGENT", "codex-power-pack-fetcher/1.0")
+
+    if not client_id or not client_secret:
+        raise RuntimeError("Set REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET before running this script.")
+
+    # Create a read-only Reddit instance from environment-provided credentials
     reddit = praw.Reddit(
-        client_id="your_client_id_here",  # You'll need to add this
-        client_secret="your_client_secret_here",  # You'll need to add this
-        user_agent="codex-power-pack-fetcher/1.0"
+        client_id=client_id,
+        client_secret=client_secret,
+        user_agent=user_agent,
     )
 
     print(f"Fetching {limit} posts from r/ClaudeCode...\n")
@@ -59,4 +67,5 @@ def fetch_claudecode_posts(limit=25):
 
 if __name__ == "__main__":
     # First, install PRAW: pip install praw
+    # Then export REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET.
     fetch_claudecode_posts(limit=25)

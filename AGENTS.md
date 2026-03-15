@@ -45,6 +45,7 @@ For Docker Compose, the Woodpecker container is intentionally legacy-only under 
 - `make lint`, `make test`, `make typecheck`, `make verify` for quality gates
 - `make skills-install-codex`, `make skills-doctor` for Codex skill registration
 - `make mcp-install-codex`, `make mcp-doctor`, `make mcp-smoke` for MCP setup/validation
+- `make deploy-check`, `make deploy-doctor` to validate repo-owned deploy paths and host drift
 - Docker entrypoints go through `make docker-*`
 - prefer `rg` for repo search
 
@@ -59,3 +60,4 @@ For Docker Compose, the Woodpecker container is intentionally legacy-only under 
 - Project slash trigger parity is mapped in `docs/skills/project-command-skill-map.md`.
 - Spec slash trigger parity is mapped in `docs/skills/spec-command-skill-map.md`.
 - AGENTS.md governance trigger parity is mapped in `docs/skills/agents-md-command-skill-map.md`.
+- Deploy runtime boundary guidance lives in `docs/deploy-runtime-boundary.md`.
