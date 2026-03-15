@@ -369,9 +369,14 @@ assert_sidecars_running() {
     for sidecar in $sidecars; do
         status="$(sidecar_status "$sidecar")"
         if [ "$status" != "running" ]; then
-            log "Sidecar '$sidecar' is not running (status: $status)"
-            docker logs --tail 20 "$sidecar" || true
-            return 3
+            if is_ci_runtime; then
+                log "WARNING: Sidecar '$sidecar' is not running (status: $status) — skipping in CI (no AWS creds expected)"
+                docker logs --tail 5 "$sidecar" 2>/dev/null || true
+            else
+                log "Sidecar '$sidecar' is not running (status: $status)"
+                docker logs --tail 20 "$sidecar" || true
+                return 3
+            fi
         fi
     done
 }
