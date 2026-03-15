@@ -2,7 +2,7 @@
        skills-install-codex skills-doctor \
        mcp-install-codex mcp-doctor mcp-smoke \
        docker-build docker-check-env docker-up docker-down docker-logs docker-ps \
-       deploy deploy-check deploy-doctor
+       deploy deploy-check deploy-doctor secret-scan dep-audit
 
 ## Quality gates (used by /flow:finish)
 
@@ -103,6 +103,16 @@ deploy-check:
 
 deploy-doctor:
 	python3 scripts/deploy_doctor.py --repo-root "$(CURDIR)"
+
+## Security scanning
+
+secret-scan:
+	gitleaks detect --source . --verbose
+
+dep-audit:
+	uv export --format requirements-txt --no-hashes > /tmp/requirements.txt
+	pip-audit -r /tmp/requirements.txt
+	bandit -r codex-second-opinion/src codex-nano-banana/src codex-playwright/src lib/ -ll --quiet
 
 ## Utilities
 

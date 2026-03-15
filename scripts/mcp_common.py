@@ -104,7 +104,8 @@ def parse_profiles(raw: str | None) -> set[str]:
     if not raw:
         return {"core"}
     normalized = raw.replace(",", " ")
-    values = {token.strip() for token in normalized.split() if token.strip()}
+    aliases = {"legacy-cicd": "cicd"}
+    values = {aliases.get(token.strip(), token.strip()) for token in normalized.split() if token.strip()}
     return values or {"core"}
 
 

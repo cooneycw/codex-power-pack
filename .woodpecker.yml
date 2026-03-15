@@ -16,6 +16,19 @@ steps:
       - uv run --extra dev pytest
       - uv run --extra dev mypy .
 
+  secret-scan:
+    image: zricethezav/gitleaks:v8.18.4
+    commands:
+      - gitleaks detect --source . --verbose
+
+  dependency-audit:
+    image: python:3.11-slim-bookworm
+    commands:
+      - pip install --quiet uv pip-audit bandit
+      - uv export --format requirements-txt --no-hashes > /tmp/requirements.txt
+      - pip-audit -r /tmp/requirements.txt
+      - bandit -r codex-second-opinion/src codex-nano-banana/src codex-playwright/src lib/ -ll --quiet
+
   deploy-entrypoint-check:
     image: docker:27-cli
     commands:

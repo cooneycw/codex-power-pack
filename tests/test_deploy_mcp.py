@@ -60,7 +60,7 @@ case "$1" in
     logs)
         printf '%s\\n' "${FAKE_DOCKER_LOG_OUTPUT:-CredentialsNotLoaded}"
         ;;
-    run)
+    exec)
         exit "${FAKE_DOCKER_RUN_EXIT:-0}"
         ;;
     image)
@@ -180,8 +180,6 @@ def test_deploy_mcp_can_run_smoke_via_docker_helper(tmp_path: Path) -> None:
     )
 
     assert result.returncode == 0
-    assert "Running mcp-smoke via Docker helper" in result.stdout
+    assert "Running mcp-smoke via docker exec" in result.stdout
     log_output = fake_log.read_text(encoding="utf-8")
-    assert "run --rm --network codex-mcp-net" in log_output
-    assert "MCP_SSE_HOST_MODE=service" in log_output
-    assert "python3 scripts/mcp_smoke.py --profiles core browser" in log_output
+    assert "exec -i -e MCP_SMOKE_PROFILES=core browser codex-second-opinion python -" in log_output

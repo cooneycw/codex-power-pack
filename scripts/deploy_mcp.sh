@@ -26,9 +26,6 @@ max_attempts="${MAX_ATTEMPTS:-10}"
 sleep_seconds="${SLEEP_SECONDS:-1}"
 sidecar_grace_seconds="${SIDECAR_GRACE_SECONDS:-3}"
 smoke_mode="${MCP_SMOKE_MODE:-auto}"
-smoke_helper_image="${MCP_SMOKE_HELPER_IMAGE:-python:3.11-alpine}"
-smoke_network="${MCP_SMOKE_NETWORK:-codex-mcp-net}"
-smoke_workdir="${MCP_SMOKE_WORKDIR:-/workspace}"
 skip_smoke=0
 
 while [ "$#" -gt 0 ]; do
@@ -173,14 +170,171 @@ run_host_smoke() {
     make mcp-smoke PROFILE="$profile_spec"
 }
 
+smoke_probe_container() {
+    case " $profile_spec " in
+        *" core "*) printf '%s\n' "codex-second-opinion" ;;
+        *" browser "*) printf '%s\n' "codex-playwright" ;;
+        *" legacy-cicd "*|*" cicd "*) printf '%s\n' "codex-woodpecker" ;;
+        *)
+            echo "ERROR: no running probe container available for profiles: $profile_spec" >&2
+            exit 1
+            ;;
+    esac
+}
+
 run_docker_smoke() {
-    docker run --rm \
-        --network "$smoke_network" \
-        -v "$repo_root:$smoke_workdir:ro" \
-        -w "$smoke_workdir" \
-        -e MCP_SSE_HOST_MODE=service \
-        "$smoke_helper_image" \
-        python3 scripts/mcp_smoke.py --profiles "$profile_spec"
+    probe_container="$(smoke_probe_container)"
+    docker exec -i \
+        -e MCP_SMOKE_PROFILES="$profile_spec" \
+        "$probe_container" \
+        python - <<'PY'
+import json
+import os
+import socket
+import sys
+from urllib.error import HTTPError, URLError
+from urllib.parse import urljoin
+from urllib.request import Request, urlopen
+
+DEFAULT_PROTOCOL_VERSION = "2024-11-05"
+PROFILE_ALIASES = {"legacy-cicd": "cicd"}
+
+
+def parse_profiles(raw):
+    if not raw:
+        return {"core"}
+    normalized = raw.replace(",", " ")
+    values = set()
+    for token in normalized.split():
+        token = token.strip()
+        if token:
+            values.add(PROFILE_ALIASES.get(token, token))
+    return values or {"core"}
+
+
+def selected_servers(profiles):
+    servers = [
+        ("codex-second-opinion", "core", "http://codex-second-opinion:9100/sse"),
+        ("codex-nano-banana", "core", "http://codex-nano-banana:9102/sse"),
+        ("codex-playwright", "browser", "http://codex-playwright:9101/sse"),
+        ("codex-woodpecker", "cicd", "http://codex-woodpecker:9103/sse"),
+    ]
+    return [spec for spec in servers if spec[1] in profiles]
+
+
+def read_sse_event(stream, max_lines=200):
+    event_name = None
+    data_lines = []
+    line_count = 0
+    while line_count < max_lines:
+        raw = stream.readline()
+        if not raw:
+            return None
+        line = raw.decode("utf-8", errors="replace").rstrip("\r\n")
+        line_count += 1
+        if line == "":
+            if event_name is not None:
+                return {"event": event_name, "data": "\n".join(data_lines)}
+            event_name = None
+            data_lines = []
+            continue
+        if line.startswith(":"):
+            continue
+        if line.startswith("event:"):
+            event_name = line.split(":", 1)[1].strip()
+            continue
+        if line.startswith("data:"):
+            data_lines.append(line.split(":", 1)[1].lstrip())
+    return None
+
+
+def probe_server(name, sse_url, timeout_seconds=8.0):
+    headers = {"Accept": "text/event-stream"}
+    try:
+        with urlopen(Request(sse_url, headers=headers, method="GET"), timeout=timeout_seconds) as stream:
+            endpoint = None
+            for _ in range(30):
+                event = read_sse_event(stream)
+                if not event:
+                    break
+                if event.get("event") == "endpoint":
+                    payload = (event.get("data") or "").strip()
+                    endpoint = payload if payload.startswith("http") else urljoin(sse_url, payload)
+                    break
+
+            if not endpoint:
+                return {"ok": False, "stage": "handshake", "target": sse_url, "error": "No endpoint event received"}
+
+            payload = {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": DEFAULT_PROTOCOL_VERSION,
+                    "capabilities": {},
+                    "clientInfo": {"name": "codex-power-pack", "version": "1.0"},
+                },
+            }
+
+            with urlopen(
+                Request(endpoint, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"}, method="POST"),
+                timeout=timeout_seconds,
+            ):
+                pass
+
+            init_result = None
+            for _ in range(60):
+                event = read_sse_event(stream)
+                if not event:
+                    break
+                data = (event.get("data") or "").strip()
+                if not data:
+                    continue
+                try:
+                    maybe_payload = json.loads(data)
+                except json.JSONDecodeError:
+                    continue
+                if maybe_payload.get("id") == 1:
+                    init_result = maybe_payload
+                    break
+
+            if not init_result or "result" not in init_result:
+                return {"ok": False, "stage": "handshake", "target": sse_url, "error": "Initialize response was not received"}
+
+            server_info = (init_result.get("result", {}) or {}).get("serverInfo", {})
+            return {
+                "ok": True,
+                "target": sse_url,
+                "server_name": server_info.get("name") or name,
+                "server_version": server_info.get("version") or "-",
+            }
+    except HTTPError as exc:
+        return {"ok": False, "stage": "endpoint", "target": sse_url, "error": f"HTTP {exc.code}"}
+    except (URLError, TimeoutError, socket.timeout, ConnectionError) as exc:
+        return {"ok": False, "stage": "endpoint", "target": sse_url, "error": str(exc)}
+    except Exception as exc:
+        return {"ok": False, "stage": "handshake", "target": sse_url, "error": str(exc)}
+
+
+profiles = parse_profiles(os.environ.get("MCP_SMOKE_PROFILES", "core"))
+results = [probe_server(name, sse_url) for name, _, sse_url in selected_servers(profiles)]
+
+print("MCP Smoke Results")
+for result in results:
+    status = "PASS" if result["ok"] else "FAIL"
+    if result["ok"]:
+        print(
+            f"- [{status}] {result['server_name']} ({result['target']}) "
+            f"server={result['server_name']} version={result['server_version']}"
+        )
+    else:
+        print(f"- [{status}] {result['target']} stage={result['stage']} error={result['error']}")
+
+if not all(result["ok"] for result in results):
+    if any(result["stage"] == "endpoint" for result in results if not result["ok"]):
+        raise SystemExit(2)
+    raise SystemExit(3)
+PY
 }
 
 run_smoke() {
@@ -238,7 +392,7 @@ assert_sidecars_running
 
 if [ "$skip_smoke" -ne 1 ]; then
     if use_docker_smoke; then
-        log "Running mcp-smoke via Docker helper on network: $smoke_network"
+        log "Running mcp-smoke via docker exec inside the compose network"
     else
         log "Running mcp-smoke from the host workspace"
     fi

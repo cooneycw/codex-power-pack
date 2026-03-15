@@ -26,6 +26,10 @@ def test_parse_profiles_supports_space_and_comma_delimiters() -> None:
     assert parse_profiles("core,browser,cicd") == {"core", "browser", "cicd"}
 
 
+def test_parse_profiles_maps_legacy_cicd_alias() -> None:
+    assert parse_profiles("core legacy-cicd") == {"core", "cicd"}
+
+
 def test_parse_profiles_defaults_to_core() -> None:
     assert parse_profiles(None) == {"core"}
     assert parse_profiles("") == {"core"}
@@ -34,6 +38,8 @@ def test_parse_profiles_defaults_to_core() -> None:
 def test_selected_servers_filters_by_profile() -> None:
     core_servers = {spec.config_name for spec in selected_servers({"core"})}
     assert core_servers == {"codex-second-opinion", "codex-nano-banana"}
+    cicd_servers = {spec.config_name for spec in selected_servers(parse_profiles("legacy-cicd"))}
+    assert cicd_servers == {"codex-woodpecker"}
 
 
 def test_selected_servers_default_to_loopback_urls() -> None:
@@ -46,7 +52,7 @@ def test_selected_servers_default_to_loopback_urls() -> None:
 
 def test_selected_servers_support_service_dns_urls(monkeypatch) -> None:
     monkeypatch.setenv("MCP_SSE_HOST_MODE", "service")
-    urls = {spec.config_name: spec.sse_url for spec in selected_servers({"core", "browser", "cicd"})}
+    urls = {spec.config_name: spec.sse_url for spec in selected_servers(parse_profiles("core browser legacy-cicd"))}
     assert urls["codex-second-opinion"] == "http://codex-second-opinion:9100/sse"
     assert urls["codex-playwright"] == "http://codex-playwright:9101/sse"
     assert urls["codex-nano-banana"] == "http://codex-nano-banana:9102/sse"
