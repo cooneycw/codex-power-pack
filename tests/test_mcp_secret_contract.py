@@ -85,12 +85,18 @@ def test_root_compose_uses_agent_sidecars_for_secret_consumers() -> None:
     second_sidecar_env = _compose_env(second_sidecar)
     woodpecker_sidecar_env = _compose_env(woodpecker_sidecar)
     assert second_sidecar_env["AWS_TOKEN"].startswith("${AWS_SECRETSMANAGER_TOKEN:")
+    assert second_sidecar_env["HOME"] == "/root"
     assert second_sidecar_env["AWS_PROFILE"] == "${AWS_PROFILE:-default}"
     assert second_sidecar_env["AWS_SDK_LOAD_CONFIG"] == "1"
+    assert second_sidecar_env["AWS_SHARED_CREDENTIALS_FILE"] == "/root/.aws/credentials"
+    assert second_sidecar_env["AWS_CONFIG_FILE"] == "/root/.aws/config"
     assert "${HOME}/.aws:/root/.aws:ro" in _service_volumes(second_sidecar)
     assert woodpecker_sidecar_env["AWS_TOKEN"].startswith("${AWS_SECRETSMANAGER_TOKEN:")
+    assert woodpecker_sidecar_env["HOME"] == "/root"
     assert woodpecker_sidecar_env["AWS_PROFILE"] == "${AWS_PROFILE:-default}"
     assert woodpecker_sidecar_env["AWS_SDK_LOAD_CONFIG"] == "1"
+    assert woodpecker_sidecar_env["AWS_SHARED_CREDENTIALS_FILE"] == "/root/.aws/credentials"
+    assert woodpecker_sidecar_env["AWS_CONFIG_FILE"] == "/root/.aws/config"
     assert "${HOME}/.aws:/root/.aws:ro" in _service_volumes(woodpecker_sidecar)
 
 
@@ -105,8 +111,11 @@ def test_second_opinion_service_compose_uses_agent_sidecar() -> None:
     assert app_env["AWS_SECRETSMANAGER_AGENT_ENDPOINT"] == "http://127.0.0.1:2773"
     assert services["second-opinion-secrets"]["network_mode"] == "service:second-opinion-mcp"
     assert sidecar_env["AWS_TOKEN"].startswith("${AWS_SECRETSMANAGER_TOKEN:")
+    assert sidecar_env["HOME"] == "/root"
     assert sidecar_env["AWS_PROFILE"] == "${AWS_PROFILE:-default}"
     assert sidecar_env["AWS_SDK_LOAD_CONFIG"] == "1"
+    assert sidecar_env["AWS_SHARED_CREDENTIALS_FILE"] == "/root/.aws/credentials"
+    assert sidecar_env["AWS_CONFIG_FILE"] == "/root/.aws/config"
     assert "${HOME}/.aws:/root/.aws:ro" in _service_volumes(services["second-opinion-secrets"])
 
 
