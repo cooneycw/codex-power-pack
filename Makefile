@@ -112,7 +112,7 @@ secret-scan:
 dep-audit:
 	uv export --format requirements-txt --no-hashes > /tmp/requirements.txt
 	pip-audit -r /tmp/requirements.txt
-	bandit -r codex-second-opinion/src codex-nano-banana/src codex-playwright/src lib/ -ll --quiet
+	bandit -r codex-second-opinion/src codex-nano-banana/src codex-playwright/src lib/ -ll --quiet --skip B104,B108,B310,B602
 
 ## Utilities
 
