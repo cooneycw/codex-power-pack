@@ -138,6 +138,7 @@ Generated via `/cicd:pipeline` using templates in `templates/workflows/`:
 
 ```yaml
 # .woodpecker.yml (generated)
+# Deploy secrets are resolved from AWS Secrets Manager.
 when:
   branch: [main]
   event: [push, pull_request]
@@ -156,7 +157,46 @@ steps:
       - pip install uv
       - uv sync
       - make test
+
+  - name: aws-secretsmanager-preflight
+    image: amazon/aws-cli:2
+    commands:
+      - aws sts get-caller-identity >/dev/null
+      - aws secretsmanager describe-secret --region "${AWS_REGION:-us-east-1}" --secret-id "codex-power-pack/codex-power-pack" >/dev/null
+    when:
+      branch: main
+      event: push
+
+  - name: deploy
+    image: python:3.12
+    environment:
+      CPP_SECRETS_PROVIDER: aws-secrets-manager
+      CPP_AWS_SECRET_ID: codex-power-pack/codex-power-pack
+      AWS_REGION: us-east-1
+    commands:
+      - pip install uv
+      - uv sync
+      - make deploy
 ```
+
+Declare the AWS bundle explicitly in `.codex/cicd.yml` when `main` includes
+`deploy`:
+
+```yaml
+pipeline:
+  provider: woodpecker
+  branches:
+    main: [lint, test, typecheck, build, deploy]
+  aws_secrets:
+    provider: aws-secrets-manager
+    project_id: codex-power-pack
+    region: us-east-1
+  secrets_needed: [DEPLOY_KEY]
+```
+
+`secrets_needed` now documents the keys expected inside the AWS Secrets Manager
+bundle. It is no longer the preferred source for raw Woodpecker secret
+injection.
 
 ### Template Selection
 
@@ -184,7 +224,7 @@ Generated via `/cicd:container` using templates in `templates/containers/`:
 1. **Named volumes** for persistent data
 2. **Health checks** with retries and intervals
 3. **Dependency ordering** with `depends_on` + `condition: service_healthy`
-4. **Environment files** - use `.env` files, never hardcode secrets
+4. **Deploy secrets** - require AWS Secrets Manager for shared runtime and deploy-time secrets
 
 ## Commands Reference
 

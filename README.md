@@ -120,6 +120,11 @@ The `/cicd:*` namespace is available through:
 - `.codex/skills/cicd-*/` - backing Codex skill packages
 - `docs/skills/cicd-command-skill-map.md` - trigger-to-skill inventory
 
+Deploy pipelines are expected to declare an explicit AWS Secrets Manager path in
+`.codex/cicd.yml` via `pipeline.aws_secrets`. Generated Woodpecker deploy steps
+now assume AWS-backed secret resolution instead of raw `.env` or ad hoc secret
+injection for shared runtime and deploy-time values.
+
 ## Flow Trigger Parity
 
 The `/flow:*` namespace is available through:

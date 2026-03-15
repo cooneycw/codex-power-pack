@@ -49,6 +49,7 @@ desktop.ini
 !package.json
 !tsconfig.json
 !.codex/hooks.json
+.codex/security.yml
 node_modules/
 .codex/settings*.json
 .codex/plans/
@@ -56,6 +57,10 @@ node_modules/
 # Logs
 *.log
 logs/
+*.pem
+*.key
+*.p12
+secrets.*
 
 # Testing
 .pytest_cache/
