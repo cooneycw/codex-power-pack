@@ -72,6 +72,16 @@ back to `AWS_SECRET_NAME` if the dedicated API-key secret name is not set.
 
 Recommended dedicated API-key secret: `codex_llm_apikeys`.
 
+For Docker deployments in this repo, the preferred path is the AWS Secrets
+Manager agent sidecar. The app container uses:
+
+- `AWS_SECRET_SOURCE=aws-secretsmanager-agent`
+- `AWS_SECRETSMANAGER_AGENT_ENDPOINT=http://127.0.0.1:2773`
+- `AWS_SECRETSMANAGER_TOKEN` for the sidecar authorization header
+
+Native `uv run` usage still supports direct `boto3` resolution with AWS
+credentials when the sidecar is not present.
+
 ## MCP Tools
 
 | Tool | Description |
