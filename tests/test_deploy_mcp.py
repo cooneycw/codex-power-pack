@@ -70,6 +70,13 @@ esac
 """
 
 
+def _strip_ci_vars(env: dict[str, str]) -> dict[str, str]:
+    """Remove CI env vars so is_ci_runtime() returns false."""
+    for key in ("CI", "CI_WORKSPACE", "CI_PIPELINE_NUMBER", "WOODPECKER_REPO"):
+        env.pop(key, None)
+    return env
+
+
 def test_deploy_mcp_fails_when_selected_sidecar_restarts(tmp_path: Path) -> None:
     fake_bin = tmp_path / "bin"
     fake_bin.mkdir()
@@ -77,7 +84,7 @@ def test_deploy_mcp_fails_when_selected_sidecar_restarts(tmp_path: Path) -> None
 
     _write_executable(fake_bin / "docker", _fake_docker_script())
 
-    env = os.environ.copy()
+    env = _strip_ci_vars(os.environ.copy())
     env["PATH"] = f"{fake_bin}:{env['PATH']}"
     env["PROFILE"] = "core"
     env["SIDECAR_GRACE_SECONDS"] = "0"
