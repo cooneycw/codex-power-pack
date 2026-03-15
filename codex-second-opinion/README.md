@@ -79,6 +79,11 @@ Manager agent sidecar. The app container uses:
 - `AWS_SECRETSMANAGER_AGENT_ENDPOINT=http://127.0.0.1:2773`
 - `AWS_SECRETSMANAGER_TOKEN` for the sidecar authorization header
 
+The sidecar can authenticate with either direct `AWS_ACCESS_KEY_ID` /
+`AWS_SECRET_ACCESS_KEY` / `AWS_SESSION_TOKEN` environment variables or the
+host's shared AWS files mounted from `~/.aws` using `AWS_PROFILE` (default:
+`default`).
+
 Native `uv run` usage still supports direct `boto3` resolution with AWS
 credentials when the sidecar is not present.
 

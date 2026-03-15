@@ -12,9 +12,10 @@
 #   AWS_API_KEYS_SECRET_NAME=codex_llm_apikeys
 #   AWS_REGION=us-east-1
 #   AWS_SECRETSMANAGER_TOKEN=change-me-sidecar-token
-#   AWS_ACCESS_KEY_ID=...       (if no IAM role/profile is available)
+#   AWS_ACCESS_KEY_ID=...       (if no IAM role/profile or ~/.aws credentials are available)
 #   AWS_SECRET_ACCESS_KEY=...
 #   AWS_SESSION_TOKEN=...
+#   AWS_PROFILE=default         (optional; defaults to "default" when ~/.aws is mounted)
 #
 # Optional native/local overrides:
 #   GEMINI_API_KEY=...
@@ -72,10 +73,14 @@ services:
     environment:
       - AWS_REGION=${AWS_REGION:-us-east-1}
       - AWS_DEFAULT_REGION=${AWS_REGION:-us-east-1}
+      - AWS_PROFILE=${AWS_PROFILE:-default}
+      - AWS_SDK_LOAD_CONFIG=1
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
       - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
       - AWS_TOKEN=${AWS_SECRETSMANAGER_TOKEN:-codex-local-sidecar-token}
+    volumes:
+      - ${HOME}/.aws:/root/.aws:ro
     restart: unless-stopped
     profiles: ["core"]
 
@@ -155,10 +160,14 @@ services:
     environment:
       - AWS_REGION=${AWS_REGION:-us-east-1}
       - AWS_DEFAULT_REGION=${AWS_REGION:-us-east-1}
+      - AWS_PROFILE=${AWS_PROFILE:-default}
+      - AWS_SDK_LOAD_CONFIG=1
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
       - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
       - AWS_TOKEN=${AWS_SECRETSMANAGER_TOKEN:-codex-local-sidecar-token}
+    volumes:
+      - ${HOME}/.aws:/root/.aws:ro
     restart: unless-stopped
     # Legacy-only container profile. Primary Codex usage is stdio transport.
     profiles: ["legacy-cicd"]

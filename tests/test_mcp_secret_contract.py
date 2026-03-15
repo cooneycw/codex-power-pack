@@ -36,6 +36,11 @@ def _load_module(module_name: str, path: Path):
     return module
 
 
+def _service_volumes(service: dict) -> list[str]:
+    raw = service.get("volumes", [])
+    return [str(entry) for entry in raw]
+
+
 class _FakeResponse:
     def __init__(self, payload: str) -> None:
         self._payload = payload.encode("utf-8")
@@ -77,8 +82,16 @@ def test_root_compose_uses_agent_sidecars_for_secret_consumers() -> None:
     woodpecker_sidecar = services["codex-woodpecker-secrets"]
     assert second_sidecar["network_mode"] == "service:codex-second-opinion"
     assert woodpecker_sidecar["network_mode"] == "service:codex-woodpecker"
-    assert _compose_env(second_sidecar)["AWS_TOKEN"].startswith("${AWS_SECRETSMANAGER_TOKEN:")
-    assert _compose_env(woodpecker_sidecar)["AWS_TOKEN"].startswith("${AWS_SECRETSMANAGER_TOKEN:")
+    second_sidecar_env = _compose_env(second_sidecar)
+    woodpecker_sidecar_env = _compose_env(woodpecker_sidecar)
+    assert second_sidecar_env["AWS_TOKEN"].startswith("${AWS_SECRETSMANAGER_TOKEN:")
+    assert second_sidecar_env["AWS_PROFILE"] == "${AWS_PROFILE:-default}"
+    assert second_sidecar_env["AWS_SDK_LOAD_CONFIG"] == "1"
+    assert "${HOME}/.aws:/root/.aws:ro" in _service_volumes(second_sidecar)
+    assert woodpecker_sidecar_env["AWS_TOKEN"].startswith("${AWS_SECRETSMANAGER_TOKEN:")
+    assert woodpecker_sidecar_env["AWS_PROFILE"] == "${AWS_PROFILE:-default}"
+    assert woodpecker_sidecar_env["AWS_SDK_LOAD_CONFIG"] == "1"
+    assert "${HOME}/.aws:/root/.aws:ro" in _service_volumes(woodpecker_sidecar)
 
 
 def test_second_opinion_service_compose_uses_agent_sidecar() -> None:
@@ -92,6 +105,9 @@ def test_second_opinion_service_compose_uses_agent_sidecar() -> None:
     assert app_env["AWS_SECRETSMANAGER_AGENT_ENDPOINT"] == "http://127.0.0.1:2773"
     assert services["second-opinion-secrets"]["network_mode"] == "service:second-opinion-mcp"
     assert sidecar_env["AWS_TOKEN"].startswith("${AWS_SECRETSMANAGER_TOKEN:")
+    assert sidecar_env["AWS_PROFILE"] == "${AWS_PROFILE:-default}"
+    assert sidecar_env["AWS_SDK_LOAD_CONFIG"] == "1"
+    assert "${HOME}/.aws:/root/.aws:ro" in _service_volumes(services["second-opinion-secrets"])
 
 
 @pytest.mark.parametrize(
