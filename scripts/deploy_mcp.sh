@@ -23,6 +23,7 @@ mode="deploy"
 profile_spec="${PROFILE:-core}"
 max_attempts="${MAX_ATTEMPTS:-10}"
 sleep_seconds="${SLEEP_SECONDS:-1}"
+sidecar_grace_seconds="${SIDECAR_GRACE_SECONDS:-3}"
 skip_smoke=0
 
 while [ "$#" -gt 0 ]; do
@@ -123,6 +124,37 @@ run_compose() {
     docker compose $compose_args "$@"
 }
 
+expected_sidecars() {
+    case " $profile_spec " in
+        *" core "*) printf '%s\n' "codex-second-opinion-secrets" ;;
+    esac
+    case " $profile_spec " in
+        *" legacy-cicd "*) printf '%s\n' "codex-woodpecker-secrets" ;;
+    esac
+}
+
+sidecar_status() {
+    docker inspect -f '{{.State.Status}}' "$1" 2>/dev/null || printf '%s\n' "missing"
+}
+
+assert_sidecars_running() {
+    sidecars="$(expected_sidecars)"
+    [ -n "$sidecars" ] || return 0
+
+    if [ "${sidecar_grace_seconds}" -gt 0 ] 2>/dev/null; then
+        sleep "${sidecar_grace_seconds}"
+    fi
+
+    for sidecar in $sidecars; do
+        status="$(sidecar_status "$sidecar")"
+        if [ "$status" != "running" ]; then
+            log "Sidecar '$sidecar' is not running (status: $status)"
+            docker logs --tail 20 "$sidecar" || true
+            return 3
+        fi
+    done
+}
+
 if [ "$mode" = "check" ]; then
     log "Validating deploy entrypoint from repo checkout: $repo_root"
     docker compose version >/dev/null
@@ -142,6 +174,7 @@ log "Deploying MCP services from repo-owned entrypoint"
 docker compose version
 run_compose up -d --build --wait
 run_compose ps
+assert_sidecars_running
 
 if [ "$skip_smoke" -ne 1 ]; then
     attempt=1
@@ -160,6 +193,8 @@ if [ "$skip_smoke" -ne 1 ]; then
         sleep "$sleep_seconds"
     done
 fi
+
+assert_sidecars_running
 
 docker image prune -f
 log "Deploy complete."
