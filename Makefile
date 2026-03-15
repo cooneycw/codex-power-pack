@@ -1,7 +1,8 @@
 .PHONY: test lint format typecheck verify build update_docs clean help \
        skills-install-codex skills-doctor \
        mcp-install-codex mcp-doctor mcp-smoke \
-       docker-build docker-check-env docker-up docker-down docker-logs docker-ps deploy
+       docker-build docker-check-env docker-up docker-down docker-logs docker-ps \
+       deploy deploy-check deploy-doctor
 
 ## Quality gates (used by /flow:finish)
 
@@ -94,21 +95,14 @@ docker-ps:
 
 ## Deploy (used by Woodpecker CI and /flow:deploy)
 
-deploy: docker-build docker-up
-	@attempt=1; max=10; \
-	while [ $$attempt -le $$max ]; do \
-		if $(MAKE) mcp-smoke PROFILE="$(PROFILE)"; then \
-			break; \
-		fi; \
-		if [ $$attempt -eq $$max ]; then \
-			echo "mcp-smoke failed after $$max attempts"; \
-			exit 2; \
-		fi; \
-		echo "mcp-smoke not ready yet (attempt $$attempt/$$max), retrying in 1s..."; \
-		attempt=$$((attempt + 1)); \
-		sleep 1; \
-	done
-	@$(MAKE) docker-ps
+deploy: docker-check-env
+	PROFILE="$(PROFILE)" ./scripts/deploy_mcp.sh
+
+deploy-check:
+	PROFILE="$(PROFILE)" ./scripts/deploy_mcp.sh --check
+
+deploy-doctor:
+	python3 scripts/deploy_doctor.py --repo-root "$(CURDIR)"
 
 ## Utilities
 
@@ -142,5 +136,7 @@ help:
 	@echo "  make docker-logs - Tail container logs"
 	@echo ""
 	@echo "Deployment:"
-	@echo "  make deploy      - Build and start containers"
+	@echo "  make deploy       - Run the canonical repo-owned deploy entrypoint"
+	@echo "  make deploy-check - Validate the deploy entrypoint without changing containers"
+	@echo "  make deploy-doctor - Diagnose host/runtime deploy drift"
 	@echo "  make clean       - Remove build artifacts"

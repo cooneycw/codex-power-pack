@@ -60,6 +60,13 @@ Validate local config drift and live endpoint health:
 make mcp-doctor PROFILE="core browser cicd"
 ```
 
+Validate the production deploy path before changing containers:
+
+```bash
+make deploy-check PROFILE="core browser"
+make deploy-doctor
+```
+
 `mcp-install-codex` automatically replaces legacy Woodpecker entries such as
 `voice-bot-acs/codex-power-pack/mcp-woodpecker-ci` with repo-local paths.
 
@@ -192,6 +199,16 @@ make test
 make typecheck
 make verify
 ```
+
+## Deploy Integrity
+
+MCP deploys are expected to run from the repo checkout, not from long-lived helper
+scripts under `/usr/local/bin`.
+
+- Canonical deploy entrypoint: `make deploy PROFILE="core browser"`
+- Canonical implementation: `scripts/deploy_mcp.sh`
+- Host drift diagnostics: `make deploy-doctor`
+- Runtime boundary documentation: `docs/deploy-runtime-boundary.md`
 
 ## Status
 

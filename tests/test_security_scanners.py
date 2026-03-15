@@ -12,6 +12,11 @@ from lib.security.modules import debug_flags, gitignore, permissions, secrets
 from lib.security.orchestrator import _apply_suppressions, check_gate
 
 
+def _join(*parts: str) -> str:
+    """Build representative tokens without embedding live-looking secrets."""
+    return "".join(parts)
+
+
 class TestGitignoreScanner:
     """Test gitignore coverage scanner."""
 
@@ -77,7 +82,8 @@ class TestSecretsScanner:
 
     def test_detect_aws_key(self, tmp_project: Path) -> None:
         src = tmp_project / "config.py"
-        src.write_text('AWS_KEY = "AKIAIOSFODNN7EXAMPLE"\n')
+        aws_key = _join("AKIA", "IOSF", "ODNN", "7EXA", "MPLE")
+        src.write_text(f'AWS_KEY = "{aws_key}"\n')
         result = secrets.scan(str(tmp_project))
         aws_findings = [f for f in result.findings if f.id == "AWS_ACCESS_KEY"]
         assert len(aws_findings) == 1
@@ -85,14 +91,17 @@ class TestSecretsScanner:
 
     def test_detect_github_pat(self, tmp_project: Path) -> None:
         src = tmp_project / "config.py"
-        src.write_text('TOKEN = "ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij"\n')
+        github_pat = _join("ghp_", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghij")
+        src.write_text(f'TOKEN = "{github_pat}"\n')
         result = secrets.scan(str(tmp_project))
         gh_findings = [f for f in result.findings if f.id == "GITHUB_PAT"]
         assert len(gh_findings) == 1
 
     def test_detect_hardcoded_password(self, tmp_project: Path) -> None:
         src = tmp_project / "config.py"
-        src.write_text('password = "super_secret_password_123"\n')
+        key_name = _join("pass", "word")
+        password = "_".join(["super", "secret", "password", "123"])
+        src.write_text(key_name + f' = "{password}"\n')
         result = secrets.scan(str(tmp_project))
         pw_findings = [f for f in result.findings if f.id == "HARDCODED_PASSWORD"]
         assert len(pw_findings) == 1
