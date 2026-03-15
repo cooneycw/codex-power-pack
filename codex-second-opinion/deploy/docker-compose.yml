@@ -10,7 +10,7 @@ services:
     environment:
       - AWS_SECRET_SOURCE=aws-secretsmanager-agent
       - AWS_SECRETSMANAGER_AGENT_ENDPOINT=http://127.0.0.1:2773
-      - AWS_SECRETSMANAGER_TOKEN=${AWS_SECRETSMANAGER_TOKEN:?AWS_SECRETSMANAGER_TOKEN is required}
+      - AWS_SECRETSMANAGER_TOKEN=${AWS_SECRETSMANAGER_TOKEN:-codex-local-sidecar-token}
       - AWS_SECRET_NAME=${AWS_SECRET_NAME:-codex-power-pack}
       - AWS_API_KEYS_SECRET_NAME=${AWS_API_KEYS_SECRET_NAME:-codex_llm_apikeys}
       - AWS_REGION=${AWS_REGION:-us-east-1}
@@ -45,5 +45,5 @@ services:
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
       - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
-      - AWS_TOKEN=${AWS_SECRETSMANAGER_TOKEN:?AWS_SECRETSMANAGER_TOKEN is required}
+      - AWS_TOKEN=${AWS_SECRETSMANAGER_TOKEN:-codex-local-sidecar-token}
     restart: unless-stopped
