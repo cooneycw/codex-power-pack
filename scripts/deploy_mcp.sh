@@ -89,6 +89,18 @@ while [ "$#" -gt 0 ]; do
 done
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [ -z "$repo_root" ]; then
+    script_path="$0"
+    case "$script_path" in
+        */*) script_dir_path="${script_path%/*}" ;;
+        *) script_dir_path="." ;;
+    esac
+    script_dir="$(CDPATH= cd -- "$script_dir_path" && pwd)"
+    candidate_root="${script_dir%/*}"
+    if [ -f "$candidate_root/docker-compose.yml" ]; then
+        repo_root="$candidate_root"
+    fi
+fi
 [ -n "$repo_root" ] || {
     echo "ERROR: deploy_mcp.sh must run from inside a git checkout" >&2
     exit 1

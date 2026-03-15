@@ -122,3 +122,31 @@ def test_deploy_mcp_succeeds_when_selected_sidecars_are_running(tmp_path: Path) 
 
     assert result.returncode == 0
     assert "Deploy complete." in result.stdout
+
+
+def test_deploy_mcp_uses_script_dir_when_git_is_unavailable(tmp_path: Path) -> None:
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_log = tmp_path / "docker.log"
+
+    _write_executable(fake_bin / "docker", _fake_docker_script())
+    _write_executable(fake_bin / "git", "#!/bin/sh\nexit 127\n")
+
+    env = os.environ.copy()
+    env["PATH"] = f"{fake_bin}:{env['PATH']}"
+    env["PROFILE"] = "core"
+    env["SIDECAR_GRACE_SECONDS"] = "0"
+    env["FAKE_DOCKER_LOG"] = str(fake_log)
+    env["FAKE_SECOND_OPINION_STATUS"] = "running"
+
+    result = subprocess.run(
+        [str(SCRIPT), "--skip-smoke"],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert "Deploy complete." in result.stdout
