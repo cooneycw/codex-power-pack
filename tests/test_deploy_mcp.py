@@ -70,13 +70,6 @@ esac
 """
 
 
-def _strip_ci_vars(env: dict[str, str]) -> dict[str, str]:
-    """Remove CI env vars so is_ci_runtime() returns false."""
-    for key in ("CI", "CI_WORKSPACE", "CI_PIPELINE_NUMBER", "WOODPECKER_REPO"):
-        env.pop(key, None)
-    return env
-
-
 def test_deploy_mcp_fails_when_selected_sidecar_restarts(tmp_path: Path) -> None:
     fake_bin = tmp_path / "bin"
     fake_bin.mkdir()
@@ -84,7 +77,7 @@ def test_deploy_mcp_fails_when_selected_sidecar_restarts(tmp_path: Path) -> None
 
     _write_executable(fake_bin / "docker", _fake_docker_script())
 
-    env = _strip_ci_vars(os.environ.copy())
+    env = os.environ.copy()
     env["PATH"] = f"{fake_bin}:{env['PATH']}"
     env["PROFILE"] = "core"
     env["SIDECAR_GRACE_SECONDS"] = "0"
@@ -104,36 +97,6 @@ def test_deploy_mcp_fails_when_selected_sidecar_restarts(tmp_path: Path) -> None
     assert result.returncode == 3
     assert "not running" in result.stdout
     assert "CredentialsNotLoaded" in result.stdout
-
-
-def test_deploy_mcp_warns_on_sidecar_failure_in_ci(tmp_path: Path) -> None:
-    """In CI, a failing sidecar should warn but not fail the deploy."""
-    fake_bin = tmp_path / "bin"
-    fake_bin.mkdir()
-    fake_log = tmp_path / "docker.log"
-
-    _write_executable(fake_bin / "docker", _fake_docker_script())
-
-    env = os.environ.copy()
-    env["PATH"] = f"{fake_bin}:{env['PATH']}"
-    env["PROFILE"] = "core"
-    env["SIDECAR_GRACE_SECONDS"] = "0"
-    env["FAKE_DOCKER_LOG"] = str(fake_log)
-    env["FAKE_SECOND_OPINION_STATUS"] = "restarting"
-    env["CI"] = "true"
-
-    result = subprocess.run(
-        [str(SCRIPT), "--skip-smoke"],
-        cwd=ROOT,
-        env=env,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-
-    assert result.returncode == 0
-    assert "WARNING" in result.stdout
-    assert "skipping in CI" in result.stdout
 
 
 def test_deploy_mcp_succeeds_when_selected_sidecars_are_running(tmp_path: Path) -> None:
