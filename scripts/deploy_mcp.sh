@@ -104,11 +104,6 @@ command -v docker >/dev/null 2>&1 || {
     exit 1
 }
 
-command -v make >/dev/null 2>&1 || {
-    echo "ERROR: make is required for deploy_mcp.sh" >&2
-    exit 1
-}
-
 compose_args=""
 for profile in $profile_spec; do
     compose_args="$compose_args --profile $profile"
@@ -134,6 +129,13 @@ if [ "$mode" = "check" ]; then
     run_compose config >/dev/null
     log "Deploy entrypoint validation passed for profiles: $profile_spec"
     exit 0
+fi
+
+if [ "$skip_smoke" -ne 1 ]; then
+    command -v make >/dev/null 2>&1 || {
+        echo "ERROR: make is required for deploy_mcp.sh when smoke checks are enabled" >&2
+        exit 1
+    }
 fi
 
 log "Deploying MCP services from repo-owned entrypoint"

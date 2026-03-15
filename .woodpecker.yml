@@ -82,8 +82,9 @@ steps:
   deploy-mcp:
     image: docker:27-cli
     commands:
+      - apk add --no-cache make python3
       - echo "Deploying MCP containers from main..."
-      - PROFILE="core browser" make deploy
+      - UV_RUN_PYTHON=python3 PROFILE="core browser" make deploy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     when:
