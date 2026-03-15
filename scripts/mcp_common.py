@@ -48,31 +48,52 @@ class ProbeResult:
     error: str | None = None
 
 
+def resolve_sse_host(config_name: str) -> str:
+    """Resolve the target host for SSE smoke checks.
+
+    `loopback` is the default for local host-driven probes.
+    `service` uses compose service DNS names for smoke checks running inside the
+    compose network from a helper container.
+    """
+
+    mode = os.getenv("MCP_SSE_HOST_MODE", "loopback").strip().lower()
+    if mode in {"", "loopback", "host", "published"}:
+        return "127.0.0.1"
+    if mode in {"service", "compose", "docker"}:
+        return config_name
+    return "127.0.0.1"
+
+
+def build_sse_url(config_name: str, port: int) -> str:
+    """Build an SSE URL for the configured smoke host mode."""
+    return f"http://{resolve_sse_host(config_name)}:{port}/sse"
+
+
 def canonical_servers() -> list[ServerSpec]:
     """Return canonical Codex Power Pack MCP server definitions."""
     return [
         ServerSpec(
             config_name="codex-second-opinion",
             profile="core",
-            sse_url="http://127.0.0.1:9100/sse",
+            sse_url=build_sse_url("codex-second-opinion", 9100),
             repo_subdir="codex-second-opinion",
         ),
         ServerSpec(
             config_name="codex-nano-banana",
             profile="core",
-            sse_url="http://127.0.0.1:9102/sse",
+            sse_url=build_sse_url("codex-nano-banana", 9102),
             repo_subdir="codex-nano-banana",
         ),
         ServerSpec(
             config_name="codex-playwright",
             profile="browser",
-            sse_url="http://127.0.0.1:9101/sse",
+            sse_url=build_sse_url("codex-playwright", 9101),
             repo_subdir="codex-playwright",
         ),
         ServerSpec(
             config_name="codex-woodpecker",
             profile="cicd",
-            sse_url="http://127.0.0.1:9103/sse",
+            sse_url=build_sse_url("codex-woodpecker", 9103),
             repo_subdir="codex-woodpecker",
         ),
     ]

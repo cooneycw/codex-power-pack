@@ -36,6 +36,23 @@ def test_selected_servers_filters_by_profile() -> None:
     assert core_servers == {"codex-second-opinion", "codex-nano-banana"}
 
 
+def test_selected_servers_default_to_loopback_urls() -> None:
+    urls = {spec.config_name: spec.sse_url for spec in selected_servers({"core", "browser", "cicd"})}
+    assert urls["codex-second-opinion"] == "http://127.0.0.1:9100/sse"
+    assert urls["codex-playwright"] == "http://127.0.0.1:9101/sse"
+    assert urls["codex-nano-banana"] == "http://127.0.0.1:9102/sse"
+    assert urls["codex-woodpecker"] == "http://127.0.0.1:9103/sse"
+
+
+def test_selected_servers_support_service_dns_urls(monkeypatch) -> None:
+    monkeypatch.setenv("MCP_SSE_HOST_MODE", "service")
+    urls = {spec.config_name: spec.sse_url for spec in selected_servers({"core", "browser", "cicd"})}
+    assert urls["codex-second-opinion"] == "http://codex-second-opinion:9100/sse"
+    assert urls["codex-playwright"] == "http://codex-playwright:9101/sse"
+    assert urls["codex-nano-banana"] == "http://codex-nano-banana:9102/sse"
+    assert urls["codex-woodpecker"] == "http://codex-woodpecker:9103/sse"
+
+
 def test_extract_directory_from_args() -> None:
     args = ["run", "--directory", "/tmp/example", "python", "src/server.py", "--stdio"]
     assert extract_directory_from_args(args) == "/tmp/example"
