@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-
 CPP_DIR_DISCOVERY = """CPP_DIR=""
-for dir in "${CODEX_POWER_PACK_DIR:-}" "$HOME/Projects/codex-power-pack" /opt/codex-power-pack "$HOME/.codex-power-pack"; do
+for dir in "${CODEX_POWER_PACK_DIR:-}" \
+  "$HOME/Projects/codex-power-pack" \
+  /opt/codex-power-pack \
+  "$HOME/.codex-power-pack"; do
   if [ -n "$dir" ] && [ -f "$dir/AGENTS.md" ]; then
     CPP_DIR="$dir"
     break
