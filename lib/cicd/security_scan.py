@@ -33,5 +33,5 @@ def build_security_gate_skip_if() -> str:
         + 'if [ -z "$CPP_DIR" ]; then exit 0; fi; '
         + 'PYTHON_BIN="$CPP_DIR/.venv/bin/python"; '
         + 'if [ ! -x "$PYTHON_BIN" ]; then PYTHON_BIN=python3; fi; '
-        + 'PYTHONPATH="$CPP_DIR${PYTHONPATH:+:$PYTHONPATH}" "$PYTHON_BIN" -c \'import lib.security\' 2>/dev/null'
+        + '! PYTHONPATH="$CPP_DIR${PYTHONPATH:+:$PYTHONPATH}" "$PYTHON_BIN" -c \'import lib.security\' 2>/dev/null'
     )

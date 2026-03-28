@@ -36,6 +36,12 @@ def assert_uses_cpp_root_security_command(command: str, gate: str) -> None:
     assert 'PYTHON_BIN="$CPP_DIR/.venv/bin/python"' in command
 
 
+def assert_skips_only_when_security_module_is_unavailable(command: str) -> None:
+    assert 'PYTHONPATH="$CPP_DIR${PYTHONPATH:+:$PYTHONPATH}"' in command
+    assert "! PYTHONPATH=" in command
+    assert "import lib.security" in command
+
+
 # -- StepModel validation tests --
 
 
@@ -359,7 +365,7 @@ class TestGenerateManifest:
         security_scan = manifest.steps["security_scan"]
         assert_uses_cpp_root_security_command(security_scan.command, "flow_finish")
         assert security_scan.skip_if is not None
-        assert 'PYTHONPATH="$CPP_DIR${PYTHONPATH:+:$PYTHONPATH}"' in security_scan.skip_if
+        assert_skips_only_when_security_module_is_unavailable(security_scan.skip_if)
 
 
 # -- write_manifest tests --
@@ -417,7 +423,7 @@ class TestGetPlanStepsIntegration:
         security_scan = next(step for step in steps if step.id == "security_scan")
         assert_uses_cpp_root_security_command(security_scan.command, "flow_finish")
         assert security_scan.skip_if is not None
-        assert 'PYTHONPATH="$CPP_DIR${PYTHONPATH:+:$PYTHONPATH}"' in security_scan.skip_if
+        assert_skips_only_when_security_module_is_unavailable(security_scan.skip_if)
 
     def test_builtin_deploy_security_scan_uses_cpp_repo_root(self, tmp_path):
         steps = get_plan_steps("deploy", project_root=str(tmp_path))
@@ -502,7 +508,9 @@ class TestCPPManifest:
             "flow_finish",
         )
         assert manifest.steps["security_scan"].skip_if is not None
-        assert 'PYTHONPATH="$CPP_DIR${PYTHONPATH:+:$PYTHONPATH}"' in manifest.steps["security_scan"].skip_if
+        assert_skips_only_when_security_module_is_unavailable(
+            manifest.steps["security_scan"].skip_if
+        )
 
         assert_uses_cpp_root_security_command(
             manifest.steps["deploy_security_scan"].command,
