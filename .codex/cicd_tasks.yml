@@ -37,19 +37,51 @@ steps:
 
   security_scan:
     command: >-
-      PYTHONPATH="${HOME}/Projects/codex-power-pack/lib"
-      python3 -m lib.security gate flow_finish
+      CPP_DIR="" for dir in "${CODEX_POWER_PACK_DIR:-}"
+      "$HOME/Projects/codex-power-pack" /opt/codex-power-pack
+      "$HOME/.codex-power-pack"; do if [ -n "$dir" ] && [ -f
+      "$dir/AGENTS.md" ]; then CPP_DIR="$dir"; break; fi; done; if
+      [ -z "$CPP_DIR" ]; then echo "codex-power-pack not found" >&2;
+      exit 1; fi; PYTHON_BIN="$CPP_DIR/.venv/bin/python"; if [ ! -x
+      "$PYTHON_BIN" ]; then PYTHON_BIN=python3; fi;
+      PYTHONPATH="$CPP_DIR${PYTHONPATH:+:$PYTHONPATH}" "$PYTHON_BIN"
+      -m lib.security gate flow_finish
     description: Run security quick scan
     timeout: 120
-    skip_if: "! python3 -c 'import lib.security' 2>/dev/null"
+    skip_if: >-
+      CPP_DIR="" for dir in "${CODEX_POWER_PACK_DIR:-}"
+      "$HOME/Projects/codex-power-pack" /opt/codex-power-pack
+      "$HOME/.codex-power-pack"; do if [ -n "$dir" ] && [ -f
+      "$dir/AGENTS.md" ]; then CPP_DIR="$dir"; break; fi; done; if
+      [ -z "$CPP_DIR" ]; then exit 0; fi;
+      PYTHON_BIN="$CPP_DIR/.venv/bin/python"; if [ ! -x "$PYTHON_BIN"
+      ]; then PYTHON_BIN=python3; fi;
+      ! PYTHONPATH="$CPP_DIR${PYTHONPATH:+:$PYTHONPATH}" "$PYTHON_BIN"
+      -c 'import lib.security' 2>/dev/null
 
   deploy_security_scan:
     command: >-
-      PYTHONPATH="${HOME}/Projects/codex-power-pack/lib"
-      python3 -m lib.security gate flow_deploy
+      CPP_DIR="" for dir in "${CODEX_POWER_PACK_DIR:-}"
+      "$HOME/Projects/codex-power-pack" /opt/codex-power-pack
+      "$HOME/.codex-power-pack"; do if [ -n "$dir" ] && [ -f
+      "$dir/AGENTS.md" ]; then CPP_DIR="$dir"; break; fi; done; if
+      [ -z "$CPP_DIR" ]; then echo "codex-power-pack not found" >&2;
+      exit 1; fi; PYTHON_BIN="$CPP_DIR/.venv/bin/python"; if [ ! -x
+      "$PYTHON_BIN" ]; then PYTHON_BIN=python3; fi;
+      PYTHONPATH="$CPP_DIR${PYTHONPATH:+:$PYTHONPATH}" "$PYTHON_BIN"
+      -m lib.security gate flow_deploy
     description: Run security scan before deploy
     timeout: 120
-    skip_if: "! python3 -c 'import lib.security' 2>/dev/null"
+    skip_if: >-
+      CPP_DIR="" for dir in "${CODEX_POWER_PACK_DIR:-}"
+      "$HOME/Projects/codex-power-pack" /opt/codex-power-pack
+      "$HOME/.codex-power-pack"; do if [ -n "$dir" ] && [ -f
+      "$dir/AGENTS.md" ]; then CPP_DIR="$dir"; break; fi; done; if
+      [ -z "$CPP_DIR" ]; then exit 0; fi;
+      PYTHON_BIN="$CPP_DIR/.venv/bin/python"; if [ ! -x "$PYTHON_BIN"
+      ]; then PYTHON_BIN=python3; fi;
+      ! PYTHONPATH="$CPP_DIR${PYTHONPATH:+:$PYTHONPATH}" "$PYTHON_BIN"
+      -c 'import lib.security' 2>/dev/null
 
   deploy:
     command: make deploy

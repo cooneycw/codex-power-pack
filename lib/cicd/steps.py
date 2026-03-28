@@ -11,6 +11,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Optional, Protocol
 
+from .security_scan import build_security_gate_command, build_security_gate_skip_if
 from .state import StepStatus
 
 
@@ -192,14 +193,11 @@ BUILTIN_PLANS: dict[str, list[StepDef]] = {
         ),
         StepDef(
             id="security_scan",
-            command=(
-                'PYTHONPATH="${HOME}/Projects/codex-power-pack/lib" '
-                "python3 -m lib.security gate flow_finish"
-            ),
+            command=build_security_gate_command("flow_finish"),
             description="Run security quick scan",
             timeout_seconds=120,
             max_attempts=1,
-            skip_if="! python3 -c 'import lib.security' 2>/dev/null",
+            skip_if=build_security_gate_skip_if(),
         ),
     ],
     "check": [
@@ -223,14 +221,11 @@ BUILTIN_PLANS: dict[str, list[StepDef]] = {
     "deploy": [
         StepDef(
             id="security_scan",
-            command=(
-                'PYTHONPATH="${HOME}/Projects/codex-power-pack/lib" '
-                "python3 -m lib.security gate flow_deploy"
-            ),
+            command=build_security_gate_command("flow_deploy"),
             description="Run security scan before deploy",
             timeout_seconds=120,
             max_attempts=1,
-            skip_if="! python3 -c 'import lib.security' 2>/dev/null",
+            skip_if=build_security_gate_skip_if(),
         ),
         StepDef(
             id="deploy",
