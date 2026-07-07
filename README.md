@@ -16,6 +16,7 @@ management, templates, and tests for Codex-centric workflows.
 - `codex-woodpecker/` - Woodpecker CI monitoring and control server
 - `lib/creds/`, `lib/security/`, `lib/cicd/`, `lib/spec_bridge/` - reusable Python libraries
 - `templates/`, `scripts/`, `docs/skills/`, `tests/` - supporting workflow assets
+- `docs/security/threat-model.md` - Phase 0 guard design for plugin marketplace modernization
 
 ## Quick Start
 
@@ -204,6 +205,12 @@ make test
 make typecheck
 make verify
 ```
+
+## Security Design
+
+The plugin marketplace modernization wave is gated by
+`docs/security/threat-model.md`. Epics C, D, and E must not merge implementation
+PRs until the owner records sign-off on issue #69.
 
 ## Deploy Integrity
 

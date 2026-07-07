@@ -11,6 +11,7 @@ Covers:
 
 from __future__ import annotations
 
+import subprocess
 import textwrap
 from pathlib import Path
 
@@ -32,6 +33,7 @@ from lib.cicd.steps import StepDef, get_plan_steps
 def assert_uses_cpp_root_security_command(command: str, gate: str) -> None:
     assert "${HOME}/Projects/codex-power-pack/lib" not in command
     assert 'PYTHONPATH="$CPP_DIR${PYTHONPATH:+:$PYTHONPATH}"' in command
+    assert '"$PYTHON_BIN" -m lib.security gate' in command
     assert f"-m lib.security gate {gate}" in command
     assert 'PYTHON_BIN="$CPP_DIR/.venv/bin/python"' in command
 
@@ -39,7 +41,18 @@ def assert_uses_cpp_root_security_command(command: str, gate: str) -> None:
 def assert_skips_only_when_security_module_is_unavailable(command: str) -> None:
     assert 'PYTHONPATH="$CPP_DIR${PYTHONPATH:+:$PYTHONPATH}"' in command
     assert "! PYTHONPATH=" in command
+    assert '"$PYTHON_BIN" -c \'import lib.security\'' in command
     assert "import lib.security" in command
+
+
+def assert_shell_parses(command: str) -> None:
+    proc = subprocess.run(
+        ["sh", "-n", "-c", command],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0, proc.stderr
 
 
 # -- StepModel validation tests --
@@ -556,12 +569,17 @@ class TestCPPManifest:
             manifest.steps["security_scan"].command,
             "flow_finish",
         )
+        assert_shell_parses(manifest.steps["security_scan"].command)
         assert manifest.steps["security_scan"].skip_if is not None
         assert_skips_only_when_security_module_is_unavailable(
             manifest.steps["security_scan"].skip_if
         )
+        assert_shell_parses(manifest.steps["security_scan"].skip_if)
 
         assert_uses_cpp_root_security_command(
             manifest.steps["deploy_security_scan"].command,
             "flow_deploy",
         )
+        assert_shell_parses(manifest.steps["deploy_security_scan"].command)
+        assert manifest.steps["deploy_security_scan"].skip_if is not None
+        assert_shell_parses(manifest.steps["deploy_security_scan"].skip_if)

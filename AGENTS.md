@@ -23,6 +23,7 @@
 - `templates/` - starter Makefiles and workflow templates
 - `scripts/` - shell helpers
 - `docs/skills/` - focused reference docs
+- `docs/security/` - security threat models and guard designs
 
 ## MCP Server Ports
 
