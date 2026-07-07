@@ -110,7 +110,7 @@ SKIP_FILES = {"package-lock.json", "yarn.lock", "uv.lock", "poetry.lock"}
 # Files that contain patterns/regex for masking/detection (not actual secrets)
 SKIP_PATTERN_FILES = {
     "secrets-mask.sh", "hook-mask-output.sh", "masking.py",
-    "explain.py", "secrets.py",  # the scanner itself and explanation docs
+    "explain.py", "secrets.py", ".gitleaks.toml",  # scanner configs and explanation docs
 }
 
 

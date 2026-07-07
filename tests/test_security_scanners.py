@@ -114,6 +114,13 @@ class TestSecretsScanner:
         result = secrets.scan(str(tmp_project))
         assert len(result.findings) == 0
 
+    def test_skip_gitleaks_config_allowlist_patterns(self, tmp_project: Path) -> None:
+        src = tmp_project / ".gitleaks.toml"
+        aws_key = _join("AKIA", "IOSF", "ODNN", "7EXA", "MPLE")
+        src.write_text(f"regexes = ['{aws_key}']\n")
+        result = secrets.scan(str(tmp_project))
+        assert len(result.findings) == 0
+
     def test_no_source_files(self, tmp_path: Path) -> None:
         result = secrets.scan(str(tmp_path))
         assert len(result.skipped) > 0
