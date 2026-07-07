@@ -1,8 +1,5 @@
 .PHONY: test lint format typecheck verify build update_docs clean help \
-       skills-install-codex skills-doctor \
-       mcp-install-codex mcp-doctor mcp-smoke \
-       docker-build docker-check-env docker-up docker-down docker-logs docker-ps \
-       deploy deploy-check deploy-doctor secret-scan dep-audit
+       skills-install-codex skills-doctor secret-scan dep-audit
 
 ## Quality gates (used by /flow:finish)
 
@@ -21,7 +18,7 @@ typecheck:
 build:
 	uv build
 
-## Pre-deploy gate (runs all quality checks)
+## Verification gate (runs all quality checks)
 
 verify: lint test typecheck
 
@@ -31,9 +28,8 @@ update_docs:
 	@echo "Run /documentation:c4 to regenerate C4 architecture diagrams"
 	@echo "Review AGENTS.md and README.md for accuracy"
 
-## MCP operations
+## Skill operations
 
-CODEX_CONFIG ?= $(HOME)/.codex/config.toml
 CODEX_SKILLS_DIR ?= $(HOME)/.codex/skills
 SKILLS_OVERWRITE ?= 0
 
@@ -43,67 +39,6 @@ skills-install-codex:
 skills-doctor:
 	python3 scripts/skills_install_codex.py --doctor --codex-skills-dir "$(CODEX_SKILLS_DIR)"
 
-mcp-install-codex:
-	python3 scripts/mcp_install_codex.py --codex-config "$(CODEX_CONFIG)"
-
-mcp-doctor:
-	python3 scripts/mcp_doctor.py --codex-config "$(CODEX_CONFIG)" --profiles "$(PROFILE)"
-
-mcp-smoke:
-	python3 scripts/mcp_smoke.py --profiles "$(PROFILE)"
-
-## Docker (MCP server containers)
-## Usage: make docker-up PROFILE=core
-##        make docker-up PROFILE="core browser"
-## Profiles: core (codex-second-opinion + codex-nano-banana), browser, legacy-cicd
-
-PROFILE ?= core
-
-docker-build:
-	$(foreach p,$(PROFILE),docker compose --profile $(p) build;)
-
-docker-check-env:
-	@if [ ! -f .env ]; then \
-		echo ""; \
-		echo "WARNING: .env file not found in $$(pwd)"; \
-		echo "Docker containers will start WITHOUT API keys."; \
-		echo "MCP Second Opinion will report 'no_api_keys' status."; \
-		echo ""; \
-		echo "Create .env with at least one key:"; \
-		echo "  echo 'GEMINI_API_KEY=your-key' > .env"; \
-		echo ""; \
-		echo "Or run /cpp:init to configure interactively."; \
-		echo ""; \
-	elif ! grep -qE '^(GEMINI|OPENAI|ANTHROPIC)_API_KEY=.+' .env 2>/dev/null; then \
-		echo ""; \
-		echo "WARNING: .env exists but contains no API keys."; \
-		echo "Add at least one: GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY"; \
-		echo ""; \
-	fi
-
-docker-up: docker-check-env
-	$(foreach p,$(PROFILE),docker compose --profile $(p) up -d;)
-
-docker-down:
-	docker compose --profile core --profile browser --profile legacy-cicd down
-
-docker-logs:
-	docker compose --profile core --profile browser --profile legacy-cicd logs -f
-
-docker-ps:
-	docker compose --profile core --profile browser --profile legacy-cicd ps
-
-## Deploy (used by Woodpecker CI and /flow:deploy)
-
-deploy: docker-check-env
-	PROFILE="$(PROFILE)" ./scripts/deploy_mcp.sh
-
-deploy-check:
-	PROFILE="$(PROFILE)" ./scripts/deploy_mcp.sh --check
-
-deploy-doctor:
-	python3 scripts/deploy_doctor.py --repo-root "$(CURDIR)"
-
 ## Security scanning
 
 secret-scan:
@@ -112,7 +47,7 @@ secret-scan:
 dep-audit:
 	uv export --format requirements-txt --no-hashes > /tmp/requirements.txt
 	pip-audit -r /tmp/requirements.txt
-	bandit -r codex-second-opinion/src codex-nano-banana/src codex-playwright/src lib/ -ll --quiet --skip B104,B108,B310,B602
+	bandit -r lib scripts -ll --quiet --skip B104,B108,B310,B602
 
 ## Utilities
 
@@ -133,20 +68,4 @@ help:
 	@echo "Skills:"
 	@echo "  make skills-install-codex - Install/update Codex skill links under ~/.codex/skills"
 	@echo "  make skills-doctor        - Validate Codex skill registration drift/missing links"
-	@echo ""
-	@echo "MCP:"
-	@echo "  make mcp-install-codex - Install/update Codex MCP registrations"
-	@echo "  make mcp-doctor        - Validate Codex MCP config and endpoint health"
-	@echo "  make mcp-smoke         - Run MCP initialize smoke tests for active PROFILE"
-	@echo ""
-	@echo "Docker:"
-	@echo "  make docker-up   - Start containers (PROFILE=core)"
-	@echo "  make docker-down - Stop all containers"
-	@echo "  make docker-ps   - Show container status"
-	@echo "  make docker-logs - Tail container logs"
-	@echo ""
-	@echo "Deployment:"
-	@echo "  make deploy       - Run the canonical repo-owned deploy entrypoint"
-	@echo "  make deploy-check - Validate the deploy entrypoint without changing containers"
-	@echo "  make deploy-doctor - Diagnose host/runtime deploy drift"
 	@echo "  make clean       - Remove build artifacts"

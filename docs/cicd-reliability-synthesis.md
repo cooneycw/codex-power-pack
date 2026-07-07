@@ -236,7 +236,7 @@ def poll_readiness(policy: ReadinessPolicy) -> bool:
 
 | Strategy | Use Case | Key Feature |
 |----------|----------|-------------|
-| `DockerComposeStrategy` | CPP's own MCP servers | `--wait` flag, health-based verification |
+| `DockerComposeStrategy` | Target-project container stacks | `--wait` flag, health-based verification |
 | `AWSSSMStrategy` | Remote EC2/Windows deployments | Async polling with `aws ssm get-command-invocation` |
 | `AtomicSymlinkStrategy` | Mutable VM hosts | Release dirs + `ln -sfn` to current |
 

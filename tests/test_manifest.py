@@ -554,12 +554,12 @@ class TestCPPManifest:
         assert "lint" in manifest.steps
         assert "test" in manifest.steps
         assert "security_scan" in manifest.steps
-        assert "deploy" in manifest.steps
+        assert "deploy" not in manifest.steps
 
         # Verify expected plans exist
         assert "finish" in manifest.plans
         assert "check" in manifest.plans
-        assert "deploy" in manifest.plans
+        assert "deploy" not in manifest.plans
 
         # Verify cross-references are valid
         errors = manifest.validate_plan_references()
@@ -575,11 +575,3 @@ class TestCPPManifest:
             manifest.steps["security_scan"].skip_if
         )
         assert_shell_parses(manifest.steps["security_scan"].skip_if)
-
-        assert_uses_cpp_root_security_command(
-            manifest.steps["deploy_security_scan"].command,
-            "flow_deploy",
-        )
-        assert_shell_parses(manifest.steps["deploy_security_scan"].command)
-        assert manifest.steps["deploy_security_scan"].skip_if is not None
-        assert_shell_parses(manifest.steps["deploy_security_scan"].skip_if)

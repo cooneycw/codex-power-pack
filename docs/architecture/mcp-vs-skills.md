@@ -72,22 +72,11 @@ Moving functionality from MCP to Skill (or vice versa):
 | Security scanning | Skill + lib | Runs local Python modules |
 | `/flow:auto` lifecycle | Skill | Composes git + gh + make commands |
 
-## Docker Deployment Patterns
+## Runtime Ownership
 
-CPP uses Docker Compose profiles to manage MCP servers:
-
-| Profile | Services | Use Case |
-|---------|----------|----------|
-| `core` | Second Opinion, Nano-Banana | Essential MCP servers |
-| `browser` | Playwright | Browser automation for testing |
-
-**Secrets:** Use env_file with a root `.env` (gitignored), never hardcode keys in Dockerfiles. For production, use Docker secrets or AWS Secrets Manager.
-
-**Start profiles:**
-```bash
-make docker-up PROFILE=core
-make docker-up PROFILE="core browser"
-```
+This repository does not own MCP server code, Docker Compose profiles, or
+deployment entrypoints. Prefer native MCP packages, externally hosted shared
+servers, or project-local runtime ownership in the consuming repository.
 
 ## Decision Checklist
 
