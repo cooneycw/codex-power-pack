@@ -1,6 +1,6 @@
 # MCP vs Skills: Decision Boundary
 
-When adding new functionality to Claude Power Pack, choose between MCP tools and Skills based on these criteria.
+When adding new functionality to Codex Power Pack, choose between MCP tools and Skills based on these criteria.
 
 ## Decision Tree
 
@@ -22,9 +22,9 @@ Does the feature need real-time external access (APIs, browsers, databases)?
 | **External access** | Yes (APIs, filesystem, network) | No (prompt-only) |
 | **Latency** | Fast (direct function call) | None (injected into prompt) |
 | **State** | Can maintain state (sessions, caches) | Stateless |
-| **Deployment** | Server process (stdio/SSE/Docker) | Markdown file in `.claude/skills/` |
+| **Deployment** | Server process (stdio/SSE/Docker) | Markdown file in `.codex/skills/` |
 | **Complexity** | Python code, dependencies, tests | Markdown with instructions |
-| **Discoverability** | Auto-listed by Claude Code | Triggered by keywords |
+| **Discoverability** | Auto-listed by Codex | Triggered by keywords |
 
 ## When to Use MCP
 
@@ -35,7 +35,7 @@ Does the feature need real-time external access (APIs, browsers, databases)?
 
 ## When to Use Skills
 
-- Teaching Claude a workflow (e.g., `/flow:auto`, `/spec:sync`)
+- Teaching Codex a workflow (e.g., `/flow:auto`, `/spec:sync`)
 - Loading reference documentation on demand
 - Domain-specific prompting (e.g., evaluation domain types)
 - Procedures that compose existing tools
@@ -45,10 +45,10 @@ Does the feature need real-time external access (APIs, browsers, databases)?
 
 | Category | Budget | Rationale |
 |----------|--------|-----------|
-| MCP server (always loaded) | <10K tokens | Per MCP_TOKEN_AUDIT_CHECKLIST |
+| MCP server (always loaded) | <10K tokens | Per `docs/skills/mcp-token-audit-checklist.md` |
 | Per-tool description | <200 chars | Minimize idle overhead |
 | Skill (on demand) | <5K tokens | Only loaded when triggered |
-| CLAUDE.md | <30K tokens | Always in context |
+| AGENTS.md | <30K tokens | Always in context |
 
 ## Migration Checklist
 
@@ -58,7 +58,7 @@ Moving functionality from MCP to Skill (or vice versa):
 2. Measure current token overhead (`/context`)
 3. If converting MCP -> Skill: extract procedure into markdown, remove tool
 4. If converting Skill -> MCP: implement as FastMCP tool, add to server
-5. Update CLAUDE.md references
+5. Update AGENTS.md references
 6. Verify no functionality lost
 
 ## Examples

@@ -19,7 +19,7 @@
 - `codex-playwright/` - browser automation server
 - `codex-nano-banana/` - diagram and PowerPoint server
 - `codex-woodpecker/` - Woodpecker CI server
-- `lib/` - reusable Python libraries for creds, security, CI/CD, and spec sync
+- `lib/` - reusable Python libraries for creds, security, and CI/CD
 - `templates/` - starter Makefiles and workflow templates
 - `scripts/` - shell helpers
 - `docs/skills/` - focused reference docs

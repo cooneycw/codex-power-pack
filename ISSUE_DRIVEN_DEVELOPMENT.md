@@ -710,8 +710,8 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
 
 ## Related Documentation
 
-- [Codex Best Practices](CLAUDE_CODE_BEST_PRACTICES_COMPREHENSIVE.md)
-- [Progressive Disclosure Guide](PROGRESSIVE_DISCLOSURE_GUIDE.md)
+- [Codex Best Practices](docs/reference/CLAUDE_CODE_BEST_PRACTICES_FULL.md)
+- [Progressive Disclosure Guide](docs/skills/progressive-disclosure-guide.md)
 - [Git Worktree Official Docs](https://git-scm.com/docs/git-worktree)
 - [GitHub CLI Reference](https://cli.github.com/manual/)
 

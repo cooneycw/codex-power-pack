@@ -2,8 +2,7 @@
 
 ## Why This Matters
 
-Claude models have finite context windows:
-- Claude Sonnet 4.5: 200K tokens
+LLM sessions have finite context windows:
 - Each MCP tool definition: 500-2000 tokens
 - GitHub MCP alone: ~30K-50K tokens
 - A typical 5-server MCP setup: ~55K tokens BEFORE any conversation

@@ -1,5 +1,19 @@
 # Changelog
 
+## [Unreleased]
+
+### Removed
+
+- Retired the legacy `lib/spec_bridge/` package and its dedicated tests; spec-kit remains the authoring path.
+- Deleted legacy root artifacts: `scrape_reddit.py`, `fetch_reddit_posts.py`, `INSTALLATION_ISSUES.md`, and `CLAUDE.md`.
+- Removed the obsolete architecture transformation PDF from `docs/`.
+
+### Moved
+
+- Moved MCP token audit and progressive disclosure references under `docs/skills/`.
+
+---
+
 ## [5.2.0] - 2026-03-08
 
 ### Added - C4 Diagram QA Framework

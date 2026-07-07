@@ -108,8 +108,8 @@ This is how Anthropic's Skills system works internally.
 
 ## Related Resources
 
-- `PROGRESSIVE_DISCLOSURE_GUIDE.md` - Comprehensive architecture guidance
-- `MCP_TOKEN_AUDIT_CHECKLIST.md` - Step-by-step token audit
+- `progressive-disclosure-guide.md` - Comprehensive architecture guidance
+- `mcp-token-audit-checklist.md` - Step-by-step token audit
 
 ---
 

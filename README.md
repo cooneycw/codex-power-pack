@@ -14,7 +14,7 @@ management, templates, and tests for Codex-centric workflows.
 - `codex-playwright/` - browser automation server
 - `codex-nano-banana/` - diagram and PowerPoint generation server
 - `codex-woodpecker/` - Woodpecker CI monitoring and control server
-- `lib/creds/`, `lib/security/`, `lib/cicd/`, `lib/spec_bridge/` - reusable Python libraries
+- `lib/creds/`, `lib/security/`, `lib/cicd/` - reusable Python libraries
 - `templates/`, `scripts/`, `docs/skills/`, `tests/` - supporting workflow assets
 - `docs/security/threat-model.md` - Phase 0 guard design for plugin marketplace modernization
 

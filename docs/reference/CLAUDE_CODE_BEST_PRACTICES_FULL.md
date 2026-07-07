@@ -405,7 +405,7 @@ This is how Anthropic's Skills system works internally.
 - 8,551 tokens saved per session
 - Same functionality maintained
 
-**See also:** `PROGRESSIVE_DISCLOSURE_GUIDE.md` for comprehensive architecture guidance
+**See also:** `../skills/progressive-disclosure-guide.md` for comprehensive architecture guidance
 
 ---
 
