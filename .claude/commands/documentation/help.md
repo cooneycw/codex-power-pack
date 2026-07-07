@@ -4,7 +4,7 @@ description: Overview of documentation and diagram commands
 
 # Documentation & Diagram Commands
 
-Generate architecture documentation and professional presentations using the Nano-Banana MCP server.
+Generate architecture documentation and professional presentations using configured diagram and presentation tools.
 
 ## Commands
 
@@ -14,22 +14,13 @@ Generate architecture documentation and professional presentations using the Nan
 | `/documentation:pptx` | Create PowerPoint presentations with optional diagrams |
 | `/documentation:help` | This help overview |
 
-## MCP Server: Nano-Banana
+## Diagram Tooling
 
-The Nano-Banana MCP server (`codex-nano-banana/`, port 9102) provides diagram generation and PPTX creation tools.
+This repo no longer ships a diagram MCP runtime. Use native harness tooling,
+external MCP servers, or project-local diagram generators when these commands
+need rendered assets.
 
-### Setup
-
-```bash
-# stdio (recommended)
-claude mcp add nano-banana --transport stdio -- uv run --directory ~/Projects/codex-power-pack/codex-nano-banana python src/server.py --stdio
-
-# SSE
-cd ~/Projects/codex-power-pack/codex-nano-banana && ./start-server.sh
-claude mcp add nano-banana --transport sse --url http://127.0.0.1:9102/sse
-```
-
-### Available MCP Tools
+### Typical Tool Capabilities
 
 | Tool | Purpose |
 |------|---------|
@@ -71,5 +62,4 @@ Add an `update_docs` target to your Makefile to run C4 diagram generation and do
 
 ### Related
 
-- `/load-mcp-docs` - Load all MCP server documentation
-- MCP Playwright - Browser automation for screenshots
+- MCP Playwright or browser automation can capture screenshots when configured externally.

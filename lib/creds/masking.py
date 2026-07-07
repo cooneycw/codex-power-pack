@@ -18,7 +18,7 @@ Usage:
     safe = masker.mask(some_output)
 
 Pattern sources:
-    codex-second-opinion/src/prompts.py:7-30
+    Shared secret-masking rules from the original Power Pack runtime.
 """
 
 from __future__ import annotations

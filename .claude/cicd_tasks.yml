@@ -43,20 +43,6 @@ steps:
     timeout: 120
     skip_if: "! python3 -c 'import lib.security' 2>/dev/null"
 
-  deploy_security_scan:
-    command: >-
-      PYTHONPATH="${HOME}/Projects/codex-power-pack/lib"
-      python3 -m lib.security gate flow_deploy
-    description: Run security scan before deploy
-    timeout: 120
-    skip_if: "! python3 -c 'import lib.security' 2>/dev/null"
-
-  deploy:
-    command: make deploy
-    description: Run deployment
-    timeout: 1800
-    idempotent: false
-
 plans:
   finish:
     description: Quality gates for /flow:finish
@@ -70,9 +56,3 @@ plans:
     steps:
       - lint
       - test
-
-  deploy:
-    description: Deployment pipeline for /flow:deploy
-    steps:
-      - deploy_security_scan
-      - deploy

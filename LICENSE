@@ -27,7 +27,6 @@ SOFTWARE.
 This license applies to:
 - All scripts in the `scripts/` directory
 - All commands in the `.claude/commands/` directory
-- The MCP Second Opinion server code in `mcp-second-opinion/`
 - Configuration files and templates
 
 ## Community Content
@@ -40,7 +39,6 @@ purposes with attribution to the community contributors.
 ## Third-Party Services
 
 This repository includes tools that integrate with third-party services:
-- Google Gemini API (subject to Google AI Terms of Service)
 - OpenAI API (subject to OpenAI Terms of Use)
 - GitHub API (subject to GitHub Terms of Service)
 - Claude Code (subject to Anthropic Commercial Terms of Service)

@@ -3,7 +3,7 @@
 ## Core Directives
 
 - Never print secrets, tokens, passwords, connection strings, or raw `.env` contents.
-- Use `make` targets as the canonical interface for lint, test, verify, deploy, and Docker operations.
+- Use `make` targets as the canonical interface for lint, test, verify, and audit operations.
 - Use `.codex/` assets as the canonical workflow surface.
 - Read topic-specific docs from `docs/skills/` only when they are relevant.
 - After code changes, run `make verify` unless the environment blocks it.
@@ -15,29 +15,17 @@
 - `.codex/skills/` - Codex skill packages backing slash-style command workflows
 - `.codex/cicd.yml` - CI/CD config
 - `.codex/cicd_tasks.yml` - deterministic CI/CD task manifest
-- `codex-second-opinion/` - external review server
-- `codex-playwright/` - browser automation server
-- `codex-nano-banana/` - diagram and PowerPoint server
-- `codex-woodpecker/` - Woodpecker CI server
 - `lib/` - reusable Python libraries for creds, security, and CI/CD
 - `templates/` - starter Makefiles and workflow templates
 - `scripts/` - shell helpers
 - `docs/skills/` - focused reference docs
 - `docs/security/` - security threat models and guard designs
 
-## MCP Server Ports
+## Runtime Boundary
 
-All MCP servers bind to the `9100-9199` range to avoid conflicts with application ports (8000-8100).
-
-| Service | Port | Profile |
-|---------|------|---------|
-| `codex-second-opinion` | 9100 | core |
-| `codex-playwright` | 9101 | browser |
-| `codex-nano-banana` | 9102 | core |
-| `codex-woodpecker` | 9103 | cicd |
-
-Defaults are set in each service's `src/config.py` and can be overridden via `MCP_SERVER_PORT` env var.
-For Docker Compose, the Woodpecker container is intentionally legacy-only under profile `legacy-cicd`; primary usage is stdio.
+Codex Power Pack no longer owns MCP server code, Docker Compose runtime, or
+deployment entrypoints. Use external MCP servers and native Codex plugins for
+tool integrations.
 
 ## Conventions
 
@@ -45,9 +33,6 @@ For Docker Compose, the Woodpecker container is intentionally legacy-only under 
 - `uv` for dependency management
 - `make lint`, `make test`, `make typecheck`, `make verify` for quality gates
 - `make skills-install-codex`, `make skills-doctor` for Codex skill registration
-- `make mcp-install-codex`, `make mcp-doctor`, `make mcp-smoke` for MCP setup/validation
-- `make deploy-check`, `make deploy-doctor` to validate repo-owned deploy paths and host drift
-- Docker entrypoints go through `make docker-*`
 - prefer `rg` for repo search
 
 ## Notes
@@ -61,4 +46,3 @@ For Docker Compose, the Woodpecker container is intentionally legacy-only under 
 - Project slash trigger parity is mapped in `docs/skills/project-command-skill-map.md`.
 - Spec slash trigger parity is mapped in `docs/skills/spec-command-skill-map.md`.
 - AGENTS.md governance trigger parity is mapped in `docs/skills/agents-md-command-skill-map.md`.
-- Deploy runtime boundary guidance lives in `docs/deploy-runtime-boundary.md`.

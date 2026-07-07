@@ -1,8 +1,8 @@
 # Codex Power Pack
 
 Codex Power Pack is a Codex-first automation toolkit.
-It preserves the reusable MCP servers, CI/CD helpers, security tooling, secrets
-management, templates, and tests for Codex-centric workflows.
+It preserves CI/CD helpers, security tooling, secrets management, templates,
+prompt surfaces, skills, and tests for Codex-centric workflows.
 
 ## What Is Included
 
@@ -10,10 +10,6 @@ management, templates, and tests for Codex-centric workflows.
 - `.codex/skills/` - Codex skill packages that back slash-style trigger workflows
 - `.codex/cicd.yml` and `.codex/cicd_tasks.yml` - Codex-local CI/CD manifests
 - `AGENTS.md` - the canonical repo instructions for Codex
-- `codex-second-opinion/` - external LLM code review server
-- `codex-playwright/` - browser automation server
-- `codex-nano-banana/` - diagram and PowerPoint generation server
-- `codex-woodpecker/` - Woodpecker CI monitoring and control server
 - `lib/creds/`, `lib/security/`, `lib/cicd/` - reusable Python libraries
 - `templates/`, `scripts/`, `docs/skills/`, `tests/` - supporting workflow assets
 - `docs/security/threat-model.md` - Phase 0 guard design for plugin marketplace modernization
@@ -26,8 +22,6 @@ cd codex-power-pack
 uv sync --extra dev
 make skills-install-codex
 make verify
-make docker-up PROFILE=core
-make mcp-smoke PROFILE=core
 ```
 
 Confirm skill registration health:
@@ -36,52 +30,11 @@ Confirm skill registration health:
 make skills-doctor
 ```
 
-The default Docker profile starts:
+## Runtime Boundary
 
-- `codex-second-opinion` on `127.0.0.1:9100`
-- `codex-nano-banana` on `127.0.0.1:9102`
-
-Add the browser profile for Playwright:
-
-```bash
-make docker-up PROFILE="core browser"
-```
-
-## Codex MCP Setup
-
-Install deterministic Codex MCP registrations from this repository path:
-
-```bash
-make mcp-install-codex
-```
-
-Validate local config drift and live endpoint health:
-
-```bash
-make mcp-doctor PROFILE="core browser cicd"
-```
-
-Validate the production deploy path before changing containers:
-
-```bash
-make deploy-check PROFILE="core browser"
-make deploy-doctor
-```
-
-`mcp-install-codex` automatically replaces legacy Woodpecker entries such as
-`voice-bot-acs/codex-power-pack/mcp-woodpecker-ci` with repo-local paths.
-
-Canonical transport matrix:
-
-| Server | Profile | Canonical endpoint | Alternate transport |
-|--------|---------|--------------------|---------------------|
-| `codex-second-opinion` | `core` | `http://127.0.0.1:9100/sse` | `uv run --directory .../codex-second-opinion python src/server.py --stdio` |
-| `codex-playwright` | `browser` | `http://127.0.0.1:9101/sse` | `uv run --directory .../codex-playwright python src/server.py --stdio` |
-| `codex-nano-banana` | `core` | `http://127.0.0.1:9102/sse` | `uv run --directory .../codex-nano-banana python src/server.py --stdio` |
-| `codex-woodpecker` | `cicd` | `http://127.0.0.1:9103/sse` | `uv run --directory .../codex-woodpecker python src/server.py --stdio` |
-
-The Woodpecker Docker container remains available only as a legacy profile:
-`make docker-up PROFILE=legacy-cicd`. Primary usage is stdio transport.
+This repo does not own MCP server code, Docker Compose runtime, or deployment
+entrypoints. Configure external MCP servers and native Codex plugins outside
+this checkout.
 
 ## Codex Architecture
 
@@ -121,10 +74,8 @@ The `/cicd:*` namespace is available through:
 - `.codex/skills/cicd-*/` - backing Codex skill packages
 - `docs/skills/cicd-command-skill-map.md` - trigger-to-skill inventory
 
-Deploy pipelines are expected to declare an explicit AWS Secrets Manager path in
-`.codex/cicd.yml` via `pipeline.aws_secrets`. Generated Woodpecker deploy steps
-now assume AWS-backed secret resolution instead of raw `.env` or ad hoc secret
-injection for shared runtime and deploy-time values.
+Pipeline generation can still create deploy stages for target projects, but this
+repository's own CI is validation-only.
 
 ## Flow Trigger Parity
 
@@ -212,19 +163,9 @@ The plugin marketplace modernization wave is gated by
 `docs/security/threat-model.md`. Epics C, D, and E must not merge implementation
 PRs until the owner records sign-off on issue #69.
 
-## Deploy Integrity
-
-MCP deploys are expected to run from the repo checkout, not from long-lived helper
-scripts under `/usr/local/bin`.
-
-- Canonical deploy entrypoint: `make deploy PROFILE="core browser"`
-- Canonical implementation: `scripts/deploy_mcp.sh`
-- Host drift diagnostics: `make deploy-doctor`
-- Runtime boundary documentation: `docs/deploy-runtime-boundary.md`
-
 ## Status
 
 This repo is a first-pass Codex replication, not a full semantic rewrite of
 every historical document. The core code paths, manifests, prompts, and top-level
-instructions are adapted for Codex use; legacy docs remain as reference material
-where they do not control runtime behavior.
+instructions are adapted for Codex use. Runtime MCP servers and compose/deploy
+entrypoints are intentionally external to this repository.

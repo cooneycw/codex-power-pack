@@ -22,7 +22,7 @@ Create a new project from zero to pushed GitHub repo in one command.
   Step 1: Validate & create ~/Projects/my-awesome-app
   Step 2: Select framework, generate scaffold
   Step 3: Initialize git, push to GitHub
-  Step 4: Run /cicd:init, /cpp:init, /spec:init
+  Step 4: Run /cicd:init and /spec:init
   Step 5: Initial spec (mandatory) + sync
   Step 6: Summary
 ```
@@ -53,7 +53,7 @@ If the directory already exists, check what steps have been completed and resume
 - Has `pyproject.toml` / `package.json` / `go.mod` / `Cargo.toml`? → Step 2 done.
 - Has `.git/`? → Step 3 partially done. Check if GitHub remote exists.
 - Has `Makefile` + `.codex/cicd.yml`? → cicd:init done.
-- Has `.codex/commands` symlink? → cpp:init done.
+- Has `.codex/skills` populated? -> skills installed.
 - Has `.specify/`? → spec:init done.
 
 If the directory doesn't exist:
@@ -687,4 +687,4 @@ Key failure scenarios:
 - Each step checks for prior completion before executing
 - The scaffold is minimal - just enough to start coding
 - Framework detection from `lib/cicd` is reused for Makefile generation
-- Sub-commands (cicd:init, cpp:init, spec:init) are executed inline, not via `/skill`
+- Sub-commands (cicd:init, spec:init) are executed inline, not via `/skill`

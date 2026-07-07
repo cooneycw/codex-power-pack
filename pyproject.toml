@@ -9,11 +9,10 @@ dev = ["mypy>=1.10", "pydantic>=2.0", "pytest>=8.0", "pyyaml>=6.0", "ruff>=0.4",
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = [".", "codex-nano-banana/src"]
+pythonpath = ["."]
 
 [tool.mypy]
 python_version = "3.11"
-exclude = ["codex-second-opinion", "codex-playwright", "codex-nano-banana", "mcp-evaluate", "mcp-coordination"]
 ignore_missing_imports = true
 explicit_package_bases = true
 mypy_path = "."

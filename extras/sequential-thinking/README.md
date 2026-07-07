@@ -28,12 +28,6 @@ The Sequential Thinking MCP server provides a `sequentialthinking` tool that Cla
 
 ## Installation
 
-### Via /cpp:init (Recommended)
-
-Run `/cpp:init` and select the Sequential Thinking extra when prompted.
-
-### Manual
-
 ```bash
 claude mcp add --transport stdio --scope user sequential-thinking -- npx -y @modelcontextprotocol/server-sequential-thinking
 ```

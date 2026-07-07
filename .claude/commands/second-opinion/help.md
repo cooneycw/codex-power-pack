@@ -59,16 +59,11 @@ You can also invoke the MCP tools directly without commands:
 
 **Error `-32602: Invalid request parameters`** usually means the server isn't running, not that parameters are wrong.
 
-**Fix:** Switch from SSE to stdio transport (auto-starts the server):
+**Fix:** Point Claude at an externally managed second-opinion MCP server:
 
 ```bash
 claude mcp remove second-opinion
-claude mcp add second-opinion --transport stdio -- uv run --directory /path/to/codex-power-pack/codex-second-opinion python src/server.py --stdio
+claude mcp add second-opinion --transport sse --url http://127.0.0.1:9100/sse
 ```
 
-**Diagnose configuration:**
-
-```bash
-cd /path/to/codex-power-pack/codex-second-opinion
-./start-server.sh --diagnose
-```
+Then use your external server's health or diagnostic command.
