@@ -1,5 +1,4 @@
-.PHONY: test lint format typecheck verify build update_docs clean help \
-       skills-install-codex skills-doctor secret-scan dep-audit
+.PHONY: test lint format typecheck verify build update_docs clean help secret-scan dep-audit
 
 ## Quality gates (used by /flow:finish)
 
@@ -28,17 +27,6 @@ update_docs:
 	@echo "Run /documentation:c4 to regenerate C4 architecture diagrams"
 	@echo "Review AGENTS.md and README.md for accuracy"
 
-## Skill operations
-
-CODEX_SKILLS_DIR ?= $(HOME)/.codex/skills
-SKILLS_OVERWRITE ?= 0
-
-skills-install-codex:
-	python3 scripts/skills_install_codex.py --codex-skills-dir "$(CODEX_SKILLS_DIR)" $(if $(filter 1,$(SKILLS_OVERWRITE)),--overwrite,)
-
-skills-doctor:
-	python3 scripts/skills_install_codex.py --doctor --codex-skills-dir "$(CODEX_SKILLS_DIR)"
-
 ## Security scanning
 
 secret-scan:
@@ -65,7 +53,4 @@ help:
 	@echo "  make build       - Build distribution packages"
 	@echo "  make verify      - Run all quality checks"
 	@echo ""
-	@echo "Skills:"
-	@echo "  make skills-install-codex - Install/update Codex skill links under ~/.codex/skills"
-	@echo "  make skills-doctor        - Validate Codex skill registration drift/missing links"
 	@echo "  make clean       - Remove build artifacts"

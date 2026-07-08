@@ -32,7 +32,8 @@ tool integrations.
 - Python 3.11+
 - `uv` for dependency management
 - `make lint`, `make test`, `make typecheck`, `make verify` for quality gates
-- `make skills-install-codex`, `make skills-doctor` for Codex skill registration
+- Native Codex plugins are the supported distribution path; use the thin
+  `cxpp:init` fallback for checkout-based project bootstrapping.
 - prefer `rg` for repo search
 
 ## Notes
