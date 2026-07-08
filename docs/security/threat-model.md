@@ -105,11 +105,58 @@ Non-goals:
 - Pattern masking is not complete. Exact-value registration is required for
   values fetched from AWS Secrets Manager or other providers.
 
-Open follow-up for issue #70:
+## Issue #70 Spike: Borrow vs Build Secret-Leak Guardrails
 
-- Evaluate whether an external real-time secret guard should replace or wrap
-  this masking layer. Until that decision is recorded, this repo continues with
-  the built-in deterministic masker plus gitleaks-style scanning.
+Decision: **partial-adopt external scanners, build the Codex session masking
+guard locally.** External tools are useful as detector layers before commit and
+for optional runtime policy checks, but neither tested AgentGuard path replaces
+the exact-value masking and AWS Secrets Manager output controls required for the
+D6 secrets family.
+
+Evaluation protocol:
+
+- Seeded a temporary repository with representative fake AWS access key ID, AWS
+  secret access key, AWS session token, GitHub PAT, Anthropic/OpenAI-style keys,
+  a generic API key assignment, the non-secret Secrets Manager bundle id
+  `codex-power-pack/codex-power-pack`, and benign SHA/integrity/example-contact
+  fixtures.
+- Ran reproducible pinned candidates from package/release metadata where
+  available.
+- Checked whether findings were redacted and whether benign fixtures produced
+  obvious false positives.
+
+Candidate results:
+
+| Candidate | Install path tested | Result |
+| --- | --- | --- |
+| SecretGuard (`secretguard` npm package, chintanshah35/secretguard) | `npx --yes secretguard@1.0.0 . --json` | Detected the seeded AWS access key ID, AWS secret access key, GitHub PAT, Anthropic/OpenAI-style key strings via generic API-key rules, and generic API key assignment. It also supported `--history`, SARIF, JSON output, and `install-hook`, which created a pre-commit hook running `npx secretguard --staged .`. No findings appeared for the benign SHA, lockfile-integrity string, or example contact fixture. It did **not** flag the seeded AWS session token. |
+| GoPlus AgentGuard (`@goplus/agentguard` npm package) | `npx --yes @goplus/agentguard@1.1.28 protect --agent codex ... --json` | Blocked synthetic destructive shell and `.env` exfiltration actions; required approval for `cat ~/.aws/credentials`; allowed a normal AWS Secrets Manager read command and an inline AWS secret-bearing command. Its `scan` command returned clean on the seeded source tree and a synthetic malicious `SKILL.md`, so this path is not a replacement source scanner for D6. |
+| NikeGunn AgentGuard sidecar | GitHub release `v1.2.2`, Linux amd64 tarball SHA-256 `fab9979cc04828e3c068e8d3a1a61d53c8ac4ed8a4431baa1cc0b64ad2f2938e` | Promising MCP-frame sidecar with Codex config auto-wiring and signed release assets, but the quick local `wrap` smoke with synthetic JSON-RPC frames did not produce an enforceable block or recorded tail event. Treat as a future MCP-runtime hardening candidate, not the D6 secret-output control. |
+
+AWS Secrets Manager conclusions:
+
+- Pattern scanners catch common static AWS key material, but coverage is
+  incomplete for session tokens and for secrets resolved dynamically from AWS
+  Secrets Manager.
+- Secrets Manager bundle identifiers such as
+  `codex-power-pack/codex-power-pack` are configuration metadata, not secret
+  values, and should not be treated as leaks by themselves.
+- Runtime command guards can catch broad protected-path access such as
+  `~/.aws/credentials`, but they do not prove that resolved secret values are
+  masked before Codex sees command output.
+
+D6 implementation guidance:
+
+1. Keep `lib.creds.masking.OutputMasker` and exact-value registration as the
+   authoritative Codex-session control.
+2. Add D6 tests that round-trip dummy AWS Secrets Manager values and assert the
+   plaintext never appears in tool output, logs, summaries, or local history.
+3. Optionally document `npx --yes secretguard@1.0.0 . --json` and
+   `npx --yes secretguard@1.0.0 . --history --json` as pinned local/CI detector
+   layers, but do not make D6 depend on an unpinned or similarly named
+   SecretGuard repository.
+4. Revisit AgentGuard only for MCP/runtime hardening after the core secrets
+   family masks exact values deterministically.
 
 ## Plugin Supply Chain
 
