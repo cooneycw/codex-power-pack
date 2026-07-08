@@ -20,15 +20,12 @@ prompt surfaces, skills, and tests for Codex-centric workflows.
 git clone https://github.com/cooneycw/codex-power-pack.git
 cd codex-power-pack
 uv sync --extra dev
-make skills-install-codex
 make verify
 ```
 
-Confirm skill registration health:
-
-```bash
-make skills-doctor
-```
+Distribution is handled by native Codex plugins. For project bootstrapping from
+the plugin, use the thin `cxpp:init` fallback rather than copying skills out of
+this checkout.
 
 ## Runtime Boundary
 
@@ -44,23 +41,11 @@ this checkout.
 - Runtime config targets `.codex/` paths
 - Secrets storage uses `~/.config/codex-power-pack/`
 
-## Workspace-Wide Skill Discovery
+## Distribution
 
-Codex command discovery is driven by installed skill packages under
-`~/.codex/skills`, not by walking parent `.claude/commands` symlinks.
-
-Use the deterministic installer to register this repository's skills globally:
-
-```bash
-make skills-install-codex
-make skills-doctor
-```
-
-If `skills-doctor` reports drift, replace conflicting registrations:
-
-```bash
-make skills-install-codex SKILLS_OVERWRITE=1
-```
+Codex command discovery is delivered through native Codex plugins. This
+repository keeps source prompts, skills, docs, and tests, but it does not install
+or link global skill packages from this checkout.
 
 The `/project:*` namespace in this repository currently includes:
 - `/project:help`
