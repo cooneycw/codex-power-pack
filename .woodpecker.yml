@@ -17,6 +17,9 @@ steps:
       # Drift gate: .codex/skills/ must match the pinned claude-power-pack copy
       # (codex-power-pack#75). Git-free, so it runs in this container.
       - uv run python scripts/codex_skills_sync.py --check
+      # Harness gate: generated/authored skills must not carry unadapted
+      # Claude-only constructs into Codex.
+      - uv run python scripts/harness_lint.py --check
 
   secret-scan:
     image: zricethezav/gitleaks:v8.18.4
