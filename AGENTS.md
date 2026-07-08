@@ -17,6 +17,8 @@
 - `.codex/cicd_tasks.yml` - deterministic CI/CD task manifest
 - `lib/` - reusable Python libraries for creds, security, and CI/CD
 - `templates/` - starter Makefiles and workflow templates
+- `templates/config.toml.example` - Codex MCP pointers for host-managed services
+- `docs/HOST_MANAGED.md` - host-owned MCP service inventory and health checks
 - `scripts/` - shell helpers
 - `docs/skills/` - focused reference docs
 - `docs/security/` - security threat models and guard designs
@@ -25,7 +27,7 @@
 
 Codex Power Pack no longer owns MCP server code, Docker Compose runtime, or
 deployment entrypoints. Use external MCP servers and native Codex plugins for
-tool integrations.
+tool integrations, with client-side pointers documented in `docs/HOST_MANAGED.md`.
 
 ## Conventions
 

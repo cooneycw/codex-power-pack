@@ -341,7 +341,7 @@ Report: `Step 3/6: Git initialized, pushed to github.com/{user}/{PROJECT_NAME}`
 
 ---
 
-## Step 4: CPP Setup (Orchestrate Sub-Commands)
+## Step 4: CxPP Setup (Orchestrate Sub-Commands)
 
 Run each sub-command in sequence. These are orchestrated directly - NOT by invoking `/skill` (which would require user interaction for each one). Instead, execute the same logic as each command but non-interactively with sensible defaults.
 
@@ -381,7 +381,7 @@ print(content)
 fi
 ```
 
-### 4b: CPP Init (symlinks)
+### 4b: CxPP Init (symlinks)
 
 ```bash
 if [ -n "$CPP_DIR" ]; then
@@ -407,7 +407,32 @@ if [ -n "$CPP_DIR" ]; then
 fi
 ```
 
-### 4c: Generate AGENTS.md
+### 4c: Future `cxpp:init` Host-Managed MCP Pointers
+
+Story C4 consumes this scope for the thin `cxpp:init/update/status` fallback.
+Until that command exists, use this as the target behavior:
+
+```bash
+if [ -n "$CPP_DIR" ]; then
+    mkdir -p .codex
+
+    # Record pointer examples for host-managed MCP services.
+    # Do not write global Codex config without explicit confirmation.
+    if [ -f "$CPP_DIR/templates/config.toml.example" ] && [ ! -f ".codex/config.toml.example" ]; then
+        cp "$CPP_DIR/templates/config.toml.example" .codex/config.toml.example
+        echo "Copied host-managed MCP pointer template to .codex/config.toml.example"
+    fi
+
+    echo "MCP pointers are documented in docs/HOST_MANAGED.md."
+    echo "CxPP does not start, stop, or deploy MCP servers."
+fi
+```
+
+The fallback may configure Codex-facing pointers for the shared
+`mcp-second-opinion` server and native `@playwright/mcp`. It does not start,
+stop, restart, update, or deploy either service.
+
+### 4d: Generate AGENTS.md
 
 If no AGENTS.md exists yet, generate one with CI/CD governance directives:
 
@@ -647,7 +672,7 @@ Project created: {PROJECT_NAME}
   GitHub:     github.com/{user}/{PROJECT_NAME} (private)
   Framework:  {Framework} ({PackageManager})
   Makefile:   lint, test, build, deploy, clean, verify
-  CPP:        Commands + Skills + Hooks
+  CxPP:       Commands + Skills + Hooks + MCP pointer template
   Spec:       .specify/ initialized
 
 Next steps:

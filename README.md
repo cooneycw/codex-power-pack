@@ -12,6 +12,8 @@ prompt surfaces, skills, and tests for Codex-centric workflows.
 - `AGENTS.md` - the canonical repo instructions for Codex
 - `lib/creds/`, `lib/security/`, `lib/cicd/` - reusable Python libraries
 - `templates/`, `scripts/`, `docs/skills/`, `tests/` - supporting workflow assets
+- `templates/config.toml.example` and `docs/HOST_MANAGED.md` - client-side
+  pointers for externally managed MCP services
 - `docs/security/threat-model.md` - Phase 0 guard design for plugin marketplace modernization
 
 ## Quick Start
@@ -27,18 +29,31 @@ Distribution is handled by native Codex plugins. For project bootstrapping from
 the plugin, use the thin `cxpp:init` fallback rather than copying skills out of
 this checkout.
 
+For host-managed MCP tools, merge `templates/config.toml.example` into your
+Codex config or run:
+
+```bash
+codex mcp add second-opinion --url http://127.0.0.1:8080/mcp
+codex mcp add playwright -- npx -y @playwright/mcp@latest
+```
+
+`mcp-second-opinion` is an external host service; this repo only documents the
+pointer. See `docs/HOST_MANAGED.md` for owners and health checks.
+
 ## Runtime Boundary
 
 This repo does not own MCP server code, Docker Compose runtime, or deployment
 entrypoints. Configure external MCP servers and native Codex plugins outside
-this checkout.
+this checkout. The checked-in MCP config is a pointer template, not lifecycle
+management.
 
 ## Codex Architecture
 
 - Codex instructions live in `AGENTS.md`
 - Prompt entrypoints live in `.codex/prompts/`
 - Skill packages live in `.codex/skills/`
-- Runtime config targets `.codex/` paths
+- Runtime config targets `.codex/` paths and host-managed pointers in
+  `templates/config.toml.example`
 - Secrets storage uses `~/.config/codex-power-pack/`
 
 ## Distribution

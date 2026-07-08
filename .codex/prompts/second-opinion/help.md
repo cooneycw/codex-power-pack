@@ -54,7 +54,10 @@ You can also invoke the MCP tools directly without commands:
 
 ## Requirements
 
-- MCP Second Opinion server configured (stdio recommended, or SSE on port 9100)
+- Host-managed MCP Second Opinion server configured via Codex streamable HTTP
+  at `http://127.0.0.1:8080/mcp`
+- Browser automation uses native `@playwright/mcp`, not a server wrapper from
+  this repo
 - At least one API key configured (GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY)
 - All three recommended for cross-provider comparison
 
@@ -66,7 +69,14 @@ You can also invoke the MCP tools directly without commands:
 
 ```bash
 codex mcp remove second-opinion
-codex mcp add second-opinion --transport sse --url http://127.0.0.1:9100/sse
+codex mcp add second-opinion --url http://127.0.0.1:8080/mcp
 ```
 
-Then use your external server's health or diagnostic command.
+For browser automation, register the native Playwright MCP package:
+
+```bash
+codex mcp add playwright -- npx -y @playwright/mcp@latest
+```
+
+Then start a fresh Codex session and use the external server's health or
+diagnostic command. Codex Power Pack does not start or manage either server.

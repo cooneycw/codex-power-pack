@@ -26,7 +26,7 @@ One-command project setup that orchestrates:
 1. Creates `~/Projects/<name>` with framework scaffold (Python/Node/Go/Rust)
 2. Initializes git and pushes to a new GitHub repo
 3. Generates Makefile from detected framework (`lib/cicd`)
-4. Installs CPP commands, skills, and hooks (symlinks)
+4. Installs CxPP commands, skills, hooks, and MCP pointer templates
 5. Initializes `.specify/` for spec-driven development
 6. Optionally creates an initial feature spec
 
@@ -39,6 +39,8 @@ One-command project setup that orchestrates:
 - Idempotent - safe to re-run if interrupted (completed steps are skipped)
 - Framework-specific scaffolds with best-practice project structure
 - Integrates with `/flow`, `/spec`, `/security`, and all CPP commands
+- Future `cxpp:init` fallback scope includes host-managed MCP pointers only;
+  external servers remain owned outside the repo
 
 ## /project-next
 
