@@ -26,9 +26,13 @@ def test_host_managed_doc_records_boundary_and_health_checks() -> None:
         assert needle in text
 
 
-def test_project_init_records_future_cxpp_init_pointer_scope() -> None:
-    text = (ROOT / ".codex" / "prompts" / "project" / "init.md").read_text()
+def test_host_managed_doc_records_future_cxpp_init_pointer_scope() -> None:
+    # The cxpp:init pointer scope is CxPP-native governance, so it lives in
+    # HOST_MANAGED.md, not in a generated (pulled-from-CPP) project skill. The
+    # former hand-port `.codex/prompts/project/init.md` carrier was deleted with
+    # the fork (codex-power-pack#75).
+    text = (ROOT / "docs" / "HOST_MANAGED.md").read_text()
 
     assert "cxpp:init" in text
     assert "templates/config.toml.example" in text
-    assert "does not start, stop, or deploy MCP servers" in text
+    assert "not own external MCP server lifecycle" in text

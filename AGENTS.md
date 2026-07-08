@@ -11,15 +11,15 @@
 ## Project Map
 
 - `AGENTS.md` - canonical Codex instructions
-- `.codex/prompts/` - Codex prompt entrypoints ported from the source repo
-- `.codex/skills/` - Codex skill packages backing slash-style command workflows
+- `.codex/skills/` - Codex skill packages, generated from claude-power-pack and pinned by commit SHA (pull model, codex-power-pack#75). Do not hand-edit - the drift gate `make codex-skills-check` enforces it. See `.codex/skills/README.md`.
 - `.codex/cicd.yml` - CI/CD config
 - `.codex/cicd_tasks.yml` - deterministic CI/CD task manifest
 - `lib/` - reusable Python libraries for creds, security, and CI/CD
+- `vendor/claude-power-pack/` - pin (`PIN`) + drift manifest (`codex-skills.sha256`) for the generated `.codex/skills/` copy
 - `templates/` - starter Makefiles and workflow templates
 - `templates/config.toml.example` - Codex MCP pointers for host-managed services
 - `docs/HOST_MANAGED.md` - host-owned MCP service inventory and health checks
-- `scripts/` - shell helpers
+- `scripts/` - shell + Python helpers, incl. `codex_skills_sync.py` (pulls + drift-gates `.codex/skills/`)
 - `docs/skills/` - focused reference docs
 - `docs/security/` - security threat models and guard designs
 
@@ -40,12 +40,13 @@ tool integrations, with client-side pointers documented in `docs/HOST_MANAGED.md
 
 ## Notes
 
-- CI/CD slash trigger parity is mapped in `docs/skills/cicd-command-skill-map.md`.
-- Flow slash trigger parity is mapped in `docs/skills/flow-command-skill-map.md`.
-- GitHub slash trigger parity is mapped in `docs/skills/github-command-skill-map.md`.
-- Documentation slash trigger parity is mapped in `docs/skills/documentation-command-skill-map.md`.
-- Second-opinion slash trigger parity is mapped in `docs/skills/second-opinion-command-skill-map.md`.
-- QA slash trigger parity is mapped in `docs/skills/qa-command-skill-map.md`.
-- Project slash trigger parity is mapped in `docs/skills/project-command-skill-map.md`.
-- Spec slash trigger parity is mapped in `docs/skills/spec-command-skill-map.md`.
-- AGENTS.md governance trigger parity is mapped in `docs/skills/agents-md-command-skill-map.md`.
+- The shared command families live as generated Codex skills under `.codex/skills/<family>-<command>/`,
+  pulled from claude-power-pack's `.claude/commands/` single source (codex-power-pack#75).
+  The skill dir name is the trigger: `/flow:auto` -> `.codex/skills/flow-auto/`.
+- Reconcile by editing the upstream source, never the generated copy: edit
+  `.claude/commands/<family>/` in claude-power-pack, regenerate there (`make codex-skills`),
+  then re-pull here (`make codex-skills-refresh`). The drift gate `make codex-skills-check`
+  fails CI on any hand-edit.
+- `claude-md` is not carried here (Out-of-Scope; the Codex-native `agents-md` family covers
+  the AGENTS.md world, epic #64/#66). The former `.codex/prompts/` and per-family
+  `docs/skills/*-command-skill-map.md` surfaces were retired with the hand-port fork.

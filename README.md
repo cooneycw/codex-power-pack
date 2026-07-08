@@ -2,12 +2,12 @@
 
 Codex Power Pack is a Codex-first automation toolkit.
 It preserves CI/CD helpers, security tooling, secrets management, templates,
-prompt surfaces, skills, and tests for Codex-centric workflows.
+generated command skills, and tests for Codex-centric workflows.
 
 ## What Is Included
 
-- `.codex/prompts/` - Codex prompt files ported from the original slash-command set
-- `.codex/skills/` - Codex skill packages that back slash-style trigger workflows
+- `.codex/skills/` - Codex skill packages generated from claude-power-pack (pull model, #75); see `.codex/skills/README.md`
+- `vendor/claude-power-pack/` - pin + drift manifest for the generated skills
 - `.codex/cicd.yml` and `.codex/cicd_tasks.yml` - Codex-local CI/CD manifests
 - `AGENTS.md` - the canonical repo instructions for Codex
 - `lib/creds/`, `lib/security/`, `lib/cicd/` - reusable Python libraries
@@ -50,8 +50,7 @@ management.
 ## Codex Architecture
 
 - Codex instructions live in `AGENTS.md`
-- Prompt entrypoints live in `.codex/prompts/`
-- Skill packages live in `.codex/skills/`
+- Skill packages live in `.codex/skills/`, generated from claude-power-pack (see `.codex/skills/README.md`)
 - Runtime config targets `.codex/` paths and host-managed pointers in
   `templates/config.toml.example`
 - Secrets storage uses `~/.config/codex-power-pack/`
@@ -66,87 +65,24 @@ The `/project:*` namespace in this repository currently includes:
 - `/project:help`
 - `/project:init`
 
-## CI/CD Trigger Parity
+## Command Skills
 
-The `/cicd:*` namespace is available through:
+The shared command families are **generated** Codex skills under
+`.codex/skills/<family>-<command>/`, pulled byte-for-byte from claude-power-pack's
+`.claude/commands/` single source (the pull side of the source-of-truth bridge, #75)
+and pinned by commit SHA in `vendor/claude-power-pack/PIN`. The skill dir name is the
+trigger: `/flow:auto` maps to `.codex/skills/flow-auto/`.
 
-- `.codex/prompts/cicd/*.md` - slash-compatible entrypoints
-- `.codex/skills/cicd-*/` - backing Codex skill packages
-- `docs/skills/cicd-command-skill-map.md` - trigger-to-skill inventory
+Families carried: `browser`, `cicd`, `cpp`, `documentation`, `evaluate`, `flow`,
+`github`, `project`, `qa`, `second-opinion`, `secrets`, `security`,
+`self-improvement`. `claude-md` is not carried - the Codex-native `agents-md` family
+covers the AGENTS.md world (epic #64/#66).
 
-Pipeline generation can still create deploy stages for target projects, but this
-repository's own CI is validation-only.
-
-## Flow Trigger Parity
-
-The `/flow:*` namespace is available through:
-
-- `.claude/commands/flow/*.md` - source command inventory
-- `.codex/prompts/flow/*.md` - slash-compatible entrypoints
-- `.codex/skills/flow-*/` - backing Codex skill packages
-- `docs/skills/flow-command-skill-map.md` - trigger-to-skill inventory
-
-## GitHub Trigger Parity
-
-The `/github:*` namespace is available through:
-
-- `.claude/commands/github/*.md` - source command inventory
-- `.codex/prompts/github/*.md` - slash-compatible entrypoints
-- `.codex/skills/github-*/` - backing Codex skill packages
-- `docs/skills/github-command-skill-map.md` - trigger-to-skill inventory
-
-## Documentation Trigger Parity
-
-The `/documentation:*` namespace is available through:
-
-- `.claude/commands/documentation/*.md` - source command inventory
-- `.codex/prompts/documentation/*.md` - slash-compatible entrypoints
-- `.codex/skills/documentation-*/` - backing Codex skill packages
-- `docs/skills/documentation-command-skill-map.md` - trigger-to-skill inventory
-
-## Second-Opinion Trigger Parity
-
-The `/second-opinion:*` namespace is available through:
-
-- `.claude/commands/second-opinion/*.md` - source command inventory
-- `.codex/prompts/second-opinion/*.md` - slash-compatible entrypoints
-- `.codex/skills/second-opinion-*/` - backing Codex skill packages
-- `docs/skills/second-opinion-command-skill-map.md` - trigger-to-skill inventory
-
-## QA Trigger Parity
-
-The `/qa:*` namespace is available through:
-
-- `.claude/commands/qa/*.md` - source command inventory
-- `.codex/prompts/qa/*.md` - slash-compatible entrypoints
-- `.codex/skills/qa-*/` - backing Codex skill packages
-- `docs/skills/qa-command-skill-map.md` - trigger-to-skill inventory
-
-## Project Trigger Parity
-
-The `/project:*` namespace is available through:
-
-- `.claude/commands/project/*.md` - source command inventory
-- `.codex/prompts/project/*.md` - slash-compatible entrypoints
-- `.codex/skills/project-*/` - backing Codex skill packages
-- `docs/skills/project-command-skill-map.md` - trigger-to-skill inventory
-
-## Spec Trigger Parity
-
-The `/spec:*` namespace is available through:
-
-- `.claude/commands/spec/*.md` - source command inventory
-- `.codex/prompts/spec/*.md` - slash-compatible entrypoints
-- `.codex/skills/spec-*/` - backing Codex skill packages
-- `docs/skills/spec-command-skill-map.md` - trigger-to-skill inventory
-
-## AGENTS.md Trigger Parity
-
-The `/agents-md:*` namespace is available through:
-
-- `.codex/prompts/agents-md/*.md` - slash-compatible entrypoints
-- `.codex/skills/agents-md-*/` - backing Codex skill packages
-- `docs/skills/agents-md-command-skill-map.md` - trigger-to-skill inventory
+**Do not hand-edit `.codex/skills/`.** The drift gate (`make codex-skills-check`)
+fails CI on any divergence from the pinned copy. To change a skill, edit
+`.claude/commands/<family>/` in claude-power-pack, regenerate there
+(`make codex-skills`), then re-pull here (`make codex-skills-refresh`). See
+`.codex/skills/README.md`.
 
 ## Verification
 

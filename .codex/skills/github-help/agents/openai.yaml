@@ -1,4 +1,0 @@
-interface:
-  display_name: "github:help"
-  short_description: "Trigger /github:help"
-  default_prompt: "/github:help"
