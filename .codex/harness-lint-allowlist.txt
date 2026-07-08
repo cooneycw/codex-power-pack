@@ -1,0 +1,8 @@
+# Reviewed harness-lint exceptions.
+#
+# Syntax:
+#   rule-id|relative/path/from/.codex/skills|needle-or-*|reason
+#
+# Prefer fixing the skill or adding a Codex harness adaptation. Use this file only
+# when a literal Claude-only token is intentionally retained and safe for Codex.
+claude-plugin-command|cpp-help/reference.md|Browse a marketplace|documents Codex plugin marketplace browsing command in generated CPP help

@@ -1,5 +1,5 @@
 .PHONY: test lint format typecheck verify build update_docs clean help secret-scan dep-audit \
-	codex-skills codex-skills-check codex-skills-refresh
+	codex-skills codex-skills-check codex-skills-refresh harness-lint
 
 # claude-power-pack checkout the generated Codex skills are pulled from (codex-power-pack#75).
 CPP_ROOT ?= ../claude-power-pack
@@ -18,6 +18,9 @@ test:
 
 typecheck:
 	uv run --extra dev mypy .
+
+harness-lint:
+	@python3 scripts/harness_lint.py --check
 
 build:
 	uv build
@@ -40,7 +43,7 @@ codex-skills-refresh:
 
 ## Verification gate (runs all quality checks)
 
-verify: lint test typecheck codex-skills-check
+verify: lint test typecheck codex-skills-check harness-lint
 
 ## Documentation (used by /flow:auto and /flow:finish)
 
@@ -71,6 +74,7 @@ help:
 	@echo "  make format      - Run ruff formatter"
 	@echo "  make test        - Run pytest"
 	@echo "  make typecheck   - Run mypy"
+	@echo "  make harness-lint - Check skills for unadapted Claude-only constructs"
 	@echo "  make build       - Build distribution packages"
 	@echo "  make verify      - Run all quality checks"
 	@echo ""

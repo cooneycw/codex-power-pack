@@ -17,6 +17,18 @@ A hand-edit is caught by the CI drift gate (`make codex-skills-check`,
 `scripts/codex_skills_sync.py --check`), which fails when any file here diverges from
 the pinned copy recorded in `vendor/claude-power-pack/`.
 
+## Harness lint
+
+Generated skills also run through `make harness-lint`
+(`scripts/harness_lint.py --check`) so Claude-only constructs do not reach Codex
+unadapted. A literal `AskUserQuestion`, `.claude/worktrees`, `/plugin`,
+`CLAUDE.md`, `Agent tool`, `Skill tool`, or leading `!` command is allowed only
+when the skill's `SKILL.md` contains a matching Codex harness adaptation.
+
+If a literal token must remain for documentation, add a reviewed exception to
+`.codex/harness-lint-allowlist.txt` using `rule|path|needle|reason`. Prefer
+rewriting the skill or adding an adaptation over allowlisting.
+
 ## Reconcile rule
 
 To change a generated skill, edit the **source** upstream, never the copy here:
