@@ -1,4 +1,0 @@
-interface:
-  display_name: "flow:finish"
-  short_description: "Trigger /flow:finish"
-  default_prompt: "/flow:finish"

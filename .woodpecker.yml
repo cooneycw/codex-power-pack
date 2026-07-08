@@ -14,6 +14,9 @@ steps:
       - uv run --extra dev ruff check .
       - uv run --extra dev pytest
       - uv run --extra dev mypy .
+      # Drift gate: .codex/skills/ must match the pinned claude-power-pack copy
+      # (codex-power-pack#75). Git-free, so it runs in this container.
+      - uv run python scripts/codex_skills_sync.py --check
 
   secret-scan:
     image: zricethezav/gitleaks:v8.18.4

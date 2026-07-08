@@ -1,6 +1,6 @@
 # Host-Managed Services
 
-Codex Power Pack does not run MCP servers. It ships prompts, skills, templates,
+Codex Power Pack does not run MCP servers. It ships skills, templates,
 and documentation that point Codex at services owned outside this repository.
 Use `templates/config.toml.example` as the source pointer template for a fresh
 Codex install.

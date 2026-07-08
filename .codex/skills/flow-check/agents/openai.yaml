@@ -1,4 +1,0 @@
-interface:
-  display_name: "flow:check"
-  short_description: "Trigger /flow:check"
-  default_prompt: "/flow:check"

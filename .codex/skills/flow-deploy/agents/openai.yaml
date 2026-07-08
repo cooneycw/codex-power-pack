@@ -1,4 +1,0 @@
-interface:
-  display_name: "flow:deploy"
-  short_description: "Trigger /flow:deploy"
-  default_prompt: "/flow:deploy"
