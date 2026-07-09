@@ -2,46 +2,80 @@
   "hooks": {
     "SessionStart": [
       {
-        "type": "command",
-        "command": "bash -c 'git fetch origin --quiet 2>/dev/null && BEHIND=$(git rev-list HEAD..origin/main --count 2>/dev/null || echo 0) && if [ \"$BEHIND\" -gt 0 ]; then echo \"⚠️  codex-power-pack has $BEHIND new commit(s). Run: git pull\"; else echo \"✓ codex-power-pack is current\"; fi'"
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'git fetch origin --quiet 2>/dev/null && BEHIND=$(git rev-list HEAD..origin/main --count 2>/dev/null || echo 0) && if [ \"$BEHIND\" -gt 0 ]; then echo \"⚠️  codex-power-pack has $BEHIND new commit(s). Run: git pull\"; else echo \"✓ codex-power-pack is current\"; fi'",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 scripts/codex-friction-hook.py --event PermissionRequest",
+            "timeout": 30
+          }
+        ]
       }
     ],
     "PreToolUse": [
       {
-        "matcher": {
-          "tool_name": "Bash"
-        },
+        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
             "command": "~/.codex/scripts/hook-validate-command.sh",
-            "timeout": 2000
+            "timeout": 30
           }
         ]
       }
     ],
     "PostToolUse": [
       {
-        "matcher": {
-          "tool_name": "Bash"
-        },
+        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
+            "command": "python3 scripts/codex-friction-hook.py --event PostToolUse",
+            "timeout": 30
+          },
+          {
+            "type": "command",
             "command": "~/.codex/scripts/hook-mask-output.sh",
-            "timeout": 5000
+            "timeout": 30
           }
         ]
       },
       {
-        "matcher": {
-          "tool_name": "Read"
-        },
+        "matcher": "Read",
         "hooks": [
           {
             "type": "command",
+            "command": "python3 scripts/codex-friction-hook.py --event PostToolUse",
+            "timeout": 30
+          },
+          {
+            "type": "command",
             "command": "~/.codex/scripts/hook-mask-output.sh",
-            "timeout": 5000
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 scripts/codex-friction-hook.py --event UserPromptSubmit",
+            "timeout": 30
           }
         ]
       }

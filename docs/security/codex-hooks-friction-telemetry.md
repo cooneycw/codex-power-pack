@@ -224,6 +224,26 @@ Build E2 around these components:
 5. Migration cleanup for legacy `.codex/hooks.json` examples that still use
    Claude-shaped comments or outdated matcher objects.
 
+## E2 Implementation Surface
+
+Issue #95 implements the first writer path:
+
+- `lib/friction/` validates allowlisted event fields, masks every string field,
+  truncates oversized summaries, computes a post-mask fingerprint, and delegates
+  storage through the stable `cpp-memory record` contract.
+- `scripts/codex-friction-hook.py` is the thin hook adapter. It extracts only
+  derived metadata from raw Codex hook payloads; raw prompts, tool input, and
+  tool output are not copied into writer events.
+- `.codex/hooks.json` uses the current matcher-group shape and wires
+  `PermissionRequest`, `PostToolUse`, and `UserPromptSubmit` to the fail-open
+  writer while keeping the existing output masker on tool output.
+- `CXPP_CPP_MEMORY_CMD` can point at the operator-installed `cpp-memory` command
+  when it is not on `PATH`. The writer never accepts or stores a database DSN;
+  Postgres credentials remain owned by the shared CPP memory layer.
+- `CXPP_FRICTION_QUEUE` can opt into a local masked JSONL fallback for writer
+  failures. Without it, missing or unreachable ledger infrastructure is skipped
+  silently from the hook's perspective.
+
 Open uncertainty for E2 to verify with fixture hooks:
 
 - The official manual documents event names, matcher behavior, hook loading, and
