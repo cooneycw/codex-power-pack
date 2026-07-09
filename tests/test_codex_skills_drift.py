@@ -25,8 +25,12 @@ def _skill_dirs() -> list[Path]:
     return sorted(d for d in sync.SKILLS_ROOT.iterdir() if d.is_dir())
 
 
+def _generated_skill_dirs() -> list[Path]:
+    return sorted(d for d in _skill_dirs() if d.name not in sync.LOCAL_SKILL_DIRS)
+
+
 def test_skills_tree_in_sync_with_pin() -> None:
-    """A hand-edit, addition, or deletion under .codex/skills/ fails this gate."""
+    """A hand-edit, addition, or deletion under generated skill dirs fails this gate."""
     assert sync.run_check() == 0
 
 
@@ -35,7 +39,7 @@ def test_manifest_covers_every_generated_file() -> None:
 
 
 def test_every_skill_carries_the_generated_marker() -> None:
-    for skill_dir in _skill_dirs():
+    for skill_dir in _generated_skill_dirs():
         skill_md = skill_dir / "SKILL.md"
         assert skill_md.is_file(), f"{skill_dir.name}: no SKILL.md"
         assert sync.MARKER_PREFIX in skill_md.read_text(), (
@@ -43,10 +47,18 @@ def test_every_skill_carries_the_generated_marker() -> None:
         )
 
 
-def test_excluded_and_retired_families_are_absent() -> None:
-    # claude-md is Out-of-Scope for CxPP (spec); the stale agents-md/spec hand-ports
-    # were deleted (agents-md returns as a Codex-native family in epic #66).
-    forbidden = ("claude-md-", "agents-md-", "spec-")
+def test_native_agents_md_skills_are_present_without_generated_marker() -> None:
+    for skill_name in sync.LOCAL_SKILL_DIRS:
+        skill_md = sync.SKILLS_ROOT / skill_name / "SKILL.md"
+        assert skill_md.is_file(), f"{skill_name}: no SKILL.md"
+        assert sync.MARKER_PREFIX not in skill_md.read_text()
+        assert all(not rel.startswith(f"{skill_name}/") for rel in sync.read_manifest())
+
+
+def test_excluded_and_retired_generated_families_are_absent() -> None:
+    # claude-md is Out-of-Scope for CxPP (spec); spec remains outside the current
+    # generated pull surface.
+    forbidden = ("claude-md-", "spec-")
     offenders = [d.name for d in _skill_dirs() if d.name.startswith(forbidden)]
     assert offenders == [], f"unexpected skill dirs present: {offenders}"
 

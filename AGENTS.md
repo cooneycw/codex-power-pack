@@ -11,11 +11,11 @@
 ## Project Map
 
 - `AGENTS.md` - canonical Codex instructions
-- `.codex/skills/` - Codex skill packages, generated from claude-power-pack and pinned by commit SHA (pull model, codex-power-pack#75). Do not hand-edit - the drift gate `make codex-skills-check` enforces it. See `.codex/skills/README.md`.
+- `.codex/skills/` - Codex skill packages. Shared families are generated from claude-power-pack and pinned by commit SHA (pull model, codex-power-pack#75); CxPP-owned native families such as `agents-md-*` are authored here. See `.codex/skills/README.md`.
 - `.codex/cicd.yml` - CI/CD config
 - `.codex/cicd_tasks.yml` - deterministic CI/CD task manifest
 - `lib/` - reusable Python libraries for creds, security, and CI/CD
-- `vendor/claude-power-pack/` - pin (`PIN`) + drift manifest (`codex-skills.sha256`) for the generated `.codex/skills/` copy
+- `vendor/claude-power-pack/` - pin (`PIN`) + drift manifest (`codex-skills.sha256`) for generated `.codex/skills/` copies
 - `templates/` - starter Makefiles and workflow templates
 - `templates/config.toml.example` - Codex MCP pointers for host-managed services
 - `docs/HOST_MANAGED.md` - host-owned MCP service inventory and health checks
@@ -47,6 +47,8 @@ tool integrations, with client-side pointers documented in `docs/HOST_MANAGED.md
   `.claude/commands/<family>/` in claude-power-pack, regenerate there (`make codex-skills`),
   then re-pull here (`make codex-skills-refresh`). The drift gate `make codex-skills-check`
   fails CI on any hand-edit.
-- `claude-md` is not carried here (Out-of-Scope; the Codex-native `agents-md` family covers
-  the AGENTS.md world, epic #64/#66). The former `.codex/prompts/` and per-family
+- `agents-md-*` is the CxPP-owned native family for the AGENTS.md world; edit those
+  skill packages directly here and keep them outside the vendored manifest.
+- `claude-md` is not carried here (Out-of-Scope; `agents-md` covers the AGENTS.md
+  world, epic #64/#66). The former `.codex/prompts/` and per-family
   `docs/skills/*-command-skill-map.md` surfaces were retired with the hand-port fork.
