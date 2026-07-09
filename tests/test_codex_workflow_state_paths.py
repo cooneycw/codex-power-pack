@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 
@@ -16,9 +17,30 @@ def test_flow_skills_do_not_reference_claude_worktree_state() -> None:
 
 
 def test_friction_log_defaults_to_codex_buffer(tmp_path: Path) -> None:
-    repo = tmp_path / "repo"
-    repo.mkdir()
-    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True, text=True)
+    main_repo = tmp_path / "repo"
+    main_repo.mkdir()
+    git_dir = main_repo / ".git"
+    git_dir.mkdir()
+    worktree = tmp_path / "worktree"
+    worktree.mkdir()
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    fake_git = bin_dir / "git"
+    fake_git.write_text(
+        "#!/bin/sh\n"
+        'if [ "$1" = "rev-parse" ] && [ "$2" = "--git-common-dir" ]; then\n'
+        '  printf "%s\\n" "$GIT_COMMON_DIR"\n'
+        "  exit 0\n"
+        "fi\n"
+        "exit 1\n",
+        encoding="utf-8",
+    )
+    fake_git.chmod(0o755)
+
+    env = os.environ.copy()
+    env["GIT_COMMON_DIR"] = str(git_dir)
+    env["PATH"] = f"{bin_dir}{os.pathsep}{env.get('PATH', '')}"
 
     script = REPO_ROOT / ".codex" / "skills" / "flow-auto" / "scripts" / "friction-log.sh"
     subprocess.run(
@@ -33,11 +55,13 @@ def test_friction_log_defaults_to_codex_buffer(tmp_path: Path) -> None:
             "--step",
             "state-paths",
         ],
-        cwd=repo,
+        cwd=worktree,
+        env=env,
         check=True,
         capture_output=True,
         text=True,
     )
 
-    assert (repo / ".codex" / "friction.jsonl").is_file()
-    assert not (repo / ".claude" / "friction.jsonl").exists()
+    assert (main_repo / ".codex" / "friction.jsonl").is_file()
+    assert not (worktree / ".codex" / "friction.jsonl").exists()
+    assert not (main_repo / ".claude" / "friction.jsonl").exists()
