@@ -1,0 +1,6 @@
+interface:
+  display_name: "CI/CD Smoke"
+  short_description: "Run smoke tests from cicd.yml configuration"
+  default_prompt: "Use $cicd-smoke when you need run smoke tests from cicd.yml configuration"
+policy:
+  allow_implicit_invocation: false

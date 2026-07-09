@@ -1,0 +1,6 @@
+interface:
+  display_name: "Documentation C4"
+  short_description: "Generate C4 architecture diagrams for the current project (all 4 levels) as GitHub-renderable Mermaid"
+  default_prompt: "Use $documentation-c4 when you need generate C4 architecture diagrams for the current project (all 4 levels) as GitHub-renderable Mermaid"
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,6 @@
+interface:
+  display_name: "CI/CD Init"
+  short_description: "Detect framework and generate/validate Makefile for CI/CD integration"
+  default_prompt: "Use $cicd-init when you need detect framework and generate/validate Makefile for CI/CD integration"
+policy:
+  allow_implicit_invocation: false

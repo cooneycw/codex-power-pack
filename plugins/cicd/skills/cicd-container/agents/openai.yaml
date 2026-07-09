@@ -1,0 +1,6 @@
+interface:
+  display_name: "CI/CD Container"
+  short_description: "CI/CD Container Generation - Generate Dockerfile, docker-compose.yml, and .dockerignore for the current project."
+  default_prompt: "Use $cicd-container when you need cI/CD Container Generation - Generate Dockerfile, docker-compose.yml, and .dockerignore for the current project."
+policy:
+  allow_implicit_invocation: false

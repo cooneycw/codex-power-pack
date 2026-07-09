@@ -1,0 +1,35 @@
+{
+  "name": "agents-md",
+  "version": "0.1.0",
+  "description": "AGENTS.md governance lint and help skills.",
+  "author": {
+    "name": "Codex Power Pack maintainers",
+    "url": "https://github.com/cooneycw/codex-power-pack"
+  },
+  "homepage": "https://github.com/cooneycw/codex-power-pack#readme",
+  "repository": "https://github.com/cooneycw/codex-power-pack",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "agents",
+    "agents-md",
+    "instructions",
+    "lint"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "AGENTS.md",
+    "shortDescription": "Lint Codex instruction files.",
+    "longDescription": "AGENTS.md packages CxPP-owned native skills for checking and explaining Codex AGENTS.md governance directives.",
+    "developerName": "Codex Power Pack",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Automation",
+      "Read"
+    ],
+    "defaultPrompt": [
+      "Lint AGENTS.md with /agents-md-lint."
+    ],
+    "brandColor": "#7C3AED"
+  }
+}

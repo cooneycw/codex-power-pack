@@ -1,0 +1,6 @@
+interface:
+  display_name: "QA Test"
+  short_description: "QA Test - Automated Web Testing - Perform automated QA testing on a web application using the upstream `@playwright/mcp` server (register..."
+  default_prompt: "Use $qa-test when you need qA Test - Automated Web Testing - Perform automated QA testing on a web application using the upstream `@playwright/mcp` server (register..."
+policy:
+  allow_implicit_invocation: false

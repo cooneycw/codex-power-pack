@@ -1,0 +1,35 @@
+{
+  "name": "documentation",
+  "version": "0.1.0",
+  "description": "Documentation, C4 diagram, and PPTX skills.",
+  "author": {
+    "name": "Codex Power Pack maintainers",
+    "url": "https://github.com/cooneycw/codex-power-pack"
+  },
+  "homepage": "https://github.com/cooneycw/codex-power-pack#readme",
+  "repository": "https://github.com/cooneycw/codex-power-pack",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "documentation",
+    "c4",
+    "pptx",
+    "diagrams"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Documentation",
+    "shortDescription": "Generate diagrams and presentations.",
+    "longDescription": "Documentation packages Codex Power Pack skills for C4 architecture diagrams, documentation help, and PowerPoint generation.",
+    "developerName": "Codex Power Pack",
+    "category": "Documentation",
+    "capabilities": [
+      "Automation",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Generate C4 diagrams with /documentation-c4."
+    ],
+    "brandColor": "#0891B2"
+  }
+}

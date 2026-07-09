@@ -1,0 +1,6 @@
+interface:
+  display_name: "Security Explain"
+  short_description: "Explain a security finding in detail"
+  default_prompt: "Use $security-explain when you need explain a security finding in detail"
+policy:
+  allow_implicit_invocation: false

@@ -15,7 +15,7 @@
 - `.agents/plugins/marketplace.json` - repo-scoped native Codex marketplace catalog
 - `.codex/cicd.yml` - CI/CD config
 - `.codex/cicd_tasks.yml` - deterministic CI/CD task manifest
-- `plugins/project/` - first native Codex plugin scaffold; packages the generated project skills for marketplace install
+- `plugins/<family>/` - native Codex plugin packages for per-family marketplace install
 - `lib/` - reusable Python libraries for creds, security, and CI/CD
 - `vendor/claude-power-pack/` - pin (`PIN`) + drift manifest (`codex-skills.sha256`) for generated `.codex/skills/` copies
 - `templates/` - starter Makefiles and workflow templates
@@ -37,7 +37,8 @@ tool integrations, with client-side pointers documented in `docs/HOST_MANAGED.md
 - `uv` for dependency management
 - `make lint`, `make test`, `make typecheck`, `make verify` for quality gates
 - Native Codex plugins are the supported distribution path; use the thin
-  `cxpp:init` fallback for checkout-based project bootstrapping.
+  `cxpp:init` fallback for checkout-based project bootstrapping once the cxpp
+  family skills land.
 - Keep marketplace entries pinned for release use. Repo marketplace entries under
   `.agents/plugins/marketplace.json` should declare pinning policy and be
   installed with `codex plugin marketplace add --ref <tag-or-sha>`.
@@ -48,9 +49,10 @@ tool integrations, with client-side pointers documented in `docs/HOST_MANAGED.md
 - The shared command families live as generated Codex skills under `.codex/skills/<family>-<command>/`,
   pulled from claude-power-pack's `.claude/commands/` single source (codex-power-pack#75).
   The skill dir name is the trigger: `/flow:auto` -> `.codex/skills/flow-auto/`.
-- Plugin-packaged copies of generated skills, such as `plugins/project/skills/`,
-  must stay byte-identical to their `.codex/skills/` source until a generator
-  owns this copy step.
+- Plugin-packaged copies of generated skills under `plugins/<family>/skills/`
+  keep their skill payload files byte-identical to `.codex/skills/`. The only
+  package-local overlay is `agents/openai.yaml`, which supplies Codex plugin UI
+  metadata and disables implicit invocation by default.
 - Reconcile by editing the upstream source, never the generated copy: edit
   `.claude/commands/<family>/` in claude-power-pack, regenerate there (`make codex-skills`),
   then re-pull here (`make codex-skills-refresh`). The drift gate `make codex-skills-check`

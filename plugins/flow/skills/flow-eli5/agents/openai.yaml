@@ -1,0 +1,6 @@
+interface:
+  display_name: "Flow ELI5"
+  short_description: "Flow: ELI5 - Post-Analysis Plan + Necessity Gate - The post-analysis, pre-implementation communication and approval gate. Restates an iss..."
+  default_prompt: "Use $flow-eli5 when you need flow: ELI5 - Post-Analysis Plan + Necessity Gate - The post-analysis, pre-implementation communication and approval gate. Restates an iss..."
+policy:
+  allow_implicit_invocation: false

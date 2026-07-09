@@ -1,0 +1,6 @@
+interface:
+  display_name: "CI/CD Health"
+  short_description: "Run health checks against configured endpoints and processes"
+  default_prompt: "Use $cicd-health when you need run health checks against configured endpoints and processes"
+policy:
+  allow_implicit_invocation: false

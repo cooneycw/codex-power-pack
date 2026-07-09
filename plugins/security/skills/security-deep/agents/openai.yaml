@@ -1,0 +1,6 @@
+interface:
+  display_name: "Security Deep"
+  short_description: "Deep security scan (includes git history)"
+  default_prompt: "Use $security-deep when you need deep security scan (includes git history)"
+policy:
+  allow_implicit_invocation: false

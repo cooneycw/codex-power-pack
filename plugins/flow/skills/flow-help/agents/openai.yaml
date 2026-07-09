@@ -1,0 +1,6 @@
+interface:
+  display_name: "Flow Help"
+  short_description: "Flow Commands - Streamlined worktree-based development workflow. No locks, no Redis - just git."
+  default_prompt: "Use $flow-help when you need flow Commands - Streamlined worktree-based development workflow. No locks, no Redis - just git."
+policy:
+  allow_implicit_invocation: false

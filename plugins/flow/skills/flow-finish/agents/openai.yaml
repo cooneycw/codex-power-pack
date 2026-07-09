@@ -1,0 +1,6 @@
+interface:
+  display_name: "Flow Finish"
+  short_description: "Flow: Finish - Quality Gates, Commit, Push, and Create PR - Run quality checks, commit changes, push the branch, and create a pull request."
+  default_prompt: "Use $flow-finish when you need flow: Finish - Quality Gates, Commit, Push, and Create PR - Run quality checks, commit changes, push the branch, and create a pull request."
+policy:
+  allow_implicit_invocation: false

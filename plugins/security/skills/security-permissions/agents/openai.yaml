@@ -1,0 +1,6 @@
+interface:
+  display_name: "Security Permissions"
+  short_description: "Risk-graded permission audit - wraps native /fewer-permission-prompts with allow/ask/deny tiers"
+  default_prompt: "Use $security-permissions when you need risk-graded permission audit - wraps native /fewer-permission-prompts with allow/ask/deny tiers"
+policy:
+  allow_implicit_invocation: false

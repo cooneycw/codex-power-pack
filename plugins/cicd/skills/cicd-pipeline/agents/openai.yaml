@@ -1,0 +1,6 @@
+interface:
+  display_name: "CI/CD Pipeline"
+  short_description: "Generate CI/CD workflows (GitHub Actions, or self-hosted Woodpecker via provider)"
+  default_prompt: "Use $cicd-pipeline when you need generate CI/CD workflows (GitHub Actions, or self-hosted Woodpecker via provider)"
+policy:
+  allow_implicit_invocation: false

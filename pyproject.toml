@@ -19,15 +19,16 @@ mypy_path = "."
 disable_error_code = ["var-annotated", "assignment", "arg-type", "attr-defined"]
 # .codex/skills/ is generated from claude-power-pack (codex-power-pack#75): its
 # bundled helper scripts are byte-identical CPP copies with duplicate basenames
-# across skill dirs (e.g. c4-mermaid.py), which collide under `mypy .`. vendor/
-# holds only the pin + drift manifest. Neither is ours to type-check.
-exclude = ['^\.codex/skills/', '^vendor/']
+# across skill dirs (e.g. c4-mermaid.py), which collide under `mypy .`. Packaged
+# plugin skill copies mirror that generated surface and add only agents/openai.yaml
+# metadata. vendor/ holds only the pin + drift manifest. None are ours to type-check.
+exclude = ['^\.codex/skills/', '^plugins/[^/]+/skills/', '^vendor/']
 
 [tool.ruff]
 target-version = "py311"
 line-length = 120
 # See the mypy note above: do not lint the vendored/generated Codex-skill copies.
-extend-exclude = [".codex/skills", "vendor"]
+extend-exclude = [".codex/skills", "plugins/*/skills", "vendor"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]

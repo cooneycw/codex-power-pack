@@ -1,0 +1,6 @@
+interface:
+  display_name: "Evaluate Help"
+  short_description: "Overview of evaluate commands"
+  default_prompt: "Use $evaluate-help when you need overview of evaluate commands"
+policy:
+  allow_implicit_invocation: false

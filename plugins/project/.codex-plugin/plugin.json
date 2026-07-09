@@ -19,7 +19,7 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Project",
-    "shortDescription": "Scaffold new Codex projects.",
+    "shortDescription": "Scaffold and orient Codex projects.",
     "longDescription": "Project packages Codex Power Pack skills for zero-to-GitHub project scaffolding and project workflow orientation.",
     "developerName": "Codex Power Pack",
     "category": "Developer Tools",

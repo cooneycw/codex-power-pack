@@ -1,0 +1,6 @@
+interface:
+  display_name: "Flow Sync"
+  short_description: "Flow: Sync - Push WIP to Remote for Cross-Machine Pickup - Push the current branch to the remote so you can continue work on another mach..."
+  default_prompt: "Use $flow-sync when you need flow: Sync - Push WIP to Remote for Cross-Machine Pickup - Push the current branch to the remote so you can continue work on another mach..."
+policy:
+  allow_implicit_invocation: false

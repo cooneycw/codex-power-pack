@@ -1,0 +1,6 @@
+interface:
+  display_name: "CI/CD Infra Pipeline"
+  short_description: "Generate CI/CD pipelines for infrastructure tiers with approval gates"
+  default_prompt: "Use $cicd-infra-pipeline when you need generate CI/CD pipelines for infrastructure tiers with approval gates"
+policy:
+  allow_implicit_invocation: false

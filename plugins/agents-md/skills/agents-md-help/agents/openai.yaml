@@ -1,0 +1,6 @@
+interface:
+  display_name: "AGENTS MD Help"
+  short_description: "Trigger /agents-md:help for AGENTS.md governance command guidance"
+  default_prompt: "Use $agents-md-help when you need trigger /agents-md:help for AGENTS.md governance command guidance"
+policy:
+  allow_implicit_invocation: false

@@ -7,7 +7,7 @@ generated command skills, and tests for Codex-centric workflows.
 ## What Is Included
 
 - `.codex/skills/` - Codex skill packages: generated shared families from claude-power-pack plus CxPP-owned native skills; see `.codex/skills/README.md`
-- `.agents/plugins/marketplace.json` and `plugins/project/` - the first native Codex marketplace/plugin scaffold (#77)
+- `.agents/plugins/marketplace.json` and `plugins/<family>/` - native Codex marketplace catalog and per-family plugin packages
 - `vendor/claude-power-pack/` - pin + drift manifest for the generated skills
 - `.codex/cicd.yml` and `.codex/cicd_tasks.yml` - Codex-local CI/CD manifests
 - `AGENTS.md` - the canonical repo instructions for Codex
@@ -30,18 +30,28 @@ Distribution is handled by native Codex plugins. For project bootstrapping from
 the plugin, use the thin `cxpp:init` fallback rather than copying skills out of
 this checkout.
 
-Install the first packaged family, `project`, from the repo marketplace with a
-pinned Git ref:
+Install only the family plugins you need from the repo marketplace with a
+pinned Git ref. Include `.agents` plus the selected `plugins/<family>` paths in
+the sparse checkout:
 
 ```bash
 codex plugin marketplace add cooneycw/codex-power-pack \
   --ref <release-tag-or-commit-sha> \
   --sparse .agents \
-  --sparse plugins/project
+  --sparse plugins/project \
+  --sparse plugins/github
 codex plugin add project@codex-power-pack
+codex plugin add github@codex-power-pack
 ```
 
-See `docs/plugin-marketplace-project-e2e.md` for the issue #77 E2E transcript.
+The catalog currently exposes per-family packages for `project`, `spec`,
+`flow`, `github`, `cicd`, `secrets`, `woodpecker`, `security`, `agents-md`,
+`documentation`, `qa`, `evaluate`, `second-opinion`, `self-improvement`, and
+`cxpp`. `spec` and `cxpp` are scaffolded package slots for the follow-up family
+implementation issues.
+
+See `docs/plugin-marketplace-project-e2e.md` for the issue #77 project-plugin
+E2E transcript.
 
 For host-managed MCP tools, merge `templates/config.toml.example` into your
 Codex config or run:
@@ -72,12 +82,14 @@ management.
 ## Distribution
 
 Codex command discovery is delivered through native Codex plugins. This
-repository keeps source prompts, skills, docs, and tests, but it does not install
-or link global skill packages from this checkout.
+repository keeps source prompts, generated skills, plugin-packaged family copies,
+docs, and tests, but it does not install or link global skill packages from this
+checkout.
 
-The `/project:*` namespace in this repository currently includes:
-- `/project:help`
-- `/project:init`
+Each plugin packages one workflow family so users can install and remove them
+independently. Packaged skill payloads stay byte-identical to `.codex/skills/`;
+the package-local `agents/openai.yaml` files supply display metadata and set
+`allow_implicit_invocation: false` by default.
 
 ## Command Skills
 

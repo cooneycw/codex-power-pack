@@ -1,0 +1,6 @@
+interface:
+  display_name: "GitHub Issue Close"
+  short_description: "Close a GitHub issue with optional comment"
+  default_prompt: "Use $github-issue-close when you need close a GitHub issue with optional comment"
+policy:
+  allow_implicit_invocation: false

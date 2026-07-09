@@ -1,0 +1,6 @@
+interface:
+  display_name: "Evaluate Issue"
+  short_description: "Multi-model evaluation flow for issues, ideas, and architectural decisions"
+  default_prompt: "Use $evaluate-issue when you need multi-model evaluation flow for issues, ideas, and architectural decisions"
+policy:
+  allow_implicit_invocation: false

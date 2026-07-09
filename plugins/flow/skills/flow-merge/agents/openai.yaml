@@ -1,0 +1,6 @@
+interface:
+  display_name: "Flow Merge"
+  short_description: "Flow: Merge PR and Clean Up - Merge the current branch's PR, then clean up the worktree and branch."
+  default_prompt: "Use $flow-merge when you need flow: Merge PR and Clean Up - Merge the current branch's PR, then clean up the worktree and branch."
+policy:
+  allow_implicit_invocation: false

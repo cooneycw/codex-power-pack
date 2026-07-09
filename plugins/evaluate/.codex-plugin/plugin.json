@@ -1,0 +1,34 @@
+{
+  "name": "evaluate",
+  "version": "0.1.0",
+  "description": "Multi-model evaluation skills.",
+  "author": {
+    "name": "Codex Power Pack maintainers",
+    "url": "https://github.com/cooneycw/codex-power-pack"
+  },
+  "homepage": "https://github.com/cooneycw/codex-power-pack#readme",
+  "repository": "https://github.com/cooneycw/codex-power-pack",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "evaluate",
+    "multi-model",
+    "review"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Evaluate",
+    "shortDescription": "Evaluate issues and decisions with multiple models.",
+    "longDescription": "Evaluate packages Codex Power Pack skills for multi-model issue, idea, and architecture evaluation flows.",
+    "developerName": "Codex Power Pack",
+    "category": "AI Assistance",
+    "capabilities": [
+      "Automation",
+      "Read"
+    ],
+    "defaultPrompt": [
+      "Evaluate an issue with /evaluate-issue."
+    ],
+    "brandColor": "#9333EA"
+  }
+}

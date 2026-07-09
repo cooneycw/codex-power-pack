@@ -1,0 +1,34 @@
+{
+  "name": "github",
+  "version": "0.1.0",
+  "description": "GitHub issue management skills.",
+  "author": {
+    "name": "Codex Power Pack maintainers",
+    "url": "https://github.com/cooneycw/codex-power-pack"
+  },
+  "homepage": "https://github.com/cooneycw/codex-power-pack#readme",
+  "repository": "https://github.com/cooneycw/codex-power-pack",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "github",
+    "issues",
+    "triage"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "GitHub",
+    "shortDescription": "Create, inspect, update, and close issues.",
+    "longDescription": "GitHub packages Codex Power Pack issue management skills backed by the GitHub CLI.",
+    "developerName": "Codex Power Pack",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Automation",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "List GitHub issues with /github-issue-list."
+    ],
+    "brandColor": "#24292F"
+  }
+}

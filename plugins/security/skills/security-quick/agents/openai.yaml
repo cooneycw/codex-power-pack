@@ -1,0 +1,6 @@
+interface:
+  display_name: "Security Quick"
+  short_description: "Quick security scan (native only, fast)"
+  default_prompt: "Use $security-quick when you need quick security scan (native only, fast)"
+policy:
+  allow_implicit_invocation: false
