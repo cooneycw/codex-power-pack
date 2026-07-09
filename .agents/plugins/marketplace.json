@@ -1,0 +1,29 @@
+{
+  "name": "codex-power-pack",
+  "interface": {
+    "displayName": "Codex Power Pack"
+  },
+  "plugins": [
+    {
+      "name": "project",
+      "source": {
+        "source": "local",
+        "path": "./plugins/project"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "pinning": {
+        "required": true,
+        "mode": "git-ref",
+        "acceptedRefs": [
+          "immutable-commit-sha",
+          "signed-release-tag"
+        ],
+        "resolvedBy": "codex plugin marketplace add --ref"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

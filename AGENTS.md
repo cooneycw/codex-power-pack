@@ -12,8 +12,10 @@
 
 - `AGENTS.md` - canonical Codex instructions
 - `.codex/skills/` - Codex skill packages. Shared families are generated from claude-power-pack and pinned by commit SHA (pull model, codex-power-pack#75); CxPP-owned native families such as `agents-md-*` are authored here. See `.codex/skills/README.md`.
+- `.agents/plugins/marketplace.json` - repo-scoped native Codex marketplace catalog
 - `.codex/cicd.yml` - CI/CD config
 - `.codex/cicd_tasks.yml` - deterministic CI/CD task manifest
+- `plugins/project/` - first native Codex plugin scaffold; packages the generated project skills for marketplace install
 - `lib/` - reusable Python libraries for creds, security, and CI/CD
 - `vendor/claude-power-pack/` - pin (`PIN`) + drift manifest (`codex-skills.sha256`) for generated `.codex/skills/` copies
 - `templates/` - starter Makefiles and workflow templates
@@ -36,6 +38,9 @@ tool integrations, with client-side pointers documented in `docs/HOST_MANAGED.md
 - `make lint`, `make test`, `make typecheck`, `make verify` for quality gates
 - Native Codex plugins are the supported distribution path; use the thin
   `cxpp:init` fallback for checkout-based project bootstrapping.
+- Keep marketplace entries pinned for release use. Repo marketplace entries under
+  `.agents/plugins/marketplace.json` should declare pinning policy and be
+  installed with `codex plugin marketplace add --ref <tag-or-sha>`.
 - prefer `rg` for repo search
 
 ## Notes
@@ -43,6 +48,9 @@ tool integrations, with client-side pointers documented in `docs/HOST_MANAGED.md
 - The shared command families live as generated Codex skills under `.codex/skills/<family>-<command>/`,
   pulled from claude-power-pack's `.claude/commands/` single source (codex-power-pack#75).
   The skill dir name is the trigger: `/flow:auto` -> `.codex/skills/flow-auto/`.
+- Plugin-packaged copies of generated skills, such as `plugins/project/skills/`,
+  must stay byte-identical to their `.codex/skills/` source until a generator
+  owns this copy step.
 - Reconcile by editing the upstream source, never the generated copy: edit
   `.claude/commands/<family>/` in claude-power-pack, regenerate there (`make codex-skills`),
   then re-pull here (`make codex-skills-refresh`). The drift gate `make codex-skills-check`

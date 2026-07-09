@@ -7,6 +7,7 @@ generated command skills, and tests for Codex-centric workflows.
 ## What Is Included
 
 - `.codex/skills/` - Codex skill packages: generated shared families from claude-power-pack plus CxPP-owned native skills; see `.codex/skills/README.md`
+- `.agents/plugins/marketplace.json` and `plugins/project/` - the first native Codex marketplace/plugin scaffold (#77)
 - `vendor/claude-power-pack/` - pin + drift manifest for the generated skills
 - `.codex/cicd.yml` and `.codex/cicd_tasks.yml` - Codex-local CI/CD manifests
 - `AGENTS.md` - the canonical repo instructions for Codex
@@ -28,6 +29,19 @@ make verify
 Distribution is handled by native Codex plugins. For project bootstrapping from
 the plugin, use the thin `cxpp:init` fallback rather than copying skills out of
 this checkout.
+
+Install the first packaged family, `project`, from the repo marketplace with a
+pinned Git ref:
+
+```bash
+codex plugin marketplace add cooneycw/codex-power-pack \
+  --ref <release-tag-or-commit-sha> \
+  --sparse .agents \
+  --sparse plugins/project
+codex plugin add project@codex-power-pack
+```
+
+See `docs/plugin-marketplace-project-e2e.md` for the issue #77 E2E transcript.
 
 For host-managed MCP tools, merge `templates/config.toml.example` into your
 Codex config or run:
