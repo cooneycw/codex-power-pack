@@ -73,6 +73,31 @@ def test_matching_codex_adaptation_allows_reference_text(tmp_path: Path) -> None
     assert harness_lint.lint_skills(root, root / "missing-allowlist.txt") == []
 
 
+def test_claude_worktree_path_is_not_allowed_by_generic_adaptation(tmp_path: Path) -> None:
+    root = tmp_path / "skills"
+    _write_skill(
+        root,
+        "flow-start",
+        _skill_with_adaptation("Native worktrees"),
+        "Open .claude/worktrees/issue-1 before editing.",
+    )
+
+    findings = harness_lint.lint_skills(root, root / "missing-allowlist.txt")
+    assert [finding.rule_id for finding in findings] == ["claude-worktree-path"]
+
+
+def test_claude_worktree_path_allows_explicit_cpp_source_context(tmp_path: Path) -> None:
+    root = tmp_path / "skills"
+    _write_skill(
+        root,
+        "flow-start",
+        "---\nname: flow-start\n---\n# Flow Start\n",
+        "CPP source context: upstream Claude docs used .claude/worktrees here.",
+    )
+
+    assert harness_lint.lint_skills(root, root / "missing-allowlist.txt") == []
+
+
 def test_adaptation_block_itself_is_not_a_violation(tmp_path: Path) -> None:
     root = tmp_path / "skills"
     _write_skill(

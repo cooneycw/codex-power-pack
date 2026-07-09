@@ -4,11 +4,10 @@
 
 Remove orphaned worktree references, delete local branches already merged to main, and prune stale remote tracking branches.
 
-Native worktrees live under `.claude/worktrees/`. `git worktree list`,
+Codex flow worktrees live under `.codex/worktrees/`. `git worktree list`,
 `git worktree prune`, and `git worktree remove` operate on them exactly as they do
-on any worktree, so this command is the correct cross-session cleanup path -
-native `ExitWorktree` only removes worktrees created by `EnterWorktree` in the
-current session and cannot prune stale or prior-session ones.
+on any linked worktree, so this command is the correct cleanup path across
+sessions and can prune stale or prior-session worktrees.
 
 ## Arguments
 

@@ -68,7 +68,7 @@ RULES = (
         id="claude-worktree-path",
         description="Claude native worktree path",
         pattern=re.compile(r"\.claude/worktrees"),
-        adaptation_terms=(".claude/worktrees", "Native worktrees"),
+        adaptation_terms=(),
     ),
     Rule(
         id="bang-command-prefix",
@@ -150,11 +150,27 @@ def _is_inside_adaptation_block(path: Path, line_number: int, skills_root: Path)
 
 
 def _has_adaptation(path: Path, rule: Rule, skills_root: Path) -> bool:
+    if not rule.adaptation_terms:
+        return False
     skill_dir = _skill_dir_for(path, skills_root)
     if skill_dir is None:
         return False
     text = _adaptation_text(skill_dir)
     return any(term in text for term in rule.adaptation_terms)
+
+
+def _is_cpp_source_context(finding: Finding) -> bool:
+    """Allow stale Claude paths only when the line says it is source context."""
+
+    if finding.rule_id != "claude-worktree-path":
+        return False
+    markers = (
+        "CPP source context",
+        "Claude source context",
+        "Claude Power Pack source context",
+        "claude-power-pack source context",
+    )
+    return any(marker in finding.text for marker in markers)
 
 
 def read_allowlist(path: Path) -> list[Allow]:
@@ -212,6 +228,8 @@ def lint_skills(skills_root: Path = DEFAULT_SKILLS_ROOT, allowlist_path: Path = 
                 if _is_inside_adaptation_block(path, line_number, skills_root):
                     continue
                 if _has_adaptation(path, rule, skills_root):
+                    continue
+                if _is_cpp_source_context(finding):
                     continue
                 if _allowed(finding, skills_root, allows):
                     continue

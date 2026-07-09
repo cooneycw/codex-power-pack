@@ -7,7 +7,7 @@
 # indistinguishable to the model AND in the transcript. Claude Code's
 # PermissionRequest hook is not - it fires at the exact moment a permission
 # dialog is shown. This hook turns that event into one `permission-prompt` record
-# in the project's .claude/friction.jsonl (via friction-log.sh), so
+# in the project's .codex/friction.jsonl (via friction-log.sh), so
 # /self-improvement:retro Step 4 finally has real input (issue #482).
 #
 # Two things per prompt:
@@ -30,7 +30,7 @@
 #
 # Input: the PermissionRequest JSON payload on stdin
 #        ({tool_name, tool_input, permission_mode, cwd, session_id, ...}).
-# Output: none (records land in the project's .claude/friction.jsonl).
+# Output: none (records land in the project's .codex/friction.jsonl).
 #
 # Registered (user-confirmed) in ~/.claude/settings.json by /cpp:init and
 # /cpp:update:

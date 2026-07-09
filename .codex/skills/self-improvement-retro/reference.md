@@ -19,7 +19,7 @@ terminal "final step retro" would be blind to exactly those. So:
 
 - **Capture** is thin, always-on instrumentation woven into `/flow-auto` and
   `/flow-merge` that records every friction signal on every step, success OR
-  failure, via `scripts/friction-log.sh` -> the main repo's `.claude/friction.jsonl`.
+  failure, via `scripts/friction-log.sh` -> the main repo's `.codex/friction.jsonl`.
   It survives failed runs AND worktree removal - the helper resolves the durable
   main-repo buffer via `git-common-dir`, so signals captured inside a `/flow-auto`
   worktree reach this command (run from the main repo) without manual re-logging
@@ -48,7 +48,9 @@ terminal "final step retro" would be blind to exactly those. So:
 - `--on-demand` (optional, informational): marks a manual run outside a flow.
 
 None are required. With no arguments, the command grills the current conversation
-plus `.claude/friction.jsonl`.
+plus `.codex/friction.jsonl`. If an older `.claude/friction.jsonl` queue exists
+from a pre-Codex-state flow run, treat it as a legacy fallback buffer and drain it
+after the Codex buffer.
 
 ## Instructions
 
@@ -58,7 +60,9 @@ When the user invokes `/self-improvement-retro`, perform these steps.
 
 Collect signals from all available sources (union, then de-duplicate):
 
-1. **Capture buffer** - if `.claude/friction.jsonl` exists, read it. Each line is a
+1. **Capture buffer** - read `.codex/friction.jsonl` first. If it is absent but
+   a legacy `.claude/friction.jsonl` exists, read that fallback buffer and label
+   it as legacy in the report. Each line is a
    JSON record: `{ts, run, step, class, signal, fix, scope, outcome, risk, harness}`.
    The `risk` field is set on `permission-prompt` records by the census hook (empty
    on other classes); Step 4 uses it to allowlist only the safe tiers. The
@@ -66,7 +70,14 @@ Collect signals from all available sources (union, then de-duplicate):
    empty = unattributed); attribute the signal counts by it in the report so a
    mixed-harness buffer distinguishes Claude from Codex friction.
    ```bash
-   [ -f .claude/friction.jsonl ] && cat .claude/friction.jsonl || echo "NO_BUFFER"
+   if [ -f .codex/friction.jsonl ]; then
+     cat .codex/friction.jsonl
+   elif [ -f .claude/friction.jsonl ]; then
+     echo "LEGACY_BUFFER .claude/friction.jsonl" >&2
+     cat .claude/friction.jsonl
+   else
+     echo "NO_BUFFER"
+   fi
    ```
 2. **This conversation** - scan the session for friction the buffer may have
    missed, across four classes:
@@ -246,8 +257,11 @@ outcomes so nothing is re-proposed next run:
 - Rationale: <why applied/rejected>
 ```
 
-Then truncate or archive the drained `.claude/friction.jsonl` records so the next
-retro starts clean (the buffer is a queue, the ledger is the record).
+Then truncate or archive the drained `.codex/friction.jsonl` records so the next
+retro starts clean (the buffer is a queue, the ledger is the record). If the run
+consumed the legacy `.claude/friction.jsonl` fallback, archive or truncate that
+legacy file after recording the decisions so the same pre-migration records are
+not reprocessed.
 
 ## Auto-offer at end of a flow run
 

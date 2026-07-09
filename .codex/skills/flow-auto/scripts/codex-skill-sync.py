@@ -86,9 +86,8 @@ INLINE_MAX_LINES = 100
 # emitted, so short clean commands carry no adaptations block at all.
 ADAPTATIONS: list[tuple[tuple[str, ...], str]] = [
     (
-        ("EnterWorktree", "ExitWorktree", ".claude/worktrees"),
-        "Native worktrees (`EnterWorktree`/`ExitWorktree` tool calls,"
-        " `.claude/worktrees/` paths): use plain git instead -"
+        ("EnterWorktree", "ExitWorktree", ".claude/worktrees", ".codex/worktrees"),
+        "Codex worktrees: use plain git under `.codex/worktrees/<branch>` -"
         " `git worktree add <path> -b <branch>`, work inside it, then"
         " `git worktree remove <path>` when done.",
     ),

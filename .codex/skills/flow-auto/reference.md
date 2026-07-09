@@ -57,7 +57,7 @@ risk-rated record with a derived allow-rule candidate on every prompt shown -
 across every session, not just flow runs (issue #482). Do not log this class by
 hand.
 
-Records go to the main repo's `.claude/friction.jsonl` (a queue drained by
+Records go to the main repo's `.codex/friction.jsonl` (a queue drained by
 `/self-improvement-retro`). The helper resolves that durable buffer automatically
 via `git-common-dir`, so signals captured inside this run's worktree survive its
 removal at Step 7 (issue #471) - no env var or per-call path needed.
@@ -69,10 +69,10 @@ This is capture only - proposing and applying fixes happens in the retro, not he
 
 **CRITICAL: You MUST create or enter a worktree before proceeding. NEVER implement changes directly on main/master. This step is NOT optional - if worktree creation fails, STOP immediately.**
 
-Worktree mechanics ride Claude Code's **native worktrees**: the `EnterWorktree`
-tool creates a checkout under `.claude/worktrees/<name>` on a new branch and
-switches the session into it. CPP keeps and enforces the issue-anchored
-`issue-<N>-<slug>` branch name (the gate policy the native tool does not absorb).
+Codex flow uses plain git linked worktrees under `.codex/worktrees/<name>`.
+Create or resume the checkout with `git worktree`, then run all implementation
+steps from that worktree path. CxPP keeps and enforces the issue-anchored
+`issue-<N>-<slug>` branch name.
 
 ```bash
 ISSUE_NUM="$1"
@@ -85,7 +85,7 @@ gh issue view "$ISSUE_NUM" --json number,title,state,body
 - Extract the title for branch naming.
 
 ```bash
-# Sanitize title for branch name (cut keeps within EnterWorktree's 64-char limit)
+# Sanitize title for branch name.
 SLUG=$(echo "$TITLE" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-//;s/-$//' | cut -c1-50)
 BRANCH="issue-${ISSUE_NUM}-${SLUG}"
 ```
@@ -106,8 +106,7 @@ git branch -r | grep "issue-${ISSUE_NUM}-"
 
 - **Already on issue branch** (`$CURRENT_BRANCH` matches `issue-${ISSUE_NUM}-`):
   verify you are NOT on main/master and use the current directory. This is a
-  resumed run - remember it so Step 7 uses the git cleanup fallback, not
-  `ExitWorktree`.
+  resumed run.
 - **Worktree exists** (prior session): before entering, guard against a
   CONCURRENT live driver (issue #503). On a box running several Claude sessions,
   another session may be mid-implementation in this very worktree; entering it
@@ -128,26 +127,25 @@ git branch -r | grep "issue-${ISSUE_NUM}-"
   If the guard prints `FLOW_LIVE_DRIVER: suspected` (a dirty file touched within
   ~30m) OR `gh pr list --head` shows an open/merged PR, STOP and require EXPLICIT
   user confirmation that no other live session owns this worktree before calling
-  `EnterWorktree(path="$WT_PATH")`. If both are clear, switch in with
-  `EnterWorktree(path="<path from git worktree list>")`. Resumed run - Step 7 uses
-  the git cleanup fallback.
+  the existing worktree. If both are clear, use the `WT_PATH` checkout as the
+  working directory. Resumed run - Step 7 uses git cleanup.
 - **Remote branch exists, no local worktree** (cross-machine pickup): the native
-  tool cannot check out an existing remote branch, so add it with git, then switch
-  in:
+  branch is the source of truth, so add it with git, then work from the checkout:
   ```bash
   REMOTE_BRANCH=$(git branch -r | grep "issue-${ISSUE_NUM}-" | head -1 | xargs)
   LOCAL_BRANCH="${REMOTE_BRANCH#origin/}"
-  git worktree add -b "$LOCAL_BRANCH" ".claude/worktrees/${LOCAL_BRANCH}" "$REMOTE_BRANCH"
+  git worktree add -b "$LOCAL_BRANCH" ".codex/worktrees/${LOCAL_BRANCH}" "$REMOTE_BRANCH"
+  cd ".codex/worktrees/${LOCAL_BRANCH}"
   ```
-  then call `EnterWorktree(path=".claude/worktrees/${LOCAL_BRANCH}")`. Step 7 uses
-  the git cleanup fallback (a `path`-entered worktree is not removed by
-  `ExitWorktree`).
-- **Neither exists** (fresh start): create and enter natively by calling the
-  `EnterWorktree` tool with `name="${BRANCH}"`. This branches from
-  `origin/<default-branch>` (default `worktree.baseRef: fresh`) and switches the
-  session into `.claude/worktrees/${BRANCH}`. Do NOT shell out to `git worktree
-  add` for the fresh path. This is a session-created worktree - Step 7 removes it
-  with `ExitWorktree`.
+- **Neither exists** (fresh start): create the linked worktree from the remote
+  default branch and then work from it:
+  ```bash
+  DEFAULT_BRANCH=$(git remote show origin 2>/dev/null | sed -n '/HEAD branch/s/.*: //p')
+  DEFAULT_BRANCH="${DEFAULT_BRANCH:-main}"
+  git fetch origin "$DEFAULT_BRANCH"
+  git worktree add -b "$BRANCH" ".codex/worktrees/${BRANCH}" "origin/${DEFAULT_BRANCH}"
+  cd ".codex/worktrees/${BRANCH}"
+  ```
 
 #### Verification Gate (MANDATORY - do NOT skip)
 
@@ -157,13 +155,13 @@ issue-anchored branch name (the moat every later step relies on):
 ```bash
 CURRENT_BRANCH=$(git branch --show-current)
 if [[ "$CURRENT_BRANCH" == "main" || "$CURRENT_BRANCH" == "master" ]]; then
-    echo "ERROR: Still on main/master after Step 1. EnterWorktree did not switch the session."
+    echo "ERROR: Still on main/master after Step 1. Switch into the issue worktree before continuing."
     echo "STOP: Cannot proceed. You MUST be on an issue branch, not main."
     exit 1
 fi
 
-# Native worktree creation derives the branch from the worktree name; normalize
-# to the issue-anchored convention so downstream steps can parse the issue number.
+# Normalize to the issue-anchored convention so downstream steps can parse the
+# issue number.
 if [[ "$CURRENT_BRANCH" != "$BRANCH" && ! "$CURRENT_BRANCH" =~ ^issue-${ISSUE_NUM}- ]]; then
     git branch -m "$BRANCH"
     CURRENT_BRANCH="$BRANCH"
@@ -292,15 +290,14 @@ fi
 - If it reports `current` or `moved-clean` with no overlap, proceed - the Step-7
   #462 guard remains the final backstop.
 
-**Worktree path-resolution rule (issue #486) - a native `EnterWorktree` session
-edits the worktree, but the worktree lives *inside* the main repo at
-`.claude/worktrees/<name>/`.** A `Write`/`Edit` given a hand-built ABSOLUTE
-`.claude/worktrees/<name>/...` path has been observed to land in the MAIN repo
+**Worktree path-resolution rule (issue #486) - the linked worktree lives inside
+the main repo at `.codex/worktrees/<name>/`.** A `Write`/`Edit` given a hand-built ABSOLUTE
+`.codex/worktrees/<name>/...` path has been observed to land in the MAIN repo
 working tree instead of the worktree (flow:auto #442 x2, #471) - work looks done
 but is written to the wrong tree. So, for every edit in this step:
 
 - Resolve edit paths from the active worktree root - `git rev-parse
-  --show-toplevel` - never a hand-built `.claude/worktrees/<name>/...` absolute
+  --show-toplevel` - never a hand-built `.codex/worktrees/<name>/...` absolute
   path. A path under `$(git rev-parse --show-toplevel)/...`, or a plain relative
   path from the session cwd, targets the worktree correctly.
 - After writing, confirm the change landed in the worktree (`git status` shows it)
@@ -579,9 +576,9 @@ Report: `Step 6/9: Finish complete - PR #XX created`
    # as a failure is a false STOP (issue #461). The helper drops --delete-branch in
    # a linked worktree, deletes the remote branch itself, and verifies the PR
    # reached MERGED before reporting failure. Local worktree/branch cleanup is left
-   # to step 4 below, so the native ExitWorktree path is unaffected.
-   if [[ -x ~/.claude/scripts/gh-pr-merge.sh ]]; then
-       ~/.claude/scripts/gh-pr-merge.sh "$PR_NUMBER" "$BRANCH"
+   # to step 4 below.
+   if [[ -x scripts/gh-pr-merge.sh ]]; then
+       scripts/gh-pr-merge.sh "$PR_NUMBER" "$BRANCH"
        MERGE_RC=$?
    else
        # Inline fallback (helper not installed): same linked-worktree guard.
@@ -614,22 +611,9 @@ Report: `Step 6/9: Finish complete - PR #XX created`
 
 4. **Clean up worktree and branch:**
 
-   **If Step 1 created the worktree this session via `EnterWorktree(name=...)`**
-   (the fresh-start path), remove it natively - a single tool call that deletes the
-   worktree and its branch and restores the session to the main repo, with no
-   manual `cd`-before-remove dance:
-
-   `ExitWorktree(action="remove", discard_changes=true)`
-
-   `discard_changes=true` is required because the squash-merge leaves the local
-   branch with commits not on `main`; discarding the now-merged local branch is
-   correct. After this the session cwd is back in the main repo.
-
-   **Otherwise** (Step 1 resumed an existing worktree, entered via
-   `EnterWorktree(path=...)`, or you are on a feature branch in the main repo)
-   `ExitWorktree` will not remove it, so use the git fallback. **CRITICAL: `cd` to
-   the main repo BEFORE removing the worktree - never remove a worktree while your
-   cwd is inside it. Execute as SEPARATE Bash calls.**
+   Use git cleanup for Codex worktrees. **CRITICAL: `cd` to the main repo BEFORE
+   removing the worktree - never remove a worktree while your cwd is inside it.
+   Execute as SEPARATE Bash calls.**
 
    **Step 7a - Return to the main repo (separate Bash call):**
    ```bash
@@ -640,8 +624,8 @@ Report: `Step 6/9: Finish complete - PR #XX created`
    **Step 7b - Remove the worktree (separate Bash call, AFTER confirming cd succeeded):**
    ```bash
    if [[ -n "$WORKTREE_PATH" && "$WORKTREE_PATH" != "$MAIN_REPO" ]]; then
-       if [[ -f ~/.claude/scripts/worktree-remove.sh ]]; then
-           ~/.claude/scripts/worktree-remove.sh "$WORKTREE_PATH" --force --delete-branch
+       if [[ -f scripts/worktree-remove.sh ]]; then
+           scripts/worktree-remove.sh "$WORKTREE_PATH" --force --delete-branch
        else
            git worktree remove "$WORKTREE_PATH" --force
            git branch -D "$BRANCH" 2>/dev/null || true
@@ -906,11 +890,11 @@ Flow Auto Complete
   Changes:  Modified 3 files (src/auth/login.py, tests/test_auth.py, config/routes.py)
   PR:       #78 (squash-merged)
   Branch:   issue-42-fix-login (deleted)
-  Worktree: .claude/worktrees/issue-42-fix-login (removed)
+  Worktree: .codex/worktrees/issue-42-fix-login (removed)
   CI:       Woodpecker pipeline #5 passed | GitHub Actions run #123 passed | skipped
   Deploy:   make deploy (success) | skipped
   Verify:   PROCEED | REVIEW | ROLLBACK | not configured
-  Friction: 4 signals captured (.claude/friction.jsonl)
+  Friction: 4 signals captured (.codex/friction.jsonl)
   Location: /home/user/Projects/my-project (main)
 ```
 
@@ -918,7 +902,7 @@ Flow Auto Complete
 
 ### Post-run: Friction Retro (optional, non-blocking)
 
-After the summary, if `.claude/friction.jsonl` recorded any signals this run, offer
+After the summary, if `.codex/friction.jsonl` recorded any signals this run, offer
 the codify step - do not block or auto-run it:
 
 ```
@@ -968,7 +952,7 @@ Key failure scenarios:
 - **CI pipeline fails:** Stop at step 8, link to pipeline/run for investigation
 - **CI not detected:** Non-blocking at step 8, warn and continue to deploy
 - **Deploy fails:** Report but don't roll back (deploy is best-effort)
-- **Inside worktree being removed:** `ExitWorktree(action="remove")` restores the session cwd for session-created worktrees; the git fallback path uses `worktree-remove.sh`, which also handles removing from inside safely
+- **Inside worktree being removed:** the git cleanup path changes to the main repo before removal; `worktree-remove.sh` also handles removing from inside safely
 
 ## Notes
 
@@ -976,8 +960,8 @@ Key failure scenarios:
 - The analyze step ensures Claude understands the issue before writing code
 - The ELI5 step (Step 3) is a human checkpoint: it restates intent in plain language, verifies the issue is still worth doing, and gates implementation on plan approval. Use `--yes` (or an `eli5: auto-approve` trailer) for fully unattended runs; a `No longer needed` verdict never auto-implements
 - Each step builds on the previous one; there's no skipping
-- Worktrees are native: Step 1 uses the `EnterWorktree` tool (checkout under `.claude/worktrees/`, branched from `origin/<default-branch>`) and Step 7 uses `ExitWorktree` for session-created worktrees, with a `git worktree` fallback for resumed or cross-machine worktrees. The issue-anchored `issue-<N>-<slug>` branch name, the ELI5 gate, and quality gates are CPP policy layered on top of the native mechanics
+- Worktrees are plain git linked worktrees under `.codex/worktrees/`, branched from `origin/<default-branch>` for fresh work or from the existing remote issue branch for cross-machine pickup. The issue-anchored `issue-<N>-<slug>` branch name, the ELI5 gate, and quality gates are CxPP policy layered on top.
 - The deploy step is always optional - it only runs if a deploy target exists
 - After completion, the user is in the main repo on the main branch
 - For step-by-step control, use individual commands: `/flow-start`, `/flow-eli5`, `/flow-finish`, `/flow-merge`, `/flow-deploy`
-- Friction capture runs throughout (always-on, fail-open, `scripts/friction-log.sh` -> `.claude/friction.jsonl`) and the run offers `/self-improvement-retro` at the end to codify fixes - the grill-me cycle (issue #426)
+- Friction capture runs throughout (always-on, fail-open, `scripts/friction-log.sh` -> `.codex/friction.jsonl`) and the run offers `/self-improvement-retro` at the end to codify fixes - the grill-me cycle (issue #426)

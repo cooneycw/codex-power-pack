@@ -8,7 +8,7 @@ description: "Flow: Sync - Push WIP to Remote for Cross-Machine Pickup - Push th
 
 Generated from a Claude Code command. Where the procedure references these Claude-only surfaces, adapt as follows:
 
-- Native worktrees (`EnterWorktree`/`ExitWorktree` tool calls, `.claude/worktrees/` paths): use plain git instead - `git worktree add <path> -b <branch>`, work inside it, then `git worktree remove <path>` when done.
+- Codex worktrees: use plain git under `.codex/worktrees/<branch>` - `git worktree add <path> -b <branch>`, work inside it, then `git worktree remove <path>` when done.
 
 # Flow: Sync - Push WIP to Remote for Cross-Machine Pickup
 
@@ -84,7 +84,7 @@ Synced branch to remote.
 ## Notes
 
 - This command is intentionally simple - just commit WIP + push.
-- Cross-machine sync operates on the `issue-<N>-<slug>` **branch**, not on worktree paths, so the native `.claude/worktrees/` location (which is per-workstation and gitignored) does not affect it.
-- `/flow-start` already handles the receiving end: it detects the remote branch and, because the native `EnterWorktree` tool cannot check out an existing remote branch, adds a worktree tracking it with `git worktree add` and then switches in with `EnterWorktree(path=...)`.
+- Cross-machine sync operates on the `issue-<N>-<slug>` **branch**, not on worktree paths, so the `.codex/worktrees/` location (which is per-workstation and gitignored) does not affect it.
+- `/flow-start` already handles the receiving end: it detects the remote branch, adds a `.codex/worktrees/<branch>` checkout with `git worktree add`, and continues from that path.
 - WIP commits are harmless because `/flow-merge` uses squash-merge, collapsing all commits into one clean commit.
 - No configuration required - works with any git remote.

@@ -8,7 +8,7 @@ description: "Clean up stale worktree references and merged branches"
 
 Generated from a Claude Code command. Where the procedure references these Claude-only surfaces, adapt as follows:
 
-- Native worktrees (`EnterWorktree`/`ExitWorktree` tool calls, `.claude/worktrees/` paths): use plain git instead - `git worktree add <path> -b <branch>`, work inside it, then `git worktree remove <path>` when done.
+- Codex worktrees: use plain git under `.codex/worktrees/<branch>` - `git worktree add <path> -b <branch>`, work inside it, then `git worktree remove <path>` when done.
 
 # Flow: Cleanup - Prune Stale Worktrees and Branches
 
