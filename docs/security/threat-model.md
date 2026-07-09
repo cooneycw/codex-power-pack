@@ -246,6 +246,9 @@ Review rule:
 - Any hook that can observe prompts, command input, command output, permissions,
   or session lifecycle is security-sensitive and must be reviewed as executable
   code.
+- The E1 spike findings in `docs/security/codex-hooks-friction-telemetry.md`
+  enumerate which Codex lifecycle events can observe approval prompts, command
+  failures, and tool errors.
 
 ## Friction Telemetry Egress
 
@@ -309,6 +312,9 @@ Required tests for implementation stories:
   failure signal.
 - Oversized summaries are truncated after masking.
 - `harness=codex` is always present.
+- The E2 implementation should follow the hook-first, mask-before-write
+  architecture recommended in
+  `docs/security/codex-hooks-friction-telemetry.md`.
 
 ## Exit Bar
 
