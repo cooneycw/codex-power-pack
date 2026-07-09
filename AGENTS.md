@@ -42,6 +42,8 @@ tool integrations, with client-side pointers documented in `docs/HOST_MANAGED.md
 - Keep marketplace entries pinned for release use. Repo marketplace entries under
   `.agents/plugins/marketplace.json` should declare pinning policy and be
   installed with `codex plugin marketplace add --ref <tag-or-sha>`.
+- Use `docs/release-process.md` for release PRs, signed tag or SHA installs,
+  upgrade transcripts, rollback refs, and changelog discipline.
 - prefer `rg` for repo search
 
 ## Notes

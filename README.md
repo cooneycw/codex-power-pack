@@ -50,6 +50,10 @@ The catalog currently exposes per-family packages for `project`, `spec`,
 `cxpp`. `spec` and `cxpp` are scaffolded package slots for the follow-up family
 implementation issues.
 
+Release installs and upgrades follow `docs/release-process.md`: use a signed
+release tag or immutable commit SHA, record the resolved SHA, and preserve
+rollback refs in the release notes.
+
 See `docs/plugin-marketplace-project-e2e.md` for the issue #77 project-plugin
 E2E transcript.
 
