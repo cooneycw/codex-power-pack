@@ -6,7 +6,7 @@ generated command skills, and tests for Codex-centric workflows.
 
 ## What Is Included
 
-- `.codex/skills/` - Codex skill packages generated from claude-power-pack (pull model, #75); see `.codex/skills/README.md`
+- `.codex/skills/` - Codex skill packages: generated shared families from claude-power-pack plus CxPP-owned native skills; see `.codex/skills/README.md`
 - `vendor/claude-power-pack/` - pin + drift manifest for the generated skills
 - `.codex/cicd.yml` and `.codex/cicd_tasks.yml` - Codex-local CI/CD manifests
 - `AGENTS.md` - the canonical repo instructions for Codex
@@ -50,7 +50,7 @@ management.
 ## Codex Architecture
 
 - Codex instructions live in `AGENTS.md`
-- Skill packages live in `.codex/skills/`, generated from claude-power-pack (see `.codex/skills/README.md`)
+- Skill packages live in `.codex/skills/`; shared families are generated from claude-power-pack, while Codex-native families are authored here (see `.codex/skills/README.md`)
 - Runtime config targets `.codex/` paths and host-managed pointers in
   `templates/config.toml.example`
 - Secrets storage uses `~/.config/codex-power-pack/`
@@ -75,14 +75,15 @@ trigger: `/flow:auto` maps to `.codex/skills/flow-auto/`.
 
 Families carried: `browser`, `cicd`, `cpp`, `documentation`, `evaluate`, `flow`,
 `github`, `project`, `qa`, `second-opinion`, `secrets`, `security`,
-`self-improvement`. `claude-md` is not carried - the Codex-native `agents-md` family
-covers the AGENTS.md world (epic #64/#66).
+`self-improvement`. `claude-md` is not carried - the CxPP-owned `agents-md` family
+covers the AGENTS.md world with native `.codex/skills/agents-md-*` packages.
 
-**Do not hand-edit `.codex/skills/`.** The drift gate (`make codex-skills-check`)
-fails CI on any divergence from the pinned copy. To change a skill, edit
+**Do not hand-edit generated skill dirs.** The drift gate (`make codex-skills-check`)
+fails CI on any divergence from the pinned copy. To change a generated skill, edit
 `.claude/commands/<family>/` in claude-power-pack, regenerate there
 (`make codex-skills`), then re-pull here (`make codex-skills-refresh`). See
-`.codex/skills/README.md`.
+`.codex/skills/README.md`. CxPP-owned native skill dirs are edited directly in
+this repo and kept out of the vendored manifest by `scripts/codex_skills_sync.py`.
 
 ## Verification
 
