@@ -4,14 +4,10 @@
 
 Merge the current branch's PR, then clean up the worktree and branch.
 
-Worktrees are Claude Code's **native worktrees** (checkouts under
-`.claude/worktrees/<name>`). `/flow-merge` is usually invoked standalone, in a
-fresh session from inside the worktree - so the worktree was NOT created by
-`EnterWorktree` in this session and `ExitWorktree` would be a no-op. The safe
-cross-session cleanup therefore stays on `git worktree remove` /
-`worktree-remove.sh`. If (and only if) you created this worktree earlier in the
-same session with `EnterWorktree(name=...)`, prefer the native
-`ExitWorktree(action="remove", discard_changes=true)` instead of Steps 5a-5c.
+Worktrees are plain git linked worktrees (normally under
+`.codex/worktrees/<name>`). `/flow-merge` is usually invoked standalone from
+inside the worktree. Cleanup therefore uses `git worktree remove` or the bundled
+`worktree-remove.sh` helper after first returning to the main checkout.
 
 ## Instructions
 
@@ -101,8 +97,8 @@ PR_NUMBER=$(echo "$PR_JSON" | jq -r '.number')
 # --delete-branch in a linked worktree, deletes the remote branch itself, and
 # verifies the PR reached MERGED before reporting failure. Local worktree/branch
 # cleanup stays in Step 5 below.
-if [[ -x ~/.claude/scripts/gh-pr-merge.sh ]]; then
-    ~/.claude/scripts/gh-pr-merge.sh "$PR_NUMBER" "$BRANCH"
+if [[ -x scripts/gh-pr-merge.sh ]]; then
+    scripts/gh-pr-merge.sh "$PR_NUMBER" "$BRANCH"
     MERGE_RC=$?
 else
     # Inline fallback (helper not installed): same linked-worktree guard.
@@ -155,8 +151,8 @@ pwd  # Verify you are in the main repo, NOT the worktree
 
 **Step 5b - Remove the worktree (separate Bash call, AFTER confirming cd succeeded):**
 ```bash
-if [[ -f ~/.claude/scripts/worktree-remove.sh ]]; then
-    ~/.claude/scripts/worktree-remove.sh "$WORKTREE_PATH" --force --delete-branch
+if [[ -f scripts/worktree-remove.sh ]]; then
+    scripts/worktree-remove.sh "$WORKTREE_PATH" --force --delete-branch
 else
     git worktree remove "$WORKTREE_PATH" --force
     git branch -D "$BRANCH" 2>/dev/null || true
@@ -215,7 +211,7 @@ PR #78 merged (squash) ✅
 
 Cleanup:
   ✅ Remote branch deleted: issue-42-fix-login
-  ✅ Worktree removed: .claude/worktrees/issue-42-fix-login
+  ✅ Worktree removed: .codex/worktrees/issue-42-fix-login
   ✅ Local branch deleted: issue-42-fix-login
   ✅ Issue #42 closed
   ✅ Pruned stale worktree references
@@ -236,7 +232,7 @@ scripts/friction-log.sh --class <permission-prompt|gate-failure|red-output|manua
   --signal "<what happened>" --run "flow:merge" --step "<N/9 Name>" --outcome "<...>"
 ```
 
-The helper writes to the main repo's `.claude/friction.jsonl` (resolved via
+The helper writes to the main repo's `.codex/friction.jsonl` (resolved via
 `git-common-dir`), so signals captured inside a worktree survive its removal
 during cleanup (issue #471). Then, if that buffer recorded any signals, offer the
 codify step (do not auto-run):
@@ -258,7 +254,7 @@ to codify fixes? [y/N]
 
 - Squash merge is the default - produces clean single-commit history
 - The remote branch is deleted by `gh pr merge --delete-branch`
-- Worktrees are native (`.claude/worktrees/`); cross-session cleanup uses `git worktree remove` / the safe `worktree-remove.sh` script (native `ExitWorktree` only removes worktrees created by `EnterWorktree` in the current session)
+- Worktrees are plain git linked worktrees under `.codex/worktrees/`; cleanup uses `git worktree remove` / the safe `worktree-remove.sh` script.
 - After merge, the user ends up in the main repo on the `main` branch
 - Automatically prunes stale worktree references, merged branches, and remote tracking branches
 - For a standalone cleanup (without merging), use `/flow-cleanup`

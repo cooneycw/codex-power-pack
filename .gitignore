@@ -55,6 +55,8 @@ desktop.ini
 node_modules/
 .codex/settings*.json
 .codex/plans/
+.codex/worktrees/
+.codex/friction*.jsonl
 
 # Logs
 *.log

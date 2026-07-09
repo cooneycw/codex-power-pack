@@ -11,7 +11,7 @@
 ## Project Map
 
 - `AGENTS.md` - canonical Codex instructions
-- `.codex/skills/` - Codex skill packages. Shared families are generated from claude-power-pack and pinned by commit SHA (pull model, codex-power-pack#75); CxPP-owned native families such as `agents-md-*` are authored here. See `.codex/skills/README.md`.
+- `.codex/skills/` - Codex skill packages. Shared families are generated from claude-power-pack and pinned by commit SHA (pull model, codex-power-pack#75), with narrow CxPP-owned `.codex/` runtime-state adaptations; CxPP-owned native families such as `agents-md-*` are authored here. See `.codex/skills/README.md`.
 - `.agents/plugins/marketplace.json` - repo-scoped native Codex marketplace catalog
 - `.codex/cicd.yml` - CI/CD config
 - `.codex/cicd_tasks.yml` - deterministic CI/CD task manifest
@@ -51,6 +51,8 @@ tool integrations, with client-side pointers documented in `docs/HOST_MANAGED.md
 - The shared command families live as generated Codex skills under `.codex/skills/<family>-<command>/`,
   pulled from claude-power-pack's `.claude/commands/` single source (codex-power-pack#75).
   The skill dir name is the trigger: `/flow:auto` -> `.codex/skills/flow-auto/`.
+  CxPP applies narrow runtime-state path adaptations where Codex-owned workflow
+  state must live under `.codex/` instead of `.claude/`.
 - Plugin-packaged copies of generated skills under `plugins/<family>/skills/`
   keep their skill payload files byte-identical to `.codex/skills/`. The only
   package-local overlay is `agents/openai.yaml`, which supplies Codex plugin UI
@@ -59,6 +61,9 @@ tool integrations, with client-side pointers documented in `docs/HOST_MANAGED.md
   `.claude/commands/<family>/` in claude-power-pack, regenerate there (`make codex-skills`),
   then re-pull here (`make codex-skills-refresh`). The drift gate `make codex-skills-check`
   fails CI on any hand-edit.
+- Exception: CxPP-owned runtime-state adaptations that move Codex workflow state
+  from `.claude/` to `.codex/` are maintained here, mirrored into plugin payloads,
+  covered by tests, and blessed by re-snapshotting `vendor/claude-power-pack/codex-skills.sha256`.
 - `agents-md-*` is the CxPP-owned native family for the AGENTS.md world; edit those
   skill packages directly here and keep them outside the vendored manifest.
 - `claude-md` is not carried here (Out-of-Scope; `agents-md` covers the AGENTS.md

@@ -8,7 +8,7 @@ description: "Flow: Status of Active Worktrees - Show all active worktrees with 
 
 Generated from a Claude Code command. Where the procedure references these Claude-only surfaces, adapt as follows:
 
-- Native worktrees (`EnterWorktree`/`ExitWorktree` tool calls, `.claude/worktrees/` paths): use plain git instead - `git worktree add <path> -b <branch>`, work inside it, then `git worktree remove <path>` when done.
+- Codex worktrees: use plain git under `.codex/worktrees/<branch>` - `git worktree add <path> -b <branch>`, work inside it, then `git worktree remove <path>` when done.
 
 # Flow: Status of Active Worktrees
 
@@ -67,8 +67,8 @@ ISSUE_TITLE=$(gh issue view "$ISSUE_NUM" --json title --jq '.title' 2>/dev/null 
 
 | Worktree | Issue | Branch | Status | PR |
 |----------|-------|--------|--------|----|
-| .claude/worktrees/issue-42-fix-login | #42 Fix login bug | issue-42-fix-login | 3 dirty files, 2 unpushed | - |
-| .claude/worktrees/issue-55-add-tests | #55 Add tests | issue-55-add-tests | Clean | PR #78 (OPEN) |
+| .codex/worktrees/issue-42-fix-login | #42 Fix login bug | issue-42-fix-login | 3 dirty files, 2 unpushed | - |
+| .codex/worktrees/issue-55-add-tests | #55 Add tests | issue-55-add-tests | Clean | PR #78 (OPEN) |
 
 ### Suggestions
 - **#42**: Has uncommitted work - commit or stash before switching

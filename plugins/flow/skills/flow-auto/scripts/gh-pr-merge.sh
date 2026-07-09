@@ -2,7 +2,7 @@
 # gh-pr-merge.sh - Squash-merge a PR robustly from any git worktree layout.
 #
 # Problem (issue #461):
-#   From inside a LINKED worktree - a native `.claude/worktrees/<name>` checkout
+#   From inside a LINKED worktree - a nested `.codex/worktrees/<name>` checkout
 #   or a legacy sibling dir - `gh pr merge <N> --squash --delete-branch` fails
 #   AFTER the remote merge has already succeeded:
 #
@@ -50,7 +50,7 @@
 #   * Linked worktree (cwd's `.git` is a FILE): run `gh pr merge --squash` WITHOUT
 #     --delete-branch so gh never attempts the local branch switch, then delete the
 #     REMOTE branch ourselves (what --delete-branch would have done). Local worktree
-#     + branch removal is left to the caller (worktree-remove.sh / ExitWorktree),
+#     + branch removal is left to the caller (worktree-remove.sh / git worktree remove),
 #     so the native cleanup path is unaffected.
 #   * Primary repo (cwd's `.git` is a DIRECTORY): keep --delete-branch; the local
 #     switch to the default branch is safe there.

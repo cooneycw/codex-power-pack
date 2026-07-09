@@ -113,16 +113,15 @@ for script in prompt-context.sh hook-mask-output.sh secrets-mask.sh; do
   fi
 done
 
-# worktree-remove.sh is now a FALLBACK, not a hard requirement: `/flow` creates
-# and removes worktrees with the native EnterWorktree/ExitWorktree tools; the
-# script is only used for cross-session / cross-machine worktree cleanup. Missing
-# is a WARN, not a FAIL.
+# worktree-remove.sh is optional: `/flow` uses git worktrees directly and this
+# helper is only a safer wrapper for cross-session / cross-machine cleanup.
+# Missing is a WARN, not a FAIL.
 if [ -x "$HOME/.claude/scripts/worktree-remove.sh" ]; then
   echo "PASS worktree-remove.sh (optional fallback)"
 elif [ -f "$HOME/.claude/scripts/worktree-remove.sh" ]; then
   echo "WARN worktree-remove.sh (not executable)"
 else
-  echo "WARN worktree-remove.sh (optional fallback not installed; native ExitWorktree covers same-session cleanup)"
+  echo "WARN worktree-remove.sh (optional cleanup helper not installed; git worktree remove is the fallback)"
 fi
 ```
 
@@ -270,7 +269,7 @@ Output a single diagnostic report in this format:
 | hooks.json | ✅/❌ | 2 hooks configured / Not found |
 | mask-output hook | ✅/❌ | ~/.claude/scripts/hook-mask-output.sh |
 | prompt-context.sh | ✅/❌ | Shell prompt context |
-| worktree-remove.sh | ✅/⚠️ | Optional fallback (native ExitWorktree is primary) |
+| worktree-remove.sh | ✅/⚠️ | Optional cleanup helper |
 | secrets-mask.sh | ✅/❌ | Output masking filter |
 | Flow allowlist | ✅/⚠️/❌ | 32/32 rules in ~/.claude/settings.json / N missing / settings.json missing |
 
@@ -324,7 +323,7 @@ Output a single diagnostic report in this format:
    - Go: `cp ~/Projects/claude-power-pack/templates/makefiles/go.mk Makefile`
    - Rust: `cp ~/Projects/claude-power-pack/templates/makefiles/rust.mk Makefile`
    - Monorepo: `cp ~/Projects/claude-power-pack/templates/makefiles/multi.mk Makefile`
-2. ⚠️ **worktree-remove.sh not found (optional)** - `/flow` uses the native `EnterWorktree`/`ExitWorktree` tools for same-session worktrees; the script is only a fallback for cross-session / cross-machine cleanup. Install if you want it: `ln -sf ~/Projects/claude-power-pack/scripts/worktree-remove.sh ~/.claude/scripts/`
+2. ⚠️ **worktree-remove.sh not found (optional)** - `/flow` uses git worktrees directly; the script is only a safer wrapper for cross-session / cross-machine cleanup. Install if you want it: `ln -sf ~/Projects/claude-power-pack/scripts/worktree-remove.sh ~/.claude/scripts/`
 2b. ⚠️ **Flow allowlist missing/incomplete** - `/flow:*` will prompt for read-only git/gh plumbing on every run. Merge via `/cpp:update` or `/cpp:init`; rationale and caveats in `templates/claude-settings-permissions.md`
 3. ⚠️ **uv not installed** - Install: `curl -LsSf https://astral.sh/uv/install.sh | sh`
 4. ❌ **cicd.yml missing** - Run `/cicd-init` to auto-detect framework and generate configuration

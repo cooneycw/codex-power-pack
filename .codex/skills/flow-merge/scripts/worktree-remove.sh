@@ -101,7 +101,7 @@ if [[ ! -d "$WORKTREE_PATH" ]]; then
     # Find the main repo (a directory whose .git is a real directory, not a
     # worktree's .git file). Two layouts to cover:
     #   1. Legacy sibling worktrees:  ../repo-issue-N  (main repo is a sibling)
-    #   2. Native worktrees:          .claude/worktrees/<name>  (main repo is an ancestor)
+    #   2. Codex worktrees:          .codex/worktrees/<name>  (main repo is an ancestor)
     PRUNE_REPO=""
     # (1) Scan siblings of the worktree path.
     for parent in "$(dirname "$WORKTREE_PATH")"/*; do
@@ -110,7 +110,7 @@ if [[ ! -d "$WORKTREE_PATH" ]]; then
             break
         fi
     done
-    # (2) Walk up ancestors (covers .claude/worktrees/<name> nested under the repo).
+    # (2) Walk up ancestors (covers .codex/worktrees/<name> nested under the repo).
     if [[ -z "$PRUNE_REPO" ]]; then
         ancestor="$(dirname "$WORKTREE_PATH")"
         while [[ "$ancestor" != "/" && -n "$ancestor" ]]; do

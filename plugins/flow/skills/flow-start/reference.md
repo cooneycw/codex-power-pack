@@ -4,12 +4,10 @@
 
 Create a worktree and branch for a GitHub issue. Stateless - all context from git and GitHub.
 
-Worktree mechanics ride Claude Code's **native worktrees**: the `EnterWorktree`
-tool creates a checkout under `.claude/worktrees/<name>` on a new branch (base
-governed by the `worktree.baseRef` setting - `fresh`, the default, branches from
-`origin/<default-branch>`, matching the old `origin/main` behavior) and switches
-the session into it. The issue-anchored `issue-<N>-<slug>` branch name is the
-policy CPP keeps and enforces; it is not absorbed by the native tool.
+Codex flow uses plain git linked worktrees under `.codex/worktrees/<name>`.
+Create or resume the checkout with `git worktree`, then run subsequent commands
+from that worktree path. The issue-anchored `issue-<N>-<slug>` branch name is the
+policy CxPP keeps and enforces.
 
 ## Arguments
 
@@ -43,15 +41,13 @@ gh issue view "$ISSUE_NUM" --json number,title,state,body
 
 ```bash
 # Sanitize title: lowercase, replace non-alphanum with hyphens, truncate.
-# The cut -c1-64 keeps the name within the EnterWorktree 64-char limit.
+# The cut -c1-50 keeps the path and branch readable.
 SLUG=$(echo "$TITLE" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-//;s/-$//' | cut -c1-50)
 
 BRANCH="issue-${ISSUE_NUM}-${SLUG}"
 ```
 
-The native worktree lives under `.claude/worktrees/${BRANCH}` - you do not choose
-a sibling directory; pass `${BRANCH}` as the worktree `name` and the tool places
-and names it.
+The Codex worktree lives under `.codex/worktrees/${BRANCH}`.
 
 ### Step 4: Check for Existing Work
 
@@ -71,24 +67,26 @@ Pick exactly one path:
 
 - **Already on the issue branch** (`$CURRENT_BRANCH` matches `issue-${ISSUE_NUM}-`):
   verify you are NOT on main/master and use the current directory. Do nothing else.
-- **Worktree already exists** (from a prior session): enter it with the
-  `EnterWorktree` tool using its existing path (do NOT create a new one):
-  `EnterWorktree(path="<path from git worktree list>")`.
+- **Worktree already exists** (from a prior session): use its existing path from
+  `git worktree list` as the working directory. Do NOT create a new one.
 - **Remote branch exists, no local worktree** (cross-machine pickup): the native
-  tool cannot check out an existing remote branch, so add the worktree with git,
-  then switch into it with `EnterWorktree`:
+  branch is the source of truth, so add the worktree with git and then work from
+  that checkout:
   ```bash
   REMOTE_BRANCH=$(git branch -r | grep "issue-${ISSUE_NUM}-" | head -1 | xargs)
   LOCAL_BRANCH="${REMOTE_BRANCH#origin/}"
-  git worktree add -b "$LOCAL_BRANCH" ".claude/worktrees/${LOCAL_BRANCH}" "$REMOTE_BRANCH"
+  git worktree add -b "$LOCAL_BRANCH" ".codex/worktrees/${LOCAL_BRANCH}" "$REMOTE_BRANCH"
+  cd ".codex/worktrees/${LOCAL_BRANCH}"
   ```
-  then call `EnterWorktree(path=".claude/worktrees/${LOCAL_BRANCH}")`.
-- **Neither exists** (fresh start): create and enter the worktree natively by
-  calling the `EnterWorktree` tool with `name="${BRANCH}"`. This branches from
-  `origin/<default-branch>` (under the default `worktree.baseRef: fresh`) and
-  switches the session into `.claude/worktrees/${BRANCH}`. Do NOT shell out to
-  `git worktree add` for the fresh path. If your `worktree.baseRef` is set to
-  `head`, sync `main` first so the branch does not start from a stale local HEAD.
+- **Neither exists** (fresh start): create the linked worktree from the remote
+  default branch and then work from it:
+  ```bash
+  DEFAULT_BRANCH=$(git remote show origin 2>/dev/null | sed -n '/HEAD branch/s/.*: //p')
+  DEFAULT_BRANCH="${DEFAULT_BRANCH:-main}"
+  git fetch origin "$DEFAULT_BRANCH"
+  git worktree add -b "$BRANCH" ".codex/worktrees/${BRANCH}" "origin/${DEFAULT_BRANCH}"
+  cd ".codex/worktrees/${BRANCH}"
+  ```
 
 ### Step 5: Verify, Normalize Branch, Output
 
@@ -97,13 +95,13 @@ Pick exactly one path:
 ```bash
 CURRENT_BRANCH=$(git branch --show-current)
 if [[ "$CURRENT_BRANCH" == "main" || "$CURRENT_BRANCH" == "master" ]]; then
-    echo "ERROR: Still on main/master. EnterWorktree did not switch the session."
+    echo "ERROR: Still on main/master. Switch into the issue worktree before continuing."
     exit 1
 fi
 ```
 
-**Enforce the issue-anchored branch name (the moat).** Native worktree creation
-derives the branch from the worktree name; if the resulting branch is not exactly
+**Enforce the issue-anchored branch name (the moat).** Worktree creation should
+already use the requested branch; if the resulting branch is not exactly
 `issue-${ISSUE_NUM}-${SLUG}`, rename it so every downstream step (`/flow-merge`,
 `/flow-status`, `/flow-cleanup`) can extract the issue number from the branch:
 
@@ -115,12 +113,12 @@ fi
 echo "Verified: on branch '$CURRENT_BRANCH' in $(pwd)"
 ```
 
-**Worktree path-resolution rule (issue #486).** A native `EnterWorktree` session
-edits the worktree, but the worktree lives *inside* the main repo at
-`.claude/worktrees/<name>/`. When you edit files from here, resolve paths from the
-worktree root - `git rev-parse --show-toplevel` - or use plain relative paths from
-the session cwd; never hand-build a `.claude/worktrees/<name>/...` absolute path,
-which has been observed to land the edit in the MAIN repo working tree instead.
+**Worktree path-resolution rule (issue #486).** The linked worktree lives inside
+the main repo at `.codex/worktrees/<name>/`. When you edit files from here,
+resolve paths from the worktree root - `git rev-parse --show-toplevel` - or use
+plain relative paths from the session cwd; never hand-build a
+`.codex/worktrees/<name>/...` absolute path, which has been observed to land the
+edit in the MAIN repo working tree instead.
 `/flow-auto` verifies this with `scripts/flow-worktree-guard.sh` before commit.
 
 Report to the user:
@@ -128,7 +126,7 @@ Report to the user:
 ```
 Created worktree for issue #42: "Fix login bug"
 
-  Directory: .claude/worktrees/issue-42-fix-login-bug
+  Directory: .codex/worktrees/issue-42-fix-login-bug
   Branch:    issue-42-fix-login-bug
   Verified:  Working directory is now the worktree (not main)
 ```

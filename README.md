@@ -98,10 +98,12 @@ the package-local `agents/openai.yaml` files supply display metadata and set
 ## Command Skills
 
 The shared command families are **generated** Codex skills under
-`.codex/skills/<family>-<command>/`, pulled byte-for-byte from claude-power-pack's
+`.codex/skills/<family>-<command>/`, pulled from claude-power-pack's
 `.claude/commands/` single source (the pull side of the source-of-truth bridge, #75)
-and pinned by commit SHA in `vendor/claude-power-pack/PIN`. The skill dir name is the
-trigger: `/flow:auto` maps to `.codex/skills/flow-auto/`.
+and pinned by commit SHA in `vendor/claude-power-pack/PIN`. CxPP carries narrow
+runtime-state adaptations where Codex-owned workflow state must live under
+`.codex/` instead of `.claude/`. The skill dir name is the trigger: `/flow:auto`
+maps to `.codex/skills/flow-auto/`.
 
 Families carried: `browser`, `cicd`, `cpp`, `documentation`, `evaluate`, `flow`,
 `github`, `project`, `qa`, `second-opinion`, `secrets`, `security`,
@@ -109,11 +111,11 @@ Families carried: `browser`, `cicd`, `cpp`, `documentation`, `evaluate`, `flow`,
 covers the AGENTS.md world with native `.codex/skills/agents-md-*` packages.
 
 **Do not hand-edit generated skill dirs.** The drift gate (`make codex-skills-check`)
-fails CI on any divergence from the pinned copy. To change a generated skill, edit
-`.claude/commands/<family>/` in claude-power-pack, regenerate there
-(`make codex-skills`), then re-pull here (`make codex-skills-refresh`). See
-`.codex/skills/README.md`. CxPP-owned native skill dirs are edited directly in
-this repo and kept out of the vendored manifest by `scripts/codex_skills_sync.py`.
+fails CI on any divergence from the manifest. To change shared generated skill
+behavior, edit `.claude/commands/<family>/` in claude-power-pack, regenerate
+there (`make codex-skills`), then re-pull here (`make codex-skills-refresh`).
+CxPP-owned runtime-state adaptations and native skill dirs are edited directly in
+this repo; see `.codex/skills/README.md`.
 
 ## Verification
 
