@@ -109,6 +109,8 @@ Families carried: `browser`, `cicd`, `cpp`, `documentation`, `evaluate`, `flow`,
 `github`, `project`, `qa`, `second-opinion`, `secrets`, `security`,
 `self-improvement`. `claude-md` is not carried - the CxPP-owned `agents-md` family
 covers the AGENTS.md world with native `.codex/skills/agents-md-*` packages.
+`project-next` and `project-lite` are CxPP-owned native project skills because
+CPP advertises those commands but does not generate payloads for them.
 
 **Do not hand-edit generated skill dirs.** The drift gate (`make codex-skills-check`)
 fails CI on any divergence from the manifest. To change shared generated skill

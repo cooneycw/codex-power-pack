@@ -1,0 +1,6 @@
+interface:
+  display_name: "Project Next"
+  short_description: "Recommend the next project issue"
+  default_prompt: "Use $project-next to recommend the next issue or cleanup action for this repository."
+policy:
+  allow_implicit_invocation: false

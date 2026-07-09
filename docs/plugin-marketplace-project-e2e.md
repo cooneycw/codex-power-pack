@@ -11,6 +11,8 @@ Pack using the `project` family.
 - Packaged skills:
   - `plugins/project/skills/project-help/`
   - `plugins/project/skills/project-init/`
+  - `plugins/project/skills/project-lite/`
+  - `plugins/project/skills/project-next/`
 
 The scaffold was created with the built-in `plugin-creator` helper and then
 validated with:
@@ -95,6 +97,8 @@ skills/project-help/SKILL.md
 skills/project-init/SKILL.md
 skills/project-init/reference.md
 skills/project-init/scripts/speckit-tasks-to-issues.sh
+skills/project-lite/SKILL.md
+skills/project-next/SKILL.md
 ```
 
 Codex prints a warning when `CODEX_HOME` is under `/tmp` because it refuses to
@@ -207,6 +211,8 @@ skills/project-help/SKILL.md
 skills/project-init/SKILL.md
 skills/project-init/reference.md
 skills/project-init/scripts/speckit-tasks-to-issues.sh
+skills/project-lite/SKILL.md
+skills/project-next/SKILL.md
 ```
 
 For release use, follow `docs/release-process.md` and replace the branch ref
