@@ -1,0 +1,6 @@
+interface:
+  display_name: "Project Init"
+  short_description: "Full project scaffolding orchestrator - zero to GitHub repo in one command"
+  default_prompt: "Use $project-init when you need full project scaffolding orchestrator - zero to GitHub repo in one command"
+policy:
+  allow_implicit_invocation: false

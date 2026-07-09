@@ -1,0 +1,34 @@
+{
+  "name": "second-opinion",
+  "version": "0.1.0",
+  "description": "Second-opinion model selection and review skills.",
+  "author": {
+    "name": "Codex Power Pack maintainers",
+    "url": "https://github.com/cooneycw/codex-power-pack"
+  },
+  "homepage": "https://github.com/cooneycw/codex-power-pack#readme",
+  "repository": "https://github.com/cooneycw/codex-power-pack",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "second-opinion",
+    "models",
+    "review"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Second Opinion",
+    "shortDescription": "Request a second model opinion.",
+    "longDescription": "Second Opinion packages Codex Power Pack client skills for model selection and quick reviews against the shared external server.",
+    "developerName": "Codex Power Pack",
+    "category": "AI Assistance",
+    "capabilities": [
+      "Automation",
+      "Read"
+    ],
+    "defaultPrompt": [
+      "Start a second opinion with /second-opinion-start."
+    ],
+    "brandColor": "#A855F7"
+  }
+}

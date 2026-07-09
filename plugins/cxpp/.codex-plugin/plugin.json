@@ -1,0 +1,34 @@
+{
+  "name": "cxpp",
+  "version": "0.1.0",
+  "description": "Codex Power Pack thin infrastructure fallback scaffold.",
+  "author": {
+    "name": "Codex Power Pack maintainers",
+    "url": "https://github.com/cooneycw/codex-power-pack"
+  },
+  "homepage": "https://github.com/cooneycw/codex-power-pack#readme",
+  "repository": "https://github.com/cooneycw/codex-power-pack",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "cxpp",
+    "bootstrap",
+    "plugins"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "CxPP",
+    "shortDescription": "Reserve the CxPP bootstrap package.",
+    "longDescription": "CxPP is the Codex Power Pack package slot for cxpp:init, cxpp:update, and cxpp:status skills. Issue #80 fills the skill payload.",
+    "developerName": "Codex Power Pack",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Automation",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Install the cxpp family when #80 lands."
+    ],
+    "brandColor": "#475569"
+  }
+}

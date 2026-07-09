@@ -1,0 +1,6 @@
+interface:
+  display_name: "Flow Cleanup"
+  short_description: "Clean up stale worktree references and merged branches"
+  default_prompt: "Use $flow-cleanup when you need clean up stale worktree references and merged branches"
+policy:
+  allow_implicit_invocation: false

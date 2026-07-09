@@ -1,0 +1,6 @@
+interface:
+  display_name: "Second Opinion Models"
+  short_description: "Select models and depth for second opinion code review"
+  default_prompt: "Use $second-opinion-models when you need select models and depth for second opinion code review"
+policy:
+  allow_implicit_invocation: false

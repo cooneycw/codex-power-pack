@@ -1,0 +1,36 @@
+{
+  "name": "cicd",
+  "version": "0.1.0",
+  "description": "Makefile, pipeline, smoke, health, and infrastructure CI/CD skills.",
+  "author": {
+    "name": "Codex Power Pack maintainers",
+    "url": "https://github.com/cooneycw/codex-power-pack"
+  },
+  "homepage": "https://github.com/cooneycw/codex-power-pack#readme",
+  "repository": "https://github.com/cooneycw/codex-power-pack",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "cicd",
+    "ci",
+    "pipeline",
+    "makefile"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "CI/CD",
+    "shortDescription": "Generate and verify CI/CD workflows.",
+    "longDescription": "CI/CD packages Codex Power Pack skills for Makefile validation, pipeline generation, smoke checks, health checks, containers, and IaC pipeline scaffolding.",
+    "developerName": "Codex Power Pack",
+    "category": "CI/CD",
+    "capabilities": [
+      "Automation",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Initialize CI/CD with /cicd-init.",
+      "Check a project with /cicd-check."
+    ],
+    "brandColor": "#0EA5E9"
+  }
+}

@@ -1,0 +1,6 @@
+interface:
+  display_name: "QA Help"
+  short_description: "QA Commands Help - Automated QA testing commands for web applications."
+  default_prompt: "Use $qa-help when you need qA Commands Help - Automated QA testing commands for web applications."
+policy:
+  allow_implicit_invocation: false

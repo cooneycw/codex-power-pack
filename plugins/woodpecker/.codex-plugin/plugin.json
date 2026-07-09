@@ -1,0 +1,34 @@
+{
+  "name": "woodpecker",
+  "version": "0.1.0",
+  "description": "Woodpecker CI pipeline skills scaffold.",
+  "author": {
+    "name": "Codex Power Pack maintainers",
+    "url": "https://github.com/cooneycw/codex-power-pack"
+  },
+  "homepage": "https://github.com/cooneycw/codex-power-pack#readme",
+  "repository": "https://github.com/cooneycw/codex-power-pack",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "woodpecker",
+    "ci",
+    "pipeline"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Woodpecker",
+    "shortDescription": "Generate hardened Woodpecker CI assets.",
+    "longDescription": "Woodpecker packages the current Woodpecker-specific Codex Power Pack skill and reserves the family package for the expanded CI/API workflow in issue #88.",
+    "developerName": "Codex Power Pack",
+    "category": "CI/CD",
+    "capabilities": [
+      "Automation",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Generate Woodpecker CI with /cicd-woodpecker."
+    ],
+    "brandColor": "#16A34A"
+  }
+}

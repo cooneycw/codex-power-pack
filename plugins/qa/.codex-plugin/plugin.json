@@ -1,0 +1,34 @@
+{
+  "name": "qa",
+  "version": "0.1.0",
+  "description": "Automated web QA testing skills.",
+  "author": {
+    "name": "Codex Power Pack maintainers",
+    "url": "https://github.com/cooneycw/codex-power-pack"
+  },
+  "homepage": "https://github.com/cooneycw/codex-power-pack#readme",
+  "repository": "https://github.com/cooneycw/codex-power-pack",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "qa",
+    "testing",
+    "playwright"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "QA",
+    "shortDescription": "Run Playwright-backed QA workflows.",
+    "longDescription": "QA packages Codex Power Pack skills for web application testing through the upstream Playwright MCP server.",
+    "developerName": "Codex Power Pack",
+    "category": "Testing",
+    "capabilities": [
+      "Automation",
+      "Read"
+    ],
+    "defaultPrompt": [
+      "Run web QA with /qa-test."
+    ],
+    "brandColor": "#EA580C"
+  }
+}

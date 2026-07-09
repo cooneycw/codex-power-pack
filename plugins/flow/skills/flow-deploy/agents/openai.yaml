@@ -1,0 +1,6 @@
+interface:
+  display_name: "Flow Deploy"
+  short_description: "Flow: Deploy via Makefile - Run deployment using the project's Makefile targets."
+  default_prompt: "Use $flow-deploy when you need flow: Deploy via Makefile - Run deployment using the project's Makefile targets."
+policy:
+  allow_implicit_invocation: false

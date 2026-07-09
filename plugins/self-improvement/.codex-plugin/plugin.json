@@ -1,0 +1,34 @@
+{
+  "name": "self-improvement",
+  "version": "0.1.0",
+  "description": "Retrospective improvement and friction review skills.",
+  "author": {
+    "name": "Codex Power Pack maintainers",
+    "url": "https://github.com/cooneycw/codex-power-pack"
+  },
+  "homepage": "https://github.com/cooneycw/codex-power-pack#readme",
+  "repository": "https://github.com/cooneycw/codex-power-pack",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "self-improvement",
+    "retro",
+    "friction"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Self Improvement",
+    "shortDescription": "Turn session friction into improvements.",
+    "longDescription": "Self Improvement packages Codex Power Pack skills for post-run retros, deployment retrospectives, and codified follow-up proposals.",
+    "developerName": "Codex Power Pack",
+    "category": "Productivity",
+    "capabilities": [
+      "Automation",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Run a friction retro with /self-improvement-retro."
+    ],
+    "brandColor": "#D97706"
+  }
+}

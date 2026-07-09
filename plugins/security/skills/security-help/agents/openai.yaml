@@ -1,0 +1,6 @@
+interface:
+  display_name: "Security Help"
+  short_description: "Security Commands - Novice-friendly security scanning for Claude Code projects."
+  default_prompt: "Use $security-help when you need security Commands - Novice-friendly security scanning for Claude Code projects."
+policy:
+  allow_implicit_invocation: false

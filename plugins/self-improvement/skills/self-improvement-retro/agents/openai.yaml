@@ -1,0 +1,6 @@
+interface:
+  display_name: "Self Improvement Retro"
+  short_description: "Self-Improvement: Retro - Post-Run Friction Retro + Codify Loop - The \\\"grill-me cycle\\\": grill a just-finished session for friction, the..."
+  default_prompt: "Use $self-improvement-retro when you need self-Improvement: Retro - Post-Run Friction Retro + Codify Loop - The \\\"grill-me cycle\\\": grill a just-finished session for friction, the..."
+policy:
+  allow_implicit_invocation: false

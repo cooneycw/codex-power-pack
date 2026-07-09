@@ -1,0 +1,6 @@
+interface:
+  display_name: "Flow Check"
+  short_description: "Run quality checks (lint + security) without committing"
+  default_prompt: "Use $flow-check when you need run quality checks (lint + security) without committing"
+policy:
+  allow_implicit_invocation: false

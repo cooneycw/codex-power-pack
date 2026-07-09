@@ -1,0 +1,6 @@
+interface:
+  display_name: "CI/CD Help"
+  short_description: "CI/CD Commands - Build, verify, and deploy automation for Claude Code projects."
+  default_prompt: "Use $cicd-help when you need cI/CD Commands - Build, verify, and deploy automation for Claude Code projects."
+policy:
+  allow_implicit_invocation: false

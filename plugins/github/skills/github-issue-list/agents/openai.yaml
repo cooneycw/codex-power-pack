@@ -1,0 +1,6 @@
+interface:
+  display_name: "GitHub Issue List"
+  short_description: "List and search GitHub issues in claude-power-pack"
+  default_prompt: "Use $github-issue-list when you need list and search GitHub issues in claude-power-pack"
+policy:
+  allow_implicit_invocation: false

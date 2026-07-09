@@ -1,0 +1,36 @@
+{
+  "name": "flow",
+  "version": "0.1.0",
+  "description": "Issue-driven development lifecycle skills.",
+  "author": {
+    "name": "Codex Power Pack maintainers",
+    "url": "https://github.com/cooneycw/codex-power-pack"
+  },
+  "homepage": "https://github.com/cooneycw/codex-power-pack#readme",
+  "repository": "https://github.com/cooneycw/codex-power-pack",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "flow",
+    "worktree",
+    "github",
+    "pull-request"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Flow",
+    "shortDescription": "Run worktree-based issue lifecycles.",
+    "longDescription": "Flow packages Codex Power Pack skills for issue worktrees, quality gates, pull requests, merges, cleanup, and deployment handoff.",
+    "developerName": "Codex Power Pack",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Automation",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Start issue work with /flow-start.",
+      "Run a full lifecycle with /flow-auto."
+    ],
+    "brandColor": "#4F46E5"
+  }
+}

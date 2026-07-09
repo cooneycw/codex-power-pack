@@ -1,0 +1,6 @@
+interface:
+  display_name: "AGENTS MD Lint"
+  short_description: "Trigger /agents-md:lint to audit AGENTS.md governance directives"
+  default_prompt: "Use $agents-md-lint when you need trigger /agents-md:lint to audit AGENTS.md governance directives"
+policy:
+  allow_implicit_invocation: false

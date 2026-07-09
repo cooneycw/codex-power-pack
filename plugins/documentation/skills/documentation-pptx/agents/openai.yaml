@@ -1,0 +1,6 @@
+interface:
+  display_name: "Documentation PPTX"
+  short_description: "Create a PowerPoint presentation with optional diagrams"
+  default_prompt: "Use $documentation-pptx when you need create a PowerPoint presentation with optional diagrams"
+policy:
+  allow_implicit_invocation: false

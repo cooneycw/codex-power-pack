@@ -1,0 +1,35 @@
+{
+  "name": "spec",
+  "version": "0.1.0",
+  "description": "Spec-kit adoption and GitHub issue sync scaffold.",
+  "author": {
+    "name": "Codex Power Pack maintainers",
+    "url": "https://github.com/cooneycw/codex-power-pack"
+  },
+  "homepage": "https://github.com/cooneycw/codex-power-pack#readme",
+  "repository": "https://github.com/cooneycw/codex-power-pack",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "spec",
+    "spec-kit",
+    "github",
+    "issues"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Spec",
+    "shortDescription": "Prepare the spec-kit workflow package.",
+    "longDescription": "Spec is the Codex Power Pack package slot for spec-kit adoption and GitHub issue sync skills. Issue #83 fills the skill payload.",
+    "developerName": "Codex Power Pack",
+    "category": "Planning",
+    "capabilities": [
+      "Planning",
+      "Automation"
+    ],
+    "defaultPrompt": [
+      "Install the spec family when #83 lands."
+    ],
+    "brandColor": "#0F766E"
+  }
+}

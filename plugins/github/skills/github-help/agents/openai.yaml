@@ -1,0 +1,6 @@
+interface:
+  display_name: "GitHub Help"
+  short_description: "Overview of all GitHub issue management commands"
+  default_prompt: "Use $github-help when you need overview of all GitHub issue management commands"
+policy:
+  allow_implicit_invocation: false

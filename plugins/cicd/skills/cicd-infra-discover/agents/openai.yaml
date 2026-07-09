@@ -1,0 +1,6 @@
+interface:
+  display_name: "CI/CD Infra Discover"
+  short_description: "Generate cloud resource discovery script for IaC import"
+  default_prompt: "Use $cicd-infra-discover when you need generate cloud resource discovery script for IaC import"
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,36 @@
+{
+  "name": "security",
+  "version": "0.1.0",
+  "description": "Deterministic security scanning and permission audit skills.",
+  "author": {
+    "name": "Codex Power Pack maintainers",
+    "url": "https://github.com/cooneycw/codex-power-pack"
+  },
+  "homepage": "https://github.com/cooneycw/codex-power-pack#readme",
+  "repository": "https://github.com/cooneycw/codex-power-pack",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "security",
+    "gitleaks",
+    "permissions",
+    "audit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Security",
+    "shortDescription": "Run deterministic security checks.",
+    "longDescription": "Security packages Codex Power Pack deterministic scanning, explanation, and permission audit skills.",
+    "developerName": "Codex Power Pack",
+    "category": "Security",
+    "capabilities": [
+      "Automation",
+      "Read"
+    ],
+    "defaultPrompt": [
+      "Run a quick scan with /security-quick.",
+      "Audit permissions with /security-permissions."
+    ],
+    "brandColor": "#DC2626"
+  }
+}

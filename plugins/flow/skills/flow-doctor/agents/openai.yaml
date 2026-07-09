@@ -1,0 +1,6 @@
+interface:
+  display_name: "Flow Doctor"
+  short_description: "Diagnose flow workflow setup and environment"
+  default_prompt: "Use $flow-doctor when you need diagnose flow workflow setup and environment"
+policy:
+  allow_implicit_invocation: false
