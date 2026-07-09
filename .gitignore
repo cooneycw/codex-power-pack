@@ -49,6 +49,8 @@ desktop.ini
 !package.json
 !tsconfig.json
 !.codex/hooks.json
+!.agents/plugins/marketplace.json
+!plugins/**/.codex-plugin/plugin.json
 .codex/security.yml
 node_modules/
 .codex/settings*.json
