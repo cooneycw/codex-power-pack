@@ -209,7 +209,8 @@ skills/project-init/reference.md
 skills/project-init/scripts/speckit-tasks-to-issues.sh
 ```
 
-For release use, replace the branch ref above with a release tag or commit SHA:
+For release use, follow `docs/release-process.md` and replace the branch ref
+above with a signed release tag or immutable commit SHA:
 
 ```bash
 codex plugin marketplace add cooneycw/codex-power-pack \

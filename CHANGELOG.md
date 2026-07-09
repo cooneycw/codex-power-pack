@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- Documented the pinned marketplace release, upgrade, and rollback process for
+  Codex plugin releases (#79).
+
 ### Removed
 
 - Retired the legacy `lib/spec_bridge/` package and its dedicated tests; spec-kit remains the authoring path.
