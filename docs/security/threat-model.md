@@ -2,15 +2,15 @@
 
 > Issue: #69
 > Scope: plugin marketplace modernization Phase 0
-> Status: owner sign-off pending on issue #69
+> Status: owner-approved on issue #69 on 2026-07-09
 > Verified against: Codex manual sections for plugins, plugin build, hooks, and
 > environment variables fetched on 2026-07-07
 
 ## Purpose
 
-This document is the Phase 0 exit-bar design for the plugin marketplace
-modernization wave. Epics C, D, and E must not merge implementation PRs until
-the owner records sign-off on issue #69.
+This document is the owner-approved Phase 0 exit-bar design for the plugin
+marketplace modernization wave. Epics C, D, and E were blocked from merging
+implementation PRs until owner sign-off was recorded on issue #69.
 
 The model covers four risk areas:
 
@@ -312,12 +312,12 @@ Required tests for implementation stories:
 
 ## Exit Bar
 
-This issue is complete only when all of the following are true:
+This issue is complete because all of the following are true:
 
 - `docs/security/threat-model.md` is merged.
 - The secrets masking design above is accepted.
 - The ledger write-path design above is accepted.
 - The plugin pinning policy above is accepted.
-- The owner records sign-off on GitHub issue #69.
+- The owner recorded sign-off on GitHub issue #69 on 2026-07-09.
 
-Until then, Epics C, D, and E implementation PRs remain blocked.
+With those conditions satisfied, Epics C, D, and E are unblocked.
