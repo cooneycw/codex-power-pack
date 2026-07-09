@@ -47,7 +47,7 @@ def test_every_skill_carries_the_generated_marker() -> None:
         )
 
 
-def test_native_agents_md_skills_are_present_without_generated_marker() -> None:
+def test_native_cxpp_skills_are_present_without_generated_marker() -> None:
     for skill_name in sync.LOCAL_SKILL_DIRS:
         skill_md = sync.SKILLS_ROOT / skill_name / "SKILL.md"
         assert skill_md.is_file(), f"{skill_name}: no SKILL.md"

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Project Lite"
+  short_description: "Orient quickly in a repository"
+  default_prompt: "Use $project-lite to summarize the current repository, branch, worktrees, and available commands."
+policy:
+  allow_implicit_invocation: false
