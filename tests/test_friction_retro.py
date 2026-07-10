@@ -57,6 +57,16 @@ def test_retro_normalizes_legacy_codex_jsonl_rows(tmp_path) -> None:
     assert any(item.kind == "validation-gate" for item in proposals)
 
 
+def test_repeated_failure_class_proposes_gate_when_legacy_summaries_vary() -> None:
+    proposals = analyze_events([
+        _event("first volatile failure"),
+        _event("second volatile failure"),
+    ])
+
+    proposal = next(item for item in proposals if item.kind == "validation-gate")
+    assert proposal.evidence_count == 2
+
+
 def test_retro_skill_uses_codex_queue_and_requires_confirmation() -> None:
     text = (REPO_ROOT / ".codex" / "skills" / "self-improvement-retro" / "SKILL.md").read_text()
     assert ".codex/friction.jsonl" in text
