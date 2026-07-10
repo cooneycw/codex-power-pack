@@ -73,7 +73,12 @@ FAMILY_SKILLS = {
         "secrets-ui",
         "secrets-validate",
     ],
-    "woodpecker": ["cicd-woodpecker"],
+    "woodpecker": [
+        "woodpecker-help",
+        "woodpecker-logs",
+        "woodpecker-restart",
+        "woodpecker-status",
+    ],
     "security": [
         "security-deep",
         "security-explain",
@@ -209,6 +214,38 @@ def test_packaged_skills_disable_implicit_invocation_by_default() -> None:
             assert interface["short_description"]
             assert interface["default_prompt"].startswith(f"Use ${skill_name}")
             assert payload["policy"]["allow_implicit_invocation"] is False
+
+
+def test_github_issue_skills_resolve_the_target_repository() -> None:
+    """Issue #85: GitHub commands must work outside the CPP checkout."""
+    github_skills = FAMILY_SKILLS["github"]
+
+    for skill_name in github_skills:
+        text = (GENERATED_SKILLS_ROOT / skill_name / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        reference = GENERATED_SKILLS_ROOT / skill_name / "reference.md"
+        if reference.exists():
+            text += reference.read_text(encoding="utf-8")
+
+        assert "cooneycw/claude-power-pack" not in text, skill_name
+
+    for skill_name in [
+        "github-issue-create",
+        "github-issue-list",
+        "github-issue-view",
+        "github-issue-update",
+        "github-issue-close",
+    ]:
+        text = (GENERATED_SKILLS_ROOT / skill_name / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        reference = GENERATED_SKILLS_ROOT / skill_name / "reference.md"
+        if reference.exists():
+            text += reference.read_text(encoding="utf-8")
+
+        assert 'gh repo view --json nameWithOwner --jq .nameWithOwner' in text
+        assert '--repo "$REPO"' in text
 
 
 def test_core_family_skill_list_stays_under_budget() -> None:

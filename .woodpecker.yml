@@ -7,6 +7,13 @@ when:
   - event: [push, pull_request]
 
 steps:
+  # Keep secret detection first and blocking: no later CI task should run when a
+  # credential has reached the repository.
+  secret-scan:
+    image: zricethezav/gitleaks:v8.18.4
+    commands:
+      - gitleaks detect --source . --config .gitleaks.toml --verbose
+
   validate:
     image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
     commands:
@@ -20,11 +27,6 @@ steps:
       # Harness gate: generated/authored skills must not carry unadapted
       # Claude-only constructs into Codex.
       - uv run python scripts/harness_lint.py --check
-
-  secret-scan:
-    image: zricethezav/gitleaks:v8.18.4
-    commands:
-      - gitleaks detect --source . --config .gitleaks.toml --verbose
 
   dependency-audit:
     image: python:3.11-slim-bookworm

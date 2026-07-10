@@ -1,0 +1,18 @@
+classDiagram
+  class FrictionWriter {
+    +write(event)
+    -mask(payload)
+  }
+  class FrictionEvent {
+    +validate()
+  }
+  class OutputMasker {
+    +register_secret(value)
+    +mask(text)
+  }
+  class SecretBundle {
+    +secrets: dict
+  }
+  FrictionWriter --> FrictionEvent : writes
+  FrictionWriter --> OutputMasker : uses
+  OutputMasker --> SecretBundle : masks values from

@@ -1,0 +1,43 @@
+{
+  "project": "Codex Power Pack",
+  "generated_at": "2026-07-10T00:00:00Z",
+  "engine": "c4-mermaid",
+  "diagrams": [
+    {
+      "id": "c4-l1-context",
+      "level": "L1",
+      "title": "L1 System Context",
+      "file": "c4-l1-context.mmd",
+      "node_count": 5,
+      "edge_count": 4,
+      "parent": null
+    },
+    {
+      "id": "c4-l2-container",
+      "level": "L2",
+      "title": "L2 Containers",
+      "file": "c4-l2-container.mmd",
+      "node_count": 5,
+      "edge_count": 5,
+      "parent": null
+    },
+    {
+      "id": "c4-l3-plugin-distribution",
+      "level": "L3",
+      "title": "L3 Plugin Distribution Components",
+      "file": "c4-l3-plugin-distribution.mmd",
+      "node_count": 5,
+      "edge_count": 5,
+      "parent": "c4-l2-container"
+    },
+    {
+      "id": "c4-l4-security-runtime",
+      "level": "L4",
+      "title": "L4 Security and Telemetry Code",
+      "file": "c4-l4-security-runtime.mmd",
+      "node_count": 4,
+      "edge_count": 3,
+      "parent": "c4-l3-plugin-distribution"
+    }
+  ]
+}

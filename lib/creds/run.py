@@ -24,6 +24,7 @@ import subprocess
 import sys
 
 from .audit import log_action
+from .masking import OutputMasker
 from .project import get_project_id
 
 logger = logging.getLogger(__name__)
@@ -101,7 +102,17 @@ def run_with_secrets(
     )
 
     try:
-        result = subprocess.run(command, env=env)
+        # Capture then redact child output. A subprocess can legitimately need a
+        # secret in its environment, but its output must never carry that value
+        # back into the Codex transcript, terminal history, or CI log.
+        result = subprocess.run(command, env=env, capture_output=True, text=True)
+        masker = OutputMasker()
+        for value in bundle.secrets.values():
+            masker.register_secret(value)
+        if result.stdout:
+            print(masker.mask(result.stdout), end="")
+        if result.stderr:
+            print(masker.mask(result.stderr), end="", file=sys.stderr)
         return result.returncode
     except FileNotFoundError:
         print(f"Error: command not found: {command[0]}", file=sys.stderr)

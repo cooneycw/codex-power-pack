@@ -7,6 +7,7 @@ from pathlib import Path
 from lib.cicd.config import CICDConfig
 from lib.cicd.models import Framework, FrameworkInfo, PackageManager
 from lib.cicd.pipeline import (
+    generate_github_actions,
     generate_pipeline,
     generate_woodpecker,
 )
@@ -58,6 +59,19 @@ class TestGeneratePipeline:
         config = _make_config(provider="woodpecker")
         files = generate_pipeline(info, config)
         assert ".woodpecker.yml" in files
+
+    def test_github_actions_provider(self) -> None:
+        info = _make_info()
+        config = _make_config(provider="github-actions")
+        files = generate_pipeline(info, config)
+        assert list(files) == [".github/workflows/ci.yml"]
+        assert "gitleaks/gitleaks-action@v2" in files[".github/workflows/ci.yml"]
+
+    def test_both_provider_generates_both_supported_pipelines(self) -> None:
+        info = _make_info()
+        config = _make_config(provider="both")
+        files = generate_pipeline(info, config)
+        assert set(files) == {".github/workflows/ci.yml", ".woodpecker.yml"}
 
     def test_write_to_disk(self, tmp_path: Path) -> None:
         info = _make_info()
@@ -156,6 +170,23 @@ class TestWoodpecker:
         assert "make test" in output
         assert "make typecheck" in output
 
+    def test_woodpecker_runs_gitleaks_before_project_commands(self) -> None:
+        output = generate_woodpecker(_make_info(), _make_config())
+        assert output.index("- name: gitleaks") < output.index("- name: lint")
+        assert "gitleaks detect --source . --config .gitleaks.toml --redact" in output
+
+
+class TestGithubActions:
+    """Test GitHub Actions workflow generation."""
+
+    def test_python_workflow_uses_makefile_and_blocks_on_gitleaks(self) -> None:
+        output = generate_github_actions(_make_info(), _make_config(provider="github-actions"))
+        assert "actions/checkout@v4" in output
+        assert "actions/setup-python@v5" in output
+        assert output.index("name: gitleaks") < output.index("name: lint")
+        assert "run: make lint" in output
+        assert "run: make test" in output
+
 
 # ---------------------------------------------------------------------------
 # Template validation - static workflow templates
@@ -214,8 +245,8 @@ class TestWorkflowTemplates:
             assert "make lint" in content, f"{name} missing 'make lint'"
             assert "make test" in content, f"{name} missing 'make test'"
 
-    def test_no_github_actions_templates_remain(self) -> None:
-        """Ensure no GitHub Actions templates exist."""
+    def test_static_templates_remain_woodpecker_templates(self) -> None:
+        """Static templates retain their documented Woodpecker format."""
         for yml_file in self.TEMPLATE_DIR.glob("*.yml"):
             content = yml_file.read_text()
             assert "actions/checkout" not in content, (

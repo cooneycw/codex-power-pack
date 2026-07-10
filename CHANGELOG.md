@@ -6,6 +6,8 @@
 
 - Documented the pinned marketplace release, upgrade, and rollback process for
   Codex plugin releases (#79).
+- Cut newcomer documentation over to native Codex marketplace installation and
+  the consent-first `cxpp:init` host bootstrap (#81).
 
 ### Removed
 

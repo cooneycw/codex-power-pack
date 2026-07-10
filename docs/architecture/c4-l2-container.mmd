@@ -1,0 +1,14 @@
+flowchart TB
+  subgraph repo["codex-power-pack repository"]
+    marketplace_catalog["Marketplace Catalog (.agents)"]:::container
+    family_plugins["Family Plugins (plugins/)"]:::container
+    codex_skills["Codex Skills (.codex/skills)"]:::container
+    runtime_libraries["Deterministic Libraries (lib/)"]:::container
+    quality_gates["Quality Gates (Makefile + tests)"]:::container
+  end
+  marketplace_catalog -->|"indexes"| family_plugins
+  family_plugins -->|"packages skills from"| codex_skills
+  codex_skills -->|"uses deterministic helpers"| runtime_libraries
+  quality_gates -->|"validates"| family_plugins
+  quality_gates -->|"drift-checks"| codex_skills
+  classDef container fill:#15803d,color:#ffffff,stroke:#0f172a

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Woodpecker Restart"
+  short_description: "Restart one confirmed Woodpecker pipeline"
+  default_prompt: "Use $woodpecker-restart to restart a confirmed pipeline after approval."
+policy:
+  allow_implicit_invocation: false

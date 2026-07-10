@@ -1,6 +1,0 @@
-interface:
-  display_name: "CI/CD Woodpecker"
-  short_description: "Generate a hardened self-hosted Woodpecker CI pipeline and scaffold the server/agent"
-  default_prompt: "Use $cicd-woodpecker when you need generate a hardened self-hosted Woodpecker CI pipeline and scaffold the server/agent"
-policy:
-  allow_implicit_invocation: false

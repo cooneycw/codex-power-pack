@@ -1,0 +1,6 @@
+interface:
+  display_name: "Woodpecker Help"
+  short_description: "Explain safe Woodpecker CI client workflows"
+  default_prompt: "Use $woodpecker-help to choose a safe Woodpecker CI action."
+policy:
+  allow_implicit_invocation: false

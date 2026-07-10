@@ -1,0 +1,15 @@
+flowchart TB
+  subgraph cxpp_boundary["Codex Power Pack"]
+    cxpp["Codex Power Pack"]:::system_focus
+  end
+  developer(("Developer")):::person
+  codex["Codex Client"]:::system
+  github["GitHub Marketplace Source"]:::system
+  host_mcp["Host-managed MCP Services"]:::system
+  developer -->|"uses"| codex
+  codex -->|"installs plugins"| cxpp
+  cxpp -->|"distributed from"| github
+  cxpp -->|"configures pointers to"| host_mcp
+  classDef person fill:#08427b,color:#ffffff,stroke:#0f172a
+  classDef system fill:#6b7280,color:#ffffff,stroke:#0f172a
+  classDef system_focus fill:#1168bd,color:#ffffff,stroke:#0f172a
