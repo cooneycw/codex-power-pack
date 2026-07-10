@@ -86,6 +86,8 @@ LOCAL_SKILL_DIRS = {
     "documentation-pptx",
     "project-lite",
     "project-next",
+    "qa-help",
+    "qa-test",
     "spec-adopt",
     "spec-sync",
     "woodpecker-help",
