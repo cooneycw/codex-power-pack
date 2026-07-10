@@ -104,7 +104,11 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
     if not path.is_file():
         return records
-    for line in path.read_text(encoding="utf-8").splitlines():
+    try:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return records
+    for line in lines:
         try:
             value = json.loads(line)
         except json.JSONDecodeError:
