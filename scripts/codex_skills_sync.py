@@ -85,6 +85,7 @@ LOCAL_SKILL_DIRS = {
     "documentation-c4",
     "documentation-pptx",
     "project-lite",
+    "project-init",
     "project-next",
     "qa-help",
     "qa-test",
