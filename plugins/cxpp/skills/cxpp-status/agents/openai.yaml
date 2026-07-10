@@ -1,0 +1,6 @@
+interface:
+  display_name: "CxPP Status"
+  short_description: "Inspect CxPP plugins, pointers, health, and drift."
+  default_prompt: "Use $cxpp-status when you need to inspect Codex Power Pack host wiring"
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,12 @@
+# Codex MCP pointer template for host-managed services.
+#
+# Merge the entries you need into ~/.codex/config.toml or the config layer your
+# Codex install uses. Codex Power Pack documents these pointers only; it does
+# not start, stop, or deploy the referenced services.
+
+[mcp_servers.second-opinion]
+url = "http://127.0.0.1:8080/mcp"
+
+[mcp_servers.playwright]
+command = "npx"
+args = ["-y", "@playwright/mcp@latest"]

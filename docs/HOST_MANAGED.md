@@ -53,16 +53,21 @@ No server lifecycle management exists in this repo. Codex Power Pack must not:
 The host service owner manages credentials, process supervision, upgrades, and
 logs. Codex Power Pack only records the client-side connection contract.
 
-## Future `cxpp:init` Scope
+## `cxpp` Fallback
 
-Story C4 owns the thin `cxpp:init/update/status` fallback. When implemented, it
-should:
+Install the `cxpp` plugin when plugins need a thin, host-side bootstrap layer:
 
-1. Copy or print `templates/config.toml.example` for the user's Codex config.
-2. Ask before writing any global `~/.codex/config.toml` entry.
-3. Run non-secret health checks such as `curl -sf http://127.0.0.1:8080/readyz`
-   and `codex mcp get playwright`.
-4. Report missing host services without trying to create them.
+1. `/cxpp:init` presents independently selectable setup components and asks
+   before every write to global Codex configuration, hooks, or rules.
+2. `/cxpp:update` rechecks those components and proposes additive refreshes;
+   it never overwrites existing configuration or removes user entries.
+3. `/cxpp:status` is read-only. It reports installed CxPP plugins, MCP pointer
+   presence and health, optional bootstrap state, and pin/drift warnings.
 
-That fallback may install Codex-facing pointers and hooks/rules. It still must
-not own external MCP server lifecycle.
+The commands use `templates/config.toml.example` as the MCP-pointer source,
+run non-secret checks such as `curl -sf http://127.0.0.1:8080/readyz` and
+`codex mcp get playwright`, and report missing services without trying to
+create them. They may install reviewed Codex-facing hooks or rules only after
+the user approves the exact files and `codex execpolicy check` passes.
+
+The fallback does not own external MCP server lifecycle.

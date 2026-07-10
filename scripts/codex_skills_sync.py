@@ -16,6 +16,7 @@ Surfaces:
                                       vendored; not covered by the drift manifest).
     .codex/skills/project-next/       CxPP-authored native project triage skill
     .codex/skills/project-lite/       CxPP-authored native project orientation skill
+    .codex/skills/cxpp-*/             CxPP-authored host bootstrap/status skills
     .codex/skills/README.md           CxPP-authored surface note (NOT vendored; not
                                       covered by the drift manifest).
     vendor/claude-power-pack/PIN      provenance: CPP repo URL + pinned commit SHA.
@@ -73,7 +74,15 @@ LOCAL_FILES = {"README.md"}
 # CxPP-owned native skill dirs under .codex/skills/. These are edited in this repo
 # and intentionally do not carry the CPP GENERATED marker. Keep this narrow and
 # explicit so generated CPP skill drift remains protected.
-LOCAL_SKILL_DIRS = {"agents-md-help", "agents-md-lint", "project-lite", "project-next"}
+LOCAL_SKILL_DIRS = {
+    "agents-md-help",
+    "agents-md-lint",
+    "cxpp-init",
+    "cxpp-status",
+    "cxpp-update",
+    "project-lite",
+    "project-next",
+}
 
 
 def _is_local_path(path: Path) -> bool:

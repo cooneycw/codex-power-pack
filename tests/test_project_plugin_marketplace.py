@@ -92,7 +92,7 @@ FAMILY_SKILLS = {
         "self-improvement-help",
         "self-improvement-retro",
     ],
-    "cxpp": [],
+    "cxpp": ["cxpp-init", "cxpp-status", "cxpp-update"],
 }
 
 EXPECTED_FAMILIES = list(FAMILY_SKILLS)
