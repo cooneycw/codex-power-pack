@@ -91,6 +91,7 @@ LOCAL_SKILL_DIRS = {
     "second-opinion-help",
     "second-opinion-models",
     "second-opinion-start",
+    "self-improvement-retro",
     "spec-adopt",
     "spec-sync",
     "evaluate-issue",
