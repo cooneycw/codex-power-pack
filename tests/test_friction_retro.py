@@ -57,6 +57,18 @@ def test_retro_normalizes_legacy_codex_jsonl_rows(tmp_path) -> None:
     assert any(item.kind == "validation-gate" for item in proposals)
 
 
+def test_retro_ignores_invalid_utf8_rows_without_stopping_analysis(tmp_path) -> None:
+    queue = tmp_path / "friction.jsonl"
+    queue.write_bytes(
+        b'{"class":"gate-failure","signal":"artifact contract missing","step":"verify"}\n'
+        b'\xff\xfe\n'
+        b'{"class":"gate-failure","signal":"artifact contract missing","step":"verify"}\n'
+    )
+
+    proposals = analyze_events(_read_jsonl(queue))
+    assert any(item.kind == "validation-gate" for item in proposals)
+
+
 def test_repeated_failure_class_proposes_gate_when_legacy_summaries_vary() -> None:
     proposals = analyze_events([
         _event("first volatile failure"),

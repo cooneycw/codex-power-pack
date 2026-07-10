@@ -55,3 +55,17 @@ def test_run_with_secrets_masks_stderr(monkeypatch: Any, capsys: Any) -> None:
     assert exit_code == 0
     assert _secret() not in output.err
     assert "****" in output.err
+
+
+def test_run_with_secrets_handles_non_utf8_child_output(monkeypatch: Any, capsys: Any) -> None:
+    monkeypatch.setattr("lib.creds.run._get_bundle_provider", lambda _: _DummyProvider())
+
+    exit_code = run_with_secrets(
+        [sys.executable, "-c", "import os; os.write(1, b'\\xff\\n')"],
+        project_id="test-project",
+        provider_name="dummy",
+    )
+
+    output = capsys.readouterr()
+    assert exit_code == 0
+    assert "\ufffd" in output.out
