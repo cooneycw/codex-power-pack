@@ -294,7 +294,7 @@ class CICDConfig(BaseModel):
         pipeline_data = data.get("pipeline", {})
         if pipeline_data and isinstance(pipeline_data, dict):
             provider = pipeline_data.get("provider", "")
-            valid_providers = {"woodpecker"}
+            valid_providers = {"github-actions", "woodpecker", "both"}
             if provider and provider not in valid_providers:
                 issues.append(
                     f"pipeline.provider '{provider}' is invalid. "
