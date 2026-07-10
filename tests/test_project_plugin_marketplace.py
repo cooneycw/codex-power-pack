@@ -26,7 +26,7 @@ PINNING_POLICY = {
 
 FAMILY_SKILLS = {
     "project": ["project-help", "project-init", "project-lite", "project-next"],
-    "spec": [],
+    "spec": ["spec-adopt", "spec-sync"],
     "flow": [
         "flow-auto",
         "flow-check",

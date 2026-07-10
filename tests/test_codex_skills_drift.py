@@ -56,9 +56,10 @@ def test_native_cxpp_skills_are_present_without_generated_marker() -> None:
 
 
 def test_excluded_and_retired_generated_families_are_absent() -> None:
-    # claude-md is Out-of-Scope for CxPP (spec); spec remains outside the current
-    # generated pull surface.
-    forbidden = ("claude-md-", "spec-")
+    # claude-md is Out-of-Scope for CxPP. The native spec-adopt and spec-sync
+    # directories are explicitly covered by LOCAL_SKILL_DIRS above, so this
+    # assertion protects only the retired generated family.
+    forbidden = ("claude-md-",)
     offenders = [d.name for d in _skill_dirs() if d.name.startswith(forbidden)]
     assert offenders == [], f"unexpected skill dirs present: {offenders}"
 

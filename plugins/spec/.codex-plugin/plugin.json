@@ -1,7 +1,7 @@
 {
   "name": "spec",
   "version": "0.1.0",
-  "description": "Spec-kit adoption and GitHub issue sync scaffold.",
+  "description": "Official spec-kit adoption and gh-CLI issue sync for Codex.",
   "author": {
     "name": "Codex Power Pack maintainers",
     "url": "https://github.com/cooneycw/codex-power-pack"
@@ -19,16 +19,18 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Spec",
-    "shortDescription": "Prepare the spec-kit workflow package.",
-    "longDescription": "Spec is the Codex Power Pack package slot for spec-kit adoption and GitHub issue sync skills. Issue #83 fills the skill payload.",
+    "shortDescription": "Adopt spec-kit and sync task issues.",
+    "longDescription": "Spec packages consent-first official spec-kit adoption and label-free GitHub task-to-issue sync skills for Codex.",
     "developerName": "Codex Power Pack",
     "category": "Planning",
     "capabilities": [
       "Planning",
-      "Automation"
+      "Automation",
+      "Write"
     ],
     "defaultPrompt": [
-      "Install the spec family when #83 lands."
+      "Use $spec-adopt to set up official spec-kit in this repository.",
+      "Use $spec-sync to preview spec-kit tasks as GitHub issues."
     ],
     "brandColor": "#0F766E"
   }

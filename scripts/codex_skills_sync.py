@@ -17,6 +17,7 @@ Surfaces:
     .codex/skills/project-next/       CxPP-authored native project triage skill
     .codex/skills/project-lite/       CxPP-authored native project orientation skill
     .codex/skills/cxpp-*/             CxPP-authored host bootstrap/status skills
+    .codex/skills/spec-*/             CxPP-authored spec-kit workflow skills
     .codex/skills/README.md           CxPP-authored surface note (NOT vendored; not
                                       covered by the drift manifest).
     vendor/claude-power-pack/PIN      provenance: CPP repo URL + pinned commit SHA.
@@ -82,6 +83,8 @@ LOCAL_SKILL_DIRS = {
     "cxpp-update",
     "project-lite",
     "project-next",
+    "spec-adopt",
+    "spec-sync",
 }
 
 

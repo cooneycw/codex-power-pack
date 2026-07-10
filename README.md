@@ -47,7 +47,8 @@ codex plugin add github@codex-power-pack
 The catalog currently exposes per-family packages for `project`, `spec`,
 `flow`, `github`, `cicd`, `secrets`, `woodpecker`, `security`, `agents-md`,
 `documentation`, `qa`, `evaluate`, `second-opinion`, `self-improvement`, and
-`cxpp`. `spec` remains a scaffolded package slot. Install `cxpp` when a fresh
+`cxpp`. Install `spec` for consent-first `$spec-adopt` setup of official
+spec-kit and `$spec-sync` task-to-issue previews. Install `cxpp` when a fresh
 machine needs the consent-first `/cxpp:init`, `/cxpp:update`, and
 `/cxpp:status` fallback skills.
 
@@ -55,8 +56,9 @@ Release installs and upgrades follow `docs/release-process.md`: use a signed
 release tag or immutable commit SHA, record the resolved SHA, and preserve
 rollback refs in the release notes.
 
-See `docs/plugin-marketplace-project-e2e.md` for the issue #77 project-plugin
-E2E transcript.
+See `docs/plugin-marketplace-project-e2e.md` and
+`docs/plugin-marketplace-spec-e2e.md` for the project and spec-plugin E2E
+transcripts.
 
 For host-managed MCP tools, install the `cxpp` plugin and run `/cxpp:init` to
 review and apply selected pointers. It asks before changing global Codex
