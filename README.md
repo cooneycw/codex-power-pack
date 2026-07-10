@@ -19,16 +19,24 @@ generated command skills, and tests for Codex-centric workflows.
 
 ## Quick Start
 
+Install the marketplace at a signed release tag or immutable commit SHA, then
+install just the plugins you need. Add `cxpp` when you also want the
+consent-first host-infrastructure bootstrap.
+
 ```bash
-git clone https://github.com/cooneycw/codex-power-pack.git
-cd codex-power-pack
-uv sync --extra dev
-make verify
+codex plugin marketplace add cooneycw/codex-power-pack \
+  --ref <release-tag-or-commit-sha> \
+  --sparse .agents \
+  --sparse plugins/project \
+  --sparse plugins/github \
+  --sparse plugins/cxpp
+codex plugin add project@codex-power-pack
+codex plugin add github@codex-power-pack
+codex plugin add cxpp@codex-power-pack
 ```
 
-Distribution is handled by native Codex plugins. For project bootstrapping from
-the plugin, use the thin `cxpp:init` fallback rather than copying skills out of
-this checkout.
+Run `/cxpp:init` to review and selectively configure host-managed pointers.
+It asks before changing global Codex configuration.
 
 Install only the family plugins you need from the repo marketplace with a
 pinned Git ref. Include `.agents` plus the selected `plugins/<family>` paths in
@@ -60,9 +68,8 @@ See `docs/plugin-marketplace-project-e2e.md` and
 `docs/plugin-marketplace-spec-e2e.md` for the project and spec-plugin E2E
 transcripts.
 
-For host-managed MCP tools, install the `cxpp` plugin and run `/cxpp:init` to
-review and apply selected pointers. It asks before changing global Codex
-configuration. Manual setup remains available:
+For host-managed MCP tools, `/cxpp:init` applies the selected pointers. Manual
+setup remains available:
 
 ```bash
 codex mcp add second-opinion --url http://127.0.0.1:8080/mcp
@@ -129,6 +136,17 @@ this repo; see `.codex/skills/README.md`.
 make lint
 make test
 make typecheck
+make verify
+```
+
+## Development Checkout
+
+Clone the repository only when contributing to Codex Power Pack itself:
+
+```bash
+git clone https://github.com/cooneycw/codex-power-pack.git
+cd codex-power-pack
+uv sync --extra dev
 make verify
 ```
 
