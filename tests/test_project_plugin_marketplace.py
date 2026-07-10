@@ -73,7 +73,12 @@ FAMILY_SKILLS = {
         "secrets-ui",
         "secrets-validate",
     ],
-    "woodpecker": ["cicd-woodpecker"],
+    "woodpecker": [
+        "woodpecker-help",
+        "woodpecker-logs",
+        "woodpecker-restart",
+        "woodpecker-status",
+    ],
     "security": [
         "security-deep",
         "security-explain",

@@ -1,7 +1,7 @@
 {
   "name": "woodpecker",
   "version": "0.1.0",
-  "description": "Woodpecker CI pipeline skills scaffold.",
+  "description": "Safe Woodpecker CI API client and pipeline generation skills.",
   "author": {
     "name": "Codex Power Pack maintainers",
     "url": "https://github.com/cooneycw/codex-power-pack"
@@ -18,8 +18,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Woodpecker",
-    "shortDescription": "Generate hardened Woodpecker CI assets.",
-    "longDescription": "Woodpecker packages the current Woodpecker-specific Codex Power Pack skill and reserves the family package for the expanded CI/API workflow in issue #88.",
+    "shortDescription": "Inspect, diagnose, and restart Woodpecker pipelines safely.",
+    "longDescription": "Woodpecker packages a safe API client for pipeline status, base64 log decoding, and explicit-confirmation restarts, plus the pipeline-generation skill.",
     "developerName": "Codex Power Pack",
     "category": "CI/CD",
     "capabilities": [
@@ -27,7 +27,7 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Generate Woodpecker CI with /cicd-woodpecker."
+      "Use /woodpecker-status to inspect a Woodpecker pipeline."
     ],
     "brandColor": "#16A34A"
   }

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Woodpecker Status"
+  short_description: "List recent Woodpecker pipelines safely"
+  default_prompt: "Use $woodpecker-status to inspect recent pipeline status."
+policy:
+  allow_implicit_invocation: false

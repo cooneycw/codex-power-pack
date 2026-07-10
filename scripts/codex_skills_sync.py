@@ -18,6 +18,7 @@ Surfaces:
     .codex/skills/project-lite/       CxPP-authored native project orientation skill
     .codex/skills/cxpp-*/             CxPP-authored host bootstrap/status skills
     .codex/skills/spec-*/             CxPP-authored spec-kit workflow skills
+    .codex/skills/woodpecker-*/       CxPP-authored Woodpecker API client skills
     .codex/skills/README.md           CxPP-authored surface note (NOT vendored; not
                                       covered by the drift manifest).
     vendor/claude-power-pack/PIN      provenance: CPP repo URL + pinned commit SHA.
@@ -85,6 +86,10 @@ LOCAL_SKILL_DIRS = {
     "project-next",
     "spec-adopt",
     "spec-sync",
+    "woodpecker-help",
+    "woodpecker-logs",
+    "woodpecker-restart",
+    "woodpecker-status",
 }
 
 
