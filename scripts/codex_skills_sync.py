@@ -82,6 +82,8 @@ LOCAL_SKILL_DIRS = {
     "cxpp-init",
     "cxpp-status",
     "cxpp-update",
+    "documentation-c4",
+    "documentation-pptx",
     "project-lite",
     "project-next",
     "spec-adopt",

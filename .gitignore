@@ -51,6 +51,8 @@ desktop.ini
 !.codex/hooks.json
 !.agents/plugins/marketplace.json
 !plugins/**/.codex-plugin/plugin.json
+!docs/architecture/c4-model.json
+!docs/architecture/c4-manifest.json
 .codex/security.yml
 node_modules/
 .codex/settings*.json

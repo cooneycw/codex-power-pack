@@ -1,0 +1,14 @@
+flowchart TB
+  subgraph plugin_package["One family plugin"]
+    plugin_manifest["plugin.json Manifest"]:::component
+    skill_payload["Skill Payload"]:::component
+    openai_metadata["agents/openai.yaml Metadata"]:::component
+  end
+  marketplace_entry["Marketplace Entry"]:::component
+  package_tests["Plugin Package Tests"]:::component
+  marketplace_entry -->|"locates"| plugin_manifest
+  plugin_manifest -->|"declares"| skill_payload
+  skill_payload -->|"includes"| openai_metadata
+  package_tests -->|"validates"| marketplace_entry
+  package_tests -->|"checks parity"| skill_payload
+  classDef component fill:#7e22ce,color:#ffffff,stroke:#0f172a
