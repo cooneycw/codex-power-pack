@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import subprocess
 import sys
 from typing import Any
 
@@ -69,3 +70,18 @@ def test_run_with_secrets_handles_non_utf8_child_output(monkeypatch: Any, capsys
     output = capsys.readouterr()
     assert exit_code == 0
     assert "\ufffd" in output.out
+
+
+def test_run_with_secrets_decodes_output_as_utf8(monkeypatch: Any) -> None:
+    monkeypatch.setattr("lib.creds.run._get_bundle_provider", lambda _: _DummyProvider())
+    captured: dict[str, object] = {}
+
+    def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        captured.update(kwargs)
+        return subprocess.CompletedProcess(args=args, returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr("lib.creds.run.subprocess.run", fake_run)
+
+    assert run_with_secrets(["echo", "ok"], project_id="test-project", provider_name="dummy") == 0
+    assert captured["encoding"] == "utf-8"
+    assert captured["errors"] == "replace"
