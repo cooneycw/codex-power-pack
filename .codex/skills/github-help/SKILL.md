@@ -12,7 +12,8 @@ Generated from a Claude Code command. Where the procedure references these Claud
 
 # GitHub Issue Management Commands
 
-Manage issues in the claude-power-pack repository directly from Claude Code.
+Manage issues in the current GitHub repository, or in an explicitly supplied
+`owner/repo` repository.
 
 ## Available Commands
 
@@ -63,4 +64,10 @@ When creating issues, you can choose from:
 
 ## Target Repository
 
-All commands operate on: `cooneycw/claude-power-pack`
+Commands resolve the repository in this order:
+
+1. An explicit `owner/repo` argument supplied by the user.
+2. The current checkout: `gh repo view --json nameWithOwner --jq .nameWithOwner`.
+
+Never hard-code a repository name. If there is no current GitHub checkout and no
+`owner/repo` argument, ask the user for the repository before making a write.

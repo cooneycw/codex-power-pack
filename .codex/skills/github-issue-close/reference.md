@@ -2,7 +2,18 @@
 
 # Close GitHub Issue
 
-Close an issue in the claude-power-pack repository.
+Close an issue in the current or explicitly specified GitHub repository.
+
+## Resolve Repository
+
+Use an explicit `owner/repo` argument when supplied; otherwise resolve the
+current checkout before any GitHub command:
+
+```bash
+REPO="${REPO:-$(gh repo view --json nameWithOwner --jq .nameWithOwner)}"
+```
+
+If this cannot determine a repository, ask the user for `owner/repo`.
 
 ## Usage
 
@@ -14,7 +25,7 @@ The user should provide an issue number. If not provided, ask for it.
 
 First, fetch and display the issue to confirm:
 ```bash
-gh issue view NUMBER --repo cooneycw/claude-power-pack
+gh issue view NUMBER --repo "$REPO"
 ```
 
 Show:
@@ -42,22 +53,22 @@ For tracking purposes, ask about the close reason:
 
 ```bash
 # Close as completed (default)
-gh issue close NUMBER --repo cooneycw/claude-power-pack
+gh issue close NUMBER --repo "$REPO"
 
 # Close as not planned
-gh issue close NUMBER --repo cooneycw/claude-power-pack --reason "not planned"
+gh issue close NUMBER --repo "$REPO" --reason "not planned"
 ```
 
 ### Step 4: Execute
 
 If closing comment provided, add it first:
 ```bash
-gh issue comment NUMBER --repo cooneycw/claude-power-pack --body "COMMENT"
+gh issue comment NUMBER --repo "$REPO" --body "COMMENT"
 ```
 
 Then close:
 ```bash
-gh issue close NUMBER --repo cooneycw/claude-power-pack
+gh issue close NUMBER --repo "$REPO"
 ```
 
 ### Step 5: Confirm
@@ -146,5 +157,5 @@ Done! Issue #45 closed as duplicate of #42.
 
 Mention that issues can be reopened if needed:
 ```bash
-gh issue reopen NUMBER --repo cooneycw/claude-power-pack
+gh issue reopen NUMBER --repo "$REPO"
 ```

@@ -2,7 +2,18 @@
 
 # Create GitHub Issue
 
-Create a new issue in the claude-power-pack repository.
+Create a new issue in the current or explicitly specified GitHub repository.
+
+## Resolve Repository
+
+Use an explicit `owner/repo` argument when supplied; otherwise resolve the
+current checkout before any GitHub command:
+
+```bash
+REPO="${REPO:-$(gh repo view --json nameWithOwner --jq .nameWithOwner)}"
+```
+
+If this cannot determine a repository, ask the user for `owner/repo`.
 
 ## Prerequisites Check
 
@@ -61,7 +72,7 @@ Use the `gh` CLI to create the issue:
 
 ```bash
 gh issue create \
-  --repo cooneycw/claude-power-pack \
+  --repo "$REPO" \
   --title "TITLE" \
   --body "BODY" \
   --label "LABELS"
@@ -77,7 +88,7 @@ gh issue create \
 
 After creation:
 1. Display the issue URL
-2. Offer to open in browser: `gh issue view NUMBER --web --repo cooneycw/claude-power-pack`
+2. Offer to open in browser: `gh issue view NUMBER --web --repo "$REPO"`
 
 ## Example Interaction
 

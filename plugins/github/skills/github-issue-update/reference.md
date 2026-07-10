@@ -2,7 +2,18 @@
 
 # Update GitHub Issue
 
-Modify an existing issue in the claude-power-pack repository.
+Modify an existing issue in the current or explicitly specified GitHub repository.
+
+## Resolve Repository
+
+Use an explicit `owner/repo` argument when supplied; otherwise resolve the
+current checkout before any GitHub command:
+
+```bash
+REPO="${REPO:-$(gh repo view --json nameWithOwner --jq .nameWithOwner)}"
+```
+
+If this cannot determine a repository, ask the user for `owner/repo`.
 
 ## Usage
 
@@ -12,7 +23,7 @@ The user should provide an issue number. If not provided, ask for it.
 
 Before making changes, fetch and display the current issue:
 ```bash
-gh issue view NUMBER --repo cooneycw/claude-power-pack
+gh issue view NUMBER --repo "$REPO"
 ```
 
 ## Update Options
@@ -28,18 +39,18 @@ Ask the user what they want to update:
 ### Edit Title
 
 ```bash
-gh issue edit NUMBER --repo cooneycw/claude-power-pack --title "NEW TITLE"
+gh issue edit NUMBER --repo "$REPO" --title "NEW TITLE"
 ```
 
 ### Edit Body
 
 ```bash
-gh issue edit NUMBER --repo cooneycw/claude-power-pack --body "NEW BODY"
+gh issue edit NUMBER --repo "$REPO" --body "NEW BODY"
 ```
 
 For multiline bodies, use a heredoc:
 ```bash
-gh issue edit NUMBER --repo cooneycw/claude-power-pack --body "$(cat <<'EOF'
+gh issue edit NUMBER --repo "$REPO" --body "$(cat <<'EOF'
 ## Description
 
 New description content here.
@@ -54,37 +65,37 @@ EOF
 ### Add Labels
 
 ```bash
-gh issue edit NUMBER --repo cooneycw/claude-power-pack --add-label "label1,label2"
+gh issue edit NUMBER --repo "$REPO" --add-label "label1,label2"
 ```
 
 ### Remove Labels
 
 ```bash
-gh issue edit NUMBER --repo cooneycw/claude-power-pack --remove-label "label1"
+gh issue edit NUMBER --repo "$REPO" --remove-label "label1"
 ```
 
 ### Assign User
 
 ```bash
-gh issue edit NUMBER --repo cooneycw/claude-power-pack --add-assignee "username"
-gh issue edit NUMBER --repo cooneycw/claude-power-pack --add-assignee "@me"
+gh issue edit NUMBER --repo "$REPO" --add-assignee "username"
+gh issue edit NUMBER --repo "$REPO" --add-assignee "@me"
 ```
 
 ### Unassign User
 
 ```bash
-gh issue edit NUMBER --repo cooneycw/claude-power-pack --remove-assignee "username"
+gh issue edit NUMBER --repo "$REPO" --remove-assignee "username"
 ```
 
 ### Add Comment
 
 ```bash
-gh issue comment NUMBER --repo cooneycw/claude-power-pack --body "Comment text"
+gh issue comment NUMBER --repo "$REPO" --body "Comment text"
 ```
 
 For multiline comments:
 ```bash
-gh issue comment NUMBER --repo cooneycw/claude-power-pack --body "$(cat <<'EOF'
+gh issue comment NUMBER --repo "$REPO" --body "$(cat <<'EOF'
 Thanks for the suggestion!
 
 I'll look into implementing this in the next update.

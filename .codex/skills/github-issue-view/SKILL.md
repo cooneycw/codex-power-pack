@@ -6,7 +6,19 @@ description: "View GitHub issue details and comments"
 
 # View GitHub Issue
 
-View detailed information about a specific issue in claude-power-pack.
+View detailed information about a specific issue in the current or explicitly
+specified GitHub repository.
+
+## Resolve Repository
+
+Use an explicit `owner/repo` argument when supplied; otherwise resolve the
+current checkout before any GitHub command:
+
+```bash
+REPO="${REPO:-$(gh repo view --json nameWithOwner --jq .nameWithOwner)}"
+```
+
+If this cannot determine a repository, ask the user for `owner/repo`.
 
 ## Usage
 
@@ -15,7 +27,7 @@ The user should provide an issue number. If not provided, ask for it.
 ## Fetch Issue Details
 
 ```bash
-gh issue view NUMBER --repo cooneycw/claude-power-pack
+gh issue view NUMBER --repo "$REPO"
 ```
 
 This returns:
@@ -32,7 +44,7 @@ This returns:
 
 To get comments:
 ```bash
-gh issue view NUMBER --repo cooneycw/claude-power-pack --comments
+gh issue view NUMBER --repo "$REPO" --comments
 ```
 
 ## Output Format
@@ -69,7 +81,7 @@ Present the issue in a readable format:
 ## Follow-up Options
 
 After viewing, offer:
-1. **Open in browser**: `gh issue view NUMBER --web --repo cooneycw/claude-power-pack`
+1. **Open in browser**: `gh issue view NUMBER --web --repo "$REPO"`
 2. **Add a comment**: `/github-issue-update NUMBER` (then add comment)
 3. **Close the issue**: `/github-issue-close NUMBER`
 4. **Edit the issue**: `/github-issue-update NUMBER`
