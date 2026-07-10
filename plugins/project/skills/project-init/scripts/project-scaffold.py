@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -124,6 +125,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("name must be lowercase kebab-case and start with a letter")
     if args.initial_commit and not args.git:
         parser.error("--initial-commit requires --git")
+    if args.git and shutil.which("git") is None:
+        parser.error("--git requires a Git executable on PATH")
     if bool(args.author_name) != bool(args.author_email):
         parser.error("--author-name and --author-email must be provided together")
 

@@ -3,12 +3,17 @@
 import subprocess
 import sys
 from pathlib import Path
+from shutil import which
+
+import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = REPO_ROOT / ".codex" / "skills" / "project-init" / "scripts" / "project-scaffold.py"
 
 
 def test_scaffold_creates_codex_project_and_initial_commit(tmp_path: Path) -> None:
+    if which("git") is None:
+        pytest.skip("the CI validate image intentionally has no Git executable")
     target = tmp_path / "demo-project"
     result = subprocess.run(
         [
