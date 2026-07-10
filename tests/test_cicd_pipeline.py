@@ -60,6 +60,12 @@ class TestGeneratePipeline:
         files = generate_pipeline(info, config)
         assert ".woodpecker.yml" in files
 
+    def test_empty_provider_preserves_woodpecker_default(self) -> None:
+        info = _make_info()
+        config = _make_config(provider="")
+        files = generate_pipeline(info, config)
+        assert ".woodpecker.yml" in files
+
     def test_github_actions_provider(self) -> None:
         info = _make_info()
         config = _make_config(provider="github-actions")
@@ -173,7 +179,9 @@ class TestWoodpecker:
     def test_woodpecker_runs_gitleaks_before_project_commands(self) -> None:
         output = generate_woodpecker(_make_info(), _make_config())
         assert output.index("- name: gitleaks") < output.index("- name: lint")
+        assert "if [ -f .gitleaks.toml ]" in output
         assert "gitleaks detect --source . --config .gitleaks.toml --redact" in output
+        assert "else gitleaks detect --source . --redact" in output
 
 
 class TestGithubActions:

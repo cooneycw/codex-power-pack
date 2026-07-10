@@ -105,7 +105,13 @@ def run_with_secrets(
         # Capture then redact child output. A subprocess can legitimately need a
         # secret in its environment, but its output must never carry that value
         # back into the Codex transcript, terminal history, or CI log.
-        result = subprocess.run(command, env=env, capture_output=True, text=True)
+        result = subprocess.run(
+            command,
+            env=env,
+            capture_output=True,
+            text=True,
+            errors="replace",
+        )
         masker = OutputMasker()
         for value in bundle.secrets.values():
             masker.register_secret(value)

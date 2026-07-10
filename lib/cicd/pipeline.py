@@ -63,7 +63,9 @@ def generate_pipeline(
     Returns:
         Dict mapping filename to content for each generated file.
     """
-    provider = config.pipeline.provider
+    # Preserve the historical Woodpecker default for configs created before
+    # the provider field was required.
+    provider = config.pipeline.provider or "woodpecker"
     files: dict[str, str] = {}
     if provider in {"github-actions", "both"}:
         files[".github/workflows/ci.yml"] = generate_github_actions(info, config)
@@ -119,7 +121,10 @@ def generate_woodpecker(info: FrameworkInfo, config: CICDConfig) -> str:
     lines.append("  - name: gitleaks")
     lines.append("    image: zricethezav/gitleaks:v8.24.3")
     lines.append("    commands:")
-    lines.append("      - gitleaks detect --source . --config .gitleaks.toml --redact")
+    lines.append(
+        "      - if [ -f .gitleaks.toml ]; then gitleaks detect --source . "
+        "--config .gitleaks.toml --redact; else gitleaks detect --source . --redact; fi"
+    )
     lines.append("")
 
     # Use PR steps (superset for CI), fall back to main
