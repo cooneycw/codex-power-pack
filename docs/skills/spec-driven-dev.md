@@ -102,10 +102,21 @@ One-sentence description
 
 ## Integration with Codex
 
-1. Create spec in `specs/` directory
-2. Reference spec in prompts: "Implement according to specs/feature.md"
-3. Ask Claude to verify implementation against spec
-4. Update spec with learnings
+Install the `spec` family plugin, then use `$spec-adopt` in the target project.
+It presents the user-scoped official `specify` CLI installation for approval and
+initializes the project with `specify init --here --integration codex`. It will not
+overwrite an existing `.specify/` directory without an explicit `--force`
+request.
+
+Use the official workflow to produce a feature's `tasks.md`. Then run
+`$spec-sync` to preview the label-free `TNNN: description` GitHub issues that
+will be created through the existing `gh` login. Confirm the dry-run before
+creating anything. The sync deliberately does not require a GitHub MCP server,
+and it does not add labels or a label adapter.
+
+Each created issue is suitable for `$flow-auto <issue-number>`. Keep the spec
+and its task list as the planning record; the issue is the independently
+actionable implementation unit.
 
 ---
 

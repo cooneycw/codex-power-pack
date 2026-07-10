@@ -16,9 +16,10 @@ marker. `claude-md` is **not** pulled (Out-of-Scope for CxPP; the Codex-native
 ## CxPP-owned native skills
 
 The `agents-md-*` skill dirs are authored in this repo because they govern
-Codex's `AGENTS.md` instruction surface. The `project-next`, `project-lite`, and
-`cxpp-init` / `cxpp-update` / `cxpp-status` skill dirs are also authored here
-because they are Codex-native workflow surfaces. These native skills
+Codex's `AGENTS.md` instruction surface. The `project-next`, `project-lite`,
+`spec-adopt` / `spec-sync`, and `cxpp-init` / `cxpp-update` / `cxpp-status`
+skill dirs are also authored here because they are Codex-native workflow
+surfaces. These native skills
 intentionally do not carry the generated marker and are excluded from
 `vendor/claude-power-pack/codex-skills.sha256`.
 
@@ -66,6 +67,6 @@ To change a CxPP-owned runtime-state adaptation, patch the generated skill copy 
 this repo, mirror it into the matching plugin payload, and run
 `scripts/codex_skills_sync.py --write` plus the local verification gates.
 
-To change a CxPP-owned native skill such as `agents-md-lint`, `project-next`, or
-`cxpp-init`,
+To change a CxPP-owned native skill such as `agents-md-lint`, `project-next`,
+`spec-adopt`, or `cxpp-init`,
 edit its skill package here and run the local verification gates.
