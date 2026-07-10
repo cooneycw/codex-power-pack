@@ -1,0 +1,6 @@
+interface:
+  display_name: "CxPP Init"
+  short_description: "Bootstrap CxPP host wiring with explicit consent."
+  default_prompt: "Use $cxpp-init when you need to set up Codex Power Pack host wiring"
+policy:
+  allow_implicit_invocation: false

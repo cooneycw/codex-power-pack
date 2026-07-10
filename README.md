@@ -47,8 +47,9 @@ codex plugin add github@codex-power-pack
 The catalog currently exposes per-family packages for `project`, `spec`,
 `flow`, `github`, `cicd`, `secrets`, `woodpecker`, `security`, `agents-md`,
 `documentation`, `qa`, `evaluate`, `second-opinion`, `self-improvement`, and
-`cxpp`. `spec` and `cxpp` are scaffolded package slots for the follow-up family
-implementation issues.
+`cxpp`. `spec` remains a scaffolded package slot. Install `cxpp` when a fresh
+machine needs the consent-first `/cxpp:init`, `/cxpp:update`, and
+`/cxpp:status` fallback skills.
 
 Release installs and upgrades follow `docs/release-process.md`: use a signed
 release tag or immutable commit SHA, record the resolved SHA, and preserve
@@ -57,8 +58,9 @@ rollback refs in the release notes.
 See `docs/plugin-marketplace-project-e2e.md` for the issue #77 project-plugin
 E2E transcript.
 
-For host-managed MCP tools, merge `templates/config.toml.example` into your
-Codex config or run:
+For host-managed MCP tools, install the `cxpp` plugin and run `/cxpp:init` to
+review and apply selected pointers. It asks before changing global Codex
+configuration. Manual setup remains available:
 
 ```bash
 codex mcp add second-opinion --url http://127.0.0.1:8080/mcp

@@ -1,7 +1,7 @@
 {
   "name": "cxpp",
   "version": "0.1.0",
-  "description": "Codex Power Pack thin infrastructure fallback scaffold.",
+  "description": "Consent-first bootstrap, refresh, and status skills for Codex Power Pack host configuration.",
   "author": {
     "name": "Codex Power Pack maintainers",
     "url": "https://github.com/cooneycw/codex-power-pack"
@@ -18,8 +18,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "CxPP",
-    "shortDescription": "Reserve the CxPP bootstrap package.",
-    "longDescription": "CxPP is the Codex Power Pack package slot for cxpp:init, cxpp:update, and cxpp:status skills. Issue #80 fills the skill payload.",
+    "shortDescription": "Bootstrap and inspect CxPP host wiring.",
+    "longDescription": "CxPP provides consent-first skills for configuring host-managed MCP pointers, optional bootstrap components, and CxPP installation health without managing external services.",
     "developerName": "Codex Power Pack",
     "category": "Developer Tools",
     "capabilities": [
@@ -27,7 +27,8 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Install the cxpp family when #80 lands."
+      "Set up Codex Power Pack host wiring with /cxpp:init.",
+      "Inspect installed CxPP components with /cxpp:status."
     ],
     "brandColor": "#475569"
   }
