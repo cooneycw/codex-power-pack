@@ -64,6 +64,21 @@ Install the `cxpp` plugin when plugins need a thin, host-side bootstrap layer:
 3. `/cxpp:status` is read-only. It reports installed CxPP plugins, MCP pointer
    presence and health, optional bootstrap state, and pin/drift warnings.
 
+When the marketplace or family plugins are missing, init and update offer
+Minimal (`cxpp`), Recommended (the common development families), Full suite
+(all published families), and Custom profiles. Status reports each published
+family as installed or missing. Before an approved install, init/update show the
+selected plugins, exact `.agents` and `plugins/<family>` sparse paths, previous
+ref, requested signed tag or immutable commit SHA, and resolved SHA. Re-running
+an unchanged profile is `already current`; other outcomes are `updated`,
+`skipped by user`, or `needs host prerequisite`.
+
+Plugin-suite consent is deliberately narrow. It authorizes only the previewed
+marketplace and plugin actions. It does not authorize MCP pointer changes,
+credential or provider setup, hooks, exec-policy rules, or external-service
+lifecycle operations. Those remain separate components with individual consent
+prompts.
+
 The commands use `templates/config.toml.example` as the MCP-pointer source,
 run non-secret checks such as `curl -sf http://127.0.0.1:8080/readyz` and
 `codex mcp get playwright`, and report missing services without trying to

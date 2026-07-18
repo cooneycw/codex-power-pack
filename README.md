@@ -60,6 +60,22 @@ spec-kit and `$spec-sync` task-to-issue previews. Install `cxpp` when a fresh
 machine needs the consent-first `/cxpp:init`, `/cxpp:update`, and
 `/cxpp:status` fallback skills.
 
+When the marketplace or family plugins are missing, `/cxpp:init` and
+`/cxpp:update` offer four suite profiles:
+
+- **Minimal** installs only `cxpp`.
+- **Recommended** installs `project`, `spec`, `flow`, `github`, `cicd`,
+  `secrets`, `security`, `agents-md`, `documentation`, `qa`,
+  `self-improvement`, and `cxpp` for common development workflows.
+- **Full suite** installs every published family listed above.
+- **Custom** installs only the individually selected families.
+
+Before writing, the workflow shows the exact sparse paths and plugins plus the
+previous, requested, and resolved immutable refs. Suite approval covers only
+marketplace and plugin installation; MCP pointers, credentials, hooks/rules,
+and external services retain separate consent prompts. `/cxpp:status` reports
+every family as installed or missing without changing the machine.
+
 Release installs and upgrades follow `docs/release-process.md`: use a signed
 release tag or immutable commit SHA, record the resolved SHA, and preserve
 rollback refs in the release notes.

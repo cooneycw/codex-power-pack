@@ -2,11 +2,35 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS = ROOT / ".codex" / "skills"
 PLUGIN = ROOT / "plugins" / "cxpp"
+MARKETPLACE = ROOT / ".agents" / "plugins" / "marketplace.json"
+
+FULL_FAMILIES = (
+    "project",
+    "spec",
+    "flow",
+    "github",
+    "cicd",
+    "secrets",
+    "woodpecker",
+    "security",
+    "agents-md",
+    "documentation",
+    "qa",
+    "evaluate",
+    "second-opinion",
+    "self-improvement",
+    "cxpp",
+)
+
+RECOMMENDED_FAMILIES = tuple(
+    family for family in FULL_FAMILIES if family not in {"woodpecker", "evaluate", "second-opinion"}
+)
 
 
 def read_skill(name: str) -> str:
@@ -40,9 +64,44 @@ def test_cxpp_status_is_read_only_and_checks_host_pointers() -> None:
     text = read_skill("cxpp-status")
 
     assert "skill is read-only" in text
-    assert "codex plugin list --json" in text
+    assert "codex plugin list --available" in text
+    assert "`installed` or `missing`" in text
     assert "codex mcp get second-opinion" in text
     assert "curl -sf http://127.0.0.1:8080/readyz" in text
+
+
+def test_cxpp_status_inventory_matches_every_marketplace_family() -> None:
+    marketplace = json.loads(MARKETPLACE.read_text(encoding="utf-8"))
+    marketplace_families = tuple(plugin["name"] for plugin in marketplace["plugins"])
+    text = read_skill("cxpp-status")
+
+    assert marketplace_families == FULL_FAMILIES
+    for family in FULL_FAMILIES:
+        assert f"`{family}`" in text
+
+
+def test_cxpp_init_and_update_offer_idempotent_suite_profiles() -> None:
+    for name in ("cxpp-init", "cxpp-update"):
+        text = read_skill(name)
+
+        for profile in ("Minimal", "Recommended", "Full suite", "Custom"):
+            assert f"**{profile}**" in text
+        for family in RECOMMENDED_FAMILIES:
+            assert f"`{family}`" in text
+        for field in ("previous ref", "requested", "resolved SHA", ".agents", "plugins/<family>"):
+            assert field in text
+        for outcome in ("updated", "already current", "skipped by user", "needs host prerequisite"):
+            assert outcome in text
+        assert "floating" in text
+        assert "idempotent" in text or "Re-running" in text
+
+
+def test_suite_consent_does_not_authorize_host_changes() -> None:
+    for name in ("cxpp-init", "cxpp-update"):
+        text = read_skill(name)
+
+        for boundary in ("MCP pointers", "credentials", "hooks", "exec-policy rules", "external-service"):
+            assert boundary in text
 
 
 def test_cxpp_plugin_includes_the_host_pointer_template() -> None:

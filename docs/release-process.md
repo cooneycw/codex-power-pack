@@ -81,6 +81,21 @@ codex plugin add project@codex-power-pack
 The marketplace pinning policy accepts immutable commit SHAs and signed release
 tags, resolved through `codex plugin marketplace add --ref`.
 
+## Suite Profiles And Sparse Expansion
+
+The consent-first `/cxpp:init` and `/cxpp:update` skills can expand a pinned
+marketplace snapshot using Minimal, Recommended, Full suite, or Custom profiles.
+For any profile, the preview and command must include `.agents` plus one
+`plugins/<family>` sparse path for every selected or already-preserved family.
+The update path takes the union of installed and selected families so expanding
+a profile never drops an existing plugin from the snapshot.
+
+Before approval, record the selected plugins, all sparse paths, previous ref,
+requested signed release tag or immutable commit SHA, and the requested ref's
+resolved commit SHA. Reject floating branches. Installing a suite does not
+authorize MCP, credential/provider, hook, exec-policy, or external-service
+changes; those use separate consent prompts.
+
 ## Upgrade Procedure
 
 1. Read the release notes and `CHANGELOG.md`.
@@ -116,4 +131,3 @@ Every release note must preserve:
 - resolved commit SHA for the new ref
 - reason for the upgrade
 - reason for rollback, if a rollback is performed
-
