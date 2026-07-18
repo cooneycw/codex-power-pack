@@ -4,6 +4,10 @@
 
 ### Added
 
+- Added minimal, recommended, full, and custom plugin-suite choices to the
+  consent-first CxPP init/update workflows, with complete family status,
+  immutable-ref previews, rollback refs, and strict host-configuration
+  boundaries (#132).
 - Documented the pinned marketplace release, upgrade, and rollback process for
   Codex plugin releases (#79).
 - Cut newcomer documentation over to native Codex marketplace installation and
