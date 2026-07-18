@@ -4,10 +4,12 @@
 
 Create a worktree and branch for a GitHub issue. Stateless - all context from git and GitHub.
 
-Codex flow uses plain git linked worktrees under `.codex/worktrees/<name>`.
-Create or resume the checkout with `git worktree`, then run subsequent commands
-from that worktree path. The issue-anchored `issue-<N>-<slug>` branch name is the
-policy CxPP keeps and enforces.
+Codex flow uses plain git linked worktrees created as a VISIBLE sibling of the
+repo under its parent dir (`../<repo>-issue-<N>`, issue #133), not hidden inside
+the repo - so a session driven from the `~/Projects` parent can see them. Create
+or resume the checkout with `git worktree`, then run subsequent commands from that
+worktree path. The issue-anchored `issue-<N>-<slug>` branch name is the policy
+CxPP keeps and enforces.
 
 ## Arguments
 
@@ -47,7 +49,8 @@ SLUG=$(echo "$TITLE" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 
 BRANCH="issue-${ISSUE_NUM}-${SLUG}"
 ```
 
-The Codex worktree lives under `.codex/worktrees/${BRANCH}`.
+The Codex worktree is a visible sibling of the repo: `../<repo>-issue-${ISSUE_NUM}`
+(computed below from the main repo's parent dir), not a folder hidden inside the repo.
 
 ### Step 4: Check for Existing Work
 
@@ -75,8 +78,11 @@ Pick exactly one path:
   ```bash
   REMOTE_BRANCH=$(git branch -r | grep "issue-${ISSUE_NUM}-" | head -1 | xargs)
   LOCAL_BRANCH="${REMOTE_BRANCH#origin/}"
-  git worktree add -b "$LOCAL_BRANCH" ".codex/worktrees/${LOCAL_BRANCH}" "$REMOTE_BRANCH"
-  cd ".codex/worktrees/${LOCAL_BRANCH}"
+  # Visible sibling of the repo, under its parent dir (issue #133) - not hidden inside it.
+  MAIN_REPO="$(git rev-parse --show-toplevel)"
+  WORKTREE_DIR="$(dirname "$MAIN_REPO")/$(basename "$MAIN_REPO")-issue-${ISSUE_NUM}"
+  git worktree add -b "$LOCAL_BRANCH" "$WORKTREE_DIR" "$REMOTE_BRANCH"
+  cd "$WORKTREE_DIR"
   ```
 - **Neither exists** (fresh start): create the linked worktree from the remote
   default branch and then work from it:
@@ -84,8 +90,11 @@ Pick exactly one path:
   DEFAULT_BRANCH=$(git remote show origin 2>/dev/null | sed -n '/HEAD branch/s/.*: //p')
   DEFAULT_BRANCH="${DEFAULT_BRANCH:-main}"
   git fetch origin "$DEFAULT_BRANCH"
-  git worktree add -b "$BRANCH" ".codex/worktrees/${BRANCH}" "origin/${DEFAULT_BRANCH}"
-  cd ".codex/worktrees/${BRANCH}"
+  # Visible sibling of the repo, under its parent dir (issue #133) - not hidden inside it.
+  MAIN_REPO="$(git rev-parse --show-toplevel)"
+  WORKTREE_DIR="$(dirname "$MAIN_REPO")/$(basename "$MAIN_REPO")-issue-${ISSUE_NUM}"
+  git worktree add -b "$BRANCH" "$WORKTREE_DIR" "origin/${DEFAULT_BRANCH}"
+  cd "$WORKTREE_DIR"
   ```
 
 ### Step 5: Verify, Normalize Branch, Output
@@ -113,20 +122,20 @@ fi
 echo "Verified: on branch '$CURRENT_BRANCH' in $(pwd)"
 ```
 
-**Worktree path-resolution rule (issue #486).** The linked worktree lives inside
-the main repo at `.codex/worktrees/<name>/`. When you edit files from here,
-resolve paths from the worktree root - `git rev-parse --show-toplevel` - or use
-plain relative paths from the session cwd; never hand-build a
-`.codex/worktrees/<name>/...` absolute path, which has been observed to land the
-edit in the MAIN repo working tree instead.
-`/flow-auto` verifies this with `scripts/flow-worktree-guard.sh` before commit.
+**Worktree path-resolution rule (issue #486).** The linked worktree is a visible
+sibling of the main repo (`../<repo>-issue-<N>/`), not nested inside it. When you
+edit files from here, resolve paths from the worktree root -
+`git rev-parse --show-toplevel` - or use plain relative paths from the session
+cwd; never hand-build an absolute worktree path, which has been observed to land
+the edit in the wrong tree. `/flow-auto` verifies this with
+`scripts/flow-worktree-guard.sh` before commit.
 
 Report to the user:
 
 ```
 Created worktree for issue #42: "Fix login bug"
 
-  Directory: .codex/worktrees/issue-42-fix-login-bug
+  Directory: ../my-project-issue-42
   Branch:    issue-42-fix-login-bug
   Verified:  Working directory is now the worktree (not main)
 ```

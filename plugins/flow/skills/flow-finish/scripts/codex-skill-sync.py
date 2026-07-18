@@ -87,9 +87,10 @@ INLINE_MAX_LINES = 100
 ADAPTATIONS: list[tuple[tuple[str, ...], str]] = [
     (
         ("EnterWorktree", "ExitWorktree", ".claude/worktrees", ".codex/worktrees"),
-        "Codex worktrees: use plain git under `.codex/worktrees/<branch>` -"
-        " `git worktree add <path> -b <branch>`, work inside it, then"
-        " `git worktree remove <path>` when done.",
+        "Codex worktrees: create them as a VISIBLE sibling next to the repo under"
+        " its parent dir (`../<repo>-issue-<N>`), never hidden inside the repo -"
+        " `git worktree add \"../<repo>-issue-<N>\" -b <branch>`, work inside it,"
+        " then `git worktree remove <path>` from the main repo when done.",
     ),
     (
         ("AskUserQuestion",),

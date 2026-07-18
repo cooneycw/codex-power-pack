@@ -3,16 +3,16 @@
 # working tree instead of landing in the active worktree (issue #486).
 #
 # Motivation: in a linked git worktree session the session cwd IS the
-# worktree, but the worktree physically lives inside the main repo at
-# `.codex/worktrees/<name>/`. A `Write`/`Edit` given a hand-built ABSOLUTE
-# `.codex/worktrees/<name>/...` path has been observed (flow:auto #442 x2, #471)
-# to modify the file in the MAIN repo working tree instead of the worktree - work
-# looks done but is written to the wrong tree, either lost or left as a stray
+# worktree. CxPP creates the worktree as a VISIBLE sibling of the main repo
+# (`../<repo>-issue-<N>/`, issue #133), not nested inside it. A `Write`/`Edit`
+# given a hand-built ABSOLUTE worktree path has been observed (flow:auto #442 x2,
+# #471) to modify the file in the MAIN repo working tree instead of the worktree -
+# work looks done but is written to the wrong tree, either lost or left as a stray
 # dirty file on main that other concurrent sessions then see.
 #
 # The durable fix is a directive: resolve edit paths from
 # `git rev-parse --show-toplevel` (the active worktree root), never a hand-built
-# `.codex/worktrees/...` absolute path. This guard is the VERIFIABLE backstop for
+# absolute worktree path. This guard is the VERIFIABLE backstop for
 # that directive: run from inside a linked worktree, it inspects the MAIN repo's
 # TRACKED working tree for the leaked-edit signature - so the trap is caught
 # before commit rather than discovered later.
@@ -97,9 +97,9 @@ if [ "$MAIN_REPO" = "$WORKTREE_ROOT" ]; then
 fi
 
 # Tracked modifications in the MAIN working tree are the leaked-edit signature.
-# --untracked-files=no keeps normal scratch/untracked noise out; the worktree's
-# own files live under main's gitignored `.codex/worktrees/` and never appear
-# here, so they cannot false-positive.
+# --untracked-files=no keeps normal scratch/untracked noise out; the worktree is a
+# sibling OUTSIDE the main repo (issue #133), so its own files never appear in
+# main's status and cannot false-positive.
 main_dirty=()
 while IFS= read -r -d '' entry; do
   # porcelain -z: 2-char status, a space, then the path.
@@ -168,7 +168,7 @@ fi
 echo "" >&2
 echo "  An edit likely LEAKED into main instead of the worktree (issue #486)." >&2
 echo "  Fix: resolve edit paths from 'git rev-parse --show-toplevel' (the worktree root)," >&2
-echo "  never a hand-built '.codex/worktrees/<name>/...' absolute path. Move the change" >&2
+echo "  never a hand-built absolute worktree path. Move the change" >&2
 echo "  into the worktree, then revert main:  git -C \"$MAIN_REPO\" checkout -- <path>" >&2
 echo "  (If these are intentional edits to main, ignore this warning.)" >&2
 

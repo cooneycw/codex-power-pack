@@ -100,8 +100,8 @@ if [[ ! -d "$WORKTREE_PATH" ]]; then
 
     # Find the main repo (a directory whose .git is a real directory, not a
     # worktree's .git file). Two layouts to cover:
-    #   1. Legacy sibling worktrees:  ../repo-issue-N  (main repo is a sibling)
-    #   2. Codex worktrees:          .codex/worktrees/<name>  (main repo is an ancestor)
+    #   1. Sibling worktrees:  ../repo-issue-N  (main repo is a sibling; the CxPP default, issue #133)
+    #   2. Nested worktrees:   .codex/worktrees/<name>  (main repo is an ancestor; legacy/other harnesses)
     PRUNE_REPO=""
     # (1) Scan siblings of the worktree path.
     for parent in "$(dirname "$WORKTREE_PATH")"/*; do
