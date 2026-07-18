@@ -5,7 +5,7 @@
 Merge the current branch's PR, then clean up the worktree and branch.
 
 Worktrees are plain git linked worktrees (a visible sibling of the repo,
-`../<repo>-issue-<N>`, issue #133). `/flow-merge` is usually invoked standalone
+`../<repo>-<branch>`, issue #133). `/flow-merge` is usually invoked standalone
 from inside the worktree. Cleanup therefore uses `git worktree remove` or the
 bundled `worktree-remove.sh` helper after first returning to the main checkout.
 
@@ -254,7 +254,7 @@ to codify fixes? [y/N]
 
 - Squash merge is the default - produces clean single-commit history
 - The remote branch is deleted by `gh pr merge --delete-branch`
-- Worktrees are plain git linked worktrees created as a visible sibling of the repo (`../<repo>-issue-<N>`, issue #133); cleanup uses `git worktree remove` / the safe `worktree-remove.sh` script.
+- Worktrees are plain git linked worktrees created as a visible sibling of the repo (`../<repo>-<branch>`, issue #133); cleanup uses `git worktree remove` / the safe `worktree-remove.sh` script.
 - After merge, the user ends up in the main repo on the `main` branch
 - Automatically prunes stale worktree references, merged branches, and remote tracking branches
 - For a standalone cleanup (without merging), use `/flow-cleanup`
