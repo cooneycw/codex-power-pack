@@ -4,12 +4,14 @@
 
 Create a worktree and branch for a GitHub issue. Stateless - all context from git and GitHub.
 
-Codex flow uses plain git linked worktrees created as a VISIBLE sibling of the
-repo under its parent dir (`../<repo>-issue-<N>`, issue #133), not hidden inside
-the repo - so a session driven from the `~/Projects` parent can see them. Create
-or resume the checkout with `git worktree`, then run subsequent commands from that
-worktree path. The issue-anchored `issue-<N>-<slug>` branch name is the policy
-CxPP keeps and enforces.
+Codex flow uses plain git linked worktrees created OUTSIDE the repo, so a session
+driven from the `~/Projects` parent can see them (issue #133). The base directory
+is configurable via `FLOW_WORKTREE_BASE` (issue #136 - identical knob + semantics
+to CPP #584): unset (the default), worktrees land in the repo's parent dir as a
+visible sibling (`../<repo>-<branch>`); set, they land at
+`$FLOW_WORKTREE_BASE/<repo>-<branch>`. Create or resume the checkout with
+`git worktree`, then run subsequent commands from that worktree path. The
+issue-anchored `issue-<N>-<slug>` branch name is the policy CxPP keeps and enforces.
 
 ## Arguments
 
@@ -49,8 +51,9 @@ SLUG=$(echo "$TITLE" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 
 BRANCH="issue-${ISSUE_NUM}-${SLUG}"
 ```
 
-The Codex worktree is a visible sibling of the repo: `../<repo>-issue-${ISSUE_NUM}`
-(computed below from the main repo's parent dir), not a folder hidden inside the repo.
+The Codex worktree lives at `$WORKTREE_BASE/<repo>-${BRANCH}`, where `WORKTREE_BASE`
+is `FLOW_WORKTREE_BASE` when set, else the main repo's parent dir - a visible
+sibling `../<repo>-${BRANCH}` (issue #136 / #133), not a folder hidden inside the repo.
 
 ### Step 4: Check for Existing Work
 
@@ -78,9 +81,13 @@ Pick exactly one path:
   ```bash
   REMOTE_BRANCH=$(git branch -r | grep "issue-${ISSUE_NUM}-" | head -1 | xargs)
   LOCAL_BRANCH="${REMOTE_BRANCH#origin/}"
-  # Visible sibling of the repo, under its parent dir (issue #133) - not hidden inside it.
   MAIN_REPO="$(git rev-parse --show-toplevel)"
-  WORKTREE_DIR="$(dirname "$MAIN_REPO")/$(basename "$MAIN_REPO")-issue-${ISSUE_NUM}"
+  # Worktree base is configurable via FLOW_WORKTREE_BASE (issue #136, ADR 0003) -
+  # identical knob + semantics to CPP #584. Default (unset) is the repo's parent
+  # dir, a visible sibling (issue #133). Set -> worktrees at $FLOW_WORKTREE_BASE.
+  WORKTREE_BASE="${FLOW_WORKTREE_BASE:-$(dirname "$MAIN_REPO")}"
+  [ -n "$FLOW_WORKTREE_BASE" ] && mkdir -p "$WORKTREE_BASE"
+  WORKTREE_DIR="$WORKTREE_BASE/$(basename "$MAIN_REPO")-${LOCAL_BRANCH}"
   git worktree add -b "$LOCAL_BRANCH" "$WORKTREE_DIR" "$REMOTE_BRANCH"
   cd "$WORKTREE_DIR"
   ```
@@ -90,9 +97,13 @@ Pick exactly one path:
   DEFAULT_BRANCH=$(git remote show origin 2>/dev/null | sed -n '/HEAD branch/s/.*: //p')
   DEFAULT_BRANCH="${DEFAULT_BRANCH:-main}"
   git fetch origin "$DEFAULT_BRANCH"
-  # Visible sibling of the repo, under its parent dir (issue #133) - not hidden inside it.
   MAIN_REPO="$(git rev-parse --show-toplevel)"
-  WORKTREE_DIR="$(dirname "$MAIN_REPO")/$(basename "$MAIN_REPO")-issue-${ISSUE_NUM}"
+  # Worktree base is configurable via FLOW_WORKTREE_BASE (issue #136, ADR 0003) -
+  # identical knob + semantics to CPP #584. Default (unset) is the repo's parent
+  # dir, a visible sibling (issue #133). Set -> worktrees at $FLOW_WORKTREE_BASE.
+  WORKTREE_BASE="${FLOW_WORKTREE_BASE:-$(dirname "$MAIN_REPO")}"
+  [ -n "$FLOW_WORKTREE_BASE" ] && mkdir -p "$WORKTREE_BASE"
+  WORKTREE_DIR="$WORKTREE_BASE/$(basename "$MAIN_REPO")-${BRANCH}"
   git worktree add -b "$BRANCH" "$WORKTREE_DIR" "origin/${DEFAULT_BRANCH}"
   cd "$WORKTREE_DIR"
   ```
@@ -123,7 +134,7 @@ echo "Verified: on branch '$CURRENT_BRANCH' in $(pwd)"
 ```
 
 **Worktree path-resolution rule (issue #486).** The linked worktree is a visible
-sibling of the main repo (`../<repo>-issue-<N>/`), not nested inside it. When you
+sibling of the main repo (`../<repo>-<branch>/`), not nested inside it. When you
 edit files from here, resolve paths from the worktree root -
 `git rev-parse --show-toplevel` - or use plain relative paths from the session
 cwd; never hand-build an absolute worktree path, which has been observed to land

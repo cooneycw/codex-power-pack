@@ -8,7 +8,7 @@ description: "Diagnose flow workflow setup and environment"
 
 Generated from a Claude Code command. Where the procedure references these Claude-only surfaces, adapt as follows:
 
-- Codex worktrees: create them as a VISIBLE sibling next to the repo under its parent dir (`../<repo>-issue-<N>`, issue #133), never hidden inside the repo - `git worktree add "../<repo>-issue-<N>" -b <branch>`, work inside it, then `git worktree remove <path>` from the main repo when done.
+- Codex worktrees: create them OUTSIDE the repo at `$FLOW_WORKTREE_BASE/<repo>-<branch>` when FLOW_WORKTREE_BASE is set, else a visible sibling under the repo's parent dir (`../<repo>-<branch>`, issue #133/#136), never hidden inside the repo - `git worktree add "$WORKTREE_DIR" -b <branch>`, work inside it, then `git worktree remove <path>` from the main repo when done.
 - MCP tools: use the MCP servers configured in `~/.codex/config.toml`, or fall back to the referenced repo scripts and CLI entry points.
 - `CLAUDE.md` references: Codex reads `AGENTS.md`; treat them as the target repo's agent-context file.
 - Helper scripts referenced as `scripts/<name>` are bundled under `scripts/` in this skill directory (byte-identical copies from the claude-power-pack checkout); some expect sibling repo resources, so prefer a full checkout when one is available.

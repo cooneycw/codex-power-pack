@@ -69,12 +69,14 @@ This is capture only - proposing and applying fixes happens in the retro, not he
 
 **CRITICAL: You MUST create or enter a worktree before proceeding. NEVER implement changes directly on main/master. This step is NOT optional - if worktree creation fails, STOP immediately.**
 
-Codex flow uses plain git linked worktrees created as a VISIBLE sibling of the
-repo under its parent dir (`../<repo>-issue-<N>`), not hidden inside the repo
-(issue #133) - so a session driven from the `~/Projects` parent can see them.
-Create or resume the checkout with `git worktree`, then run all implementation
-steps from that worktree path. CxPP keeps and enforces the issue-anchored
-`issue-<N>-<slug>` branch name.
+Codex flow uses plain git linked worktrees created OUTSIDE the repo, so a session
+driven from the `~/Projects` parent can see them (issue #133). The base directory
+is configurable via `FLOW_WORKTREE_BASE` (issue #136 - identical knob + semantics
+to CPP #584): unset (the default), worktrees land in the repo's parent dir as a
+visible sibling (`../<repo>-<branch>`); set, they land at
+`$FLOW_WORKTREE_BASE/<repo>-<branch>`. Create or resume the checkout with
+`git worktree`, then run all implementation steps from that worktree path. CxPP
+keeps and enforces the issue-anchored `issue-<N>-<slug>` branch name.
 
 ```bash
 ISSUE_NUM="$1"
@@ -136,9 +138,13 @@ git branch -r | grep "issue-${ISSUE_NUM}-"
   ```bash
   REMOTE_BRANCH=$(git branch -r | grep "issue-${ISSUE_NUM}-" | head -1 | xargs)
   LOCAL_BRANCH="${REMOTE_BRANCH#origin/}"
-  # Visible sibling of the repo, under its parent dir (issue #133) - not hidden inside it.
   MAIN_REPO="$(git rev-parse --show-toplevel)"
-  WORKTREE_DIR="$(dirname "$MAIN_REPO")/$(basename "$MAIN_REPO")-issue-${ISSUE_NUM}"
+  # Worktree base is configurable via FLOW_WORKTREE_BASE (issue #136, ADR 0003) -
+  # identical knob + semantics to CPP #584. Default (unset) is the repo's parent
+  # dir, a visible sibling (issue #133). Set -> worktrees at $FLOW_WORKTREE_BASE.
+  WORKTREE_BASE="${FLOW_WORKTREE_BASE:-$(dirname "$MAIN_REPO")}"
+  [ -n "$FLOW_WORKTREE_BASE" ] && mkdir -p "$WORKTREE_BASE"
+  WORKTREE_DIR="$WORKTREE_BASE/$(basename "$MAIN_REPO")-${LOCAL_BRANCH}"
   git worktree add -b "$LOCAL_BRANCH" "$WORKTREE_DIR" "$REMOTE_BRANCH"
   cd "$WORKTREE_DIR"
   ```
@@ -148,9 +154,13 @@ git branch -r | grep "issue-${ISSUE_NUM}-"
   DEFAULT_BRANCH=$(git remote show origin 2>/dev/null | sed -n '/HEAD branch/s/.*: //p')
   DEFAULT_BRANCH="${DEFAULT_BRANCH:-main}"
   git fetch origin "$DEFAULT_BRANCH"
-  # Visible sibling of the repo, under its parent dir (issue #133) - not hidden inside it.
   MAIN_REPO="$(git rev-parse --show-toplevel)"
-  WORKTREE_DIR="$(dirname "$MAIN_REPO")/$(basename "$MAIN_REPO")-issue-${ISSUE_NUM}"
+  # Worktree base is configurable via FLOW_WORKTREE_BASE (issue #136, ADR 0003) -
+  # identical knob + semantics to CPP #584. Default (unset) is the repo's parent
+  # dir, a visible sibling (issue #133). Set -> worktrees at $FLOW_WORKTREE_BASE.
+  WORKTREE_BASE="${FLOW_WORKTREE_BASE:-$(dirname "$MAIN_REPO")}"
+  [ -n "$FLOW_WORKTREE_BASE" ] && mkdir -p "$WORKTREE_BASE"
+  WORKTREE_DIR="$WORKTREE_BASE/$(basename "$MAIN_REPO")-${BRANCH}"
   git worktree add -b "$BRANCH" "$WORKTREE_DIR" "origin/${DEFAULT_BRANCH}"
   cd "$WORKTREE_DIR"
   ```
@@ -299,7 +309,7 @@ fi
   #462 guard remains the final backstop.
 
 **Worktree path-resolution rule (issue #486) - the linked worktree is a VISIBLE
-sibling of the main repo (`../<repo>-issue-<N>/`), not nested inside it.** A
+sibling of the main repo (`../<repo>-<branch>/`), not nested inside it.** A
 `Write`/`Edit` should still resolve paths from the active worktree root so an edit
 never lands in the wrong tree (the hand-built-path-lands-in-main class, flow:auto
 #442 x2, #471). Because the sibling lives outside the main repo, a stray path is
@@ -970,7 +980,7 @@ Key failure scenarios:
 - The analyze step ensures Claude understands the issue before writing code
 - The ELI5 step (Step 3) is a human checkpoint: it restates intent in plain language, verifies the issue is still worth doing, and gates implementation on plan approval. Use `--yes` (or an `eli5: auto-approve` trailer) for fully unattended runs; a `No longer needed` verdict never auto-implements
 - Each step builds on the previous one; there's no skipping
-- Worktrees are plain git linked worktrees created as a visible sibling of the repo (`../<repo>-issue-<N>`, issue #133), branched from `origin/<default-branch>` for fresh work or from the existing remote issue branch for cross-machine pickup. The issue-anchored `issue-<N>-<slug>` branch name, the ELI5 gate, and quality gates are CxPP policy layered on top.
+- Worktrees are plain git linked worktrees created outside the repo at a configurable base (`FLOW_WORKTREE_BASE`, issue #136; default the repo's parent dir as a visible sibling `../<repo>-<branch>`, issue #133), branched from `origin/<default-branch>` for fresh work or from the existing remote issue branch for cross-machine pickup. The issue-anchored `issue-<N>-<slug>` branch name, the ELI5 gate, and quality gates are CxPP policy layered on top.
 - The deploy step is always optional - it only runs if a deploy target exists
 - After completion, the user is in the main repo on the main branch
 - For step-by-step control, use individual commands: `/flow-start`, `/flow-eli5`, `/flow-finish`, `/flow-merge`, `/flow-deploy`
