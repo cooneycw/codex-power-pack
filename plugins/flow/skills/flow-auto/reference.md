@@ -69,7 +69,9 @@ This is capture only - proposing and applying fixes happens in the retro, not he
 
 **CRITICAL: You MUST create or enter a worktree before proceeding. NEVER implement changes directly on main/master. This step is NOT optional - if worktree creation fails, STOP immediately.**
 
-Codex flow uses plain git linked worktrees under `.codex/worktrees/<name>`.
+Codex flow uses plain git linked worktrees created as a VISIBLE sibling of the
+repo under its parent dir (`../<repo>-issue-<N>`), not hidden inside the repo
+(issue #133) - so a session driven from the `~/Projects` parent can see them.
 Create or resume the checkout with `git worktree`, then run all implementation
 steps from that worktree path. CxPP keeps and enforces the issue-anchored
 `issue-<N>-<slug>` branch name.
@@ -134,8 +136,11 @@ git branch -r | grep "issue-${ISSUE_NUM}-"
   ```bash
   REMOTE_BRANCH=$(git branch -r | grep "issue-${ISSUE_NUM}-" | head -1 | xargs)
   LOCAL_BRANCH="${REMOTE_BRANCH#origin/}"
-  git worktree add -b "$LOCAL_BRANCH" ".codex/worktrees/${LOCAL_BRANCH}" "$REMOTE_BRANCH"
-  cd ".codex/worktrees/${LOCAL_BRANCH}"
+  # Visible sibling of the repo, under its parent dir (issue #133) - not hidden inside it.
+  MAIN_REPO="$(git rev-parse --show-toplevel)"
+  WORKTREE_DIR="$(dirname "$MAIN_REPO")/$(basename "$MAIN_REPO")-issue-${ISSUE_NUM}"
+  git worktree add -b "$LOCAL_BRANCH" "$WORKTREE_DIR" "$REMOTE_BRANCH"
+  cd "$WORKTREE_DIR"
   ```
 - **Neither exists** (fresh start): create the linked worktree from the remote
   default branch and then work from it:
@@ -143,8 +148,11 @@ git branch -r | grep "issue-${ISSUE_NUM}-"
   DEFAULT_BRANCH=$(git remote show origin 2>/dev/null | sed -n '/HEAD branch/s/.*: //p')
   DEFAULT_BRANCH="${DEFAULT_BRANCH:-main}"
   git fetch origin "$DEFAULT_BRANCH"
-  git worktree add -b "$BRANCH" ".codex/worktrees/${BRANCH}" "origin/${DEFAULT_BRANCH}"
-  cd ".codex/worktrees/${BRANCH}"
+  # Visible sibling of the repo, under its parent dir (issue #133) - not hidden inside it.
+  MAIN_REPO="$(git rev-parse --show-toplevel)"
+  WORKTREE_DIR="$(dirname "$MAIN_REPO")/$(basename "$MAIN_REPO")-issue-${ISSUE_NUM}"
+  git worktree add -b "$BRANCH" "$WORKTREE_DIR" "origin/${DEFAULT_BRANCH}"
+  cd "$WORKTREE_DIR"
   ```
 
 #### Verification Gate (MANDATORY - do NOT skip)
@@ -290,16 +298,18 @@ fi
 - If it reports `current` or `moved-clean` with no overlap, proceed - the Step-7
   #462 guard remains the final backstop.
 
-**Worktree path-resolution rule (issue #486) - the linked worktree lives inside
-the main repo at `.codex/worktrees/<name>/`.** A `Write`/`Edit` given a hand-built ABSOLUTE
-`.codex/worktrees/<name>/...` path has been observed to land in the MAIN repo
-working tree instead of the worktree (flow:auto #442 x2, #471) - work looks done
-but is written to the wrong tree. So, for every edit in this step:
+**Worktree path-resolution rule (issue #486) - the linked worktree is a VISIBLE
+sibling of the main repo (`../<repo>-issue-<N>/`), not nested inside it.** A
+`Write`/`Edit` should still resolve paths from the active worktree root so an edit
+never lands in the wrong tree (the hand-built-path-lands-in-main class, flow:auto
+#442 x2, #471). Because the sibling lives outside the main repo, a stray path is
+far less likely to resolve under main - but keep the directive anyway. So, for
+every edit in this step:
 
 - Resolve edit paths from the active worktree root - `git rev-parse
-  --show-toplevel` - never a hand-built `.codex/worktrees/<name>/...` absolute
-  path. A path under `$(git rev-parse --show-toplevel)/...`, or a plain relative
-  path from the session cwd, targets the worktree correctly.
+  --show-toplevel` - or a plain relative path from the session cwd; never a
+  hand-built absolute worktree path. A path under
+  `$(git rev-parse --show-toplevel)/...` targets the worktree correctly.
 - After writing, confirm the change landed in the worktree (`git status` shows it)
   and did NOT leak into main. The guard makes the leak check verifiable:
   ```bash
@@ -890,7 +900,7 @@ Flow Auto Complete
   Changes:  Modified 3 files (src/auth/login.py, tests/test_auth.py, config/routes.py)
   PR:       #78 (squash-merged)
   Branch:   issue-42-fix-login (deleted)
-  Worktree: .codex/worktrees/issue-42-fix-login (removed)
+  Worktree: ../my-project-issue-42 (removed)
   CI:       Woodpecker pipeline #5 passed | GitHub Actions run #123 passed | skipped
   Deploy:   make deploy (success) | skipped
   Verify:   PROCEED | REVIEW | ROLLBACK | not configured
@@ -960,7 +970,7 @@ Key failure scenarios:
 - The analyze step ensures Claude understands the issue before writing code
 - The ELI5 step (Step 3) is a human checkpoint: it restates intent in plain language, verifies the issue is still worth doing, and gates implementation on plan approval. Use `--yes` (or an `eli5: auto-approve` trailer) for fully unattended runs; a `No longer needed` verdict never auto-implements
 - Each step builds on the previous one; there's no skipping
-- Worktrees are plain git linked worktrees under `.codex/worktrees/`, branched from `origin/<default-branch>` for fresh work or from the existing remote issue branch for cross-machine pickup. The issue-anchored `issue-<N>-<slug>` branch name, the ELI5 gate, and quality gates are CxPP policy layered on top.
+- Worktrees are plain git linked worktrees created as a visible sibling of the repo (`../<repo>-issue-<N>`, issue #133), branched from `origin/<default-branch>` for fresh work or from the existing remote issue branch for cross-machine pickup. The issue-anchored `issue-<N>-<slug>` branch name, the ELI5 gate, and quality gates are CxPP policy layered on top.
 - The deploy step is always optional - it only runs if a deploy target exists
 - After completion, the user is in the main repo on the main branch
 - For step-by-step control, use individual commands: `/flow-start`, `/flow-eli5`, `/flow-finish`, `/flow-merge`, `/flow-deploy`

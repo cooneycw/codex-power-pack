@@ -33,9 +33,9 @@ A hand-edit is caught by the CI drift gate (`make codex-skills-check`,
 `scripts/codex_skills_sync.py --check`), which fails when any file here diverges from
 the manifest recorded in `vendor/claude-power-pack/`. For shared command behavior,
 edit upstream in CPP and refresh. For CxPP-owned runtime-state adaptations such as
-`.codex/worktrees/` and `.codex/friction.jsonl`, update the generated skill
-surface here, keep plugin payloads byte-identical, add/adjust tests, and
-re-snapshot the manifest.
+the visible-sibling worktree location (`../<repo>-issue-<N>`, issue #133) and
+`.codex/friction.jsonl`, update the generated skill surface here, keep plugin
+payloads byte-identical, add/adjust tests, and re-snapshot the manifest.
 
 ## Harness lint
 
@@ -45,7 +45,8 @@ unadapted. A literal `AskUserQuestion`, `/plugin`, `CLAUDE.md`, `Agent tool`,
 `Skill tool`, or leading `!` command is allowed only when the skill's `SKILL.md`
 contains a matching Codex harness adaptation. A literal `.claude/worktrees` path
 is stricter: it is rejected unless the line explicitly marks itself as CPP or
-Claude source context. Codex runtime worktrees belong under `.codex/worktrees/`.
+Claude source context. Codex runtime worktrees are created as a visible sibling of
+the repo (`../<repo>-issue-<N>`, issue #133), not hidden inside it.
 
 If a literal token must remain for documentation, add a reviewed exception to
 `.codex/harness-lint-allowlist.txt` using `rule|path|needle|reason`. Prefer
