@@ -149,6 +149,22 @@ bundled resolver always selects the plain-git lane and creates visible sibling
 worktrees (or uses `FLOW_WORKTREE_BASE` when configured).
 
 """
+_CLAUDE_CICD_DISCOVERY = (
+    "for dir in ~/Projects/claude-power-pack /opt/claude-power-pack ~/.claude-power-pack; do"
+)
+_CODEX_CICD_DISCOVERY = f"""# Prefer the CxPP-owned runner. The first two candidates cover a
+# repo-local .codex skill and a checkout-local plugin respectively; installed
+# marketplace skills then fall through to the standard CxPP checkout locations.
+# claude-power-pack is an explicit compatibility fallback only (CxPP #142).
+for dir in \\
+  "{SKILL_DIR_TOKEN}/../../.." \\
+  "{SKILL_DIR_TOKEN}/../../../.." \\
+  "$HOME/Projects/codex-power-pack" \\
+  /opt/codex-power-pack \\
+  "$HOME/.codex-power-pack" \\
+  "$HOME/Projects/claude-power-pack" \\
+  /opt/claude-power-pack \\
+  "$HOME/.claude-power-pack"; do"""
 _GITHUB_REPO_PREAMBLE = """## Codex target-repository contract
 
 Resolve `REPO` from an explicit `owner/repo` argument when supplied; otherwise
@@ -404,6 +420,72 @@ def _adapt_flow_text(skill_dir: Path, source_file: Path, text: str) -> str:
     return text
 
 
+def _adapt_flow_cicd_runtime(skill_dir: Path, source_file: Path, text: str) -> str:
+    """Prefer CxPP's runner in Codex finish lanes, retaining CPP as fallback."""
+    if source_file.name != "reference.md" or skill_dir.name not in {
+        "flow-auto",
+        "flow-finish",
+        "flow-merge",
+    }:
+        return text
+
+    discovery = re.compile(
+        rf'CPP_DIR=""\n{re.escape(_CLAUDE_CICD_DISCOVERY)}\n(?P<body>.*?)\ndone',
+        re.DOTALL,
+    )
+
+    def adapt_match(match: re.Match[str]) -> str:
+        # A flow reference can also locate CPP solely for legacy helper scripts.
+        # Adapt only blocks whose nearby command actually invokes lib.cicd.
+        if "python -m lib.cicd" not in text[match.end() : match.end() + 1600]:
+            return match.group(0)
+        body = match.group("body").replace(
+            'if [ -d "$dir" ] && [ -f "$dir/CLAUDE.md" ]; then',
+            'if [ -d "$dir/lib/cicd" ] && '
+            '{ [ -f "$dir/AGENTS.md" ] || [ -f "$dir/CLAUDE.md" ]; }; then',
+        )
+        body = body.replace(
+            '[ -d "$dir" ] && [ -f "$dir/CLAUDE.md" ] && { CPP_DIR="$dir"; break; }',
+            '[ -d "$dir/lib/cicd" ] && '
+            '{ [ -f "$dir/AGENTS.md" ] || [ -f "$dir/CLAUDE.md" ]; } && '
+            '{ CPP_DIR="$dir"; break; }',
+        )
+        return (
+            f'CPP_DIR=""\nCICD_RUNTIME_KIND=""\n{_CODEX_CICD_DISCOVERY}\n{body}\ndone\n'
+            'if [ -n "$CPP_DIR" ]; then\n'
+            '  if [ -f "$CPP_DIR/AGENTS.md" ]; then\n'
+            '    CICD_RUNTIME_KIND="cxpp"\n'
+            '  else\n'
+            '    CICD_RUNTIME_KIND="cpp-compat"\n'
+            '  fi\n'
+            'fi'
+        )
+
+    text = discovery.sub(adapt_match, text)
+    runner_command = re.compile(
+        r'^(?P<indent>[ \t]*)PYTHONPATH="\$CPP_DIR:\$PYTHONPATH" '
+        r'uv run --project "\$CPP_DIR" python -m lib\.cicd (?P<args>[^\n]+)$',
+        re.MULTILINE,
+    )
+
+    def adapt_runner_command(match: re.Match[str]) -> str:
+        indent = match.group("indent")
+        args = match.group("args")
+        return (
+            f'{indent}if [ "$CICD_RUNTIME_KIND" = "cxpp" ]; then\n'
+            f'{indent}    PYTHONPATH="$CPP_DIR:$PYTHONPATH" '
+            f'uv run python -m lib.cicd {args}\n'
+            f"{indent}else\n"
+            f'{indent}    PYTHONPATH="$CPP_DIR:$PYTHONPATH" '
+            f'uv run --project "$CPP_DIR" python -m lib.cicd {args}\n'
+            f"{indent}fi"
+        )
+
+    text = runner_command.sub(adapt_runner_command, text)
+    text = text.replace("CPP checkout not found", "CxPP/CPP runtime not found")
+    return text
+
+
 def _adapt_flow_resolver(text: str) -> str:
     """Make CPP's resolver use Codex's plain-git visible-worktree lane."""
     text = text.replace(
@@ -446,6 +528,7 @@ def _adapted_source_files(skill_dir: Path) -> dict[str, bytes]:
         if rel == "scripts/flow-start-resolve.sh":
             text = _adapt_flow_resolver(text)
         text = _adapt_flow_text(skill_dir, source_file, text)
+        text = _adapt_flow_cicd_runtime(skill_dir, source_file, text)
         text = _adapt_github_text(skill_dir, source_file, text)
         files[rel] = text.encode()
     return files

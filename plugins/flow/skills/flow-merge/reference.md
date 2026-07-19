@@ -76,11 +76,35 @@ if [[ "$(git rev-list --count HEAD..origin/main)" -gt 0 ]]; then
     # Re-run the FULL quality gate on the MERGED tree (deterministic runner,
     # Makefile fallback - same gate /flow-finish uses).
     CPP_DIR=""
-    for dir in ~/Projects/claude-power-pack /opt/claude-power-pack ~/.claude-power-pack; do
-      [ -d "$dir" ] && [ -f "$dir/CLAUDE.md" ] && { CPP_DIR="$dir"; break; }
+    CICD_RUNTIME_KIND=""
+    # Prefer the CxPP-owned runner. The first two candidates cover a
+    # repo-local .codex skill and a checkout-local plugin respectively; installed
+    # marketplace skills then fall through to the standard CxPP checkout locations.
+    # claude-power-pack is an explicit compatibility fallback only (CxPP #142).
+    for dir in \
+      "<SKILL_DIR>/../../.." \
+      "<SKILL_DIR>/../../../.." \
+      "$HOME/Projects/codex-power-pack" \
+      /opt/codex-power-pack \
+      "$HOME/.codex-power-pack" \
+      "$HOME/Projects/claude-power-pack" \
+      /opt/claude-power-pack \
+      "$HOME/.claude-power-pack"; do
+      [ -d "$dir/lib/cicd" ] && { [ -f "$dir/AGENTS.md" ] || [ -f "$dir/CLAUDE.md" ]; } && { CPP_DIR="$dir"; break; }
     done
+    if [ -n "$CPP_DIR" ]; then
+      if [ -f "$CPP_DIR/AGENTS.md" ]; then
+        CICD_RUNTIME_KIND="cxpp"
+      else
+        CICD_RUNTIME_KIND="cpp-compat"
+      fi
+    fi
     if [ -n "$CPP_DIR" ] && command -v uv >/dev/null 2>&1; then
-        PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run --project "$CPP_DIR" python -m lib.cicd run --plan finish
+        if [ "$CICD_RUNTIME_KIND" = "cxpp" ]; then
+            PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run python -m lib.cicd run --plan finish
+        else
+            PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run --project "$CPP_DIR" python -m lib.cicd run --plan finish
+        fi
         REGATE_EXIT=$?
     else
         echo "NOTE: deterministic runner unavailable; re-gating via Makefile fallback." >&2

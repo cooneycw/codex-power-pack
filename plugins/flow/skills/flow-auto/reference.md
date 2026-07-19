@@ -440,12 +440,32 @@ fi
    **Primary path:** Call the CI/CD runner for reproducible quality gates:
    ```bash
    CPP_DIR=""
-   for dir in ~/Projects/claude-power-pack /opt/claude-power-pack ~/.claude-power-pack; do
-     if [ -d "$dir" ] && [ -f "$dir/CLAUDE.md" ]; then
+   CICD_RUNTIME_KIND=""
+   # Prefer the CxPP-owned runner. The first two candidates cover a
+   # repo-local .codex skill and a checkout-local plugin respectively; installed
+   # marketplace skills then fall through to the standard CxPP checkout locations.
+   # claude-power-pack is an explicit compatibility fallback only (CxPP #142).
+   for dir in \
+     "<SKILL_DIR>/../../.." \
+     "<SKILL_DIR>/../../../.." \
+     "$HOME/Projects/codex-power-pack" \
+     /opt/codex-power-pack \
+     "$HOME/.codex-power-pack" \
+     "$HOME/Projects/claude-power-pack" \
+     /opt/claude-power-pack \
+     "$HOME/.claude-power-pack"; do
+     if [ -d "$dir/lib/cicd" ] && { [ -f "$dir/AGENTS.md" ] || [ -f "$dir/CLAUDE.md" ]; }; then
        CPP_DIR="$dir"
        break
      fi
    done
+   if [ -n "$CPP_DIR" ]; then
+     if [ -f "$CPP_DIR/AGENTS.md" ]; then
+       CICD_RUNTIME_KIND="cxpp"
+     else
+       CICD_RUNTIME_KIND="cpp-compat"
+     fi
+   fi
 
    RUNNER_RAN=0
    if [ -n "$CPP_DIR" ] && command -v uv >/dev/null 2>&1; then
@@ -456,13 +476,17 @@ fi
        # exactly the environment /flow-auto always creates (issue #430).
        # PYTHONPATH must point at CPP_DIR (the PARENT of lib/) so `-m lib.cicd`
        # resolves for external projects too, not just when dogfooding CPP.
-       PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run --project "$CPP_DIR" python -m lib.cicd run --plan finish
+       if [ "$CICD_RUNTIME_KIND" = "cxpp" ]; then
+           PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run python -m lib.cicd run --plan finish
+       else
+           PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run --project "$CPP_DIR" python -m lib.cicd run --plan finish
+       fi
        RUNNER_EXIT=$?
        RUNNER_RAN=1
    fi
 
    if [ "$RUNNER_RAN" -eq 0 ]; then
-       REASON=$([ -z "$CPP_DIR" ] && echo "CPP checkout not found" || echo "uv not installed")
+       REASON=$([ -z "$CPP_DIR" ] && echo "CxPP/CPP runtime not found" || echo "uv not installed")
        echo "NOTE: deterministic runner unavailable ($REASON); using Makefile fallback." >&2
    fi
    ```
@@ -541,9 +565,29 @@ Report: `Step 6/9: Finish complete - PR #XX created`
        # Re-run the FULL quality gate on the MERGED tree (not the pre-merge branch)
        # - same deterministic runner as Step 6, with the same Makefile fallback.
        CPP_DIR=""
-       for dir in ~/Projects/claude-power-pack /opt/claude-power-pack ~/.claude-power-pack; do
-         [ -d "$dir" ] && [ -f "$dir/CLAUDE.md" ] && { CPP_DIR="$dir"; break; }
+       CICD_RUNTIME_KIND=""
+       # Prefer the CxPP-owned runner. The first two candidates cover a
+       # repo-local .codex skill and a checkout-local plugin respectively; installed
+       # marketplace skills then fall through to the standard CxPP checkout locations.
+       # claude-power-pack is an explicit compatibility fallback only (CxPP #142).
+       for dir in \
+         "<SKILL_DIR>/../../.." \
+         "<SKILL_DIR>/../../../.." \
+         "$HOME/Projects/codex-power-pack" \
+         /opt/codex-power-pack \
+         "$HOME/.codex-power-pack" \
+         "$HOME/Projects/claude-power-pack" \
+         /opt/claude-power-pack \
+         "$HOME/.claude-power-pack"; do
+         [ -d "$dir/lib/cicd" ] && { [ -f "$dir/AGENTS.md" ] || [ -f "$dir/CLAUDE.md" ]; } && { CPP_DIR="$dir"; break; }
        done
+       if [ -n "$CPP_DIR" ]; then
+         if [ -f "$CPP_DIR/AGENTS.md" ]; then
+           CICD_RUNTIME_KIND="cxpp"
+         else
+           CICD_RUNTIME_KIND="cpp-compat"
+         fi
+       fi
        # If the merge pulled ANY command-family source, re-sync the in-repo
        # generated surfaces - the packaged plugin copies AND the Codex skills
        # (all families, not just flow - issue #506; Codex skills #555, flat
@@ -564,7 +608,11 @@ Report: `Step 6/9: Finish complete - PR #XX created`
            git commit -m "chore(generated): re-sync plugin + codex skill copies after merging origin/main (#506)"
        fi
        if [ -n "$CPP_DIR" ] && command -v uv >/dev/null 2>&1; then
-           PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run --project "$CPP_DIR" python -m lib.cicd run --plan finish
+           if [ "$CICD_RUNTIME_KIND" = "cxpp" ]; then
+               PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run python -m lib.cicd run --plan finish
+           else
+               PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run --project "$CPP_DIR" python -m lib.cicd run --plan finish
+           fi
            REGATE_EXIT=$?
        else
            echo "NOTE: deterministic runner unavailable; re-gating via Makefile fallback." >&2
@@ -833,12 +881,32 @@ cd "$MAIN_REPO"
 
 # Locate CPP source for lib/cicd (deploy verification)
 CPP_DIR=""
-for dir in ~/Projects/claude-power-pack /opt/claude-power-pack ~/.claude-power-pack; do
-  if [ -d "$dir" ] && [ -f "$dir/CLAUDE.md" ]; then
+CICD_RUNTIME_KIND=""
+# Prefer the CxPP-owned runner. The first two candidates cover a
+# repo-local .codex skill and a checkout-local plugin respectively; installed
+# marketplace skills then fall through to the standard CxPP checkout locations.
+# claude-power-pack is an explicit compatibility fallback only (CxPP #142).
+for dir in \
+  "<SKILL_DIR>/../../.." \
+  "<SKILL_DIR>/../../../.." \
+  "$HOME/Projects/codex-power-pack" \
+  /opt/codex-power-pack \
+  "$HOME/.codex-power-pack" \
+  "$HOME/Projects/claude-power-pack" \
+  /opt/claude-power-pack \
+  "$HOME/.claude-power-pack"; do
+  if [ -d "$dir/lib/cicd" ] && { [ -f "$dir/AGENTS.md" ] || [ -f "$dir/CLAUDE.md" ]; }; then
     CPP_DIR="$dir"
     break
   fi
 done
+if [ -n "$CPP_DIR" ]; then
+  if [ -f "$CPP_DIR/AGENTS.md" ]; then
+    CICD_RUNTIME_KIND="cxpp"
+  else
+    CICD_RUNTIME_KIND="cpp-compat"
+  fi
+fi
 VERIFY_ENABLED=0
 if [ -n "$CPP_DIR" ] && grep -q "deploy_verification:" .claude/cicd.yml 2>/dev/null; then
     VERIFY_ENABLED=1
