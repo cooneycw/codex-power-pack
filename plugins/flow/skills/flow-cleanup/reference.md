@@ -4,10 +4,11 @@
 
 Remove orphaned worktree references, delete local branches already merged to main, and prune stale remote tracking branches.
 
-Codex flow worktrees are visible siblings of the repo (`../<repo>-<branch>`,
-issue #133). `git worktree list`, `git worktree prune`, and `git worktree remove`
-operate on them exactly as they do on any linked worktree, so this command is the
-correct cleanup path across sessions and can prune stale or prior-session worktrees.
+Native worktrees live under `../<repo>-<branch>/`. `git worktree list`,
+`git worktree prune`, and `git worktree remove` operate on them exactly as they do
+on any worktree, so this command is the correct cross-session cleanup path -
+native `ExitWorktree` only removes worktrees created by `EnterWorktree` in the
+current session and cannot prune stale or prior-session ones.
 
 ## Arguments
 

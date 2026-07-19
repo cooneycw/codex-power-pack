@@ -7,7 +7,7 @@
 # indistinguishable to the model AND in the transcript. Claude Code's
 # PermissionRequest hook is not - it fires at the exact moment a permission
 # dialog is shown. This hook turns that event into one `permission-prompt` record
-# in the project's .codex/friction.jsonl (via friction-log.sh), so
+# in the project's .claude/friction.jsonl (via friction-log.sh), so
 # /self-improvement:retro Step 4 finally has real input (issue #482).
 #
 # Two things per prompt:
@@ -30,7 +30,7 @@
 #
 # Input: the PermissionRequest JSON payload on stdin
 #        ({tool_name, tool_input, permission_mode, cwd, session_id, ...}).
-# Output: none (records land in the project's .codex/friction.jsonl).
+# Output: none (records land in the project's .claude/friction.jsonl).
 #
 # Registered (user-confirmed) in ~/.claude/settings.json by /cpp:init and
 # /cpp:update:
@@ -423,7 +423,10 @@ RISK="$(printf '%s' "$DERIVED" | cut -f3)"
 
 # A prompt that was SHOWN (not necessarily approved - the hook cannot observe the
 # click). --scope local: census records are per-machine and never pushed to the
-# shared store. Everything is silenced so no stray byte reaches stdout.
+# shared store. --harness claude: the census only ever runs inside Claude Code (it
+# is a Claude Code PermissionRequest hook), so it attributes explicitly rather than
+# leaning on friction-log.sh's $CLAUDECODE default (#563). Everything is silenced
+# so no stray byte reaches stdout.
 bash "$FRICTION_LOG" \
   --class permission-prompt \
   --signal "$SIGNAL" \
@@ -431,6 +434,7 @@ bash "$FRICTION_LOG" \
   --risk "$RISK" \
   --scope local \
   --outcome "shown" \
+  --harness claude \
   --run "permission-census" >/dev/null 2>&1 || true
 
 exit 0

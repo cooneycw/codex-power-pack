@@ -70,6 +70,15 @@ To change a CxPP-owned runtime-state adaptation, patch the generated skill copy 
 this repo, mirror it into the matching plugin payload, and run
 `scripts/codex_skills_sync.py --write` plus the local verification gates.
 
+Flow helpers are an installation-local exception to upstream's Claude runtime
+contract. Generated references use `<SKILL_DIR>` for the absolute directory that
+contains the loaded `SKILL.md`; Codex resolves that locator before invoking the
+bundled `scripts/<name>` file. Helpers must never resolve against the user's
+project directory or `~/.claude/scripts/`. `codex_skills_sync.py --refresh`
+applies this overlay deterministically and mirrors adapted payloads into existing
+native plugin packages. `make codex-skills-currency-check` compares the result
+with a current CPP checkout without flagging unrelated upstream changes.
+
 To change a CxPP-owned native skill such as `agents-md-lint`, `project-next`,
 `spec-adopt`, or `cxpp-init`,
 edit its skill package here and run the local verification gates.

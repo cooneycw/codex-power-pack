@@ -8,7 +8,7 @@ description: "Flow: Status of Active Worktrees - Show all active worktrees with 
 
 Generated from a Claude Code command. Where the procedure references these Claude-only surfaces, adapt as follows:
 
-- Codex worktrees: create them OUTSIDE the repo at `$FLOW_WORKTREE_BASE/<repo>-<branch>` when FLOW_WORKTREE_BASE is set, else a visible sibling under the repo's parent dir (`../<repo>-<branch>`, issue #133/#136), never hidden inside the repo - `git worktree add "$WORKTREE_DIR" -b <branch>`, work inside it, then `git worktree remove <path>` from the main repo when done.
+- Codex worktrees: use the bundled resolver and plain git. Worktrees live at `$FLOW_WORKTREE_BASE/<repo>-<branch>` when configured, otherwise as a visible sibling `../<repo>-<branch>`; enter with `cd` and clean up with `git worktree remove`. Never use Claude's hidden worktree directory.
 
 # Flow: Status of Active Worktrees
 
@@ -67,8 +67,8 @@ ISSUE_TITLE=$(gh issue view "$ISSUE_NUM" --json title --jq '.title' 2>/dev/null 
 
 | Worktree | Issue | Branch | Status | PR |
 |----------|-------|--------|--------|----|
-| ../my-project-issue-42 | #42 Fix login bug | issue-42-fix-login | 3 dirty files, 2 unpushed | - |
-| ../my-project-issue-55 | #55 Add tests | issue-55-add-tests | Clean | PR #78 (OPEN) |
+| ../<repo>-<branch>/issue-42-fix-login | #42 Fix login bug | issue-42-fix-login | 3 dirty files, 2 unpushed | - |
+| ../<repo>-<branch>/issue-55-add-tests | #55 Add tests | issue-55-add-tests | Clean | PR #78 (OPEN) |
 
 ### Suggestions
 - **#42**: Has uncommitted work - commit or stash before switching

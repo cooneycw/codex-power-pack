@@ -11,16 +11,16 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
-# Both the generated Codex surface and its byte-identical plugin payload.
-REFERENCE_FILES = [
-    REPO_ROOT / ".codex" / "skills" / "flow-auto" / "reference.md",
-    REPO_ROOT / ".codex" / "skills" / "flow-start" / "reference.md",
-    REPO_ROOT / "plugins" / "flow" / "skills" / "flow-auto" / "reference.md",
-    REPO_ROOT / "plugins" / "flow" / "skills" / "flow-start" / "reference.md",
+# Both generated resolver copies and their byte-identical plugin payloads.
+RESOLVER_FILES = [
+    REPO_ROOT / ".codex" / "skills" / "flow-auto" / "scripts" / "flow-start-resolve.sh",
+    REPO_ROOT / ".codex" / "skills" / "flow-start" / "scripts" / "flow-start-resolve.sh",
+    REPO_ROOT / "plugins" / "flow" / "skills" / "flow-auto" / "scripts" / "flow-start-resolve.sh",
+    REPO_ROOT / "plugins" / "flow" / "skills" / "flow-start" / "scripts" / "flow-start-resolve.sh",
 ]
 
 
-@pytest.mark.parametrize("path", REFERENCE_FILES, ids=lambda p: str(p.relative_to(REPO_ROOT)))
+@pytest.mark.parametrize("path", RESOLVER_FILES, ids=lambda p: str(p.relative_to(REPO_ROOT)))
 def test_worktree_base_is_configurable_with_visible_default(path: Path) -> None:
     text = path.read_text(encoding="utf-8")
 
@@ -28,14 +28,13 @@ def test_worktree_base_is_configurable_with_visible_default(path: Path) -> None:
     assert "FLOW_WORKTREE_BASE" in text
 
     # Default (unset) falls back to the repo's parent dir - the #133 visible sibling.
-    assert 'WORKTREE_BASE="${FLOW_WORKTREE_BASE:-$(dirname "$MAIN_REPO")}"' in text
+    assert 'echo "$(dirname "$TARGET_REPO")/$(basename "$TARGET_REPO")-$1"' in text
 
-    # An overridden base is created if missing.
-    assert '[ -n "$FLOW_WORKTREE_BASE" ] && mkdir -p "$WORKTREE_BASE"' in text
-
-    # Dir naming is <repo>-<branch> for parity with CPP's $BASE/<repo>-<branch>.
-    assert '"$WORKTREE_BASE/$(basename "$MAIN_REPO")-${BRANCH}"' in text  # fresh lane
-    assert '"$WORKTREE_BASE/$(basename "$MAIN_REPO")-${LOCAL_BRANCH}"' in text  # pickup lane
+    # An overridden base is created if missing, and both lanes use plain git.
+    assert '[ -n "${FLOW_WORKTREE_BASE:-}" ] && mkdir -p "$FLOW_WORKTREE_BASE"' in text
+    assert 'echo "$FLOW_WORKTREE_BASE/$(basename "$TARGET_REPO")-$1"' in text
+    assert "GIT_LANE=1" in text
 
     # The retired hidden path must not come back.
     assert ".codex/worktrees" not in text
+    assert ".claude/worktrees" not in text

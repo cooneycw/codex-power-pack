@@ -6,9 +6,15 @@ flowchart TB
   end
   marketplace_entry["Marketplace Entry"]:::component
   package_tests["Plugin Package Tests"]:::component
+  skill_sync["Skill Sync"]:::component
+  runtime_overlay["Codex Runtime Overlay"]:::component
+  currency_gate["Upstream Currency Gate"]:::component
   marketplace_entry -->|"locates"| plugin_manifest
   plugin_manifest -->|"declares"| skill_payload
   skill_payload -->|"includes"| openai_metadata
+  skill_sync -->|"applies during refresh"| runtime_overlay
+  runtime_overlay -->|"writes adapted payload"| skill_payload
+  currency_gate -->|"compares current CPP through"| runtime_overlay
   package_tests -->|"validates"| marketplace_entry
   package_tests -->|"checks parity"| skill_payload
   classDef component fill:#7e22ce,color:#ffffff,stroke:#0f172a
