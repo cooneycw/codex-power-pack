@@ -32,11 +32,12 @@ and tests so the ownership boundary stays explicit.
 A hand-edit is caught by the CI drift gate (`make codex-skills-check`,
 `scripts/codex_skills_sync.py --check`), which fails when any file here diverges from
 the manifest recorded in `vendor/claude-power-pack/`. For shared command behavior,
-edit upstream in CPP and refresh. For CxPP-owned runtime-state adaptations such as
-the configurable worktree base (`FLOW_WORKTREE_BASE`, issue #136; default the
-visible-sibling `../<repo>-<branch>`, issue #133) and `.codex/friction.jsonl`,
-update the generated skill surface here, keep plugin payloads byte-identical,
-add/adjust tests, and re-snapshot the manifest.
+edit upstream in CPP and refresh. For CxPP-owned runtime adaptations such as the
+configurable worktree base (`FLOW_WORKTREE_BASE`, issue #136; default the
+visible-sibling `../<repo>-<branch>`, issue #133), `.codex/friction.jsonl`, and
+CxPP-first `lib/cicd` selection in finish lanes (issue #142), update the generated
+skill surface here, keep plugin payloads byte-identical, add or adjust tests, and
+re-snapshot the manifest.
 
 ## Harness lint
 
@@ -66,7 +67,7 @@ copy here:
 
 The pinned upstream commit lives in `vendor/claude-power-pack/PIN`.
 
-To change a CxPP-owned runtime-state adaptation, patch the generated skill copy in
+To change a CxPP-owned runtime adaptation, patch the generated skill copy in
 this repo, mirror it into the matching plugin payload, and run
 `scripts/codex_skills_sync.py --write` plus the local verification gates.
 

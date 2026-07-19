@@ -84,12 +84,32 @@ guard remains the final backstop.
 ```bash
 # Locate CPP source for lib/cicd
 CPP_DIR=""
-for dir in ~/Projects/claude-power-pack /opt/claude-power-pack ~/.claude-power-pack; do
-  if [ -d "$dir" ] && [ -f "$dir/CLAUDE.md" ]; then
+CICD_RUNTIME_KIND=""
+# Prefer the CxPP-owned runner. The first two candidates cover a
+# repo-local .codex skill and a checkout-local plugin respectively; installed
+# marketplace skills then fall through to the standard CxPP checkout locations.
+# claude-power-pack is an explicit compatibility fallback only (CxPP #142).
+for dir in \
+  "<SKILL_DIR>/../../.." \
+  "<SKILL_DIR>/../../../.." \
+  "$HOME/Projects/codex-power-pack" \
+  /opt/codex-power-pack \
+  "$HOME/.codex-power-pack" \
+  "$HOME/Projects/claude-power-pack" \
+  /opt/claude-power-pack \
+  "$HOME/.claude-power-pack"; do
+  if [ -d "$dir/lib/cicd" ] && { [ -f "$dir/AGENTS.md" ] || [ -f "$dir/CLAUDE.md" ]; }; then
     CPP_DIR="$dir"
     break
   fi
 done
+if [ -n "$CPP_DIR" ]; then
+  if [ -f "$CPP_DIR/AGENTS.md" ]; then
+    CICD_RUNTIME_KIND="cxpp"
+  else
+    CICD_RUNTIME_KIND="cpp-compat"
+  fi
+fi
 
 RUNNER_RAN=0
 if [ -n "$CPP_DIR" ] && command -v uv >/dev/null 2>&1; then
@@ -99,13 +119,17 @@ if [ -n "$CPP_DIR" ] && command -v uv >/dev/null 2>&1; then
     # dies on ModuleNotFoundError, silently degrading to the fallback (#430).
     # PYTHONPATH must point at CPP_DIR (the PARENT of lib/) so `-m lib.cicd`
     # resolves for external projects too, not just when dogfooding CPP.
-    PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run --project "$CPP_DIR" python -m lib.cicd run --plan finish
+    if [ "$CICD_RUNTIME_KIND" = "cxpp" ]; then
+        PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run python -m lib.cicd run --plan finish
+    else
+        PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run --project "$CPP_DIR" python -m lib.cicd run --plan finish
+    fi
     RUNNER_EXIT=$?
     RUNNER_RAN=1
 fi
 
 if [ "$RUNNER_RAN" -eq 0 ]; then
-    REASON=$([ -z "$CPP_DIR" ] && echo "CPP checkout not found" || echo "uv not installed")
+    REASON=$([ -z "$CPP_DIR" ] && echo "CxPP/CPP runtime not found" || echo "uv not installed")
     echo "NOTE: deterministic runner unavailable ($REASON); using Makefile fallback." >&2
 fi
 ```
@@ -196,12 +220,32 @@ If `lib/cicd` is available, run a quick Makefile validation and report any gaps 
 ```bash
 # Locate CPP source for lib/cicd
 CPP_DIR=""
-for dir in ~/Projects/claude-power-pack /opt/claude-power-pack ~/.claude-power-pack; do
-  if [ -d "$dir" ] && [ -f "$dir/CLAUDE.md" ]; then
+CICD_RUNTIME_KIND=""
+# Prefer the CxPP-owned runner. The first two candidates cover a
+# repo-local .codex skill and a checkout-local plugin respectively; installed
+# marketplace skills then fall through to the standard CxPP checkout locations.
+# claude-power-pack is an explicit compatibility fallback only (CxPP #142).
+for dir in \
+  "<SKILL_DIR>/../../.." \
+  "<SKILL_DIR>/../../../.." \
+  "$HOME/Projects/codex-power-pack" \
+  /opt/codex-power-pack \
+  "$HOME/.codex-power-pack" \
+  "$HOME/Projects/claude-power-pack" \
+  /opt/claude-power-pack \
+  "$HOME/.claude-power-pack"; do
+  if [ -d "$dir/lib/cicd" ] && { [ -f "$dir/AGENTS.md" ] || [ -f "$dir/CLAUDE.md" ]; }; then
     CPP_DIR="$dir"
     break
   fi
 done
+if [ -n "$CPP_DIR" ]; then
+  if [ -f "$CPP_DIR/AGENTS.md" ]; then
+    CICD_RUNTIME_KIND="cxpp"
+  else
+    CICD_RUNTIME_KIND="cpp-compat"
+  fi
+fi
 ```
 
 If `CPP_DIR` is found, `uv` is available, and a Makefile exists (invoke via
@@ -210,7 +254,11 @@ If `CPP_DIR` is found, `uv` is available, and a Makefile exists (invoke via
 
 ```bash
 if command -v uv >/dev/null 2>&1; then
-    PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run --project "$CPP_DIR" python -m lib.cicd check --summary
+    if [ "$CICD_RUNTIME_KIND" = "cxpp" ]; then
+        PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run python -m lib.cicd check --summary
+    else
+        PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run --project "$CPP_DIR" python -m lib.cicd check --summary
+    fi
     CHECK_EXIT=$?
 fi
 ```

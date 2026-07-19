@@ -128,10 +128,11 @@ The shared command families are **generated** Codex skills under
 `.codex/skills/<family>-<command>/`, pulled from claude-power-pack's
 `.claude/commands/` single source (the pull side of the source-of-truth bridge, #75)
 and pinned by commit SHA in `vendor/claude-power-pack/PIN`. CxPP carries narrow
-runtime-state adaptations where Codex-owned workflow state must live under
-`.codex/` instead of `.claude/`. Installed flow helpers resolve from the loaded
-skill package rather than the user's checkout or `~/.claude/scripts/`. The skill
-dir name is the trigger: `/flow:auto` maps to `.codex/skills/flow-auto/`.
+runtime adaptations for Codex-owned workflow state and native services. Installed
+flow helpers resolve from the loaded skill package, and finish lanes prefer CxPP's
+`lib/cicd` runner before the explicit claude-power-pack compatibility fallback.
+The skill dir name is the trigger: `/flow:auto` maps to
+`.codex/skills/flow-auto/`.
 
 Families carried: `browser`, `cicd`, `cpp`, `documentation`, `evaluate`, `flow`,
 `github`, `project`, `qa`, `second-opinion`, `secrets`, `security`,
@@ -145,7 +146,7 @@ explicitly preserve them even when CPP generates skills with the same names.
 fails CI on any divergence from the manifest. To change shared generated skill
 behavior, edit `.claude/commands/<family>/` in claude-power-pack, regenerate
 there (`make codex-skills`), then re-pull here (`make codex-skills-refresh`).
-CxPP-owned runtime-state adaptations and native skill dirs are edited directly in
+CxPP-owned runtime adaptations and native skill dirs are edited directly in
 this repo; see `.codex/skills/README.md`. `make codex-skills-currency-check`
 compares the adapted snapshot with a current CPP checkout, and CI runs the same
 comparison against CPP `main` so upstream feature drift cannot remain silent.

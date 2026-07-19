@@ -43,7 +43,7 @@ set -u 2>/dev/null || true
 
 # Resolve the sibling friction-log.sh. Both scripts live together: in the repo
 # checkout (scripts/) and, once installed, symlinked side by side in
-# ~/.claude/scripts/. Honour an override so tests can point at a specific copy.
+# <SKILL_DIR>/scripts/. Honour an override so tests can point at a specific copy.
 SELF="${BASH_SOURCE[0]:-$0}"
 SCRIPT_DIR="$(cd "$(dirname "$SELF")" 2>/dev/null && pwd || printf '')"
 FRICTION_LOG="${CPP_FRICTION_LOG_HELPER:-$SCRIPT_DIR/friction-log.sh}"
