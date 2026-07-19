@@ -8,7 +8,7 @@ description: "Flow: Sync - Push WIP to Remote for Cross-Machine Pickup - Push th
 
 Generated from a Claude Code command. Where the procedure references these Claude-only surfaces, adapt as follows:
 
-- Codex worktrees: create them OUTSIDE the repo at `$FLOW_WORKTREE_BASE/<repo>-<branch>` when FLOW_WORKTREE_BASE is set, else a visible sibling under the repo's parent dir (`../<repo>-<branch>`, issue #133/#136), never hidden inside the repo - `git worktree add "$WORKTREE_DIR" -b <branch>`, work inside it, then `git worktree remove <path>` from the main repo when done.
+- Codex worktrees: use the bundled resolver and plain git. Worktrees live at `$FLOW_WORKTREE_BASE/<repo>-<branch>` when configured, otherwise as a visible sibling `../<repo>-<branch>`; enter with `cd` and clean up with `git worktree remove`. Never use Claude's hidden worktree directory.
 
 # Flow: Sync - Push WIP to Remote for Cross-Machine Pickup
 
@@ -84,7 +84,7 @@ Synced branch to remote.
 ## Notes
 
 - This command is intentionally simple - just commit WIP + push.
-- Cross-machine sync operates on the `issue-<N>-<slug>` **branch**, not on worktree paths, so the worktree location (per-workstation; the configurable `FLOW_WORKTREE_BASE`, default `../<repo>-<branch>`, issue #133/#136) does not affect it.
-- `/flow-start` already handles the receiving end: it detects the remote branch, adds a `$WORKTREE_BASE/<repo>-<branch>` checkout with `git worktree add`, and continues from that path.
+- Cross-machine sync operates on the `issue-<N>-<slug>` **branch**, not on worktree paths, so the native `../<repo>-<branch>/` location (which is per-workstation and gitignored) does not affect it.
+- `/flow-start` already handles the receiving end: it detects the remote branch and, because the native `EnterWorktree` tool cannot check out an existing remote branch, adds a worktree tracking it with `git worktree add` and then switches in with `EnterWorktree(path=...)`.
 - WIP commits are harmless because `/flow-merge` uses squash-merge, collapsing all commits into one clean commit.
 - No configuration required - works with any git remote.

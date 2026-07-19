@@ -10,12 +10,14 @@
         {"id": "developer", "label": "Developer", "type": "person"},
         {"id": "codex", "label": "Codex Client", "type": "system"},
         {"id": "cxpp", "label": "Codex Power Pack", "type": "system-focus"},
+        {"id": "cpp", "label": "Claude Power Pack Skill Source", "type": "system"},
         {"id": "github", "label": "GitHub Marketplace Source", "type": "system"},
         {"id": "host-mcp", "label": "Host-managed MCP Services", "type": "system"}
       ],
       "edges": [
         {"source": "developer", "target": "codex", "label": "uses"},
         {"source": "codex", "target": "cxpp", "label": "installs plugins"},
+        {"source": "cxpp", "target": "cpp", "label": "pulls pinned generated skills from"},
         {"source": "cxpp", "target": "github", "label": "distributed from"},
         {"source": "cxpp", "target": "host-mcp", "label": "configures pointers to"}
       ],
@@ -30,22 +32,25 @@
         {"id": "marketplace-catalog", "label": "Marketplace Catalog (.agents)", "type": "container"},
         {"id": "family-plugins", "label": "Family Plugins (plugins/)", "type": "container"},
         {"id": "codex-skills", "label": "Codex Skills (.codex/skills)", "type": "container"},
+        {"id": "vendor-snapshot", "label": "Pinned CPP Snapshot (vendor/)", "type": "container"},
         {"id": "runtime-libraries", "label": "Deterministic Libraries (lib/)", "type": "container"},
         {"id": "quality-gates", "label": "Quality Gates (Makefile + tests)", "type": "container"}
       ],
       "edges": [
         {"source": "marketplace-catalog", "target": "family-plugins", "label": "indexes"},
         {"source": "family-plugins", "target": "codex-skills", "label": "packages skills from"},
+        {"source": "vendor-snapshot", "target": "codex-skills", "label": "pins and integrity-checks"},
         {"source": "codex-skills", "target": "runtime-libraries", "label": "uses deterministic helpers"},
         {"source": "quality-gates", "target": "family-plugins", "label": "validates"},
-        {"source": "quality-gates", "target": "codex-skills", "label": "drift-checks"}
+        {"source": "quality-gates", "target": "codex-skills", "label": "drift-checks"},
+        {"source": "quality-gates", "target": "vendor-snapshot", "label": "checks upstream currency"}
       ],
-      "boundaries": [{"id": "repo", "label": "codex-power-pack repository", "nodes": ["marketplace-catalog", "family-plugins", "codex-skills", "runtime-libraries", "quality-gates"]}]
+      "boundaries": [{"id": "repo", "label": "codex-power-pack repository", "nodes": ["marketplace-catalog", "family-plugins", "codex-skills", "vendor-snapshot", "runtime-libraries", "quality-gates"]}]
     },
     {
       "id": "c4-l3-plugin-distribution",
       "level": "L3",
-      "title": "L3 Plugin Distribution Components",
+      "title": "L3 Skill Vendoring and Plugin Distribution",
       "kind": "flowchart",
       "parent": "c4-l2-container",
       "nodes": [
@@ -53,12 +58,18 @@
         {"id": "skill-payload", "label": "Skill Payload", "type": "component"},
         {"id": "openai-metadata", "label": "agents/openai.yaml Metadata", "type": "component"},
         {"id": "marketplace-entry", "label": "Marketplace Entry", "type": "component"},
-        {"id": "package-tests", "label": "Plugin Package Tests", "type": "component"}
+        {"id": "package-tests", "label": "Plugin Package Tests", "type": "component"},
+        {"id": "skill-sync", "label": "Skill Sync", "type": "component"},
+        {"id": "runtime-overlay", "label": "Codex Runtime Overlay", "type": "component"},
+        {"id": "currency-gate", "label": "Upstream Currency Gate", "type": "component"}
       ],
       "edges": [
         {"source": "marketplace-entry", "target": "plugin-manifest", "label": "locates"},
         {"source": "plugin-manifest", "target": "skill-payload", "label": "declares"},
         {"source": "skill-payload", "target": "openai-metadata", "label": "includes"},
+        {"source": "skill-sync", "target": "runtime-overlay", "label": "applies during refresh"},
+        {"source": "runtime-overlay", "target": "skill-payload", "label": "writes adapted payload"},
+        {"source": "currency-gate", "target": "runtime-overlay", "label": "compares current CPP through"},
         {"source": "package-tests", "target": "marketplace-entry", "label": "validates"},
         {"source": "package-tests", "target": "skill-payload", "label": "checks parity"}
       ],

@@ -3,12 +3,15 @@ flowchart TB
     marketplace_catalog["Marketplace Catalog (.agents)"]:::container
     family_plugins["Family Plugins (plugins/)"]:::container
     codex_skills["Codex Skills (.codex/skills)"]:::container
+    vendor_snapshot["Pinned CPP Snapshot (vendor/)"]:::container
     runtime_libraries["Deterministic Libraries (lib/)"]:::container
     quality_gates["Quality Gates (Makefile + tests)"]:::container
   end
   marketplace_catalog -->|"indexes"| family_plugins
   family_plugins -->|"packages skills from"| codex_skills
+  vendor_snapshot -->|"pins and integrity-checks"| codex_skills
   codex_skills -->|"uses deterministic helpers"| runtime_libraries
   quality_gates -->|"validates"| family_plugins
   quality_gates -->|"drift-checks"| codex_skills
+  quality_gates -->|"checks upstream currency"| vendor_snapshot
   classDef container fill:#15803d,color:#ffffff,stroke:#0f172a

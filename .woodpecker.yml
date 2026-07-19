@@ -28,6 +28,16 @@ steps:
       # Claude-only constructs into Codex.
       - uv run python scripts/harness_lint.py --check
 
+  # Live currency gate (#139): the local manifest detects hand edits, while
+  # this compares the adopted payload with current CPP main. Unrelated CPP
+  # changes do not fail the gate because comparison is file-content based.
+  codex-skills-currency:
+    image: python:3.11-alpine
+    commands:
+      - apk add --no-cache git
+      - git clone --depth=1 https://github.com/cooneycw/claude-power-pack.git /tmp/claude-power-pack-current
+      - python3 scripts/codex_skills_sync.py --source-check --cpp-root /tmp/claude-power-pack-current
+
   dependency-audit:
     image: python:3.11-slim-bookworm
     commands:

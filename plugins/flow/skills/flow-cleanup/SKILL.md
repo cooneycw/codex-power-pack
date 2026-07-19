@@ -8,7 +8,7 @@ description: "Clean up stale worktree references and merged branches"
 
 Generated from a Claude Code command. Where the procedure references these Claude-only surfaces, adapt as follows:
 
-- Codex worktrees: create them OUTSIDE the repo at `$FLOW_WORKTREE_BASE/<repo>-<branch>` when FLOW_WORKTREE_BASE is set, else a visible sibling under the repo's parent dir (`../<repo>-<branch>`, issue #133/#136), never hidden inside the repo - `git worktree add "$WORKTREE_DIR" -b <branch>`, work inside it, then `git worktree remove <path>` from the main repo when done.
+- Codex worktrees: use the bundled resolver and plain git. Worktrees live at `$FLOW_WORKTREE_BASE/<repo>-<branch>` when configured, otherwise as a visible sibling `../<repo>-<branch>`; enter with `cd` and clean up with `git worktree remove`. Never use Claude's hidden worktree directory.
 
 # Flow: Cleanup - Prune Stale Worktrees and Branches
 

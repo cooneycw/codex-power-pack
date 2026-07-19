@@ -36,6 +36,9 @@ Modes:
     --refresh --cpp-root PATH [--ref SHA]
               (maintainer) mirror `<cpp-root>/codex/skills/<dir>/` -> `.codex/skills/`,
               update PIN, then re-snapshot the manifest.
+    --source-check --cpp-root PATH
+              compare the adopted, Codex-adapted payload with a CPP checkout;
+              used by CI after a shallow upstream clone to catch stale pins.
 
 Reconcile rule (hybrid SoT): for generated shared families, edit the SOURCE in claude-power-pack
 `.claude/commands/<family>/`, regenerate CPP's `codex/skills/` (`make codex-skills`
@@ -48,6 +51,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -57,6 +61,7 @@ SKILLS_ROOT = REPO_ROOT / ".codex" / "skills"
 VENDOR_DIR = REPO_ROOT / "vendor" / "claude-power-pack"
 MANIFEST_PATH = VENDOR_DIR / "codex-skills.sha256"
 PIN_PATH = VENDOR_DIR / "PIN"
+PLUGINS_ROOT = REPO_ROOT / "plugins"
 
 CPP_REPO_URL = "https://github.com/cooneycw/claude-power-pack"
 
@@ -105,6 +110,65 @@ LOCAL_SKILL_DIRS = {
     "woodpecker-restart",
     "woodpecker-status",
 }
+
+# Helpers that execute as part of an installed flow skill.  CPP's generated
+# references use Claude's stable ~/.claude/scripts location; Codex plugins do
+# not populate that directory.  CxPP ships these files inside each skill and
+# resolves them from the skill package instead (issue #139).
+FLOW_RUNTIME_HELPERS = {
+    "check-ignored-additions.sh",
+    "flow-live-driver-guard.sh",
+    "flow-stale-check.sh",
+    "flow-start-resolve.sh",
+    "flow-worktree-guard.sh",
+    "friction-log.sh",
+    "gh-pr-merge.sh",
+    "hook-permission-census.sh",
+    "worktree-remove.sh",
+}
+
+SKILL_DIR_TOKEN = "<SKILL_DIR>"
+_GENERIC_WORKTREE_ADAPTATION = (
+    "- Native worktrees (`EnterWorktree`/`ExitWorktree` tool calls,"
+    " `.claude/worktrees/` paths): use plain git instead -"
+    " `git worktree add <path> -b <branch>`, work inside it, then"
+    " `git worktree remove <path>` when done."
+)
+_CXPP_WORKTREE_ADAPTATION = (
+    "- Codex worktrees: use the bundled resolver and plain git. Worktrees live"
+    " at `$FLOW_WORKTREE_BASE/<repo>-<branch>` when configured, otherwise as a"
+    " visible sibling `../<repo>-<branch>`; enter with `cd` and clean up with"
+    " `git worktree remove`. Never use Claude's hidden worktree directory."
+)
+_SKILL_HELPER_PREAMBLE = f"""## Codex installed-skill runtime contract
+
+`{SKILL_DIR_TOKEN}` below means the absolute directory containing this loaded
+skill's `SKILL.md`. Resolve it from the skill locator before running a command;
+never interpret bundled helper paths relative to the target repository. The
+bundled resolver always selects the plain-git lane and creates visible sibling
+worktrees (or uses `FLOW_WORKTREE_BASE` when configured).
+
+"""
+_GITHUB_REPO_PREAMBLE = """## Codex target-repository contract
+
+Resolve `REPO` from an explicit `owner/repo` argument when supplied; otherwise
+run `gh repo view --json nameWithOwner --jq .nameWithOwner` in the current
+checkout. Pass `--repo "$REPO"` to every issue command. If neither source can
+resolve a repository, ask the user before performing a write.
+
+"""
+_CODEX_DOCTOR_HELPERS = f"""# Installed Codex flow helper family (issue #139).
+# Resolve SKILL_DIR from this loaded flow-doctor skill before running.
+FLOW_SKILLS_ROOT="{SKILL_DIR_TOKEN}/.."
+for script in flow-start-resolve.sh flow-stale-check.sh flow-worktree-guard.sh \
+  flow-live-driver-guard.sh gh-pr-merge.sh; do
+  helper=$(find "$FLOW_SKILLS_ROOT" -path "*/scripts/$script" -type f -perm -u+x -print -quit)
+  if [ -n "$helper" ]; then
+    echo "PASS $script (bundled Codex flow helper)"
+  else
+    echo "FAIL $script (missing from installed flow plugin; reinstall or upgrade flow@codex-power-pack)"
+  fi
+done"""
 
 
 def _is_local_path(path: Path) -> bool:
@@ -248,6 +312,218 @@ def _write_pin(ref: str) -> None:
     PIN_PATH.write_text("\n".join(lines))
 
 
+def _source_skill_dirs(cpp_root: Path) -> list[Path]:
+    src_root = cpp_root / "codex" / "skills"
+    if not src_root.is_dir():
+        return []
+    excluded_prefixes = tuple(f"{fam}-" for fam in PULL_EXCLUDE_FAMILIES)
+    return sorted(
+        d
+        for d in src_root.iterdir()
+        if d.is_dir()
+        and (d / "SKILL.md").is_file()
+        and not d.name.startswith(excluded_prefixes)
+        # A newly generated upstream command must never overwrite a native
+        # CxPP skill with the same name (#135/#139).
+        and d.name not in LOCAL_SKILL_DIRS
+    )
+
+
+def _adapt_flow_text(skill_dir: Path, source_file: Path, text: str) -> str:
+    """Apply the narrow CxPP-owned Codex runtime overlay to flow payloads."""
+    if not skill_dir.name.startswith("flow-"):
+        return text
+
+    text = text.replace(_GENERIC_WORKTREE_ADAPTATION, _CXPP_WORKTREE_ADAPTATION)
+    text = text.replace(".claude/friction.jsonl", ".codex/friction.jsonl")
+
+    for helper in sorted(FLOW_RUNTIME_HELPERS):
+        helper_owner = next(
+            (
+                candidate
+                for candidate in (
+                    skill_dir,
+                    skill_dir.parent / "flow-start",
+                    skill_dir.parent / "flow-auto",
+                    skill_dir.parent / "flow-merge",
+                )
+                if (candidate / "scripts" / helper).is_file()
+            ),
+            None,
+        )
+        if helper_owner is None:
+            continue
+        if helper_owner == skill_dir:
+            resolved = f"{SKILL_DIR_TOKEN}/scripts/{helper}"
+        else:
+            resolved = f"{SKILL_DIR_TOKEN}/../{helper_owner.name}/scripts/{helper}"
+        text = text.replace(f"~/.claude/scripts/{helper}", resolved)
+        text = re.sub(
+            rf"(?<![/A-Za-z0-9_.-])scripts/{re.escape(helper)}",
+            resolved,
+            text,
+        )
+
+    # Generated references describe Claude's native hidden worktrees.  The
+    # SKILL.md adaptation and resolver below are authoritative for Codex, but
+    # remove the stale path spellings as well so examples cannot be followed
+    # literally and the harness lint remains meaningful.
+    text = text.replace(".claude/worktrees", "../<repo>-<branch>")
+    text = text.replace(
+        "Helpers are invoked bare at their stable `~/.claude/scripts/` paths",
+        "Helpers are invoked by absolute path from the installed Codex skill package",
+    )
+
+    if skill_dir.name == "flow-doctor" and source_file.name == "reference.md":
+        text = re.sub(
+            r"# Flow helper family \(issue #581\):.*?^done$",
+            _CODEX_DOCTOR_HELPERS,
+            text,
+            count=1,
+            flags=re.MULTILINE | re.DOTALL,
+        )
+        text = text.replace(
+            "| Flow helper family | ✅/⚠️ | flow-start-resolve, flow-stale-check,"
+            " flow-worktree-guard, flow-live-driver-guard, gh-pr-merge at"
+            " ~/.claude/scripts/ (zero-prompt lane, #581) |",
+            "| Flow helper family | ✅/❌ | Bundled executable helpers in the installed"
+            " flow skill packages (#139) |",
+        )
+        text = text.replace(
+            "2c. ⚠️ **Flow helper(s) not at ~/.claude/scripts/** - the #581 zero-prompt"
+            " lane degrades to CPP-checkout fallback paths, which prompt. Run"
+            " `/cpp:update` (Step 5b re-links new scripts) or `/cpp:init` Tier 2",
+            "2c. ❌ **Bundled Codex flow helper(s) missing** - reinstall or upgrade"
+            " `flow@codex-power-pack`; a CPP clone is not required.",
+        )
+
+    if source_file.name == "reference.md" and SKILL_DIR_TOKEN in text:
+        marker_end = text.find("\n\n")
+        if marker_end != -1 and _SKILL_HELPER_PREAMBLE not in text:
+            text = text[: marker_end + 2] + _SKILL_HELPER_PREAMBLE + text[marker_end + 2 :]
+    return text
+
+
+def _adapt_flow_resolver(text: str) -> str:
+    """Make CPP's resolver use Codex's plain-git visible-worktree lane."""
+    text = text.replace(
+        "GIT_LANE=$CROSS_REPO\n[ -n \"${FLOW_WORKTREE_BASE:-}\" ] && GIT_LANE=1",
+        "# Codex has no EnterWorktree tool: every lane uses plain git.\nGIT_LANE=1",
+    )
+    text = text.replace(
+        'echo "$TARGET_REPO/.claude/worktrees/$1"',
+        'echo "$(dirname "$TARGET_REPO")/$(basename "$TARGET_REPO")-$1"',
+    )
+    text = text.replace(
+        "<target repo>/.claude/worktrees/<branch>",
+        "<target repo parent>/<repo>-<branch>",
+    )
+    text = text.replace(".claude/worktrees", "visible sibling worktrees")
+    return text
+
+
+def _adapt_github_text(skill_dir: Path, source_file: Path, text: str) -> str:
+    """Keep shared GitHub skills repository-neutral on the CxPP surface."""
+    if not skill_dir.name.startswith("github-"):
+        return text
+    text = text.replace("cooneycw/claude-power-pack", '"$REPO"')
+    if source_file.name == "SKILL.md" and _GITHUB_REPO_PREAMBLE not in text:
+        marker_end = text.find("\n\n")
+        if marker_end != -1:
+            text = text[: marker_end + 2] + _GITHUB_REPO_PREAMBLE + text[marker_end + 2 :]
+    return text
+
+
+def _adapted_source_files(skill_dir: Path) -> dict[str, bytes]:
+    files: dict[str, bytes] = {}
+    for source_file in sorted(path for path in skill_dir.rglob("*") if path.is_file()):
+        rel = source_file.relative_to(skill_dir).as_posix()
+        try:
+            text = source_file.read_text()
+        except UnicodeDecodeError:
+            files[rel] = source_file.read_bytes()
+            continue
+        if rel == "scripts/flow-start-resolve.sh":
+            text = _adapt_flow_resolver(text)
+        text = _adapt_flow_text(skill_dir, source_file, text)
+        text = _adapt_github_text(skill_dir, source_file, text)
+        files[rel] = text.encode()
+    return files
+
+
+def _write_skill_payload(src_dir: Path, dest: Path) -> None:
+    if dest.exists():
+        shutil.rmtree(dest)
+    for rel, payload in _adapted_source_files(src_dir).items():
+        target = dest / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(payload)
+        source = src_dir / rel
+        shutil.copymode(source, target)
+
+
+def _sync_plugin_payload(skill_name: str) -> None:
+    """Mirror an adopted skill into an existing plugin, preserving UI metadata."""
+    source = SKILLS_ROOT / skill_name
+    candidates = sorted(
+        (
+            plugin_dir / "skills" / skill_name
+            for plugin_dir in PLUGINS_ROOT.iterdir()
+            if plugin_dir.is_dir()
+        ),
+        key=lambda path: len(path.parts),
+    )
+    for destination in candidates:
+        if not destination.is_dir():
+            continue
+        agents_dir = destination / "agents"
+        for existing in list(destination.iterdir()):
+            if existing == agents_dir:
+                continue
+            if existing.is_dir():
+                shutil.rmtree(existing)
+            else:
+                existing.unlink()
+        for source_file in sorted(path for path in source.rglob("*") if path.is_file()):
+            rel = source_file.relative_to(source)
+            if rel.parts[0] == "agents":
+                continue
+            target = destination / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source_file, target)
+        return
+
+
+def run_source_check(cpp_root: Path) -> int:
+    """Fail when the adopted generated payload differs from a CPP checkout."""
+    src_dirs = _source_skill_dirs(cpp_root)
+    if not src_dirs:
+        print(f"codex-skills-sync: no generated skills under {cpp_root}", file=sys.stderr)
+        return 2
+
+    expected: dict[str, bytes] = {}
+    for src_dir in src_dirs:
+        for rel, payload in _adapted_source_files(src_dir).items():
+            expected[f"{src_dir.name}/{rel}"] = payload
+    actual = {
+        _rel(path): path.read_bytes()
+        for path in _generated_files()
+    }
+
+    stale = sorted(rel for rel in set(expected) | set(actual) if expected.get(rel) != actual.get(rel))
+    if stale:
+        for rel in stale:
+            print(f"UPSTREAM-DRIFT: .codex/skills/{rel}")
+        print(
+            "codex-skills-sync: vendored skills differ from the supplied CPP source;"
+            " run --refresh with that checkout",
+            file=sys.stderr,
+        )
+        return 1
+    print(f"codex-skills-sync: {len(actual)} vendored file(s) current with {cpp_root}")
+    return 0
+
+
 def run_refresh(cpp_root: Path, ref: str) -> int:
     src_root = cpp_root / "codex" / "skills"
     if not src_root.is_dir():
@@ -258,14 +534,7 @@ def run_refresh(cpp_root: Path, ref: str) -> int:
         )
         return 2
 
-    excluded_prefixes = tuple(f"{fam}-" for fam in PULL_EXCLUDE_FAMILIES)
-    src_dirs = sorted(
-        d
-        for d in src_root.iterdir()
-        if d.is_dir()
-        and (d / "SKILL.md").is_file()
-        and not d.name.startswith(excluded_prefixes)
-    )
+    src_dirs = _source_skill_dirs(cpp_root)
     if not src_dirs:
         print(f"codex-skills-sync: no skill dirs under {src_root}", file=sys.stderr)
         return 2
@@ -283,9 +552,8 @@ def run_refresh(cpp_root: Path, ref: str) -> int:
 
     for src_dir in src_dirs:
         dest = SKILLS_ROOT / src_dir.name
-        if dest.exists():
-            shutil.rmtree(dest)
-        shutil.copytree(src_dir, dest)
+        _write_skill_payload(src_dir, dest)
+        _sync_plugin_payload(src_dir.name)
 
     _write_pin(ref)
     print(
@@ -306,6 +574,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="mirror <cpp-root>/codex/skills/ -> .codex/skills/, update PIN + manifest",
     )
+    mode.add_argument(
+        "--source-check",
+        action="store_true",
+        help="compare vendored skills with <cpp-root> after Codex runtime adaptations",
+    )
     parser.add_argument("--cpp-root", type=Path, help="path to a claude-power-pack checkout (with --refresh)")
     parser.add_argument("--ref", default="", help="the CPP commit SHA being pinned (with --refresh)")
     args = parser.parse_args(argv)
@@ -314,6 +587,10 @@ def main(argv: list[str] | None = None) -> int:
         if args.cpp_root is None:
             parser.error("--refresh requires --cpp-root")
         return run_refresh(args.cpp_root.expanduser().resolve(), args.ref or "unknown")
+    if args.source_check:
+        if args.cpp_root is None:
+            parser.error("--source-check requires --cpp-root")
+        return run_source_check(args.cpp_root.expanduser().resolve())
     if args.write:
         return run_write()
     return run_check()

@@ -2,18 +2,7 @@
 
 # Update GitHub Issue
 
-Modify an existing issue in the current or explicitly specified GitHub repository.
-
-## Resolve Repository
-
-Use an explicit `owner/repo` argument when supplied; otherwise resolve the
-current checkout before any GitHub command:
-
-```bash
-REPO="${REPO:-$(gh repo view --json nameWithOwner --jq .nameWithOwner)}"
-```
-
-If this cannot determine a repository, ask the user for `owner/repo`.
+Modify an existing issue in the claude-power-pack repository.
 
 ## Usage
 

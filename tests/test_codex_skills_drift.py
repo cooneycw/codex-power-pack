@@ -69,3 +69,27 @@ def test_pin_records_a_claude_power_pack_commit() -> None:
     text = sync.PIN_PATH.read_text()
     assert "claude-power-pack" in text
     assert re.search(r"^commit: [0-9a-f]{40}$", text, re.MULTILINE), "PIN has no pinned commit SHA"
+
+
+def test_current_flow_resolver_is_part_of_the_vendored_manifest() -> None:
+    manifest = sync.read_manifest()
+    required = {
+        "flow-auto/scripts/flow-start-resolve.sh",
+        "flow-start/scripts/flow-start-resolve.sh",
+    }
+
+    assert required <= manifest.keys()
+
+
+def test_refresh_source_selection_never_overwrites_native_skills(tmp_path: Path) -> None:
+    skills = tmp_path / "codex" / "skills"
+    for name in ("flow-auto", "project-next", "project-lite"):
+        skill_dir = skills / name
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text("fixture", encoding="utf-8")
+
+    selected = {path.name for path in sync._source_skill_dirs(tmp_path)}
+
+    assert "flow-auto" in selected
+    assert "project-next" not in selected
+    assert "project-lite" not in selected
