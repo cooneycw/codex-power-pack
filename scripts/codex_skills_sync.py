@@ -380,6 +380,11 @@ def _adapt_flow_text(skill_dir: Path, source_file: Path, text: str) -> str:
             text,
         )
 
+    # New upstream prose can refer to the stable Claude helper directory
+    # without naming an individual helper (#590). Codex packages helpers with
+    # the loaded skill, so the generic directory must follow the same overlay.
+    text = text.replace("~/.claude/scripts/", f"{SKILL_DIR_TOKEN}/scripts/")
+
     # Generated references describe Claude's native hidden worktrees.  The
     # SKILL.md adaptation and resolver below are authoritative for Codex, but
     # remove the stale path spellings as well so examples cannot be followed
@@ -430,8 +435,9 @@ def _adapt_flow_cicd_runtime(skill_dir: Path, source_file: Path, text: str) -> s
         return text
 
     discovery = re.compile(
-        rf'CPP_DIR=""\n{re.escape(_CLAUDE_CICD_DISCOVERY)}\n(?P<body>.*?)\ndone',
-        re.DOTALL,
+        rf'^(?P<indent>[ \t]*)CPP_DIR=""\n(?P=indent)'
+        rf'{re.escape(_CLAUDE_CICD_DISCOVERY)}\n(?P<body>.*?)\n(?P=indent)done',
+        re.DOTALL | re.MULTILINE,
     )
 
     def adapt_match(match: re.Match[str]) -> str:
@@ -439,6 +445,7 @@ def _adapt_flow_cicd_runtime(skill_dir: Path, source_file: Path, text: str) -> s
         # Adapt only blocks whose nearby command actually invokes lib.cicd.
         if "python -m lib.cicd" not in text[match.end() : match.end() + 1600]:
             return match.group(0)
+        indent = match.group("indent")
         body = match.group("body").replace(
             'if [ -d "$dir" ] && [ -f "$dir/CLAUDE.md" ]; then',
             'if [ -d "$dir/lib/cicd" ] && '
@@ -450,21 +457,24 @@ def _adapt_flow_cicd_runtime(skill_dir: Path, source_file: Path, text: str) -> s
             '{ [ -f "$dir/AGENTS.md" ] || [ -f "$dir/CLAUDE.md" ]; } && '
             '{ CPP_DIR="$dir"; break; }',
         )
+        discovery_text = "\n".join(f"{indent}{line}" for line in _CODEX_CICD_DISCOVERY.splitlines())
         return (
-            f'CPP_DIR=""\nCICD_RUNTIME_KIND=""\n{_CODEX_CICD_DISCOVERY}\n{body}\ndone\n'
-            'if [ -n "$CPP_DIR" ]; then\n'
-            '  if [ -f "$CPP_DIR/AGENTS.md" ]; then\n'
-            '    CICD_RUNTIME_KIND="cxpp"\n'
-            '  else\n'
-            '    CICD_RUNTIME_KIND="cpp-compat"\n'
-            '  fi\n'
-            'fi'
+            f'{indent}CPP_DIR=""\n{indent}CICD_RUNTIME_KIND=""\n{discovery_text}\n'
+            f'{body}\n{indent}done\n'
+            f'{indent}if [ -n "$CPP_DIR" ]; then\n'
+            f'{indent}  if [ -f "$CPP_DIR/AGENTS.md" ]; then\n'
+            f'{indent}    CICD_RUNTIME_KIND="cxpp"\n'
+            f'{indent}  else\n'
+            f'{indent}    CICD_RUNTIME_KIND="cpp-compat"\n'
+            f'{indent}  fi\n'
+            f'{indent}fi'
         )
 
     text = discovery.sub(adapt_match, text)
     runner_command = re.compile(
         r'^(?P<indent>[ \t]*)PYTHONPATH="\$CPP_DIR:\$PYTHONPATH" '
-        r'uv run --project "\$CPP_DIR" python -m lib\.cicd (?P<args>[^\n]+)$',
+        r'uv run --project "\$CPP_DIR" python -m lib\.cicd '
+        r'(?P<args>run --plan finish|check --summary)$',
         re.MULTILINE,
     )
 

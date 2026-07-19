@@ -43,30 +43,42 @@ def test_codex_flow_references_prefer_cxpp_with_explicit_cpp_fallback() -> None:
 
 
 def test_marketplace_and_checkout_runtime_layouts_are_adapted() -> None:
+    for indent in ("", "   ", "    "):
+        upstream = (
+            f'{indent}CPP_DIR=""\n'
+            f"{indent}for dir in ~/Projects/claude-power-pack /opt/claude-power-pack "
+            "~/.claude-power-pack; do\n"
+            f'{indent}  if [ -d "$dir" ] && [ -f "$dir/CLAUDE.md" ]; then\n'
+            f'{indent}    CPP_DIR="$dir"\n'
+            f"{indent}    break\n"
+            f"{indent}  fi\n"
+            f"{indent}done\n"
+            f'{indent}PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run --project "$CPP_DIR" '
+            "python -m lib.cicd run --plan finish\n"
+        )
+        skill_dir = REPO_ROOT / "upstream" / "flow-auto"
+        adapted = sync._adapt_flow_cicd_runtime(skill_dir, Path("reference.md"), upstream)
+
+        # Both relative layouts are emitted: .codex/skills/<skill> and
+        # plugins/flow/skills/<skill> (including the installed marketplace copy).
+        assert f'{indent}"<SKILL_DIR>/../../.."' in adapted
+        assert f'{indent}"<SKILL_DIR>/../../../.."' in adapted
+        assert adapted.index("$HOME/Projects/codex-power-pack") < adapted.index(
+            "$HOME/Projects/claude-power-pack"
+        )
+        assert '[ -d "$dir/lib/cicd" ]' in adapted
+        assert f'{indent}if [ "$CICD_RUNTIME_KIND" = "cxpp" ]; then' in adapted
+        assert "uv run python -m lib.cicd run --plan finish" in adapted
+
+
+def test_deploy_verification_command_is_not_rewritten() -> None:
     upstream = (
-        "CPP_DIR=\"\"\n"
-        "for dir in ~/Projects/claude-power-pack /opt/claude-power-pack ~/.claude-power-pack; do\n"
-        "  if [ -d \"$dir\" ] && [ -f \"$dir/CLAUDE.md\" ]; then\n"
-        "    CPP_DIR=\"$dir\"\n"
-        "    break\n"
-        "  fi\n"
-        "done\n"
         'PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run --project "$CPP_DIR" '
-        "python -m lib.cicd run --plan finish\n"
+        "python -m lib.cicd verify\n"
     )
     skill_dir = REPO_ROOT / "upstream" / "flow-auto"
-    adapted = sync._adapt_flow_cicd_runtime(skill_dir, Path("reference.md"), upstream)
 
-    # Both relative layouts are emitted: .codex/skills/<skill> and
-    # plugins/flow/skills/<skill> (including the installed marketplace copy).
-    assert '"<SKILL_DIR>/../../.."' in adapted
-    assert '"<SKILL_DIR>/../../../.."' in adapted
-    assert adapted.index("$HOME/Projects/codex-power-pack") < adapted.index(
-        "$HOME/Projects/claude-power-pack"
-    )
-    assert '[ -d "$dir/lib/cicd" ]' in adapted
-    assert 'if [ "$CICD_RUNTIME_KIND" = "cxpp" ]; then' in adapted
-    assert "uv run python -m lib.cicd run --plan finish" in adapted
+    assert sync._adapt_flow_cicd_runtime(skill_dir, Path("reference.md"), upstream) == upstream
 
 
 def test_finish_runner_preserves_valid_newer_project_environment(tmp_path: Path) -> None:

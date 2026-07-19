@@ -76,7 +76,11 @@ hand.
 Records go to the main repo's `.codex/friction.jsonl` (a queue drained by
 `/self-improvement-retro`). The helper resolves that durable buffer automatically
 via `git-common-dir`, so signals captured inside this run's worktree survive its
-removal at Step 7 (issue #471) - no env var or per-call path needed.
+removal at Step 7 (issue #471) - no env var or per-call path needed. It is
+invoked at the stable `<SKILL_DIR>/scripts/` path like every other helper; on exit
+127 fall back to `${CLAUDE_PLUGIN_ROOT}/scripts/friction-log.sh` (bundled with
+the plugin, #590) or the CPP-checkout copy. Capture is fail-open - if no copy
+exists, skip it rather than stopping the run.
 This is capture only - proposing and applying fixes happens in the retro, not here.
 
 ---
@@ -109,13 +113,39 @@ result. This rule applies to every flow helper in this file (see also Steps 4,
 number (and project, when `/flow-auto` was given a PROJECT arg):
 
 ```bash
-<SKILL_DIR>/scripts/flow-start-resolve.sh 42
-<SKILL_DIR>/scripts/flow-start-resolve.sh 42 my-project
+<SKILL_DIR>/scripts/flow-start-resolve.sh 42 --session-cwd /home/user/Projects/my-repo
+<SKILL_DIR>/scripts/flow-start-resolve.sh 42 my-project --session-cwd /home/user/Projects/my-repo
 ```
 
-If the stable path is missing (exit 127 - the helper family installs via
-`/cpp:init` / `/cpp:update`), fall back to `<SKILL_DIR>/scripts/flow-start-resolve.sh` from
-the CPP checkout; that path may prompt once.
+**`--session-cwd` is not optional in practice (issue #592).** The helper cannot
+observe the Claude session's working directory - it sees only the cwd this Bash
+call inherited, and that cwd persists across calls and drifts the moment any
+earlier step `cd`s somewhere. `EnterWorktree` always acts on the SESSION cwd,
+which never moves. When the two diverge, the contract's central decision
+(`EnterWorktree` vs `cd`) is made against the wrong repo and a faithful reading
+of this contract does the wrong thing. So pass the session's working directory
+VERBATIM as a literal path - the directory this session reports as its cwd,
+never `$(pwd)` and never wherever a previous step left the shell.
+
+Omitting it does not break the run: the helper falls back to the process cwd,
+reports `SESSION_CWD_INFERRED=1`, and fails closed to `GIT_LANE=1`. The git
+lane is correct in every case, just slightly less ergonomic than the native
+one - the asymmetry is deliberate, since a wrong `GIT_LANE=0` sends
+`EnterWorktree` at a directory that may not be a repo at all.
+
+If the stable path is missing (exit 127), fall back in this order - the first
+that exists (issue #590):
+
+1. `${CLAUDE_PLUGIN_ROOT}/scripts/flow-start-resolve.sh` - the flow plugin
+   bundles the helper family, so a marketplace-only install (no CPP clone) has
+   this copy. `CLAUDE_PLUGIN_ROOT` is unset outside a plugin install.
+2. `<SKILL_DIR>/scripts/flow-start-resolve.sh` from the CPP checkout.
+
+Either fallback may prompt once: the allowlist rules match only the stable
+`<SKILL_DIR>/scripts/` path. Tell the user to run **`/flow-repair`**, which
+installs the family there and restores the prompt-free lane. If BOTH fallbacks
+exit 127 there is no helper source at all - **STOP** and report that flow needs
+`/plugin install flow@cpp` (then `/flow-repair`) or a CPP checkout.
 
 The helper prints a `key=value` contract ending in `FLOW_START_RESOLVE: ok`.
 On `FLOW_START_RESOLVE: error` (with an `ERROR=` line): **STOP** and report it.
@@ -125,8 +155,13 @@ Contract keys: `LANE` (`current-branch|fresh|resume|remote-pickup|cross-repo`),
 `EnterWorktree`, git cleanup at Step 7 - set for cross-repo runs, when
 `FLOW_WORKTREE_BASE` relocates worktrees out of the repo (issue #584, ADR 0003:
 the native tool's base dir is not configurable, and out-of-repo
-`EnterWorktree(path=...)` triggers an unsuppressable approval prompt), and when
-a resumed worktree lies outside the target repo), `TARGET_REPO`, `ISSUE_STATE`,
+`EnterWorktree(path=...)` triggers an unsuppressable approval prompt), when
+a resumed worktree lies outside the target repo, and whenever the session cwd
+was inferred rather than declared (issue #592)), `SESSION_CWD` (the directory
+the lane decision was made against), `SESSION_CWD_INFERRED` (1 = no
+`--session-cwd` was passed; the decision rests on a possibly drifted process
+cwd, so `GIT_LANE` was forced to 1 - if you see this, you forgot to pass it),
+`TARGET_REPO`, `ISSUE_STATE`,
 `ISSUE_TITLE`, `BRANCH` (the enforced issue-anchored name), `WT_PATH` (honors
 `FLOW_WORKTREE_BASE`: `$FLOW_WORKTREE_BASE/<repo>-<branch>` when set, else
 in-repo `../<repo>-<branch>/<branch>`), `DEFAULT_BRANCH`, `REMOTE_BRANCH`
@@ -295,8 +330,10 @@ applies to every helper call below):
 ```
 
 (Exit 127 - helper family not installed: fall back to
-`$CPP_DIR/scripts/flow-stale-check.sh` after locating the CPP checkout; that
-path may prompt.)
+`${CLAUDE_PLUGIN_ROOT}/scripts/flow-stale-check.sh` (bundled with the plugin,
+#590), else `$CPP_DIR/scripts/flow-stale-check.sh` after locating the CPP
+checkout; either may prompt. This guard is advisory - if no copy exists, note it
+and continue. `/flow-repair` installs the family at the stable path.)
 
 - If it reports `FLOW_STALE_BASE: collision` - or names a file you are about to
   touch under "Changed upstream" - bring the base in now, before piling edits on
@@ -321,14 +358,18 @@ but is written to the wrong tree. So, for every edit in this step:
   path. A path under `$(git rev-parse --show-toplevel)/...`, or a plain relative
   path from the session cwd, targets the worktree correctly.
 - After writing, confirm the change landed in the worktree (`git status` shows it)
-  and did NOT leak into main. The guard makes the leak check verifiable - bare
-  invocation (advisory: warns on a leak, never blocks):
+  and did NOT leak into main. The guard makes the leak check verifiable -
+  invoked with `--strict`, which BLOCKS on a leak signature (issue #576):
   ```bash
-  <SKILL_DIR>/scripts/flow-worktree-guard.sh
+  <SKILL_DIR>/scripts/flow-worktree-guard.sh --strict
   ```
-  If it warns that main has tracked modifications mirroring files you edited, the
-  edit leaked: move the change into the worktree, then `git -C <main> checkout --
-  <path>` to revert main before continuing.
+  **Exit 3 is a STOP.** A leak means your edits are landing in the wrong tree, so
+  every further edit compounds the damage and the worktree the rest of the flow
+  commits from does not contain the work. Move the change into the worktree, then
+  `git -C <main> checkout -- <path>` to revert main, then re-run the guard before
+  continuing. Only a leak signature exits 3: pre-existing, non-overlapping dirt in
+  main stays a quiet note and never blocks (#536), and a total leak (idle worktree
+  + fresh main edits) is caught the same way (#573).
 
 Execute the approved plan from the Step 3 ELI5 gate:
 
@@ -385,7 +426,9 @@ ISSUE_NUM=$(echo "$BRANCH" | grep -oP 'issue-\K[0-9]+' || echo "")
 **Stale-base pre-check (issue #473) - run BEFORE the quality gates and commit**,
 so the commit lands on a current tree and the gate reflects what will merge (the
 #462 Step-7 guard stays the final backstop). Bare invocation first (#581
-discipline; on exit 127 fall back to the CPP-checkout copy):
+discipline; on exit 127 fall back to the plugin-bundled copy at
+`${CLAUDE_PLUGIN_ROOT}/scripts/flow-stale-check.sh` (#590), else the
+CPP-checkout copy):
 
 ```bash
 <SKILL_DIR>/scripts/flow-stale-check.sh origin/main
@@ -507,16 +550,21 @@ fi
    ```
    If it warns, add a `!negation` to `.gitignore` for any intended file and re-stage.
 
-   **Worktree-leak guard** (issue #486): in a native-worktree session, confirm no
-   edit leaked into the MAIN repo working tree before committing (a stray dirty
-   file on main is otherwise committed later by whoever works there next):
+   **Worktree-leak guard** (issue #486; blocking since #576): in a
+   native-worktree session, confirm no edit leaked into the MAIN repo working
+   tree before committing (a stray dirty file on main is otherwise committed
+   later by whoever works there next, and the commit about to be made here is
+   missing that work). Invoke bare with `--strict` (#581 discipline):
    ```bash
-   if [ -n "$CPP_DIR" ] && [ -x "$CPP_DIR/scripts/flow-worktree-guard.sh" ]; then
-       "$CPP_DIR/scripts/flow-worktree-guard.sh"   # advisory: warns on a leak, never blocks
-   fi
+   <SKILL_DIR>/scripts/flow-worktree-guard.sh --strict
    ```
-   If it warns, an edit landed in main instead of the worktree: move it into the
-   worktree and revert main (`git -C <main> checkout -- <path>`), then re-gate.
+   **Exit 3 is a STOP** - do not commit. An edit landed in main instead of the
+   worktree: move it into the worktree and revert main (`git -C <main> checkout
+   -- <path>`), then re-run the guard and re-gate. Non-overlapping pre-existing
+   main dirt is a quiet note and never blocks (#536). On exit 127 fall back to
+   `${CLAUDE_PLUGIN_ROOT}/scripts/flow-worktree-guard.sh --strict` (#590), else
+   the CPP-checkout copy; if no copy exists, note it and continue (the guard
+   cannot block what it cannot run).
 
 2. **Commit** - if there are uncommitted changes:
    - Use conventional commit format: `type(scope): Description (Closes #N)`
@@ -881,35 +929,25 @@ cd "$MAIN_REPO"
 
 # Locate CPP source for lib/cicd (deploy verification)
 CPP_DIR=""
-CICD_RUNTIME_KIND=""
-# Prefer the CxPP-owned runner. The first two candidates cover a
-# repo-local .codex skill and a checkout-local plugin respectively; installed
-# marketplace skills then fall through to the standard CxPP checkout locations.
-# claude-power-pack is an explicit compatibility fallback only (CxPP #142).
-for dir in \
-  "<SKILL_DIR>/../../.." \
-  "<SKILL_DIR>/../../../.." \
-  "$HOME/Projects/codex-power-pack" \
-  /opt/codex-power-pack \
-  "$HOME/.codex-power-pack" \
-  "$HOME/Projects/claude-power-pack" \
-  /opt/claude-power-pack \
-  "$HOME/.claude-power-pack"; do
-  if [ -d "$dir/lib/cicd" ] && { [ -f "$dir/AGENTS.md" ] || [ -f "$dir/CLAUDE.md" ]; }; then
+for dir in ~/Projects/claude-power-pack /opt/claude-power-pack ~/.claude-power-pack; do
+  if [ -d "$dir" ] && [ -f "$dir/CLAUDE.md" ]; then
     CPP_DIR="$dir"
     break
   fi
 done
-if [ -n "$CPP_DIR" ]; then
-  if [ -f "$CPP_DIR/AGENTS.md" ]; then
-    CICD_RUNTIME_KIND="cxpp"
-  else
-    CICD_RUNTIME_KIND="cpp-compat"
-  fi
-fi
+# Verification runs through `uv`, exactly as the Step 6 gate does (issue #595):
+# bare `python3 -m lib.cicd` uses the system interpreter (often 3.10, no venv),
+# so lib/cicd's deps (pydantic) are absent and the module dies on import. If
+# `uv` is missing, verification is skipped with a NOTE rather than attempted -
+# it is a fail-open confidence gate, and there is no Makefile fallback for it
+# the way `make lint` / `make test` back the Step 6 runner.
 VERIFY_ENABLED=0
 if [ -n "$CPP_DIR" ] && grep -q "deploy_verification:" .claude/cicd.yml 2>/dev/null; then
-    VERIFY_ENABLED=1
+    if command -v uv >/dev/null 2>&1; then
+        VERIFY_ENABLED=1
+    else
+        echo "NOTE: deploy verification configured but 'uv' is not installed; skipping baseline + verdict." >&2
+    fi
 fi
 
 # Out-of-band deploy opt-out (issue #535): a repo whose real deploy path is a host
@@ -949,7 +987,9 @@ elif [[ -f "Makefile" ]] && grep -q "^deploy:" Makefile; then
     # verify can detect regressions.
     if [ "$VERIFY_ENABLED" -eq 1 ]; then
         echo "Capturing pre-deploy baseline..."
-        PYTHONPATH="$CPP_DIR/lib:$PYTHONPATH" python3 -m lib.cicd verify --baseline --summary
+        # PYTHONPATH points at CPP_DIR (the PARENT of lib/), not at lib/ itself,
+        # or `-m lib.cicd` cannot resolve the package - same contract as Step 6.
+        PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run --project "$CPP_DIR" python -m lib.cicd verify --baseline --summary
     fi
 
     echo "Running: make deploy"
@@ -960,7 +1000,7 @@ elif [[ -f "Makefile" ]] && grep -q "^deploy:" Makefile; then
     VERDICT="none"
     if [ "$VERIFY_ENABLED" -eq 1 ]; then
         echo "Running deploy verification..."
-        PYTHONPATH="$CPP_DIR/lib:$PYTHONPATH" python3 -m lib.cicd verify
+        PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run --project "$CPP_DIR" python -m lib.cicd verify
         VERIFY_EXIT=$?
         VERDICT=$( [ "$VERIFY_EXIT" -eq 1 ] && echo "rollback" || echo "proceed/review" )
         if [ "$VERIFY_EXIT" -eq 1 ]; then
@@ -1066,7 +1106,8 @@ Key failure scenarios:
 - The ELI5 step (Step 3) is a human checkpoint: it restates intent in plain language, verifies the issue is still worth doing, and gates implementation on plan approval. Use `--yes` (or an `eli5: auto-approve` trailer) for fully unattended runs; a `No longer needed` verdict never auto-implements
 - Each step builds on the previous one; there's no skipping
 - Worktrees are native: Step 1 uses the `EnterWorktree` tool (checkout under `../<repo>-<branch>/`, branched from `origin/<default-branch>`) and Step 7 uses `ExitWorktree` for session-created worktrees, with a `git worktree` fallback for resumed or cross-machine worktrees. The issue-anchored `issue-<N>-<slug>` branch name, the ELI5 gate, and quality gates are CPP policy layered on top of the native mechanics
-- Step 1's plumbing is deterministic (issue #581): `<SKILL_DIR>/scripts/flow-start-resolve.sh` owns target-repo resolution, issue fetch, branch derivation, existing-work triage, the #503 guard, and git-lane creation, emitting a `key=value` contract; the model's only decision is `EnterWorktree` vs `cd`. Helpers are invoked by absolute path from the installed Codex skill package so the shipped allowlist rules match (`templates/claude-settings-permissions.json`) and Phase 1 runs prompt-free
+- Step 1's plumbing is deterministic (issue #581): `<SKILL_DIR>/scripts/flow-start-resolve.sh` owns target-repo resolution, issue fetch, branch derivation, existing-work triage, the #503 guard, and git-lane creation, emitting a `key=value` contract; the model's only decision is `EnterWorktree` vs `cd`. Helpers are invoked bare at their stable `<SKILL_DIR>/scripts/` paths so the shipped allowlist rules match (`templates/claude-settings-permissions.json`) and Phase 1 runs prompt-free
+- The session cwd is DECLARED, not inferred (issue #592): Step 1a passes `--session-cwd <path>` so the resolver decides `CROSS_REPO`/`GIT_LANE` (and, with no PROJECT arg, `TARGET_REPO` itself) against the session's working directory rather than the Bash tool's cwd, which drifts on any earlier `cd`. Without it the resolver reports `SESSION_CWD_INFERRED=1` and fails closed to `GIT_LANE=1` - the residual #578 left behind
 - Cross-repo invocations (`/flow-auto <ISSUE> <PROJECT>`, or a session cwd outside any git repo) are first-class (issue #578): the resolver detects the mismatch (path, else `~/Projects/<PROJECT>`) and the run rides the deterministic git lane end-to-end - helper-created worktree, `cd` instead of `EnterWorktree`, git cleanup at Step 7 - with the worktree still under the target repo's `../<repo>-<branch>/` so every guard resolves unchanged
 - The worktree base is configurable (issue #584, ADR 0003 Option A): `FLOW_WORKTREE_BASE`, when set in host config, relocates worktrees to `$FLOW_WORKTREE_BASE/<repo>-<branch>` and commits the run to the same git lane (`GIT_LANE=1`); unset, shipped behavior is byte-identical to the in-repo default. The guard/merge/remove/friction scripts resolve via git plumbing and need no awareness of the base
 - The deploy step is always optional - it only runs if a deploy target exists

@@ -48,21 +48,45 @@ issue number - never wrapped in `if [ -x ... ]`, never chained with `&&` or
 `;`, never followed by `echo $?`. A compound invocation defeats the allowlist
 prefix rule; the helper prints its own status markers.
 
+**Always pass `--session-cwd` (issue #592).** The helper cannot observe the
+Claude session's working directory; it can only see the cwd the Bash tool call
+inherited, and that cwd drifts whenever any earlier command in the session
+`cd`s somewhere. `EnterWorktree`, meanwhile, always acts on the session cwd,
+which never moves. So supply the session's working directory VERBATIM as a
+literal path - the same directory the session reports as its cwd, not `$(pwd)`
+and not the directory a previous step left you in:
+
 ```bash
-<SKILL_DIR>/scripts/flow-start-resolve.sh 42
+<SKILL_DIR>/scripts/flow-start-resolve.sh 42 --session-cwd /home/user/Projects/my-repo
 ```
 
-If the stable path is missing (exit 127 - the helper family installs via
-`/cpp:init` / `/cpp:update`), fall back to `<SKILL_DIR>/scripts/flow-start-resolve.sh` from
-the CPP checkout; that path may prompt once.
+If it is omitted the helper still works, but it says so
+(`SESSION_CWD_INFERRED=1`) and fails closed to `GIT_LANE=1`, because a wrong
+`GIT_LANE=0` would point `EnterWorktree` at the wrong repo - or at no repo.
+
+If the stable path is missing (exit 127), fall back in this order - the first
+that exists (issue #590):
+
+1. `${CLAUDE_PLUGIN_ROOT}/scripts/flow-start-resolve.sh` - the flow plugin
+   bundles the helper family, so a marketplace-only install (no CPP clone) has
+   this copy. `CLAUDE_PLUGIN_ROOT` is unset outside a plugin install.
+2. `<SKILL_DIR>/scripts/flow-start-resolve.sh` from the CPP checkout.
+
+Either fallback may prompt once: the allowlist rules match only the stable
+`<SKILL_DIR>/scripts/` path. Tell the user to run **`/flow-repair`**, which
+installs the family there and restores the prompt-free lane. If BOTH fallbacks
+exit 127 there is no helper source at all - **STOP** and report that flow needs
+`/plugin install flow@cpp` (then `/flow-repair`) or a CPP checkout.
 
 The helper fetches the issue, derives the `issue-<N>-<slug>` branch (slug cut
 to keep the name within the EnterWorktree 64-char limit), triages existing
 work, and prints a `key=value` contract ending in `FLOW_START_RESOLVE: ok`. On
 `FLOW_START_RESOLVE: error` (with an `ERROR=` line): **STOP** and report it.
-Keys: `LANE`, `CROSS_REPO`, `GIT_LANE`, `TARGET_REPO`, `ISSUE_STATE`,
-`ISSUE_TITLE`, `BRANCH`, `WT_PATH`, `DEFAULT_BRANCH`, `REMOTE_BRANCH`,
-`WT_CREATED`, `LIVE_DRIVER` (the helper wraps its sibling
+Keys: `LANE`, `CROSS_REPO`, `GIT_LANE`, `SESSION_CWD`, `SESSION_CWD_INFERRED`
+(1 = no `--session-cwd` was passed, so the lane decision rests on a possibly
+drifted process cwd and `GIT_LANE` was forced to 1, issue #592), `TARGET_REPO`,
+`ISSUE_STATE`, `ISSUE_TITLE`, `BRANCH`, `WT_PATH`, `DEFAULT_BRANCH`,
+`REMOTE_BRANCH`, `WT_CREATED`, `LIVE_DRIVER` (the helper wraps its sibling
 `<SKILL_DIR>/scripts/flow-live-driver-guard.sh`, #503), `PR_HEAD`, `CONFIRM_REQUIRED` -
 the same contract `/flow-auto` Step 1 documents.
 
@@ -131,7 +155,8 @@ edits the worktree, but the worktree lives *inside* the main repo at
 worktree root - `git rev-parse --show-toplevel` - or use plain relative paths from
 the session cwd; never hand-build a `../<repo>-<branch>/<name>/...` absolute path,
 which has been observed to land the edit in the MAIN repo working tree instead.
-`/flow-auto` verifies this with `<SKILL_DIR>/scripts/flow-worktree-guard.sh` before commit.
+`/flow-auto` verifies this with `<SKILL_DIR>/scripts/flow-worktree-guard.sh --strict` before
+commit, where a fresh leak signature (exit 3) stops the run (issue #576).
 
 Report to the user:
 
