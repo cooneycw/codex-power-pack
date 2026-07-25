@@ -15,10 +15,10 @@ When the marketplace is missing or published family plugins are absent, offer:
 - **Minimal**: `cxpp` only.
 - **Recommended**: `project`, `spec`, `flow`, `github`, `cicd`, `secrets`,
   `security`, `agents-md`, `documentation`, `qa`, `self-improvement`, and
-  `cxpp`.
+  `cxpp`, plus `claude`.
 - **Full suite**: `project`, `spec`, `flow`, `github`, `cicd`, `secrets`,
   `woodpecker`, `security`, `agents-md`, `documentation`, `qa`, `evaluate`,
-  `second-opinion`, `self-improvement`, and `cxpp`.
+  `second-opinion`, `self-improvement`, `cxpp`, and `claude`.
 - **Custom**: one or more names from the full-suite list. Reject unknown names,
   de-duplicate in full-suite order, and treat an empty selection as `skipped by
   user`.

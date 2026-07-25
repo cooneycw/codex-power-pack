@@ -378,8 +378,19 @@ Execute the approved plan from the Step 3 ELI5 gate:
 3. **Run tests locally** if a quick feedback loop is available (e.g., `make test` or the project's test command).
 4. **Verify the changes** address all acceptance criteria from the issue.
 
-If implementation hits a blocker that cannot be resolved:
-- **STOP** and report the blocker.
+If implementation hits a blocker:
+- Make up to two materially distinct, evidence-driven attempts to resolve it
+  locally. Repeating the same failing command or edit does not count as a new
+  attempt.
+- If the blocker persists, invoke `$claude-code-review` (the Codex-native
+  `claude:code_review` capability) once for that blocker fingerprint. Give it
+  the issue criteria, failed approaches, safe error summary, and current
+  worktree. Claude is read-only support; Codex remains responsible for every
+  edit and decision.
+- Verify Claude's findings against the code, apply only supported fixes, and
+  rerun the focused test. If the skill or SDK is unavailable, continue directly
+  to the normal STOP path.
+- If the blocker remains unresolved after the review, **STOP** and report it.
 - Suggest manual intervention.
 
 Report: `Step 4/9: Implement complete - {summary of changes}`

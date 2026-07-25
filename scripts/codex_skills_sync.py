@@ -84,6 +84,7 @@ LOCAL_FILES = {"README.md"}
 LOCAL_SKILL_DIRS = {
     "agents-md-help",
     "agents-md-lint",
+    "claude-code-review",
     "cxpp-init",
     "cxpp-status",
     "cxpp-update",
@@ -173,6 +174,20 @@ checkout. Pass `--repo "$REPO"` to every issue command. If neither source can
 resolve a repository, ask the user before performing a write.
 
 """
+_CLAUDE_REVIEW_ESCALATION = """If implementation hits a blocker:
+- Make up to two materially distinct, evidence-driven attempts to resolve it
+  locally. Repeating the same failing command or edit does not count as a new
+  attempt.
+- If the blocker persists, invoke `$claude-code-review` (the Codex-native
+  `claude:code_review` capability) once for that blocker fingerprint. Give it
+  the issue criteria, failed approaches, safe error summary, and current
+  worktree. Claude is read-only support; Codex remains responsible for every
+  edit and decision.
+- Verify Claude's findings against the code, apply only supported fixes, and
+  rerun the focused test. If the skill or SDK is unavailable, continue directly
+  to the normal STOP path.
+- If the blocker remains unresolved after the review, **STOP** and report it.
+- Suggest manual intervention."""
 _CODEX_DOCTOR_HELPERS = f"""# Installed Codex flow helper family (issue #139).
 # Resolve SKILL_DIR from this loaded flow-doctor skill before running.
 FLOW_SKILLS_ROOT="{SKILL_DIR_TOKEN}/.."
@@ -496,6 +511,18 @@ def _adapt_flow_cicd_runtime(skill_dir: Path, source_file: Path, text: str) -> s
     return text
 
 
+def _adapt_flow_claude_review(skill_dir: Path, source_file: Path, text: str) -> str:
+    """Add CxPP's bounded cross-model escalation to Codex flow:auto."""
+    if skill_dir.name != "flow-auto" or source_file.name != "reference.md":
+        return text
+    original = """If implementation hits a blocker that cannot be resolved:
+- **STOP** and report the blocker.
+- Suggest manual intervention."""
+    if original in text:
+        return text.replace(original, _CLAUDE_REVIEW_ESCALATION, 1)
+    return text
+
+
 def _adapt_flow_resolver(text: str) -> str:
     """Make CPP's resolver use Codex's plain-git visible-worktree lane."""
     text = text.replace(
@@ -539,6 +566,7 @@ def _adapted_source_files(skill_dir: Path) -> dict[str, bytes]:
             text = _adapt_flow_resolver(text)
         text = _adapt_flow_text(skill_dir, source_file, text)
         text = _adapt_flow_cicd_runtime(skill_dir, source_file, text)
+        text = _adapt_flow_claude_review(skill_dir, source_file, text)
         text = _adapt_github_text(skill_dir, source_file, text)
         files[rel] = text.encode()
     return files

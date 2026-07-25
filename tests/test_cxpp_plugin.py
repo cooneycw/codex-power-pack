@@ -26,6 +26,7 @@ FULL_FAMILIES = (
     "second-opinion",
     "self-improvement",
     "cxpp",
+    "claude",
 )
 
 RECOMMENDED_FAMILIES = tuple(
