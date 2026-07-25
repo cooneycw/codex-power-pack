@@ -87,51 +87,26 @@ if [[ "$(git rev-list --count HEAD..origin/main)" -gt 0 ]]; then
         echo "(Do NOT 'git merge --abort' - that discards the resolution.)"
         exit 1
     fi
-    # Re-run the FULL quality gate on the MERGED tree (deterministic runner,
-    # Makefile fallback - same gate /flow-finish uses).
-    CPP_DIR=""
-    CICD_RUNTIME_KIND=""
-    # Prefer the CxPP-owned runner. The first two candidates cover a
-    # repo-local .codex skill and a checkout-local plugin respectively; installed
-    # marketplace skills then fall through to the standard CxPP checkout locations.
-    # claude-power-pack is an explicit compatibility fallback only (CxPP #142).
-    for dir in \
-      "<SKILL_DIR>/../../.." \
-      "<SKILL_DIR>/../../../.." \
-      "$HOME/Projects/codex-power-pack" \
-      /opt/codex-power-pack \
-      "$HOME/.codex-power-pack" \
-      "$HOME/Projects/claude-power-pack" \
-      /opt/claude-power-pack \
-      "$HOME/.claude-power-pack"; do
-      [ -d "$dir/lib/cicd" ] && { [ -f "$dir/AGENTS.md" ] || [ -f "$dir/CLAUDE.md" ]; } && { CPP_DIR="$dir"; break; }
-    done
-    if [ -n "$CPP_DIR" ]; then
-      if [ -f "$CPP_DIR/AGENTS.md" ]; then
-        CICD_RUNTIME_KIND="cxpp"
-      else
-        CICD_RUNTIME_KIND="cpp-compat"
-      fi
-    fi
-    if [ -n "$CPP_DIR" ] && command -v uv >/dev/null 2>&1; then
-        if [ "$CICD_RUNTIME_KIND" = "cxpp" ]; then
-            PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run python -m lib.cicd run --plan finish
-        else
-            PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run --project "$CPP_DIR" python -m lib.cicd run --plan finish
-        fi
-        REGATE_EXIT=$?
-    else
-        echo "NOTE: deterministic runner unavailable; re-gating via Makefile fallback." >&2
-        make lint && make test
-        REGATE_EXIT=$?
-    fi
-    if [ "$REGATE_EXIT" -ne 0 ]; then
-        echo "STOP: quality gate failed on the post-merge tree. Fix, commit, then re-run /flow-merge."
-        exit 1
-    fi
-    # Push the merge so the PR reflects the post-merge tree before squashing.
-    git push origin "$BRANCH"
 fi
+```
+
+**If the merge above ran** (the branch was behind), re-run the FULL quality
+gate on the MERGED tree - the same audited helper `/flow-finish` uses
+(deterministic runner with Makefile fallback built in, issue #613), invoked
+BARE as a separate call (#581 discipline - never fold it back into a compound
+block):
+
+```bash
+<SKILL_DIR>/scripts/flow-finish-gate.sh
+```
+
+On `FLOW_FINISH_GATE: fail` (exit 1): **STOP** - the quality gate failed on
+the post-merge tree. Fix, commit, then re-run `/flow-merge`. On `ok` (or
+`skipped`, with a warning), push the merge so the PR reflects the post-merge
+tree before squashing:
+
+```bash
+git push origin "$BRANCH"
 ```
 
 Then merge the PR:

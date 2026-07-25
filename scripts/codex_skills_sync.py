@@ -118,6 +118,7 @@ LOCAL_SKILL_DIRS = {
 # resolves them from the skill package instead (issue #139).
 FLOW_RUNTIME_HELPERS = {
     "check-ignored-additions.sh",
+    "flow-finish-gate.sh",
     "flow-live-driver-guard.sh",
     "flow-stale-check.sh",
     "flow-start-resolve.sh",
@@ -511,6 +512,95 @@ def _adapt_flow_cicd_runtime(skill_dir: Path, source_file: Path, text: str) -> s
     return text
 
 
+def _adapt_flow_cicd_helper(skill_dir: Path, source_file: Path, text: str) -> str:
+    """Make the bundled finish gate prefer CxPP and provision its dev runtime."""
+    if source_file.name != "flow-finish-gate.sh" or not skill_dir.name.startswith("flow-"):
+        return text
+
+    upstream_discovery = """# --- Locate the CPP checkout (same search the command docs use) -------------
+if [[ -n "${FLOW_GATE_CPP_DIR+x}" ]]; then
+    CPP_DIR="$FLOW_GATE_CPP_DIR"
+else
+    CPP_DIR=""
+    for dir in "$HOME/Projects/claude-power-pack" /opt/claude-power-pack "$HOME/.claude-power-pack"; do
+        if [[ -d "$dir" && -f "$dir/CLAUDE.md" ]]; then
+            CPP_DIR="$dir"
+            break
+        fi
+    done
+fi
+"""
+    codex_discovery = """# --- Locate the CxPP runner, retaining CPP as compatibility fallback --------
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+# Bare helper invocation cannot prefix uv with an environment assignment. Keep
+# caller configuration when present; otherwise use a cache location that is
+# writable in restricted agent sandboxes as well as normal shells.
+export UV_CACHE_DIR="${UV_CACHE_DIR:-${TMPDIR:-/tmp}/codex-power-pack-uv-cache}"
+if [[ -n "${FLOW_GATE_CPP_DIR+x}" ]]; then
+    CPP_DIR="$FLOW_GATE_CPP_DIR"
+else
+    CPP_DIR=""
+    for dir in \\
+        "$SCRIPT_DIR/../../../.." \\
+        "$SCRIPT_DIR/../../../../.." \\
+        "$HOME/Projects/codex-power-pack" \\
+        /opt/codex-power-pack \\
+        "$HOME/.codex-power-pack" \\
+        "$HOME/Projects/claude-power-pack" \\
+        /opt/claude-power-pack \\
+        "$HOME/.claude-power-pack"; do
+        if [[ -d "$dir/lib/cicd" && ( -f "$dir/AGENTS.md" || -f "$dir/CLAUDE.md" ) ]]; then
+            CPP_DIR="$dir"
+            break
+        fi
+    done
+fi
+
+CICD_RUNTIME_KIND=""
+if [[ -n "$CPP_DIR" ]]; then
+    if [[ -f "$CPP_DIR/AGENTS.md" ]]; then
+        CICD_RUNTIME_KIND="cxpp"
+    else
+        CICD_RUNTIME_KIND="cpp-compat"
+    fi
+fi
+"""
+    if upstream_discovery not in text:
+        return text
+    text = text.replace(upstream_discovery, codex_discovery, 1)
+    text = text.replace("CPP checkout not found", "CxPP/CPP runtime not found")
+
+    upstream_command = (
+        'PYTHONPATH="$CPP_DIR:${PYTHONPATH:-}" uv run --project "$CPP_DIR" '
+        "python -m lib.cicd"
+    )
+    codex_check_command = """    if [[ "$CICD_RUNTIME_KIND" == "cxpp" ]]; then
+        PYTHONPATH="$CPP_DIR:${PYTHONPATH:-}" uv run --project "$CPP_DIR" --extra dev python -m lib.cicd check --summary
+    else
+        PYTHONPATH="$CPP_DIR:${PYTHONPATH:-}" uv run --project "$CPP_DIR" python -m lib.cicd check --summary
+    fi"""
+    codex_runner_command = (
+        '    if [[ "$CICD_RUNTIME_KIND" == "cxpp" ]]; then\n'
+        '        PYTHONPATH="$CPP_DIR:${PYTHONPATH:-}" uv run --project "$CPP_DIR" '
+        '--extra dev python -m lib.cicd run --plan "$PLAN"\n'
+        "    else\n"
+        '        PYTHONPATH="$CPP_DIR:${PYTHONPATH:-}" uv run --project "$CPP_DIR" '
+        'python -m lib.cicd run --plan "$PLAN"\n'
+        "    fi"
+    )
+    text = text.replace(
+        f"    {upstream_command} check --summary",
+        codex_check_command,
+        1,
+    )
+    text = text.replace(
+        f'    {upstream_command} run --plan "$PLAN"',
+        codex_runner_command,
+        1,
+    )
+    return text
+
+
 def _adapt_flow_claude_review(skill_dir: Path, source_file: Path, text: str) -> str:
     """Add CxPP's bounded cross-model escalation to Codex flow:auto."""
     if skill_dir.name != "flow-auto" or source_file.name != "reference.md":
@@ -565,6 +655,7 @@ def _adapted_source_files(skill_dir: Path) -> dict[str, bytes]:
         if rel == "scripts/flow-start-resolve.sh":
             text = _adapt_flow_resolver(text)
         text = _adapt_flow_text(skill_dir, source_file, text)
+        text = _adapt_flow_cicd_helper(skill_dir, source_file, text)
         text = _adapt_flow_cicd_runtime(skill_dir, source_file, text)
         text = _adapt_flow_claude_review(skill_dir, source_file, text)
         text = _adapt_github_text(skill_dir, source_file, text)
