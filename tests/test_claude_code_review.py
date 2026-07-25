@@ -39,6 +39,10 @@ runner = _load(RUNNER_PATH, "claude_code_review")
 sync = _load(SYNC_PATH, "codex_skills_sync_claude_review")
 
 
+def test_review_default_allows_large_projects() -> None:
+    assert runner.DEFAULT_MAX_TURNS == 50
+
+
 def _git(repo: Path, *args: str) -> str:
     result = subprocess.run(
         ["git", *args],

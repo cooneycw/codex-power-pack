@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -175,7 +176,7 @@ def test_each_family_plugin_manifest_is_native_codex_shape() -> None:
         manifest = load_json(PLUGINS_ROOT / family / ".codex-plugin" / "plugin.json")
 
         assert manifest["name"] == family
-        assert manifest["version"] == "0.1.0"
+        assert re.fullmatch(r"0\.1\.0(?:\+codex\.[A-Za-z0-9.-]+)?", manifest["version"])
         assert manifest["skills"] == "./skills/"
         assert manifest["repository"] == "https://github.com/cooneycw/codex-power-pack"
         assert manifest["license"] == "MIT"

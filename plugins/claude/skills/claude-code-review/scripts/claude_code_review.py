@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 
 MAX_DIFF_BYTES = 1_500_000
+DEFAULT_MAX_TURNS = 50
 READ_ONLY_TOOLS = ["Read", "Glob", "Grep"]
 DISALLOWED_TOOLS = [
     "Bash",
@@ -166,7 +167,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--issue", required=True, help="Issue and acceptance-criteria summary")
     parser.add_argument("--blocker", required=True, help="Safe blocker summary and review question")
     parser.add_argument("--claude-cli", default=shutil.which("claude"), help=argparse.SUPPRESS)
-    parser.add_argument("--max-turns", type=int, default=8)
+    parser.add_argument("--max-turns", type=int, default=DEFAULT_MAX_TURNS)
     parser.add_argument("--max-budget-usd", type=float, default=2.0)
     parser.add_argument("--dry-run", action="store_true", help="Validate and summarize without calling Claude")
     return parser.parse_args()

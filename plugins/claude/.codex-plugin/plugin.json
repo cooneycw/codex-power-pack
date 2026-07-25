@@ -1,6 +1,6 @@
 {
   "name": "claude",
-  "version": "0.1.0",
+  "version": "0.1.0+codex.20260725200828",
   "description": "Read-only Claude Code support for Codex workflows.",
   "author": {
     "name": "Codex Power Pack maintainers",
