@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import importlib.util
+import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RUNNER_PATH = (
@@ -47,6 +50,7 @@ def _git(repo: Path, *args: str) -> str:
     return result.stdout.strip()
 
 
+@pytest.mark.skipif(shutil.which("git") is None, reason="git executable is unavailable")
 def test_review_context_includes_worktree_diff(tmp_path: Path) -> None:
     _git(tmp_path, "init", "-b", "main")
     _git(tmp_path, "config", "user.email", "test@example.com")
