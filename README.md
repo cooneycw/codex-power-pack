@@ -55,7 +55,8 @@ codex plugin add github@codex-power-pack
 The catalog currently exposes per-family packages for `project`, `spec`,
 `flow`, `github`, `cicd`, `secrets`, `woodpecker`, `security`, `agents-md`,
 `documentation`, `qa`, `evaluate`, `second-opinion`, `self-improvement`, and
-`cxpp`. Install `spec` for consent-first `$spec-adopt` setup of official
+`cxpp`, plus `claude` for OAuth-backed, read-only `$claude-code-review`
+escalations. Install `spec` for consent-first `$spec-adopt` setup of official
 spec-kit and `$spec-sync` task-to-issue previews. Install `cxpp` when a fresh
 machine needs the consent-first `/cxpp:init`, `/cxpp:update`, and
 `/cxpp:status` fallback skills.
@@ -66,7 +67,7 @@ When the marketplace or family plugins are missing, `/cxpp:init` and
 - **Minimal** installs only `cxpp`.
 - **Recommended** installs `project`, `spec`, `flow`, `github`, `cicd`,
   `secrets`, `security`, `agents-md`, `documentation`, `qa`,
-  `self-improvement`, and `cxpp` for common development workflows.
+  `self-improvement`, `cxpp`, and `claude` for common development workflows.
 - **Full suite** installs every published family listed above.
 - **Custom** installs only the individually selected families.
 

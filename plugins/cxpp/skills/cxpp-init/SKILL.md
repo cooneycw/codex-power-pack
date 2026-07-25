@@ -32,10 +32,11 @@ published family plugins are missing:
 - **Minimal**: `cxpp` only.
 - **Recommended**: `project`, `spec`, `flow`, `github`, `cicd`, `secrets`,
   `security`, `agents-md`, `documentation`, `qa`, `self-improvement`, and
-  `cxpp`. This is the documented default for common development workflows.
+  `cxpp`, plus `claude`. This is the documented default for common development
+  workflows.
 - **Full suite**: `project`, `spec`, `flow`, `github`, `cicd`, `secrets`,
   `woodpecker`, `security`, `agents-md`, `documentation`, `qa`, `evaluate`,
-  `second-opinion`, `self-improvement`, and `cxpp`.
+  `second-opinion`, `self-improvement`, `cxpp`, and `claude`.
 - **Custom**: one or more individually selected names from the full-suite list.
   Reject unknown names, de-duplicate selections in full-suite order, and treat
   an empty selection as `skipped by user`.

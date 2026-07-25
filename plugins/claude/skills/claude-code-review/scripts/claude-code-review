@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if ! command -v uv >/dev/null 2>&1; then
+    echo "ERROR: uv is required to launch the Claude Agent SDK." >&2
+    exit 2
+fi
+
+if ! command -v claude >/dev/null 2>&1; then
+    echo "ERROR: Claude Code is not installed or not on PATH." >&2
+    exit 2
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CLAUDE_CLI="$(command -v claude)"
+
+exec uv run --quiet \
+    --with "claude-agent-sdk>=0.1.77,<0.2" \
+    python3 "$SCRIPT_DIR/claude_code_review.py" \
+    --claude-cli "$CLAUDE_CLI" \
+    "$@"

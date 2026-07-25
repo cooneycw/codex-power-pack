@@ -14,7 +14,7 @@ anything.
 Treat the repo marketplace as authoritative for these published families, in
 this order: `project`, `spec`, `flow`, `github`, `cicd`, `secrets`,
 `woodpecker`, `security`, `agents-md`, `documentation`, `qa`, `evaluate`,
-`second-opinion`, `self-improvement`, and `cxpp`.
+`second-opinion`, `self-improvement`, `cxpp`, and `claude`.
 
 ## Procedure
 

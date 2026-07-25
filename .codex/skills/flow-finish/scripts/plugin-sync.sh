@@ -65,7 +65,7 @@ declare -A EXTRA_FILES=(
     # allowlist rules match - by /flow:repair (flow-helpers-install.sh, itself
     # bundled so a plugin-only user can run it). flow-start-resolve.sh resolves
     # flow-live-driver-guard.sh via $SELF_DIR, so the two must travel together.
-    [flow]="<SKILL_DIR>/../flow-start/scripts/flow-start-resolve.sh <SKILL_DIR>/../flow-start/scripts/flow-live-driver-guard.sh <SKILL_DIR>/scripts/flow-stale-check.sh <SKILL_DIR>/../flow-start/scripts/flow-worktree-guard.sh <SKILL_DIR>/../flow-auto/scripts/gh-pr-merge.sh <SKILL_DIR>/../flow-start/scripts/worktree-remove.sh <SKILL_DIR>/../flow-auto/scripts/friction-log.sh <SKILL_DIR>/scripts/check-ignored-additions.sh scripts/flow-helpers-install.sh"
+    [flow]="<SKILL_DIR>/../flow-start/scripts/flow-start-resolve.sh <SKILL_DIR>/../flow-start/scripts/flow-live-driver-guard.sh scripts/flow-worktree-claim.sh <SKILL_DIR>/scripts/flow-stale-check.sh <SKILL_DIR>/../flow-start/scripts/flow-worktree-guard.sh <SKILL_DIR>/../flow-auto/scripts/gh-pr-merge.sh <SKILL_DIR>/../flow-start/scripts/worktree-remove.sh <SKILL_DIR>/../flow-auto/scripts/friction-log.sh <SKILL_DIR>/scripts/check-ignored-additions.sh scripts/flow-helpers-install.sh"
     # /cpp:load-best-practices reads this doc; a plugin-only install has no CPP
     # checkout, so the plugin bundles it (resolved via ${CLAUDE_PLUGIN_ROOT}).
     [cpp]="docs/reference/CLAUDE_CODE_BEST_PRACTICES_FULL.md"

@@ -1,0 +1,31 @@
+{
+  "name": "claude",
+  "version": "0.1.0",
+  "description": "Read-only Claude Code support for Codex workflows.",
+  "author": {
+    "name": "Codex Power Pack maintainers",
+    "url": "https://github.com/cooneycw/codex-power-pack"
+  },
+  "homepage": "https://github.com/cooneycw/codex-power-pack#readme",
+  "repository": "https://github.com/cooneycw/codex-power-pack",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "claude",
+    "code-review",
+    "cross-model"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Claude",
+    "shortDescription": "Request guarded Claude Code reviews.",
+    "longDescription": "Claude provides read-only, OAuth-backed Claude Code review support through the Claude Agent SDK.",
+    "developerName": "Codex Power Pack",
+    "category": "AI Assistance",
+    "capabilities": [
+      "Automation",
+      "Read"
+    ],
+    "defaultPrompt": "Use $claude-code-review to get a read-only cross-model review of the current issue diff."
+  }
+}
