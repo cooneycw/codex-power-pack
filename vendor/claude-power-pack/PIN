@@ -1,5 +1,5 @@
 # Pinned claude-power-pack source for the generated Codex skills (pull model).
 # Managed by scripts/codex_skills_sync.py --refresh; do not hand-edit.
 repo: https://github.com/cooneycw/claude-power-pack
-commit: 37735aa34eb8237e068ae3a3a238960bcd373026
+commit: 6ece597cc8b0311bdff1d54777bfa56bc4abe222
 pulls: codex/skills/  ->  .codex/skills/
