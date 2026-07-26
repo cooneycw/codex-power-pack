@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import importlib.util
+import os
+import subprocess
 from pathlib import Path
 
 from lib.cicd.runner import DeterministicRunner
@@ -20,26 +22,21 @@ FLOW_RUNNER_REFERENCES = (
     "flow-finish/reference.md",
     "flow-merge/reference.md",
 )
+FLOW_FINISH_GATE_HELPERS = (
+    "flow-auto/scripts/flow-finish-gate.sh",
+    "flow-check/scripts/flow-finish-gate.sh",
+    "flow-finish/scripts/flow-finish-gate.sh",
+    "flow-merge/scripts/flow-finish-gate.sh",
+)
 
 
-def test_codex_flow_references_prefer_cxpp_with_explicit_cpp_fallback() -> None:
+def test_codex_flow_references_delegate_to_bundled_finish_gate() -> None:
     for rel in FLOW_RUNNER_REFERENCES:
         source = (REPO_ROOT / ".codex/skills" / rel).read_text(encoding="utf-8")
         packaged = (REPO_ROOT / "plugins/flow/skills" / rel).read_text(encoding="utf-8")
 
         assert source == packaged
-        assert "<SKILL_DIR>/../../.." in source
-        assert "<SKILL_DIR>/../../../.." in source
-        assert source.index("$HOME/Projects/codex-power-pack") < source.index(
-            "$HOME/Projects/claude-power-pack"
-        )
-        assert "claude-power-pack is an explicit compatibility fallback only" in source
-        assert '[ -d "$dir/lib/cicd" ]' in source
-        assert '[ -f "$dir/AGENTS.md" ] || [ -f "$dir/CLAUDE.md" ]' in source
-        assert 'CICD_RUNTIME_KIND="cxpp"' in source
-        assert 'CICD_RUNTIME_KIND="cpp-compat"' in source
-        assert "uv run python -m lib.cicd" in source
-        assert 'uv run --project "$CPP_DIR" python -m lib.cicd' in source
+        assert "<SKILL_DIR>/scripts/flow-finish-gate.sh" in source
 
 
 def test_marketplace_and_checkout_runtime_layouts_are_adapted() -> None:
@@ -69,6 +66,65 @@ def test_marketplace_and_checkout_runtime_layouts_are_adapted() -> None:
         assert '[ -d "$dir/lib/cicd" ]' in adapted
         assert f'{indent}if [ "$CICD_RUNTIME_KIND" = "cxpp" ]; then' in adapted
         assert "uv run python -m lib.cicd run --plan finish" in adapted
+
+
+def test_finish_gate_helpers_prefer_cxpp_and_provision_runtime_dependencies() -> None:
+    for rel in FLOW_FINISH_GATE_HELPERS:
+        source = (REPO_ROOT / ".codex/skills" / rel).read_text(encoding="utf-8")
+        packaged = (REPO_ROOT / "plugins/flow/skills" / rel).read_text(encoding="utf-8")
+
+        assert source == packaged
+        assert 'SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)' in source
+        assert source.index("$HOME/Projects/codex-power-pack") < source.index(
+            "$HOME/Projects/claude-power-pack"
+        )
+        assert 'CICD_RUNTIME_KIND="cxpp"' in source
+        assert 'CICD_RUNTIME_KIND="cpp-compat"' in source
+        assert 'uv run --project "$CPP_DIR" --extra dev python -m lib.cicd' in source
+        assert 'uv run --project "$CPP_DIR" python -m lib.cicd' in source
+
+
+def test_finish_gate_executes_cxpp_runner_with_dev_extra(tmp_path: Path) -> None:
+    cxpp = tmp_path / "cxpp"
+    (cxpp / "lib" / "cicd").mkdir(parents=True)
+    (cxpp / "AGENTS.md").write_text("# fixture\n", encoding="utf-8")
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    invocation = tmp_path / "uv-invocation.txt"
+    fake_uv = bin_dir / "uv"
+    fake_uv.write_text(
+        "#!/usr/bin/env bash\n"
+        'printf "%s\\n%s\\n" "$*" "$UV_CACHE_DIR" > "$FLOW_GATE_TEST_INVOCATION"\n',
+        encoding="utf-8",
+    )
+    fake_uv.chmod(0o755)
+
+    helper = REPO_ROOT / ".codex/skills/flow-auto/scripts/flow-finish-gate.sh"
+    sandbox_tmp = tmp_path / "tmp"
+    sandbox_tmp.mkdir()
+    env = os.environ | {
+        "FLOW_GATE_CPP_DIR": str(cxpp),
+        "FLOW_GATE_TEST_INVOCATION": str(invocation),
+        "PATH": f"{bin_dir}:{os.environ['PATH']}",
+        "TMPDIR": str(sandbox_tmp),
+    }
+    env.pop("UV_CACHE_DIR", None)
+    result = subprocess.run(
+        [str(helper)],
+        cwd=tmp_path,
+        env=env,
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert "FLOW_FINISH_GATE: ok" in result.stdout
+    assert invocation.read_text(encoding="utf-8").splitlines() == [
+        f"run --project {cxpp} --extra dev python -m lib.cicd run --plan finish",
+        str(sandbox_tmp / "codex-power-pack-uv-cache"),
+    ]
 
 
 def test_deploy_verification_command_is_not_rewritten() -> None:
