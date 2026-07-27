@@ -121,7 +121,7 @@ checkout.
 Each plugin packages one workflow family so users can install and remove them
 independently. Packaged skill payloads stay byte-identical to `.codex/skills/`;
 the package-local `agents/openai.yaml` files supply display metadata and set
-`allow_implicit_invocation: false` by default.
+`allow_implicit_invocation: true` by default.
 
 ## Command Skills
 

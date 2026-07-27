@@ -3,4 +3,4 @@ interface:
   short_description: "Flow: Start Working on an Issue - Create a worktree and branch for a GitHub issue. Stateless - all context from git and GitHub."
   default_prompt: "Use $flow-start when you need flow: Start Working on an Issue - Create a worktree and branch for a GitHub issue. Stateless - all context from git and GitHub."
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true

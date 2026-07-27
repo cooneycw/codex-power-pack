@@ -1,6 +1,6 @@
 {
   "name": "agents-md",
-  "version": "0.1.0",
+  "version": "0.1.0+codex.20260727145047",
   "description": "AGENTS.md governance lint and help skills.",
   "author": {
     "name": "Codex Power Pack maintainers",

@@ -3,4 +3,4 @@ interface:
   short_description: "Overview of project management commands"
   default_prompt: "Use $project-help when you need overview of project management commands"
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true

@@ -3,4 +3,4 @@ interface:
   short_description: "Overview of self-improvement commands"
   default_prompt: "Use $self-improvement-help when you need overview of self-improvement commands"
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true

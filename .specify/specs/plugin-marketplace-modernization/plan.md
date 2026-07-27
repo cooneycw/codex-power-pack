@@ -78,8 +78,10 @@ owner-approved before any Epic C/D/E implementation PR merges.
   plugin (project family) with `.codex-plugin/plugin.json`; prove E2E with
   `/plugins` install from the repo as a git-backed source.
 - **C2** Package all families as per-family plugins; per-skill
-  `agents/openai.yaml` (default `allow_implicit_invocation: false`,
-  display metadata).
+  `agents/openai.yaml` (default `allow_implicit_invocation: true`,
+  display metadata). Skills reach the Codex session prompt inventory only
+  when implicit invocation is enabled, so the original `false` default left
+  installed families invisible to the model.
 - **C3** Version pinning and release process: tagged releases, marketplace
   entries pin ref/sha, upgrade documented.
 - **C4** `cxpp:init/update/status` thin fallback for non-plugin infra:

@@ -3,4 +3,4 @@ interface:
   short_description: "Overview of documentation and diagram commands"
   default_prompt: "Use $documentation-help when you need overview of documentation and diagram commands"
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true

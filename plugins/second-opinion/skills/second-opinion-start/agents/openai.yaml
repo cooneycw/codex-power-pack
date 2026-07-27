@@ -3,4 +3,4 @@ interface:
   short_description: "Quick second opinion with sensible defaults"
   default_prompt: "Use $second-opinion-start when you need quick second opinion with sensible defaults"
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true

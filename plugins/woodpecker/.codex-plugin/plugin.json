@@ -1,6 +1,6 @@
 {
   "name": "woodpecker",
-  "version": "0.1.0",
+  "version": "0.1.0+codex.20260727145047",
   "description": "Safe Woodpecker CI API client and pipeline generation skills.",
   "author": {
     "name": "Codex Power Pack maintainers",
