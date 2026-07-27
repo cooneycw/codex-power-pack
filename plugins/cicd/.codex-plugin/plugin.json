@@ -1,6 +1,6 @@
 {
   "name": "cicd",
-  "version": "0.1.0",
+  "version": "0.1.0+codex.20260727145047",
   "description": "Makefile, pipeline, smoke, health, and infrastructure CI/CD skills.",
   "author": {
     "name": "Codex Power Pack maintainers",

@@ -56,7 +56,7 @@ tool integrations, with client-side pointers documented in `docs/HOST_MANAGED.md
 - Plugin-packaged copies of generated skills under `plugins/<family>/skills/`
   keep their skill payload files byte-identical to `.codex/skills/`. The only
   package-local overlay is `agents/openai.yaml`, which supplies Codex plugin UI
-  metadata and disables implicit invocation by default.
+  metadata and enables implicit invocation by default.
 - Reconcile by editing the upstream source, never the generated copy: edit
   `.claude/commands/<family>/` in claude-power-pack, regenerate there (`make codex-skills`),
   then re-pull here (`make codex-skills-refresh`). The drift gate `make codex-skills-check`

@@ -109,7 +109,11 @@ FAMILY_SKILLS = {
 EXPECTED_FAMILIES = list(FAMILY_SKILLS)
 CORE_BUDGET_FAMILIES = ("project", "spec", "github")
 SKILL_LIST_BUDGET_CHARS = 8_000
-IMPLICIT_SKILLS = {"flow-auto"}
+# Every packaged skill is advertised to Codex. Skills only reach the session
+# prompt inventory when implicit invocation is enabled, so a `false` here means
+# the skill is installed but invisible to the model (issue #150 for flow-auto).
+# Narrow this back to a subset if a family should become opt-in again.
+IMPLICIT_SKILLS = {skill for skills in FAMILY_SKILLS.values() for skill in skills}
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -211,7 +215,7 @@ def test_plugin_skill_payloads_match_generated_source_with_metadata_overlay() ->
             assert sha256(plugin_files[rel]) == sha256(source_file), rel
 
 
-def test_only_selected_packaged_skills_allow_implicit_invocation() -> None:
+def test_packaged_skills_advertise_implicit_invocation() -> None:
     for family, expected_skills in FAMILY_SKILLS.items():
         for skill_name in expected_skills:
             payload = load_agent_manifest(family, skill_name)

@@ -3,4 +3,4 @@ interface:
   short_description: "Overview of Second Opinion commands"
   default_prompt: "Use $second-opinion-help when you need overview of Second Opinion commands"
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true

@@ -3,4 +3,4 @@ interface:
   short_description: "Fetch and decode a Woodpecker step log"
   default_prompt: "Use $woodpecker-logs to inspect a failed Woodpecker step log."
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true

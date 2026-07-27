@@ -3,4 +3,4 @@ interface:
   short_description: "Run full security scan (native + external tools)"
   default_prompt: "Use $security-scan when you need run full security scan (native + external tools)"
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true

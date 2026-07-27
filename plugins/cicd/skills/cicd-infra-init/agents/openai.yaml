@@ -3,4 +3,4 @@ interface:
   short_description: "Scaffold IaC directory with tiered structure (foundation/platform/app)"
   default_prompt: "Use $cicd-infra-init when you need scaffold IaC directory with tiered structure (foundation/platform/app)"
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true
