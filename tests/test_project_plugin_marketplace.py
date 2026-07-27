@@ -4,10 +4,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
+import shutil
+import subprocess
 from pathlib import Path
 from typing import Any
 
+import pytest
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -105,6 +109,7 @@ FAMILY_SKILLS = {
 EXPECTED_FAMILIES = list(FAMILY_SKILLS)
 CORE_BUDGET_FAMILIES = ("project", "spec", "github")
 SKILL_LIST_BUDGET_CHARS = 8_000
+IMPLICIT_SKILLS = {"flow-auto"}
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -206,7 +211,7 @@ def test_plugin_skill_payloads_match_generated_source_with_metadata_overlay() ->
             assert sha256(plugin_files[rel]) == sha256(source_file), rel
 
 
-def test_packaged_skills_disable_implicit_invocation_by_default() -> None:
+def test_only_selected_packaged_skills_allow_implicit_invocation() -> None:
     for family, expected_skills in FAMILY_SKILLS.items():
         for skill_name in expected_skills:
             payload = load_agent_manifest(family, skill_name)
@@ -215,7 +220,41 @@ def test_packaged_skills_disable_implicit_invocation_by_default() -> None:
             assert interface["display_name"]
             assert interface["short_description"]
             assert interface["default_prompt"].startswith(f"Use ${skill_name}")
-            assert payload["policy"]["allow_implicit_invocation"] is False
+            assert payload["policy"]["allow_implicit_invocation"] is (
+                skill_name in IMPLICIT_SKILLS
+            )
+
+
+def test_fresh_flow_plugin_install_advertises_flow_auto(tmp_path: Path) -> None:
+    """Issue #150: enabled Flow installs must inject flow-auto into new sessions."""
+    codex = shutil.which("codex")
+    if codex is None:
+        pytest.skip("Codex CLI is not installed")
+
+    codex_home = tmp_path / "codex-home"
+    codex_home.mkdir()
+    env = os.environ.copy()
+    env["CODEX_HOME"] = str(codex_home)
+
+    def run_codex(*args: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [codex, *args],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
+    run_codex("plugin", "marketplace", "add", str(REPO_ROOT), "--json")
+    install = run_codex("plugin", "add", "flow@codex-power-pack", "--json")
+    installed_path = Path(json.loads(install.stdout)["installedPath"])
+
+    prompt = run_codex("-C", str(tmp_path), "debug", "prompt-input")
+    prompt_text = json.dumps(json.loads(prompt.stdout))
+
+    assert "- flow:flow-auto:" in prompt_text
+    assert str(installed_path / "skills" / "flow-auto" / "SKILL.md") in prompt_text
 
 
 def test_github_issue_skills_resolve_the_target_repository() -> None:
