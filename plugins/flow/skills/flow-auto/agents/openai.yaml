@@ -3,4 +3,4 @@ interface:
   short_description: "Flow: Auto - Full Issue Lifecycle in One Shot - Complete end-to-end workflow: start worktree \u2192 analyze issue \u2192 ELI5 plan + necessity gate..."
   default_prompt: "Use $flow-auto when you need flow: Auto - Full Issue Lifecycle in One Shot - Complete end-to-end workflow: start worktree \u2192 analyze issue \u2192 ELI5 plan + necessity gate..."
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true
