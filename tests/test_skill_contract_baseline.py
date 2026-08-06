@@ -76,7 +76,7 @@ def test_inventory_reconciles_the_stage_zero_baseline() -> None:
     assert enabled | disabled == {skill["name"] for skill in packaged}
 
 
-def test_every_unpublished_source_skill_has_a_time_bounded_owner() -> None:
+def test_every_unpublished_source_skill_has_a_reviewed_time_bounded_exclusion() -> None:
     contract = load_json(CONTRACT_PATH)
     unpackaged = [skill for skill in contract["skills"] if skill["package"]["state"] == "unpackaged"]
     gaps = {
@@ -89,15 +89,16 @@ def test_every_unpublished_source_skill_has_a_time_bounded_owner() -> None:
     for skill in unpackaged:
         exclusion = skill["exclusion"]
         gap = gaps[skill["name"]]
-        assert exclusion["state"] == "gap"
+        assert exclusion["state"] == "excluded"
         assert exclusion["owner"]
+        assert exclusion["rationale"]
         assert exclusion["replacement"]
         assert exclusion["review_by"] == "2026-09-30"
         assert exclusion["tracking_issue"] == 160
         assert gap["owner"]
         assert gap["disposition"]
         assert gap["review_by"] == "2026-09-30"
-        assert gap["status"] == "scheduled"
+        assert gap["status"] == "reviewed_exclusion"
         assert gap["evidence"]
 
 
@@ -107,11 +108,14 @@ def test_cross_skill_and_host_references_are_classified_and_owned() -> None:
     reference_ids = [reference["id"] for reference in references]
 
     assert reference_ids == [f"REF-{index:04d}" for index in range(1, len(references) + 1)]
-    assert Counter(reference["classification"] for reference in references).keys() == {
+    classifications = Counter(reference["classification"] for reference in references)
+    assert set(classifications) == {
         "resolvable",
         "native",
         "adapted",
-        "unexplained",
+        "excluded",
+        "source_context",
+        "example",
     }
 
     unexplained_groups = {
@@ -125,6 +129,7 @@ def test_cross_skill_and_host_references_are_classified_and_owned() -> None:
         if gap["type"] == "unexplained_reference"
     }
     assert {token for _, token in unexplained_groups} == gap_tokens
+    assert not unexplained_groups
 
     for gap in contract["gaps"]:
         if gap["type"] != "unexplained_reference":
@@ -140,6 +145,7 @@ def test_alias_and_dependency_state_is_explicit() -> None:
     contract = load_json(CONTRACT_PATH)
 
     for skill in contract["skills"]:
+        assert skill["installed"] == {"state": "present", "path": skill["source"]["path"]}
         assert skill["dependencies"] == sorted(set(skill["dependencies"]))
         if skill["package"]["state"] == "packaged":
             aliases = {(alias["value"], alias["state"]) for alias in skill["aliases"]}

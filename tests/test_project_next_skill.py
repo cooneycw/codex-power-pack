@@ -23,7 +23,7 @@ def test_project_next_delegates_selection_to_the_deterministic_runtime() -> None
         "next_startable_issue",
         "Only `available` issues can be named as safe to start.",
         "In-flight, blocked, cyclic, and uncertain issues remain non-startable.",
-        "contract version `1.0`",
+        "contract version `1.1`",
         "scripts/project-next.py",
     )
 

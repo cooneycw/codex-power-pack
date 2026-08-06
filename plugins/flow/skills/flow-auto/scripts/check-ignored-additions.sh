@@ -74,7 +74,7 @@ is_scratch() {
 # All are documented never-committed in .gitignore (issue #504). Keep this list
 # short - each entry is a path the guard will NEVER warn about again.
 _INTENTIONAL_IGNORES=".claude/settings.local.json .codex/friction.jsonl \
-.claude/learnings.md .claude/learnings.rejected.jsonl .claude/deploy.log \
+.claude/learnings.md .claude/learnings.rejected.jsonl .codex/deploy.log \
 .claude/deploy-baseline.json"
 
 is_intentional_ignore() {

@@ -85,7 +85,8 @@ Generates spec artifacts in `.specify/specs/{feature-name}/`:
 └── tasks.md     ← Actionable items organized in waves
 ```
 
-Use `./scripts/speckit-tasks-to-issues.sh` to create GitHub issues from the generated tasks.
+Hand approved Spec Kit artifacts to `$spec-sync`; evaluate does not own or bundle
+an issue compiler.
 
 ## Cost
 
@@ -96,4 +97,4 @@ Typical evaluation costs $0.10-0.30 depending on model selection and depth. Phas
 - `$second-opinion-start` - Quick single-file code review
 - `$second-opinion-models` - Interactive model selection for reviews
 - `$spec-adopt` - Install the official spec-kit for structured spec authoring
-- `scripts/speckit-tasks-to-issues.sh` - Turn a spec `tasks.md` into GitHub issues
+- `$spec-sync` - Separately preview and compile approved artifacts into GitHub issues

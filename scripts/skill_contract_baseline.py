@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Build and check the Wave 7 skill-contract inventory.
 
-This is deliberately an inventory collector, not the semantic release gate planned
-for Wave 7 Stage 3. It records every current source and package surface, extracts
-references conservatively, and makes every unexplained result owned and time-bound.
+The inventory is the machine-readable input to the semantic release gate.  It
+records source, installed, package, marketplace, reference, adaptation, and
+exclusion state without silently treating an unexplained result as compatible.
 """
 
 from __future__ import annotations
@@ -55,20 +55,55 @@ HOST_TOOLS = {
 HOST_PATH_PATTERNS = {
     "CLAUDE_PLUGIN_ROOT": re.compile(r"\bCLAUDE_PLUGIN_ROOT\b"),
     ".claude/": re.compile(r"(?<![A-Za-z0-9_-])(?:~/)?\.claude/"),
+    "fixed-claude-power-pack-runtime": re.compile(
+        r"(?:\$HOME|~)/Projects/claude-power-pack|/opt/claude-power-pack|~/\.claude-power-pack"
+    ),
 }
 
-UNPACKAGED_REPLACEMENTS = {
-    "browser-help": "qa-help and upstream Playwright MCP guidance",
-    "browser-session": "qa-test and upstream Playwright MCP sessions",
-    "cicd-woodpecker": "the packaged cicd-pipeline and woodpecker skills",
-    "cpp-dockers": "CxPP host-status guidance",
-    "cpp-happy-check": "CxPP status guidance",
-    "cpp-help": "the packaged family help skills",
-    "cpp-load-best-practices": "focused Codex documentation",
-    "cpp-load-mcp-docs": "docs/HOST_MANAGED.md and second-opinion-help",
-    "flow-auto_codex": "flow-auto plus claude-code-review escalation",
-    "flow-repair": "plugin-bundled flow helpers and flow-doctor",
+EXCLUSION_DECISIONS = {
+    "browser-help": {
+        "rationale": "Codex uses the native Playwright MCP workflow instead of the retired browser family.",
+        "replacement": "qa-help and upstream Playwright MCP guidance",
+    },
+    "browser-session": {
+        "rationale": "Session management is provided by the packaged qa-test workflow and Playwright MCP.",
+        "replacement": "qa-test and upstream Playwright MCP sessions",
+    },
+    "cicd-woodpecker": {
+        "rationale": "The legacy combined command is split between pipeline generation and Woodpecker operations.",
+        "replacement": "the packaged cicd-pipeline and woodpecker skills",
+    },
+    "cpp-dockers": {
+        "rationale": "CxPP does not manage the retired Claude Power Pack Docker runtime.",
+        "replacement": "cxpp-status host-service guidance",
+    },
+    "cpp-happy-check": {
+        "rationale": "Host readiness is reported by the narrower packaged status and health skills.",
+        "replacement": "cxpp-status and cicd-health",
+    },
+    "cpp-help": {
+        "rationale": "A global catch-all help command would duplicate the packaged family help skills.",
+        "replacement": "the packaged family help skills",
+    },
+    "cpp-load-best-practices": {
+        "rationale": "Codex discovers focused instructions and documentation without a context-loader command.",
+        "replacement": "AGENTS.md and focused Codex documentation",
+    },
+    "cpp-load-mcp-docs": {
+        "rationale": "MCP discovery is host-managed and documented without a Claude context-loader command.",
+        "replacement": "docs/HOST_MANAGED.md and second-opinion-help",
+    },
+    "flow-auto_codex": {
+        "rationale": "Its supported behavior was folded into flow-auto with bounded claude-code-review escalation.",
+        "replacement": "flow-auto plus claude-code-review escalation",
+    },
+    "flow-repair": {
+        "rationale": "Installed flow packages bundle their helpers; flow-doctor owns diagnosis and repair guidance.",
+        "replacement": "plugin-bundled flow helpers and flow-doctor",
+    },
 }
+
+EXCLUSION_OWNER = "Codex Power Pack maintainers"
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -142,6 +177,20 @@ def _adapted_skills(sources: dict[str, Path]) -> set[str]:
     }
 
 
+def _is_generated_source_context(line: str) -> bool:
+    return GENERATED_MARKER in line and ".claude/commands/" in line
+
+
+def _is_legacy_context(line: str) -> bool:
+    lowered = line.casefold()
+    return (
+        "legacy" in lowered
+        or "historical" in lowered
+        or "source context" in lowered
+        or ("optional" in lowered and ".claude/friction" in lowered)
+    )
+
+
 def _reference(
     *,
     source_skill: str,
@@ -177,7 +226,9 @@ def _extract_references(
     )
     native_re = re.compile("|".join(re.escape(value) for value in sorted(NATIVE_COMMANDS, key=len, reverse=True)))
     claude_command_re = re.compile(
-        "|".join(re.escape(value) for value in sorted(CLAUDE_HOST_COMMANDS, key=len, reverse=True))
+        r"(?<![A-Za-z0-9_.-])(?:"
+        + "|".join(re.escape(value) for value in sorted(CLAUDE_HOST_COMMANDS, key=len, reverse=True))
+        + r")(?![A-Za-z0-9_-])"
     )
 
     references: list[dict[str, Any]] = []
@@ -196,6 +247,14 @@ def _extract_references(
             for line_number, line in enumerate(markdown_path.read_text(encoding="utf-8").splitlines(), start=1):
                 for match in EXPLICIT_SKILL_RE.finditer(line):
                     target = match.group(1)
+                    if target == "skill-name":
+                        classification = "example"
+                    elif target in packaged_names:
+                        classification = "resolvable"
+                    elif target in EXCLUSION_DECISIONS:
+                        classification = "excluded"
+                    else:
+                        classification = "unexplained"
                     add(
                         _reference(
                             source_skill=source_skill,
@@ -204,7 +263,7 @@ def _extract_references(
                             token=match.group(0),
                             kind="skill",
                             target=target,
-                            classification="resolvable" if target in packaged_names else "unexplained",
+                            classification=classification,
                         )
                     )
 
@@ -252,6 +311,13 @@ def _extract_references(
                     )
 
                 for match in claude_command_re.finditer(line):
+                    classification = (
+                        "source_context"
+                        if _is_generated_source_context(line) or _is_legacy_context(line)
+                        else "adapted"
+                        if has_adaptation
+                        else "unexplained"
+                    )
                     add(
                         _reference(
                             source_skill=source_skill,
@@ -260,7 +326,7 @@ def _extract_references(
                             token=match.group(0),
                             kind="host_command",
                             target=match.group(0),
-                            classification="adapted" if has_adaptation else "unexplained",
+                            classification=classification,
                         )
                     )
 
@@ -280,6 +346,13 @@ def _extract_references(
 
                 for token, pattern in HOST_PATH_PATTERNS.items():
                     if pattern.search(line):
+                        classification = (
+                            "source_context"
+                            if _is_generated_source_context(line) or _is_legacy_context(line)
+                            else "adapted"
+                            if has_adaptation
+                            else "unexplained"
+                        )
                         add(
                             _reference(
                                 source_skill=source_skill,
@@ -288,7 +361,7 @@ def _extract_references(
                                 token=token,
                                 kind="host_path",
                                 target=token,
-                                classification="adapted" if has_adaptation else "unexplained",
+                                classification=classification,
                             )
                         )
 
@@ -317,16 +390,17 @@ def _exclusion(name: str, packaged: bool) -> dict[str, Any]:
         return {
             "state": "not_excluded",
             "owner": None,
-            "reason": None,
+            "rationale": None,
             "replacement": None,
             "review_by": None,
             "tracking_issue": None,
         }
+    decision = EXCLUSION_DECISIONS[name]
     return {
-        "state": "gap",
-        "owner": "Wave 7 Stage 3",
-        "reason": "The source skill has no plugin package or marketplace publication path.",
-        "replacement": UNPACKAGED_REPLACEMENTS.get(name),
+        "state": "excluded",
+        "owner": EXCLUSION_OWNER,
+        "rationale": decision["rationale"],
+        "replacement": decision["replacement"],
         "review_by": REVIEW_BY,
         "tracking_issue": 160,
     }
@@ -337,17 +411,16 @@ def _gaps(
 ) -> list[dict[str, Any]]:
     gaps: list[dict[str, Any]] = []
     for name in sorted(set(sources) - set(packaged)):
+        decision = EXCLUSION_DECISIONS[name]
         gaps.append(
             {
                 "type": "unpackaged_skill",
                 "subject": name,
-                "owner": "Wave 7 Stage 3",
-                "disposition": (
-                    f"Package, replace with {UNPACKAGED_REPLACEMENTS[name]}, or record a reviewed exclusion."
-                ),
+                "owner": EXCLUSION_OWNER,
+                "disposition": f"Excluded: {decision['rationale']} Replacement: {decision['replacement']}.",
                 "tracking_issue": 160,
                 "review_by": REVIEW_BY,
-                "status": "scheduled",
+                "status": "reviewed_exclusion",
                 "evidence": [_relative(sources[name] / "SKILL.md")],
             }
         )
@@ -409,6 +482,10 @@ def build_contract() -> dict[str, Any]:
                         if GENERATED_MARKER in (source_path / "SKILL.md").read_text(encoding="utf-8")
                         else "native"
                     ),
+                },
+                "installed": {
+                    "state": "present",
+                    "path": _relative(source_path),
                 },
                 "package": {
                     "state": "packaged" if package else "unpackaged",
@@ -556,6 +633,9 @@ def render_report(contract: dict[str, Any]) -> str:
             f"| Native | {classifications['native']} | Supported Codex host command. |",
             f"| Adapted | {classifications['adapted']} | The packaged skill carries an explicit Codex harness "
             "adaptation. |",
+            f"| Excluded | {classifications['excluded']} | Target has a reviewed, owned, time-bound exclusion. |",
+            f"| Source context | {classifications['source_context']} | Non-operational provenance or migration text. |",
+            f"| Example | {classifications['example']} | Documented placeholder syntax, not a dependency. |",
             f"| Unexplained | {classifications['unexplained']} | Scheduled for invocation normalization or semantic "
             "review. |",
             "",

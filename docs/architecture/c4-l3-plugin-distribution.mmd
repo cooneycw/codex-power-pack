@@ -13,7 +13,10 @@ flowchart TB
   invocation_policy["Invocation Policy and Profiles"]:::component
   baseline_collector["Skill Contract Baseline Collector"]:::component
   contract_tests["Skill Contract Tests"]:::component
-  fresh_install_tests["Fresh Install Inventory Tests"]:::component
+  semantic_contract_lint["Semantic Compatibility Gate"]:::component
+  spec_kit_extension["Official Spec Kit Extension Adapter"]:::component
+  spec_sync_compiler["Sole Spec-to-Issue Compiler"]:::component
+  spec_sync_ledger["Stable Issue Mapping Ledger"]:::component
   project_next_core["Project Next Classifier and Ranker"]:::component
   project_next_collector["Git, GitHub, and Spec Collector"]:::component
   project_next_bundle["Installed Project Plugin Runtime"]:::component
@@ -33,10 +36,14 @@ flowchart TB
   baseline_collector -->|"reports current policy from"| invocation_policy
   contract_tests -->|"validates"| skill_contract
   contract_tests -->|"validates"| invocation_policy
+  semantic_contract_lint -->|"rebuilds and checks"| skill_contract
+  semantic_contract_lint -->|"resolves references and runtime paths in"| skill_payload
+  semantic_contract_lint -->|"validates neutrality and starters in"| openai_metadata
   invocation_policy -->|"limits implicit eligibility in"| openai_metadata
   invocation_policy -->|"versions profiles and starters in"| plugin_manifest
-  fresh_install_tests -->|"enforces entry and byte budgets from"| invocation_policy
-  fresh_install_tests -->|"installs and inventories"| skill_payload
+  spec_kit_extension -->|"offers read-only preview through"| spec_sync_compiler
+  spec_sync_compiler -->|"writes approved stable mappings to"| spec_sync_ledger
+  spec_sync_ledger -->|"supplies mapped, missing, stale, or ambiguous state to"| project_next_collector
   skill_payload -->|"invokes for deterministic triage"| project_next_bundle
   project_next_collector -->|"supplies structured repository state"| project_next_core
   project_next_core -->|"generates installed copy"| project_next_bundle

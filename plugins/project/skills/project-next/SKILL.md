@@ -49,4 +49,7 @@ or repository/authentication suggestion.
 - Failing checks or requested review changes on active work outrank broad new
   work.
 - Unsynchronized spec tasks are surfaced but are not treated as GitHub issues.
-- Structured JSON and brief/compact/full renderers use contract version `1.0`.
+- Structured JSON and brief/compact/full renderers use contract version `1.1`.
+- Spec Kit synchronization is trusted only through `spec-sync:v1` Issue Sync
+  ledger mappings. Missing, stale, or ambiguous mappings remain explicit
+  uncertainty and never make represented work appear safely startable.

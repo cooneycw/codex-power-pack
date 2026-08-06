@@ -16,6 +16,7 @@ generated command skills, and tests for Codex-centric workflows.
 - `AGENTS.md` - the canonical repo instructions for Codex
 - `lib/creds/`, `lib/security/`, `lib/cicd/` - reusable Python libraries
 - `templates/`, `scripts/`, `docs/skills/`, `tests/` - supporting workflow assets
+- `extensions/cxpp-issue-sync/` - official Spec Kit v0.16.0 extension that previews the separate `$spec-sync` handoff
 - `templates/config.toml.example` and `docs/HOST_MANAGED.md` - client-side
   pointers for externally managed MCP services
 - `docs/security/threat-model.md` - Phase 0 guard design for plugin marketplace modernization
@@ -60,7 +61,7 @@ The catalog currently exposes per-family packages for `project`, `spec`,
 `documentation`, `qa`, `evaluate`, `second-opinion`, `self-improvement`, and
 `cxpp`, plus `claude` for OAuth-backed, read-only `$claude-code-review`
 escalations. Install `spec` for consent-first `$spec-adopt` setup of official
-spec-kit and `$spec-sync` task-to-issue previews. Install `cxpp` when a fresh
+Spec Kit and `$spec-sync` stage/story issue compilation. Install `cxpp` when a fresh
 machine needs the consent-first `$cxpp-init`, `$cxpp-update`, and
 `$cxpp-status` fallback skills.
 
@@ -170,6 +171,7 @@ make test
 make typecheck
 make verify
 uv run --extra dev python scripts/skill_contract_baseline.py --check
+python3 scripts/skill_contract_lint.py --check
 python3 scripts/project-next.py --brief
 python3 scripts/project-next.py --json
 ```
@@ -179,10 +181,10 @@ Repositories can add a harness-neutral `.project-next.json` policy using
 actionable error. Installed project plugins carry a generated runtime bundle,
 and `make project-next-check` verifies it against `lib/project_next/`.
 
-The dated baseline and owned gap dispositions are summarized in
-`docs/skill-contract-baseline.md`. The contract check reconciles current source,
-package, marketplace, implicit, alias, dependency, and reference state without
-changing skill runtime behavior.
+The measured inventory and reviewed exclusions are summarized in
+`docs/skill-contract-baseline.md`. The semantic gate reconciles source,
+installed, package, marketplace, metadata, dependency, runtime-path, and
+reference state; unexplained operational references block `make verify`.
 
 See `docs/skill-invocation-migration.md` for the CPP slash-syntax migration,
 initial implicit-entrypoint set, and plugin-upgrade plus new-session refresh
@@ -207,7 +209,6 @@ PRs until the owner records sign-off on issue #69.
 
 ## Status
 
-This repo is a first-pass Codex replication, not a full semantic rewrite of
-every historical document. The core code paths, manifests, prompts, and top-level
-instructions are adapted for Codex use. Runtime MCP servers and compose/deploy
-entrypoints are intentionally external to this repository.
+Published skills are gated for Codex semantic compatibility as well as file
+parity. Reviewed exclusions remain explicit and time-bound. Runtime MCP servers
+and compose/deploy entrypoints are intentionally external to this repository.

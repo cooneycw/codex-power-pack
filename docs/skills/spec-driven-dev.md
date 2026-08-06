@@ -103,20 +103,25 @@ One-sentence description
 ## Integration with Codex
 
 Install the `spec` family plugin, then use `$spec-adopt` in the target project.
-It presents the user-scoped official `specify` CLI installation for approval and
-initializes the project with `specify init --here --integration codex`. It will not
-overwrite an existing `.specify/` directory without an explicit `--force`
-request.
+It presents the pinned official `v0.16.0` installation for approval, records
+the reviewed release and commit, and initializes with `specify init --here
+--integration codex`. It will not use `--force` until the exact affected paths
+have been shown and explicitly approved.
 
-Use the official workflow to produce a feature's `tasks.md`. Then run
-`$spec-sync` to preview the label-free `TNNN: description` GitHub issues that
-will be created through the existing `gh` login. Confirm the dry-run before
-creating anything. The sync deliberately does not require a GitHub MCP server,
-and it does not add labels or a label adapter.
+After adoption, `$spec-adopt` can separately offer the packaged
+`cxpp-issue-sync` official extension. Its optional `after_tasks` hook previews
+readiness and issue groups; declining it leaves official authoring unchanged.
 
-Each created issue is suitable for `$flow-auto <issue-number>`. Keep the spec
-and its task list as the planning record; the issue is the independently
-actionable implementation unit.
+Use the official workflow to produce and analyze a feature's `spec.md`,
+`plan.md`, and `tasks.md`. Then run `$spec-sync` with the reviewed artifact SHA
+to validate readiness and preview label-free stage/story issues. Task
+granularity is opt-in. Confirm the dry-run before GitHub or ledger writes. The
+sync deliberately requires no GitHub MCP server and adds no labels or adapter.
+
+Each rich issue carries immutable artifact links, dependencies, acceptance,
+quality commands, and a hidden stable identity suitable for `$flow-auto
+<issue-number>`. Open and closed issues are idempotent, and successful writes
+update the task ledger consumed by `project-next`.
 
 ---
 

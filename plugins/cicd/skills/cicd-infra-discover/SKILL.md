@@ -10,12 +10,12 @@ Generate a discovery script that audits existing cloud resources and outputs the
 
 ## Instructions
 
-1. **Detect cloud provider** from `.claude/cicd.yml` or ask the user (aws/azure/gcp).
+1. **Detect cloud provider** from `.codex/cicd.yml` or ask the user (aws/azure/gcp).
 
 2. **Generate the discovery script:**
 
 ```bash
-PYTHONPATH="$CPP_DIR/lib:$PYTHONPATH" python3 -m lib.cicd infra-discover --path "$(pwd)" --cloud aws --write
+PYTHONPATH="$HOME/Projects/codex-power-pack:$PYTHONPATH" python3 -m lib.cicd infra-discover --path "$(pwd)" --cloud aws --write
 ```
 
 3. **Optionally run the script** if the user has CLI tools configured:

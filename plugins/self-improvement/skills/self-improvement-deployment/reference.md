@@ -40,9 +40,9 @@ To use this command effectively:
 ### Step 2: Gather Context - Deploy History
 
 ```bash
-if [ -f ".claude/deploy.log" ]; then
+if [ -f ".codex/deploy.log" ]; then
     echo "=== Recent Deploy History ==="
-    tail -20 .claude/deploy.log
+    tail -20 .codex/deploy.log
 else
     echo "No deploy.log found"
 fi
@@ -69,7 +69,7 @@ If no Makefile exists, recommend creating one from the template:
 ```
 No Makefile found. Create one from the CPP template:
 
-  cp ~/Projects/claude-power-pack/templates/Makefile.example Makefile
+  cp ~/Projects/codex-power-pack/templates/Makefile.example Makefile
 
 Then customize targets for your project.
 ```
@@ -84,7 +84,7 @@ Before analyzing the current session, check historical failure patterns:
 
 ```bash
 cd "$(git rev-parse --show-toplevel 2>/dev/null || echo .)"
-PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$HOME/Projects/claude-power-pack/lib"
+PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$HOME/Projects/codex-power-pack"
 python3 -c "
 from pathlib import Path
 from lib.cicd.failure_patterns import analyze_failure_patterns
@@ -221,7 +221,7 @@ Apply changes? [y/N]
 
 - This is a **retrospective** command - it looks backward at what happened, not forward
 - It never modifies the Makefile without explicit user approval
-- The deploy.log at `.claude/deploy.log` provides historical context beyond the current session
+- The deploy.log at `.codex/deploy.log` provides historical context beyond the current session
 - Pair with `$flow-doctor` for a forward-looking health check of your workflow environment
-- Reference template: `~/Projects/claude-power-pack/templates/Makefile.example`
+- Reference template: `~/Projects/codex-power-pack/templates/Makefile.example`
 - All Makefile targets should use `uv run` for Python commands to ensure environment isolation

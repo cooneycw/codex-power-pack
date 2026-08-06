@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from lib.project_next.collect import CollectionError, collect_repository
+from lib.project_next.collect import CollectionError, _spec_tasks, collect_repository
 from lib.project_next.config import ProjectNextConfig
 
 
@@ -96,3 +96,63 @@ def test_collector_stops_when_repository_cannot_be_resolved(tmp_path: Path) -> N
 
     with pytest.raises(CollectionError, match="cannot resolve git repository"):
         collect_repository(tmp_path, runner=runner)
+
+
+def test_spec_tasks_consume_stable_issue_sync_ledger(tmp_path: Path) -> None:
+    feature = tmp_path / ".specify" / "specs" / "feature"
+    feature.mkdir(parents=True)
+    source = ".specify/specs/feature/tasks.md"
+    identity = f"spec-sync:v1:example/repo:{source}:stage-1"
+    (feature / "tasks.md").write_text(
+        """## Stage 1: Foundation
+- [ ] **T001** [US1] Implement `src/a.py`.
+- [ ] **T002** [US1] Test `tests/test_a.py`.
+
+## Issue Sync Ledger
+
+<!-- spec-sync-ledger:start -->
+| Stable identity | Granularity | Group | Tasks | Issue | URL | State |
+|---|---|---|---|---:|---|---|
+| `{identity}` | stage | `stage-1` | T001, T002 | #42 | https://github.com/example/repo/issues/42 | OPEN |
+<!-- spec-sync-ledger:end -->
+""".format(identity=identity)
+    )
+    warnings: list[str] = []
+
+    tasks = _spec_tasks(tmp_path, "example/repo", warnings)
+
+    assert warnings == []
+    assert {task.mapping_status for task in tasks} == {"mapped"}
+    assert {task.issue_numbers for task in tasks} == {(42,)}
+    assert {task.group_id for task in tasks} == {"stage-1"}
+
+
+def test_missing_stale_and_ambiguous_spec_mappings_are_uncertain(tmp_path: Path) -> None:
+    feature = tmp_path / ".specify" / "specs" / "feature"
+    feature.mkdir(parents=True)
+    source = ".specify/specs/feature/tasks.md"
+    stale_row = f"| `spec-sync:v1:wrong/repo:{source}:stage-1` | stage | `stage-1` | T001 | #1 | "
+    mapped_row = f"| `spec-sync:v1:example/repo:{source}:stage-2` | stage | `stage-2` | T002 | #2 | "
+    ambiguous_row = f"| `spec-sync:v1:example/repo:{source}:stage-3` | stage | `stage-3` | T002 | #3 | "
+    (feature / "tasks.md").write_text(
+        f"""- [ ] **T001** Implement `src/a.py`.
+- [ ] **T002** Implement `src/b.py`.
+- [ ] **T003** Implement `src/c.py`.
+
+{chr(60)}!-- spec-sync-ledger:start --{chr(62)}
+| Stable identity | Granularity | Group | Tasks | Issue | URL | State |
+|---|---|---|---|---:|---|---|
+{stale_row}https://github.com/wrong/repo/issues/1 | OPEN |
+{mapped_row}https://github.com/example/repo/issues/2 | OPEN |
+{ambiguous_row}https://github.com/example/repo/issues/3 | OPEN |
+{chr(60)}!-- spec-sync-ledger:end --{chr(62)}
+"""
+    )
+    warnings: list[str] = []
+
+    tasks = {task.task_id: task for task in _spec_tasks(tmp_path, "example/repo", warnings)}
+
+    assert tasks["T001"].mapping_status == "stale"
+    assert tasks["T002"].mapping_status == "ambiguous"
+    assert tasks["T003"].mapping_status == "missing"
+    assert len(warnings) == 3

@@ -93,6 +93,7 @@
       "required": [
         "name",
         "source",
+        "installed",
         "package",
         "marketplace",
         "implicit",
@@ -109,6 +110,15 @@
           "properties": {
             "path": {"type": "string"},
             "ownership": {"enum": ["generated", "native"]}
+          }
+        },
+        "installed": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "path"],
+          "properties": {
+            "state": {"const": "present"},
+            "path": {"type": "string", "minLength": 1}
           }
         },
         "package": {
@@ -160,11 +170,11 @@
         "exclusion": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["state", "owner", "reason", "replacement", "review_by", "tracking_issue"],
+          "required": ["state", "owner", "rationale", "replacement", "review_by", "tracking_issue"],
           "properties": {
-            "state": {"enum": ["not_excluded", "gap", "reviewed_exclusion"]},
+            "state": {"enum": ["not_excluded", "excluded"]},
             "owner": {"type": ["string", "null"]},
-            "reason": {"type": ["string", "null"]},
+            "rationale": {"type": ["string", "null"]},
             "replacement": {"type": ["string", "null"]},
             "review_by": {"type": ["string", "null"], "format": "date"},
             "tracking_issue": {"type": ["integer", "null"]}
@@ -184,7 +194,9 @@
         "token": {"type": "string"},
         "kind": {"enum": ["skill", "legacy_skill_command", "native_command", "host_command", "host_path"]},
         "target": {"type": "string"},
-        "classification": {"enum": ["resolvable", "native", "adapted", "unexplained"]}
+        "classification": {
+          "enum": ["resolvable", "native", "adapted", "excluded", "source_context", "example", "unexplained"]
+        }
       }
     },
     "gap": {
@@ -209,7 +221,7 @@
         "disposition": {"type": "string", "minLength": 1},
         "tracking_issue": {"type": "integer", "minimum": 1},
         "review_by": {"type": "string", "format": "date"},
-        "status": {"enum": ["scheduled", "time_bounded_exception", "resolved"]},
+        "status": {"enum": ["scheduled", "reviewed_exclusion", "time_bounded_exception", "resolved"]},
         "evidence": {
           "type": "array",
           "items": {"type": "string"},

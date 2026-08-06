@@ -42,10 +42,10 @@ fi
 
 ## Step 3: Load Configuration
 
-If `.claude/cicd.yml` exists, it overrides default required/recommended targets:
+If `.codex/cicd.yml` exists, it overrides default required/recommended targets:
 
 ```bash
-PYTHONPATH="$CPP_DIR/lib:$PYTHONPATH" python3 -m lib.cicd check
+PYTHONPATH="$HOME/Projects/codex-power-pack:$PYTHONPATH" python3 -m lib.cicd check
 ```
 
 ---

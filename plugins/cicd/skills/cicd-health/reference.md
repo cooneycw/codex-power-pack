@@ -28,13 +28,13 @@ fi
 ## Step 2: Check for Configuration
 
 ```bash
-if [ ! -f ".claude/cicd.yml" ]; then
-  echo "No .claude/cicd.yml found in $(pwd)"
+if [ ! -f ".codex/cicd.yml" ]; then
+  echo "No .codex/cicd.yml found in $(pwd)"
   echo ""
   echo "Create one with:"
   echo "  $cicd-init    - Auto-detect framework and generate"
   echo ""
-  echo "Or add health checks manually to .claude/cicd.yml:"
+  echo "Or add health checks manually to .codex/cicd.yml:"
   echo ""
   echo "  health:"
   echo "    endpoints:"
@@ -47,14 +47,14 @@ if [ ! -f ".claude/cicd.yml" ]; then
 fi
 ```
 
-If `.claude/cicd.yml` exists but has no `health:` section, the CLI will report "no checks configured" and show configuration guidance. This is handled gracefully - no error.
+If `.codex/cicd.yml` exists but has no `health:` section, the CLI will report "no checks configured" and show configuration guidance. This is handled gracefully - no error.
 
 ---
 
 ## Step 3: Run Health Checks
 
 ```bash
-PYTHONPATH="$CPP_DIR/lib:$PYTHONPATH" python3 -m lib.cicd health
+PYTHONPATH="$HOME/Projects/codex-power-pack:$PYTHONPATH" python3 -m lib.cicd health
 ```
 
 ---
@@ -88,7 +88,7 @@ If the CLI reports "no checks configured", guide the user:
 ```
 No health checks configured.
 
-Add checks to .claude/cicd.yml:
+Add checks to .codex/cicd.yml:
 
   health:
     endpoints:
@@ -107,12 +107,12 @@ Then re-run: $cicd-health
 
 ## Step 5: Interactive Fallback (No Config)
 
-If no `.claude/cicd.yml` exists, ask the user what to check:
+If no `.codex/cicd.yml` exists, ask the user what to check:
 
 1. Use AskUserQuestion: "What endpoints should I check? (e.g., http://localhost:8000/health)"
 2. If the user provides URLs, run `curl -sf -o /dev/null -w "%{http_code}" <URL>` for each
 3. Report results in the same table format
-4. Offer to save the configuration to `.claude/cicd.yml`
+4. Offer to save the configuration to `.codex/cicd.yml`
 
 ---
 
@@ -124,4 +124,4 @@ If no `.claude/cicd.yml` exists, ask the user what to check:
 - All checks run sequentially with timing for each
 - Use `--json` flag for machine-readable output
 - Use `--summary` flag for one-line pass/fail (useful in scripts)
-- Configure checks in `.claude/cicd.yml` under the `health:` section
+- Configure checks in `.codex/cicd.yml` under the `health:` section

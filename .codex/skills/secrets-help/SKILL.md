@@ -31,11 +31,11 @@ Tiered Architecture:
   Tier 2: AWS Secrets Manager (requires boto3 + AWS credentials)
 
 CLI Usage:
-  PYTHONPATH="$HOME/Projects/claude-power-pack/lib:$PYTHONPATH"
+  PYTHONPATH="$HOME/Projects/codex-power-pack:$PYTHONPATH"
   python3 -m lib.creds <command> [options]
 
 Configuration:
-  Project-level: .claude/secrets.yml
+  Project-level: .codex/secrets.yml
   Audit log:     ~/.config/claude-power-pack/audit.log
   Secret store:  ~/.config/claude-power-pack/secrets/{project_id}/.env
 ```

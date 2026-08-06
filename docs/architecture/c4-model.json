@@ -11,6 +11,7 @@
         {"id": "codex", "label": "Codex Client", "type": "system"},
         {"id": "cxpp", "label": "Codex Power Pack", "type": "system-focus"},
         {"id": "cpp", "label": "Claude Power Pack Skill Source", "type": "system"},
+        {"id": "spec-kit", "label": "Official GitHub Spec Kit", "type": "system"},
         {"id": "github", "label": "GitHub Marketplace Source", "type": "system"},
         {"id": "host-mcp", "label": "Host-managed MCP Services", "type": "system"}
       ],
@@ -18,6 +19,7 @@
         {"source": "developer", "target": "codex", "label": "uses"},
         {"source": "codex", "target": "cxpp", "label": "installs plugins"},
         {"source": "cxpp", "target": "cpp", "label": "pulls pinned generated skills from"},
+        {"source": "cxpp", "target": "spec-kit", "label": "pins adoption and provides an extension for"},
         {"source": "cxpp", "target": "github", "label": "distributed from"},
         {"source": "cxpp", "target": "host-mcp", "label": "configures pointers to"}
       ],
@@ -35,6 +37,7 @@
         {"id": "vendor-snapshot", "label": "Pinned CPP Snapshot (vendor/)", "type": "container"},
         {"id": "runtime-libraries", "label": "Deterministic Libraries (lib/)", "type": "container"},
         {"id": "project-next-engine", "label": "Project Next Recommendation Engine", "type": "container"},
+        {"id": "spec-workflow", "label": "Spec Kit Extension and Issue Compiler", "type": "container"},
         {"id": "quality-gates", "label": "Quality Gates (Makefile + tests)", "type": "container"}
       ],
       "edges": [
@@ -43,6 +46,8 @@
         {"source": "vendor-snapshot", "target": "codex-skills", "label": "pins and integrity-checks"},
         {"source": "codex-skills", "target": "runtime-libraries", "label": "uses deterministic helpers"},
         {"source": "codex-skills", "target": "project-next-engine", "label": "delegates triage decisions to"},
+        {"source": "codex-skills", "target": "spec-workflow", "label": "offers adoption and synchronization through"},
+        {"source": "spec-workflow", "target": "project-next-engine", "label": "publishes stable issue mappings for"},
         {"source": "project-next-engine", "target": "runtime-libraries", "label": "is authored in"},
         {"source": "family-plugins", "target": "project-next-engine", "label": "bundles generated runtime from"},
         {"source": "quality-gates", "target": "family-plugins", "label": "validates"},
@@ -50,12 +55,12 @@
         {"source": "quality-gates", "target": "codex-skills", "label": "drift-checks"},
         {"source": "quality-gates", "target": "vendor-snapshot", "label": "checks upstream currency"}
       ],
-      "boundaries": [{"id": "repo", "label": "codex-power-pack repository", "nodes": ["marketplace-catalog", "family-plugins", "codex-skills", "vendor-snapshot", "runtime-libraries", "project-next-engine", "quality-gates"]}]
+      "boundaries": [{"id": "repo", "label": "codex-power-pack repository", "nodes": ["marketplace-catalog", "family-plugins", "codex-skills", "vendor-snapshot", "runtime-libraries", "project-next-engine", "spec-workflow", "quality-gates"]}]
     },
     {
       "id": "c4-l3-plugin-distribution",
       "level": "L3",
-      "title": "L3 Skill Distribution and Deterministic Project Triage",
+      "title": "L3 Skill Contracts, Spec Synchronization, and Project Triage",
       "kind": "flowchart",
       "parent": "c4-l2-container",
       "nodes": [
@@ -71,7 +76,10 @@
         {"id": "invocation-policy", "label": "Invocation Policy and Profiles", "type": "component"},
         {"id": "baseline-collector", "label": "Skill Contract Baseline Collector", "type": "component"},
         {"id": "contract-tests", "label": "Skill Contract Tests", "type": "component"},
-        {"id": "fresh-install-tests", "label": "Fresh Install Inventory Tests", "type": "component"},
+        {"id": "semantic-contract-lint", "label": "Semantic Compatibility Gate", "type": "component"},
+        {"id": "spec-kit-extension", "label": "Official Spec Kit Extension Adapter", "type": "component"},
+        {"id": "spec-sync-compiler", "label": "Sole Spec-to-Issue Compiler", "type": "component"},
+        {"id": "spec-sync-ledger", "label": "Stable Issue Mapping Ledger", "type": "component"},
         {"id": "project-next-core", "label": "Project Next Classifier and Ranker", "type": "component"},
         {"id": "project-next-collector", "label": "Git, GitHub, and Spec Collector", "type": "component"},
         {"id": "project-next-bundle", "label": "Installed Project Plugin Runtime", "type": "component"},
@@ -93,10 +101,14 @@
         {"source": "baseline-collector", "target": "invocation-policy", "label": "reports current policy from"},
         {"source": "contract-tests", "target": "skill-contract", "label": "validates"},
         {"source": "contract-tests", "target": "invocation-policy", "label": "validates"},
+        {"source": "semantic-contract-lint", "target": "skill-contract", "label": "rebuilds and checks"},
+        {"source": "semantic-contract-lint", "target": "skill-payload", "label": "resolves references and runtime paths in"},
+        {"source": "semantic-contract-lint", "target": "openai-metadata", "label": "validates neutrality and starters in"},
         {"source": "invocation-policy", "target": "openai-metadata", "label": "limits implicit eligibility in"},
         {"source": "invocation-policy", "target": "plugin-manifest", "label": "versions profiles and starters in"},
-        {"source": "fresh-install-tests", "target": "invocation-policy", "label": "enforces entry and byte budgets from"},
-        {"source": "fresh-install-tests", "target": "skill-payload", "label": "installs and inventories"},
+        {"source": "spec-kit-extension", "target": "spec-sync-compiler", "label": "offers read-only preview through"},
+        {"source": "spec-sync-compiler", "target": "spec-sync-ledger", "label": "writes approved stable mappings to"},
+        {"source": "spec-sync-ledger", "target": "project-next-collector", "label": "supplies mapped, missing, stale, or ambiguous state to"},
         {"source": "skill-payload", "target": "project-next-bundle", "label": "invokes for deterministic triage"},
         {"source": "project-next-collector", "target": "project-next-core", "label": "supplies structured repository state"},
         {"source": "project-next-core", "target": "project-next-bundle", "label": "generates installed copy"},
@@ -109,19 +121,19 @@
     {
       "id": "c4-l4-security-runtime",
       "level": "L4",
-      "title": "L4 Security and Telemetry Code",
+      "title": "L4 Spec Synchronization Data Model",
       "kind": "classdiagram",
       "parent": "c4-l3-plugin-distribution",
       "classes": [
-        {"name": "FrictionWriter", "members": ["+write(event)", "-mask(payload)"]},
-        {"name": "FrictionEvent", "members": ["+validate()"]},
-        {"name": "OutputMasker", "members": ["+register_secret(value)", "+mask(text)"]},
-        {"name": "SecretBundle", "members": ["+secrets: dict"]}
+        {"name": "Task", "members": ["+task_id: str", "+story: str", "+dependencies: tuple", "+paths: tuple"]},
+        {"name": "Group", "members": ["+group_id: str", "+granularity: str", "+tasks: tuple"]},
+        {"name": "Mapping", "members": ["+identity: str", "+task_ids: tuple", "+issue_number: int", "+state: str"]},
+        {"name": "SpecTask", "members": ["+task_id: str", "+stable_identity: str", "+mapping_status: str", "+issue_numbers: tuple"]}
       ],
       "relations": [
-        {"source": "FrictionWriter", "target": "FrictionEvent", "kind": "-->", "label": "writes"},
-        {"source": "FrictionWriter", "target": "OutputMasker", "kind": "-->", "label": "uses"},
-        {"source": "OutputMasker", "target": "SecretBundle", "kind": "-->", "label": "masks values from"}
+        {"source": "Group", "target": "Task", "kind": "*--", "label": "contains"},
+        {"source": "Mapping", "target": "Group", "kind": "-->", "label": "records issue for"},
+        {"source": "SpecTask", "target": "Mapping", "kind": "-->", "label": "consumes stable identity from"}
       ]
     }
   ]

@@ -13,21 +13,21 @@ Generate a tiered IaC directory structure for your project.
 1. **Check for existing IaC** by running detection:
 
 ```bash
-PYTHONPATH="$CPP_DIR/lib:$PYTHONPATH" python3 -m lib.cicd infra-init --path "$(pwd)" --json
+PYTHONPATH="$HOME/Projects/codex-power-pack:$PYTHONPATH" python3 -m lib.cicd infra-init --path "$(pwd)" --json
 ```
 
-2. **If no `.claude/cicd.yml` exists**, ask the user for:
+2. **If no `.codex/cicd.yml` exists**, ask the user for:
    - IaC provider: terraform (default), pulumi, or bicep
    - Cloud provider: aws (default), azure, or gcp
    - Remote state backend type (s3, azure-storage, gcs)
    - Tagging conventions (managed-by, repo, owner)
 
-3. **If `.claude/cicd.yml` exists** with an `infrastructure` section, use those settings.
+3. **If `.codex/cicd.yml` exists** with an `infrastructure` section, use those settings.
 
 4. **Generate the scaffold:**
 
 ```bash
-PYTHONPATH="$CPP_DIR/lib:$PYTHONPATH" python3 -m lib.cicd infra-init --path "$(pwd)" --write
+PYTHONPATH="$HOME/Projects/codex-power-pack:$PYTHONPATH" python3 -m lib.cicd infra-init --path "$(pwd)" --write
 ```
 
 5. **Report what was created** and suggest next steps.
@@ -40,7 +40,7 @@ PYTHONPATH="$CPP_DIR/lib:$PYTHONPATH" python3 -m lib.cicd infra-init --path "$(p
 
 ## Configuration
 
-Add to `.claude/cicd.yml`:
+Add to `.codex/cicd.yml`:
 
 ```yaml
 infrastructure:

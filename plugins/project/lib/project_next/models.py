@@ -120,6 +120,10 @@ class SpecTask:
     source: str
     issue_numbers: tuple[int, ...] = ()
     synchronized: bool = False
+    group_id: str = ""
+    stable_identity: str = ""
+    mapping_status: str = "missing"
+    mapping_state: str = ""
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> SpecTask:
@@ -130,6 +134,10 @@ class SpecTask:
             source=str(data["source"]),
             issue_numbers=_tuple_of_ints(data.get("issue_numbers")),
             synchronized=bool(data.get("synchronized", False)),
+            group_id=str(data.get("group_id") or ""),
+            stable_identity=str(data.get("stable_identity") or ""),
+            mapping_status=str(data.get("mapping_status") or "missing"),
+            mapping_state=str(data.get("mapping_state") or ""),
         )
 
 

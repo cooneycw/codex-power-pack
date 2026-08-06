@@ -110,7 +110,7 @@ targets:
 
 Before deploying, snapshot the currently-running system so the post-deploy run
 (Step 8) can detect regressions. Only runs when
-`health.deploy_verification.enabled` is set in `.claude/cicd.yml`.
+`health.deploy_verification.enabled` is set in `.codex/cicd.yml`.
 
 ```bash
 # Locate CPP source for lib/cicd
@@ -122,7 +122,7 @@ for dir in ~/Projects/claude-power-pack /opt/claude-power-pack ~/.claude-power-p
   fi
 done
 
-if [ -n "$CPP_DIR" ] && grep -q "deploy_verification:" .claude/cicd.yml 2>/dev/null; then
+if [ -n "$CPP_DIR" ] && grep -q "deploy_verification:" .codex/cicd.yml 2>/dev/null; then
     if command -v uv >/dev/null 2>&1; then
         echo "Capturing pre-deploy baseline..."
         # Invoke through uv, and point PYTHONPATH at CPP_DIR (the PARENT of
@@ -189,11 +189,11 @@ make "$TARGET"
 
 ### Step 6: Log Deployment
 
-Append to `.claude/deploy.log`:
+Append to `.codex/deploy.log`:
 
 ```bash
 mkdir -p .claude
-echo "$(date -Iseconds) | ${TARGET} | $(git rev-parse --short HEAD) | $(git branch --show-current) | $?" >> .claude/deploy.log
+echo "$(date -Iseconds) | ${TARGET} | $(git rev-parse --short HEAD) | $(git branch --show-current) | $?" >> .codex/deploy.log
 ```
 
 Format: `timestamp | target | commit | branch | exit_code`
@@ -209,7 +209,7 @@ Deployment complete ✅
   Branch:  main
   Time:    2026-02-16T14:30:00-05:00
 
-  Log: .claude/deploy.log
+  Log: .codex/deploy.log
 ```
 
 On failure:
@@ -226,7 +226,7 @@ Review the output above for errors.
 
 After a successful deployment, automatically run health checks and smoke tests if configured.
 
-**Condition:** Only run if `.claude/cicd.yml` exists AND contains `health.post_deploy: true`.
+**Condition:** Only run if `.codex/cicd.yml` exists AND contains `health.post_deploy: true`.
 
 ```bash
 # Locate CPP source for lib/cicd
@@ -239,11 +239,11 @@ for dir in ~/Projects/claude-power-pack /opt/claude-power-pack ~/.claude-power-p
 done
 ```
 
-If `CPP_DIR` is found and `.claude/cicd.yml` exists:
+If `CPP_DIR` is found and `.codex/cicd.yml` exists:
 
 1. **Check if post-deploy verification is enabled:**
    ```bash
-   if grep -q "post_deploy:" .claude/cicd.yml 2>/dev/null; then
+   if grep -q "post_deploy:" .codex/cicd.yml 2>/dev/null; then
        # Verification enabled
    else
        # Skip - not configured
@@ -300,13 +300,13 @@ If `CPP_DIR` is found and `.claude/cicd.yml` exists:
    HEALTH_PASS=$( [ "$HEALTH_EXIT" -eq 0 ] && echo "pass" || echo "fail" )
    SMOKE_PASS=$( [ "$SMOKE_EXIT" -eq 0 ] && echo "pass" || echo "fail" )
    VERDICT=$( PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run --project "$CPP_DIR" python -m lib.cicd verify --summary 2>/dev/null | grep -oiE 'proceed|review|rollback' | head -1 | tr 'A-Z' 'a-z' )
-   echo "$(date -Iseconds) | ${TARGET} | $(git rev-parse --short HEAD) | $(git branch --show-current) | $DEPLOY_EXIT | health:${HEALTH_PASS} | smoke:${SMOKE_PASS} | verify:${VERDICT:-none}" >> .claude/deploy.log
+   echo "$(date -Iseconds) | ${TARGET} | $(git rev-parse --short HEAD) | $(git branch --show-current) | $DEPLOY_EXIT | health:${HEALTH_PASS} | smoke:${SMOKE_PASS} | verify:${VERDICT:-none}" >> .codex/deploy.log
    ```
 
    Extended log format: `timestamp | target | commit | branch | deploy_exit | health:pass/fail | smoke:pass/fail | verify:proceed/review/rollback/none`
 
 **Skip conditions:**
-- No `.claude/cicd.yml` → skip silently
+- No `.codex/cicd.yml` → skip silently
 - No `post_deploy:` in config → skip silently
 - `lib/cicd` not available (no CPP_DIR) → skip with warning
 - Verification failures do NOT roll back the deployment - they only report
@@ -321,6 +321,6 @@ If `CPP_DIR` is found and `.claude/cicd.yml` exists:
 ## Notes
 
 - Deployment always goes through `make` - the Makefile is the single source of truth
-- The `.claude/deploy.log` provides an audit trail of all deployments
+- The `.codex/deploy.log` provides an audit trail of all deployments
 - The optional `.claude/deploy.yaml` adds metadata without changing the Makefile
 - This command works from any directory that has a Makefile
