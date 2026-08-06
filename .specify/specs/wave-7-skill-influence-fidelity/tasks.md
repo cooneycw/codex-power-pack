@@ -257,12 +257,18 @@ Stage 0 baseline
 |-------|-------|-------|--------|
 | Specification | spec.md, plan.md, tasks.md | #153 | complete |
 | 0 - Baseline | T001-T006 | #157 | complete |
+| Contract augmentation | project-init / Spec Kit | #166 | open |
 | 1 - project-next | T101-T112 | #158 | open |
 | 2 - Invocation/metadata | T201-T208 | #159 | open |
 | 3 - Semantic gates | T301-T311 | #160 | open |
 | 4 - Evaluations | T401-T408 | #161 | open |
 | 5 - Persistent influence | T501-T507 | #162 | open |
 | 6 - Rollout | T601-T608 | #163 | open |
+
+Completion sequence: #157 is complete. The #158 core and #166 may proceed in
+parallel; #166 unlocks #159 and the issue-mapping slice of #158; #159 unlocks
+#160; #158 and #160 jointly unlock #161; #160 and #161 jointly unlock #162;
+#158 through #162 plus #166 must close before #163 can close the wave.
 
 ---
 
