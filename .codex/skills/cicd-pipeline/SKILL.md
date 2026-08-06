@@ -7,17 +7,17 @@ description: "Generate CI/CD workflows (GitHub Actions, or self-hosted Woodpecke
 # CI/CD Pipeline Generation
 
 Generate CI/CD workflows from your Makefile targets. Defaults to GitHub Actions;
-set `pipeline.provider: woodpecker` (or `both`) in `.claude/cicd.yml` to emit a
+set `pipeline.provider: woodpecker` (or `both`) in `.codex/cicd.yml` to emit a
 self-hosted Woodpecker `.woodpecker.yml`. For a hardened self-hosted pipeline
 (secret-scan + image-security + runtime-smoke) and to scaffold the Woodpecker
 server/agent, use `$cicd-woodpecker` instead.
 
 ## Steps
 
-1. **Check for task manifest** - if `.claude/cicd_tasks.yml` exists, use it to inform pipeline generation:
+1. **Check for task manifest** - if `.codex/cicd_tasks.yml` exists, use it to inform pipeline generation:
 
 ```bash
-if [ -f ".claude/cicd_tasks.yml" ]; then
+if [ -f ".codex/cicd_tasks.yml" ]; then
     echo "Found cicd_tasks.yml manifest - pipeline will use manifest-defined steps"
     # The manifest defines plan steps (lint, test, deploy, etc.) with exact commands.
     # Pipeline generation should use these commands instead of defaults.
@@ -33,13 +33,13 @@ When a manifest is present, the generated pipeline YAML should:
 2. **Detect framework** using `lib/cicd`:
 
 ```bash
-PYTHONPATH="$PWD/lib:$HOME/Projects/claude-power-pack/lib:$PYTHONPATH" python3 -m lib.cicd detect --quiet
+PYTHONPATH="$PWD:$HOME/Projects/codex-power-pack:$PYTHONPATH" python3 -m lib.cicd detect --quiet
 ```
 
 3. **Generate pipeline** (dry run first):
 
 ```bash
-PYTHONPATH="$PWD/lib:$HOME/Projects/claude-power-pack/lib:$PYTHONPATH" python3 -m lib.cicd pipeline
+PYTHONPATH="$PWD:$HOME/Projects/codex-power-pack:$PYTHONPATH" python3 -m lib.cicd pipeline
 ```
 
 4. **Review output** with the user. Show the generated workflow YAML.
@@ -50,7 +50,7 @@ PYTHONPATH="$PWD/lib:$HOME/Projects/claude-power-pack/lib:$PYTHONPATH" python3 -
 6. **Write files** if approved:
 
 ```bash
-PYTHONPATH="$PWD/lib:$HOME/Projects/claude-power-pack/lib:$PYTHONPATH" python3 -m lib.cicd pipeline --write
+PYTHONPATH="$PWD:$HOME/Projects/codex-power-pack:$PYTHONPATH" python3 -m lib.cicd pipeline --write
 ```
 
 7. **Report results**:
@@ -74,8 +74,8 @@ To view: cat .github/workflows/ci.yml
 - Workflows use `make <target>` as steps (not direct tool commands)
 - This keeps CI in sync with local development commands
 - Caching is included for package managers (uv, npm, cargo, go)
-- Matrix builds are configured from `.claude/cicd.yml` if present
-- Configure pipeline settings in `.claude/cicd.yml`:
+- Matrix builds are configured from `.codex/cicd.yml` if present
+- Configure pipeline settings in `.codex/cicd.yml`:
   ```yaml
   pipeline:
     provider: github-actions   # github-actions | woodpecker | both

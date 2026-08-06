@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from lib.project_next.models import Issue, RepositoryState
+from lib.project_next.models import Issue, RepositoryState, SpecTask
 from lib.project_next.rank import recommend
 
 
@@ -35,3 +35,51 @@ def test_incomplete_inventory_never_selects_next_startable(project_next_scenario
 
     assert result.top_action is not None and result.top_action.kind == "resolve_inventory"
     assert result.next_startable_issue is None
+
+
+def test_stale_mapping_is_repaired_before_spec_synchronization() -> None:
+    state = RepositoryState(
+        repository="example/repo",
+        default_branch="main",
+        collected_at="2026-08-06T00:00:00Z",
+        spec_tasks=(
+            SpecTask(
+                "T001",
+                "Mapped incorrectly",
+                "feature",
+                ".specify/specs/feature/tasks.md",
+                mapping_status="stale",
+                stable_identity="spec-sync:v1:wrong/repo:path:stage-1",
+            ),
+        ),
+    )
+
+    result = recommend(state)
+
+    assert result.top_action is not None
+    assert result.top_action.kind == "resolve_spec_mapping"
+    assert result.next_startable_issue is None
+
+
+def test_missing_mapping_recommends_spec_sync_group() -> None:
+    state = RepositoryState(
+        repository="example/repo",
+        default_branch="main",
+        collected_at="2026-08-06T00:00:00Z",
+        spec_tasks=(
+            SpecTask(
+                "T001",
+                "Ready to sync",
+                "feature",
+                ".specify/specs/feature/tasks.md",
+                group_id="stage-1",
+                mapping_status="missing",
+            ),
+        ),
+    )
+
+    result = recommend(state)
+
+    assert result.top_action is not None
+    assert result.top_action.kind == "sync_spec"
+    assert "stage-1" in result.top_action.title

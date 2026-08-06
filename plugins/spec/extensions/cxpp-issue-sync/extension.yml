@@ -1,0 +1,47 @@
+schema_version: "1.0"
+
+extension:
+  id: "cxpp-issue-sync"
+  name: "Codex Power Pack Issue Sync"
+  version: "1.0.0"
+  description: "Adds consent-gated artifact readiness and Flow issue compilation after official Spec Kit authoring."
+  category: "integration"
+  effect: "read-write"
+  author: "Codex Power Pack maintainers"
+  repository: "https://github.com/cooneycw/codex-power-pack"
+  license: "MIT"
+  homepage: "https://github.com/cooneycw/codex-power-pack"
+
+requires:
+  speckit_version: "==0.16.0"
+  commands:
+    - "speckit.tasks"
+  tools:
+    - name: "gh"
+      required: true
+    - name: "codex-power-pack-spec-plugin"
+      required: true
+
+provides:
+  commands:
+    - name: "speckit.cxpp-issue-sync.preview"
+      file: "commands/speckit.cxpp-issue-sync.preview.md"
+      description: "Validate approved artifacts and preview independently deliverable Flow issues"
+
+hooks:
+  after_tasks:
+    command: "speckit.cxpp-issue-sync.preview"
+    optional: true
+    prompt: "Validate these artifacts and preview dependency-aware Flow issues?"
+    description: "Offers a read-only readiness and issue-group preview after task authoring."
+
+tags:
+  - "github"
+  - "issues"
+  - "codex"
+  - "flow"
+
+defaults:
+  granularity: "auto"
+  require_analysis_clean: true
+  require_approval: true

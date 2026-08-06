@@ -31,7 +31,7 @@ echo "CPP source: $CPP_DIR"
 Run the framework detector:
 
 ```bash
-PYTHONPATH="$CPP_DIR/lib:$PYTHONPATH" python3 -m lib.cicd detect
+PYTHONPATH="$HOME/Projects/codex-power-pack:$PYTHONPATH" python3 -m lib.cicd detect
 ```
 
 Report the detection results to the user:
@@ -49,7 +49,7 @@ If framework is "Unknown", ask the user which framework to use via AskUserQuesti
 ```bash
 if [ -f "Makefile" ]; then
   echo "Existing Makefile found - running validation..."
-  PYTHONPATH="$CPP_DIR/lib:$PYTHONPATH" python3 -m lib.cicd check
+  PYTHONPATH="$HOME/Projects/codex-power-pack:$PYTHONPATH" python3 -m lib.cicd check
 else
   echo "No Makefile found - will generate one."
 fi
@@ -87,23 +87,23 @@ fi
 
 ## Step 4: Generate cicd.yml (if not exists)
 
-If `.claude/cicd.yml` does not exist, generate it from detected defaults:
+If `.codex/cicd.yml` does not exist, generate it from detected defaults:
 
 ```bash
-if [ ! -f ".claude/cicd.yml" ]; then
+if [ ! -f ".codex/cicd.yml" ]; then
   # Get detection result as JSON
-  DETECT_JSON=$(PYTHONPATH="$CPP_DIR/lib:$PYTHONPATH" python3 -m lib.cicd detect --json)
+  DETECT_JSON=$(PYTHONPATH="$HOME/Projects/codex-power-pack:$PYTHONPATH" python3 -m lib.cicd detect --json)
 fi
 ```
 
-Generate `.claude/cicd.yml` with:
+Generate `.codex/cicd.yml` with:
 - Detected framework and package manager (commented out - auto-detection is preferred)
 - Build section with required and recommended targets
 - Deploy section with placeholder target metadata
 
 Use the `templates/cicd.yml.example` as reference but generate a minimal version with only the relevant sections for the detected framework.
 
-If `.claude/cicd.yml` already exists, skip this step and report "cicd.yml already configured".
+If `.codex/cicd.yml` already exists, skip this step and report "cicd.yml already configured".
 
 ---
 
@@ -116,7 +116,7 @@ Framework:       {detected}
 Package Manager: {detected}
 
 Makefile:        {Generated from template | Validated (N/M targets)}
-Config:          {.claude/cicd.yml generated | Already exists}
+Config:          {.codex/cicd.yml generated | Already exists}
 
 Next Steps:
   1. Review and customize your Makefile targets

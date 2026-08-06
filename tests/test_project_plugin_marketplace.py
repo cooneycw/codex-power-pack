@@ -129,10 +129,14 @@ def marketplace_entries() -> dict[str, dict[str, Any]]:
 
 def source_files_for_skill(skill_name: str) -> dict[str, Path]:
     source_root = GENERATED_SKILLS_ROOT / skill_name
+
+    def is_payload_file(path: Path) -> bool:
+        return path.is_file() and "__pycache__" not in path.parts and path.suffix not in {".pyc", ".pyo"}
+
     return {
         f"{skill_name}/{source_file.relative_to(source_root).as_posix()}": source_file
         for source_file in source_root.rglob("*")
-        if source_file.is_file()
+        if is_payload_file(source_file)
     }
 
 

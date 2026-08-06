@@ -6,6 +6,7 @@ flowchart TB
     vendor_snapshot["Pinned CPP Snapshot (vendor/)"]:::container
     runtime_libraries["Deterministic Libraries (lib/)"]:::container
     project_next_engine["Project Next Recommendation Engine"]:::container
+    spec_workflow["Spec Kit Extension and Issue Compiler"]:::container
     quality_gates["Quality Gates (Makefile + tests)"]:::container
   end
   marketplace_catalog -->|"indexes"| family_plugins
@@ -13,6 +14,8 @@ flowchart TB
   vendor_snapshot -->|"pins and integrity-checks"| codex_skills
   codex_skills -->|"uses deterministic helpers"| runtime_libraries
   codex_skills -->|"delegates triage decisions to"| project_next_engine
+  codex_skills -->|"offers adoption and synchronization through"| spec_workflow
+  spec_workflow -->|"publishes stable issue mappings for"| project_next_engine
   project_next_engine -->|"is authored in"| runtime_libraries
   family_plugins -->|"bundles generated runtime from"| project_next_engine
   quality_gates -->|"validates"| family_plugins

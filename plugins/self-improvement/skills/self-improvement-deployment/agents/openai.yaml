@@ -1,6 +1,6 @@
 interface:
   display_name: "Self Improvement Deployment"
-  short_description: "Self-Improvement: Deployment - Retrospective Makefile Analysis - Examine recent errors from the current session and deploy history, then..."
-  default_prompt: "Use $self-improvement-deployment when you need self-Improvement: Deployment - Retrospective Makefile Analysis - Examine recent errors from the current session and deploy history, then..."
+  short_description: "Review deployment failures and propose safer Makefile or workflow improvements"
+  default_prompt: "Use $self-improvement-deployment to analyze recent deployment friction and propose reviewed improvements."
 policy:
   allow_implicit_invocation: false

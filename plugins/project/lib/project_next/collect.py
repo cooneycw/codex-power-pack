@@ -16,6 +16,8 @@ from .models import Branch, Issue, PullRequest, RepositoryState, SpecTask, Workt
 CommandRunner = Callable[[list[str], Path], str]
 TASK = re.compile(r"^-\s*\[\s\]\s+(?:\*\*)?(?P<id>[A-Za-z]+\d+)(?:\*\*)?\s+(?P<title>.+)$")
 ISSUE_REF = re.compile(r"#(?P<number>\d+)\b")
+TASK_ID = re.compile(r"\bT\d{3}\b")
+LEDGER_IDENTITY = re.compile(r"^spec-sync:v1:(?P<repo>[^:]+/[^:]+):(?P<source>.+):(?P<group>[^:]+)$")
 
 
 class CollectionError(RuntimeError):
@@ -106,25 +108,72 @@ def _parse_branches(output: str) -> tuple[Branch, ...]:
     return tuple(branches)
 
 
-def _spec_tasks(repository: Path, issues: tuple[Issue, ...], warnings: list[str]) -> tuple[SpecTask, ...]:
+def _spec_tasks(repository: Path, repository_name: str, warnings: list[str]) -> tuple[SpecTask, ...]:
     specs = repository / ".specify" / "specs"
     if not specs.is_dir():
         return ()
     tasks: list[SpecTask] = []
-    issue_text = {issue.number: f"{issue.title}\n{issue.body}" for issue in issues}
     for path in sorted(specs.glob("*/tasks.md")):
         try:
             lines = path.read_text(encoding="utf-8").splitlines()
         except OSError as exc:
             warnings.append(f"cannot read {path}: {exc}")
             continue
+        relative = path.relative_to(repository).as_posix()
+        ledger_by_task: dict[str, list[dict[str, str]]] = {}
+        for line_number, line in enumerate(lines, start=1):
+            if not line.lstrip().startswith("| `spec-sync:v1:"):
+                continue
+            cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+            if len(cells) != 7:
+                warnings.append(f"{relative}:{line_number}: malformed Issue Sync ledger row")
+                continue
+            identity, granularity, group_id, task_ids, issue_cell, url, state = cells
+            row = {
+                "identity": identity.strip("`"),
+                "granularity": granularity,
+                "group_id": group_id.strip("`"),
+                "issue": issue_cell,
+                "url": url,
+                "state": state,
+            }
+            parsed_ids = TASK_ID.findall(task_ids)
+            if not parsed_ids:
+                warnings.append(f"{relative}:{line_number}: ledger row has no task identifiers")
+            for task_id in parsed_ids:
+                ledger_by_task.setdefault(task_id, []).append(row)
+
         for line in lines:
             match = TASK.match(line.strip())
             if not match:
                 continue
             task_id = match.group("id")
-            issue_numbers = tuple(sorted({int(item.group("number")) for item in ISSUE_REF.finditer(line)}))
-            synchronized = bool(issue_numbers) or any(task_id in text for text in issue_text.values())
+            candidates = ledger_by_task.get(task_id, [])
+            group_id = ""
+            identity = ""
+            mapping_state = ""
+            issue_numbers: tuple[int, ...] = ()
+            status = "missing"
+            if len(candidates) > 1:
+                status = "ambiguous"
+            elif candidates:
+                candidate = candidates[0]
+                group_id = candidate["group_id"]
+                identity = candidate["identity"]
+                mapping_state = candidate["state"].upper()
+                identity_match = LEDGER_IDENTITY.match(identity)
+                issue_numbers = tuple(int(item.group("number")) for item in ISSUE_REF.finditer(candidate["issue"]))
+                expected = (
+                    identity_match is not None
+                    and identity_match.group("repo") == repository_name
+                    and identity_match.group("source") == relative
+                    and identity_match.group("group") == group_id
+                    and len(issue_numbers) == 1
+                    and candidate["url"].endswith(f"/issues/{issue_numbers[0]}")
+                )
+                status = "mapped" if expected else "stale"
+            if status != "mapped":
+                warnings.append(f"{relative}:{task_id}: spec-sync mapping is {status}")
             tasks.append(
                 SpecTask(
                     task_id=task_id,
@@ -132,7 +181,11 @@ def _spec_tasks(repository: Path, issues: tuple[Issue, ...], warnings: list[str]
                     feature=path.parent.name,
                     source=str(path.relative_to(repository)),
                     issue_numbers=issue_numbers,
-                    synchronized=synchronized,
+                    synchronized=status == "mapped",
+                    group_id=group_id,
+                    stable_identity=identity,
+                    mapping_status=status,
+                    mapping_state=mapping_state,
                 )
             )
     return tuple(tasks)
@@ -259,7 +312,7 @@ def collect_repository(
         complete = False
         branches = ()
 
-    spec_tasks = _spec_tasks(repository, issues, warnings)
+    spec_tasks = _spec_tasks(repository, repo_name, warnings)
     return RepositoryState(
         repository=repo_name,
         default_branch=default_branch,

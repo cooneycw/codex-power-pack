@@ -2,7 +2,7 @@
 
 ## L1 System Context
 
-_L1 - 6 nodes, 5 edges - [`c4-l1-context.mmd`](c4-l1-context.mmd)_
+_L1 - 7 nodes, 6 edges - [`c4-l1-context.mmd`](c4-l1-context.mmd)_
 
 ```mermaid
 flowchart TB
@@ -12,11 +12,13 @@ flowchart TB
   developer(("Developer")):::person
   codex["Codex Client"]:::system
   cpp["Claude Power Pack Skill Source"]:::system
+  spec_kit["Official GitHub Spec Kit"]:::system
   github["GitHub Marketplace Source"]:::system
   host_mcp["Host-managed MCP Services"]:::system
   developer -->|"uses"| codex
   codex -->|"installs plugins"| cxpp
   cxpp -->|"pulls pinned generated skills from"| cpp
+  cxpp -->|"pins adoption and provides an extension for"| spec_kit
   cxpp -->|"distributed from"| github
   cxpp -->|"configures pointers to"| host_mcp
   classDef person fill:#08427b,color:#ffffff,stroke:#0f172a
@@ -26,7 +28,7 @@ flowchart TB
 
 ## L2 Containers
 
-_L2 - 7 nodes, 11 edges - [`c4-l2-container.mmd`](c4-l2-container.mmd)_
+_L2 - 8 nodes, 13 edges - [`c4-l2-container.mmd`](c4-l2-container.mmd)_
 
 ```mermaid
 flowchart TB
@@ -37,6 +39,7 @@ flowchart TB
     vendor_snapshot["Pinned CPP Snapshot (vendor/)"]:::container
     runtime_libraries["Deterministic Libraries (lib/)"]:::container
     project_next_engine["Project Next Recommendation Engine"]:::container
+    spec_workflow["Spec Kit Extension and Issue Compiler"]:::container
     quality_gates["Quality Gates (Makefile + tests)"]:::container
   end
   marketplace_catalog -->|"indexes"| family_plugins
@@ -44,6 +47,8 @@ flowchart TB
   vendor_snapshot -->|"pins and integrity-checks"| codex_skills
   codex_skills -->|"uses deterministic helpers"| runtime_libraries
   codex_skills -->|"delegates triage decisions to"| project_next_engine
+  codex_skills -->|"offers adoption and synchronization through"| spec_workflow
+  spec_workflow -->|"publishes stable issue mappings for"| project_next_engine
   project_next_engine -->|"is authored in"| runtime_libraries
   family_plugins -->|"bundles generated runtime from"| project_next_engine
   quality_gates -->|"validates"| family_plugins
@@ -53,9 +58,9 @@ flowchart TB
   classDef container fill:#15803d,color:#ffffff,stroke:#0f172a
 ```
 
-## L3 Skill Distribution and Deterministic Project Triage
+## L3 Skill Contracts, Spec Synchronization, and Project Triage
 
-_L3 - 17 nodes, 25 edges - [`c4-l3-plugin-distribution.mmd`](c4-l3-plugin-distribution.mmd)_
+_L3 - 20 nodes, 29 edges - [`c4-l3-plugin-distribution.mmd`](c4-l3-plugin-distribution.mmd)_
 
 ```mermaid
 flowchart TB
@@ -73,7 +78,10 @@ flowchart TB
   invocation_policy["Invocation Policy and Profiles"]:::component
   baseline_collector["Skill Contract Baseline Collector"]:::component
   contract_tests["Skill Contract Tests"]:::component
-  fresh_install_tests["Fresh Install Inventory Tests"]:::component
+  semantic_contract_lint["Semantic Compatibility Gate"]:::component
+  spec_kit_extension["Official Spec Kit Extension Adapter"]:::component
+  spec_sync_compiler["Sole Spec-to-Issue Compiler"]:::component
+  spec_sync_ledger["Stable Issue Mapping Ledger"]:::component
   project_next_core["Project Next Classifier and Ranker"]:::component
   project_next_collector["Git, GitHub, and Spec Collector"]:::component
   project_next_bundle["Installed Project Plugin Runtime"]:::component
@@ -93,10 +101,14 @@ flowchart TB
   baseline_collector -->|"reports current policy from"| invocation_policy
   contract_tests -->|"validates"| skill_contract
   contract_tests -->|"validates"| invocation_policy
+  semantic_contract_lint -->|"rebuilds and checks"| skill_contract
+  semantic_contract_lint -->|"resolves references and runtime paths in"| skill_payload
+  semantic_contract_lint -->|"validates neutrality and starters in"| openai_metadata
   invocation_policy -->|"limits implicit eligibility in"| openai_metadata
   invocation_policy -->|"versions profiles and starters in"| plugin_manifest
-  fresh_install_tests -->|"enforces entry and byte budgets from"| invocation_policy
-  fresh_install_tests -->|"installs and inventories"| skill_payload
+  spec_kit_extension -->|"offers read-only preview through"| spec_sync_compiler
+  spec_sync_compiler -->|"writes approved stable mappings to"| spec_sync_ledger
+  spec_sync_ledger -->|"supplies mapped, missing, stale, or ambiguous state to"| project_next_collector
   skill_payload -->|"invokes for deterministic triage"| project_next_bundle
   project_next_collector -->|"supplies structured repository state"| project_next_core
   project_next_core -->|"generates installed copy"| project_next_bundle
@@ -106,29 +118,38 @@ flowchart TB
   classDef component fill:#7e22ce,color:#ffffff,stroke:#0f172a
 ```
 
-## L4 Security and Telemetry Code
+## L4 Spec Synchronization Data Model
 
 _L4 - 4 nodes, 3 edges - [`c4-l4-security-runtime.mmd`](c4-l4-security-runtime.mmd)_
 
 ```mermaid
 classDiagram
-  class FrictionWriter {
-    +write(event)
-    -mask(payload)
+  class Task {
+    +task_id: str
+    +story: str
+    +dependencies: tuple
+    +paths: tuple
   }
-  class FrictionEvent {
-    +validate()
+  class Group {
+    +group_id: str
+    +granularity: str
+    +tasks: tuple
   }
-  class OutputMasker {
-    +register_secret(value)
-    +mask(text)
+  class Mapping {
+    +identity: str
+    +task_ids: tuple
+    +issue_number: int
+    +state: str
   }
-  class SecretBundle {
-    +secrets: dict
+  class SpecTask {
+    +task_id: str
+    +stable_identity: str
+    +mapping_status: str
+    +issue_numbers: tuple
   }
-  FrictionWriter --> FrictionEvent : writes
-  FrictionWriter --> OutputMasker : uses
-  OutputMasker --> SecretBundle : masks values from
+  Group *-- Task : contains
+  Mapping --> Group : records issue for
+  SpecTask --> Mapping : consumes stable identity from
 ```
 
-_Generated 2026-08-06T21:00:45Z_
+_Generated 2026-08-06T21:33:57Z_

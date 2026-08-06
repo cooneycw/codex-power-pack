@@ -15,6 +15,7 @@ def test_verify_composes_every_required_local_quality_gate() -> None:
         "typecheck",
         "codex-skills-check",
         "harness-lint",
+        "skill-contract-lint",
         "project-next-check",
     ]
 

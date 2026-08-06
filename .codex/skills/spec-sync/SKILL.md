@@ -1,46 +1,56 @@
 ---
 name: spec-sync
-description: Convert official spec-kit tasks.md entries into label-free GitHub issues with the gh CLI. Use when a completed spec-kit task list needs an idempotent issue wave for flow-auto.
+description: Compile approved Spec Kit artifacts into dependency-aware, idempotent GitHub issues and ledger mappings for Flow.
 ---
 
 # Spec Sync
 
-Create one GitHub issue per `TNNN` task in a selected official spec-kit
-`tasks.md` file. This is the Codex implementation of the approved Option-B
-sync: `gh` CLI only, no GitHub MCP server and no label adapter.
+Compile one approved Spec Kit feature into independently deliverable stage or
+story issues. Per-task issues are an explicit compatibility mode. This is the
+sole CxPP issue compiler: `gh` CLI only, no GitHub MCP server and no label
+adapter.
 
 ## Safety Contract
 
 - This skill never reads, prints, or persists credentials.
 - It accepts only a GitHub `origin` remote and relies on the user's existing
   `gh` authentication; it never asks for or displays authentication data.
-- Start with `--dry-run`. GitHub issue creation is an external write and needs
-  explicit user confirmation after the dry-run shows the proposed issue titles.
-- Re-runs are idempotent: existing `TNNN` titles are skipped across open and
-  closed issues.
+- Start with `--dry-run`. GitHub issue creation and ledger write-back are
+  external/local writes and need explicit user confirmation after the preview.
+- Re-runs are idempotent across open and closed issues using hidden stable
+  identities; changed titles never create duplicates.
+- Missing artifacts, dirty consistency analysis, placeholders, malformed task
+  syntax, vague paths, missing checkpoints, unresolved dependencies, cycles,
+  or absent approval fail loudly.
 
 ## Procedure
 
 1. Confirm `gh` is installed and authenticated using `gh auth status`; report a
    missing login without displaying its details.
-2. Select exactly one task file. The helper auto-detects a single
-   `.specify/specs/*/tasks.md`, or the user may supply `--tasks PATH`.
-3. Run the packaged helper in dry-run mode:
+2. Select exactly one `.specify/specs/<feature>/tasks.md` and the reviewed
+   immutable artifact commit. Confirm the official consistency analysis is
+   clean.
+3. Preview independently deliverable groups with the packaged helper:
 
    ```bash
-   scripts/speckit-tasks-to-issues.sh --dry-run --tasks <tasks.md>
+   scripts/speckit-tasks-to-issues.sh --dry-run --analysis-clean \
+     --artifact-commit <sha> --tasks <tasks.md>
    ```
 
-4. Show the proposed `TNNN: description` titles and the count that will be
-   skipped as existing. Ask for explicit approval before proceeding.
-5. After approval, re-run the same command without `--dry-run`. Use `--repo
+   Use `--granularity story` when the approved boundary is user-story based, or
+   `--granularity task` only when the user explicitly requests micro-issues.
+4. Show every group, task, dependency, stable identity, immutable artifact ref,
+   and existing open/closed mapping. Ask for explicit approval.
+5. After approval, re-run with `--approve` instead of `--dry-run`. Use `--repo
    OWNER/REPO` only when the user intentionally targets a repository other than
    `origin`.
-6. Report created and skipped issue URLs, then recommend `$flow-auto <issue>`
-   for each independently actionable issue.
+6. Verify that the Issue Sync ledger in `tasks.md` contains issue number, URL,
+   state, granularity, group ID, and stable identity for every synchronized
+   group. Report partial writes as unresolved; never claim full synchronization.
+7. Recommend `$flow-auto <issue>` in dependency order.
 
 ## Report
 
-Report the selected task file, target repository, dry-run result, created count,
-and skipped count. State explicitly that the created issues have no labels by
-design.
+Report the artifact commit, selected task file, repository, granularity,
+readiness result, created/skipped groups, ledger result, and unresolved
+dependencies. State explicitly that created issues are label-free by design.

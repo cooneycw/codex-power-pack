@@ -254,6 +254,10 @@ def _is_local_path(path: Path) -> bool:
     return first in LOCAL_FILES or first in LOCAL_SKILL_DIRS
 
 
+def _is_python_cache(path: Path) -> bool:
+    return "__pycache__" in path.parts or path.suffix in {".pyc", ".pyo"}
+
+
 def _generated_files() -> list[Path]:
     """Every pulled file under .codex/skills/ - i.e. files inside a skill subdir.
 
@@ -265,7 +269,10 @@ def _generated_files() -> list[Path]:
     return sorted(
         p
         for p in SKILLS_ROOT.rglob("*")
-        if p.is_file() and not _is_local_path(p) and len(p.relative_to(SKILLS_ROOT).parts) > 1
+        if p.is_file()
+        and not _is_python_cache(p)
+        and not _is_local_path(p)
+        and len(p.relative_to(SKILLS_ROOT).parts) > 1
     )
 
 
@@ -688,6 +695,48 @@ def _adapt_github_text(skill_dir: Path, source_file: Path, text: str) -> str:
     return text
 
 
+def _adapt_codex_runtime_text(skill_dir: Path, source_file: Path, text: str) -> str:
+    """Remove operational Claude state/runtime paths from the Codex payload."""
+    if source_file.suffix not in {".md", ".sh"}:
+        return text
+
+    text = text.replace(".claude/cicd_tasks.yml", ".codex/cicd_tasks.yml")
+    text = text.replace(".claude/cicd.yml", ".codex/cicd.yml")
+    text = text.replace(".claude/deploy.log", ".codex/deploy.log")
+    text = text.replace(".claude/secrets.yml", ".codex/secrets.yml")
+
+    if skill_dir.name.startswith("cicd-"):
+        text = text.replace(
+            '$PWD/lib:$HOME/Projects/claude-power-pack/lib:$PYTHONPATH',
+            '$PWD:$HOME/Projects/codex-power-pack:$PYTHONPATH',
+        )
+        text = text.replace(
+            '$CPP_DIR/lib:$PYTHONPATH',
+            '$HOME/Projects/codex-power-pack:$PYTHONPATH',
+        )
+
+    if skill_dir.name == "secrets-help":
+        text = text.replace(
+            '$HOME/Projects/claude-power-pack/lib:$PYTHONPATH',
+            '$HOME/Projects/codex-power-pack:$PYTHONPATH',
+        )
+
+    if skill_dir.name == "self-improvement-deployment" and source_file.name == "reference.md":
+        text = text.replace(
+            "cp ~/Projects/claude-power-pack/templates/Makefile.example Makefile",
+            "cp ~/Projects/codex-power-pack/templates/Makefile.example Makefile",
+        )
+        text = text.replace(
+            "Reference template: `~/Projects/claude-power-pack/templates/Makefile.example`",
+            "Reference template: `~/Projects/codex-power-pack/templates/Makefile.example`",
+        )
+        text = text.replace(
+            'PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$HOME/Projects/claude-power-pack/lib"',
+            'PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$HOME/Projects/codex-power-pack"',
+        )
+    return text
+
+
 def _adapt_invocation_text(skill_dir: Path, source_file: Path, text: str) -> str:
     """Normalize generated user guidance to native Codex skill selection."""
     if source_file.suffix != ".md":
@@ -713,6 +762,17 @@ def _adapt_invocation_text(skill_dir: Path, source_file: Path, text: str) -> str
         heading = text.find("# Project Commands")
         if heading != -1:
             text = text[:heading] + _CODEX_PROJECT_HELP_BODY
+
+    if skill_dir.name == "evaluate-help" and source_file.name == "SKILL.md":
+        text = text.replace(
+            "Use `./scripts/speckit-tasks-to-issues.sh` to create GitHub issues from the generated tasks.",
+            "Hand approved Spec Kit artifacts to `$spec-sync`; evaluate does not own or bundle\n"
+            "an issue compiler.",
+        )
+        text = text.replace(
+            "- `scripts/speckit-tasks-to-issues.sh` - Turn a spec `tasks.md` into GitHub issues",
+            "- `$spec-sync` - Separately preview and compile approved artifacts into GitHub issues",
+        )
 
     skill_names = {
         path.name
@@ -742,8 +802,12 @@ def _adapt_invocation_text(skill_dir: Path, source_file: Path, text: str) -> str
 
 def _adapted_source_files(skill_dir: Path) -> dict[str, bytes]:
     files: dict[str, bytes] = {}
-    for source_file in sorted(path for path in skill_dir.rglob("*") if path.is_file()):
+    for source_file in sorted(
+        path for path in skill_dir.rglob("*") if path.is_file() and not _is_python_cache(path)
+    ):
         rel = source_file.relative_to(skill_dir).as_posix()
+        if skill_dir.name == "evaluate-help" and rel == "scripts/speckit-tasks-to-issues.sh":
+            continue
         try:
             text = source_file.read_text()
         except UnicodeDecodeError:
@@ -756,6 +820,7 @@ def _adapted_source_files(skill_dir: Path) -> dict[str, bytes]:
         text = _adapt_flow_cicd_runtime(skill_dir, source_file, text)
         text = _adapt_flow_claude_review(skill_dir, source_file, text)
         text = _adapt_github_text(skill_dir, source_file, text)
+        text = _adapt_codex_runtime_text(skill_dir, source_file, text)
         text = _adapt_invocation_text(skill_dir, source_file, text)
         files[rel] = text.encode()
     return files
@@ -794,7 +859,9 @@ def _sync_plugin_payload(skill_name: str) -> None:
                 shutil.rmtree(existing)
             else:
                 existing.unlink()
-        for source_file in sorted(path for path in source.rglob("*") if path.is_file()):
+        for source_file in sorted(
+            path for path in source.rglob("*") if path.is_file() and not _is_python_cache(path)
+        ):
             rel = source_file.relative_to(source)
             if rel.parts[0] == "agents":
                 continue

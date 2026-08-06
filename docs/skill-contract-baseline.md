@@ -12,8 +12,8 @@
 | Unpackaged source skills | 10 |
 | Marketplace plugins | 16 |
 | Implicitly eligible packaged skills | 2 |
-| Extracted packaged-Markdown references | 706 |
-| Unexplained reference occurrences | 67 |
+| Extracted packaged-Markdown references | 675 |
+| Unexplained reference occurrences | 0 |
 
 The machine-readable source of truth is [`.agents/skill-contracts.json`](../.agents/skill-contracts.json).
 
@@ -37,37 +37,33 @@ Prompt presence passed. Direct recall, indirect recall, and negative precision r
 
 | Skill | Owner | Disposition | Review by |
 |---|---|---|---|
-| `browser-help` | Wave 7 Stage 3 (#160) | Package, replace with qa-help and upstream Playwright MCP guidance, or record a reviewed exclusion. | 2026-09-30 |
-| `browser-session` | Wave 7 Stage 3 (#160) | Package, replace with qa-test and upstream Playwright MCP sessions, or record a reviewed exclusion. | 2026-09-30 |
-| `cicd-woodpecker` | Wave 7 Stage 3 (#160) | Package, replace with the packaged cicd-pipeline and woodpecker skills, or record a reviewed exclusion. | 2026-09-30 |
-| `cpp-dockers` | Wave 7 Stage 3 (#160) | Package, replace with CxPP host-status guidance, or record a reviewed exclusion. | 2026-09-30 |
-| `cpp-happy-check` | Wave 7 Stage 3 (#160) | Package, replace with CxPP status guidance, or record a reviewed exclusion. | 2026-09-30 |
-| `cpp-help` | Wave 7 Stage 3 (#160) | Package, replace with the packaged family help skills, or record a reviewed exclusion. | 2026-09-30 |
-| `cpp-load-best-practices` | Wave 7 Stage 3 (#160) | Package, replace with focused Codex documentation, or record a reviewed exclusion. | 2026-09-30 |
-| `cpp-load-mcp-docs` | Wave 7 Stage 3 (#160) | Package, replace with docs/HOST_MANAGED.md and second-opinion-help, or record a reviewed exclusion. | 2026-09-30 |
-| `flow-auto_codex` | Wave 7 Stage 3 (#160) | Package, replace with flow-auto plus claude-code-review escalation, or record a reviewed exclusion. | 2026-09-30 |
-| `flow-repair` | Wave 7 Stage 3 (#160) | Package, replace with plugin-bundled flow helpers and flow-doctor, or record a reviewed exclusion. | 2026-09-30 |
+| `browser-help` | Codex Power Pack maintainers (#160) | Excluded: Codex uses the native Playwright MCP workflow instead of the retired browser family. Replacement: qa-help and upstream Playwright MCP guidance. | 2026-09-30 |
+| `browser-session` | Codex Power Pack maintainers (#160) | Excluded: Session management is provided by the packaged qa-test workflow and Playwright MCP. Replacement: qa-test and upstream Playwright MCP sessions. | 2026-09-30 |
+| `cicd-woodpecker` | Codex Power Pack maintainers (#160) | Excluded: The legacy combined command is split between pipeline generation and Woodpecker operations. Replacement: the packaged cicd-pipeline and woodpecker skills. | 2026-09-30 |
+| `cpp-dockers` | Codex Power Pack maintainers (#160) | Excluded: CxPP does not manage the retired Claude Power Pack Docker runtime. Replacement: cxpp-status host-service guidance. | 2026-09-30 |
+| `cpp-happy-check` | Codex Power Pack maintainers (#160) | Excluded: Host readiness is reported by the narrower packaged status and health skills. Replacement: cxpp-status and cicd-health. | 2026-09-30 |
+| `cpp-help` | Codex Power Pack maintainers (#160) | Excluded: A global catch-all help command would duplicate the packaged family help skills. Replacement: the packaged family help skills. | 2026-09-30 |
+| `cpp-load-best-practices` | Codex Power Pack maintainers (#160) | Excluded: Codex discovers focused instructions and documentation without a context-loader command. Replacement: AGENTS.md and focused Codex documentation. | 2026-09-30 |
+| `cpp-load-mcp-docs` | Codex Power Pack maintainers (#160) | Excluded: MCP discovery is host-managed and documented without a Claude context-loader command. Replacement: docs/HOST_MANAGED.md and second-opinion-help. | 2026-09-30 |
+| `flow-auto_codex` | Codex Power Pack maintainers (#160) | Excluded: Its supported behavior was folded into flow-auto with bounded claude-code-review escalation. Replacement: flow-auto plus claude-code-review escalation. | 2026-09-30 |
+| `flow-repair` | Codex Power Pack maintainers (#160) | Excluded: Installed flow packages bundle their helpers; flow-doctor owns diagnosis and repair guidance. Replacement: plugin-bundled flow helpers and flow-doctor. | 2026-09-30 |
 
 ## Reference Classification
 
 | Classification | Occurrences | Meaning |
 |---|---:|---|
-| Resolvable | 408 | Explicit `$skill-name` resolves to a packaged skill. |
+| Resolvable | 410 | Explicit `$skill-name` resolves to a packaged skill. |
 | Native | 17 | Supported Codex host command. |
-| Adapted | 214 | The packaged skill carries an explicit Codex harness adaptation. |
-| Unexplained | 67 | Scheduled for invocation normalization or semantic review. |
+| Adapted | 157 | The packaged skill carries an explicit Codex harness adaptation. |
+| Excluded | 24 | Target has a reviewed, owned, time-bound exclusion. |
+| Source context | 66 | Non-operational provenance or migration text. |
+| Example | 1 | Documented placeholder syntax, not a dependency. |
+| Unexplained | 0 | Scheduled for invocation normalization or semantic review. |
 
 Unexplained occurrences are grouped below so every gap has one owner and disposition without hiding its evidence locations.
 
 | Token | Evidence count | Owner | Disposition | Review by |
 |---|---:|---|---|---|
-| `/plugin` | 4 | Wave 7 Stage 3 (#160) | Resolve to a packaged/native capability, add a narrow adaptation, or record a reviewed exclusion. | 2026-09-30 |
-| `.claude/` | 38 | Wave 7 Stage 3 (#160) | Resolve to a packaged/native capability, add a narrow adaptation, or record a reviewed exclusion. | 2026-09-30 |
-| `$cicd-woodpecker` | 5 | Wave 7 Stage 3 (#160) | Resolve to a packaged/native capability, add a narrow adaptation, or record a reviewed exclusion. | 2026-09-30 |
-| `$cpp-load-mcp-docs` | 1 | Wave 7 Stage 3 (#160) | Resolve to a packaged/native capability, add a narrow adaptation, or record a reviewed exclusion. | 2026-09-30 |
-| `$flow-auto_codex` | 1 | Wave 7 Stage 3 (#160) | Resolve to a packaged/native capability, add a narrow adaptation, or record a reviewed exclusion. | 2026-09-30 |
-| `$flow-repair` | 17 | Wave 7 Stage 3 (#160) | Resolve to a packaged/native capability, add a narrow adaptation, or record a reviewed exclusion. | 2026-09-30 |
-| `$skill-name` | 1 | Wave 7 Stage 3 (#160) | Resolve to a packaged/native capability, add a narrow adaptation, or record a reviewed exclusion. | 2026-09-30 |
 
 ## Stage 0 Known Failures and Owners
 

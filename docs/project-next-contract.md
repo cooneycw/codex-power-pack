@@ -10,7 +10,7 @@ authoritative implementation. CPP adoption is tracked by
 
 ## Version and entry points
 
-Contract version `1.0` accepts a structured `RepositoryState` and emits a
+Contract version `1.1` accepts a structured `RepositoryState` and emits a
 structured `RecommendationResult`. Run it from a CxPP checkout with:
 
 ```bash
@@ -24,8 +24,8 @@ drift from the authoritative `lib/project_next/` package.
 ## Input contract
 
 Repository state includes open issues, open pull requests, local and remote
-branches, worktrees and dirtiness, review/check/merge state, unsynchronized
-specification tasks, collection warnings, and whether the inventory is
+branches, worktrees and dirtiness, review/check/merge state, stable Spec Kit
+ledger mappings, collection warnings, and whether the inventory is
 complete. Fixture JSON can supply the same model without git, GitHub, or an LLM.
 
 The live collector performs batched GitHub queries. Authentication, rate-limit,
@@ -87,5 +87,10 @@ be the top action while a different issue is the safe next issue to start.
 - `--full` adds exhaustive classifications, pull requests, worktrees, and
   unsynchronized specification tasks.
 
-All modes name the `1.0` contract. Missing prerequisites and incomplete state
+Spec Kit work is represented only by the `spec-sync:v1` Issue Sync ledger.
+Task-ID searches in issue titles or bodies are not synchronization evidence.
+Missing mappings produce `sync_spec`; stale or ambiguous identities produce
+`resolve_spec_mapping`. Neither state is silently treated as completed work.
+
+All modes name the `1.1` contract. Missing prerequisites and incomplete state
 are explicit failure states; they never become a confident recommendation.

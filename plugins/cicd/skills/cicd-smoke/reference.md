@@ -2,7 +2,7 @@
 
 # $cicd-smoke - Smoke Tests
 
-Run smoke tests from `.claude/cicd.yml` configuration.
+Run smoke tests from `.codex/cicd.yml` configuration.
 
 ---
 
@@ -28,13 +28,13 @@ fi
 ## Step 2: Check for Configuration
 
 ```bash
-if [ ! -f ".claude/cicd.yml" ]; then
-  echo "No .claude/cicd.yml found in $(pwd)"
+if [ ! -f ".codex/cicd.yml" ]; then
+  echo "No .codex/cicd.yml found in $(pwd)"
   echo ""
   echo "Create one with:"
   echo "  $cicd-init    - Auto-detect framework and generate"
   echo ""
-  echo "Or add smoke tests manually to .claude/cicd.yml:"
+  echo "Or add smoke tests manually to .codex/cicd.yml:"
   echo ""
   echo "  health:"
   echo "    smoke_tests:"
@@ -48,14 +48,14 @@ if [ ! -f ".claude/cicd.yml" ]; then
 fi
 ```
 
-If `.claude/cicd.yml` exists but has no `smoke_tests:` section, the CLI will report "no tests configured" and show configuration guidance.
+If `.codex/cicd.yml` exists but has no `smoke_tests:` section, the CLI will report "no tests configured" and show configuration guidance.
 
 ---
 
 ## Step 3: Run Smoke Tests
 
 ```bash
-PYTHONPATH="$CPP_DIR/lib:$PYTHONPATH" python3 -m lib.cicd smoke
+PYTHONPATH="$HOME/Projects/codex-power-pack:$PYTHONPATH" python3 -m lib.cicd smoke
 ```
 
 ---
@@ -77,7 +77,7 @@ The report includes:
 
 ### Test Configuration
 
-Each smoke test in `.claude/cicd.yml` supports:
+Each smoke test in `.codex/cicd.yml` supports:
 
 | Field | Required | Description |
 |-------|----------|-------------|
@@ -94,7 +94,7 @@ If the CLI reports "no tests configured", guide the user:
 ```
 No smoke tests configured.
 
-Add tests to .claude/cicd.yml:
+Add tests to .codex/cicd.yml:
 
   health:
     smoke_tests:
@@ -146,5 +146,5 @@ Test "API responds" FAILED:
 - Each test is independent - failures don't stop subsequent tests
 - Use `--json` flag for machine-readable output
 - Use `--summary` flag for one-line pass/fail (useful in scripts)
-- Configure tests in `.claude/cicd.yml` under `health.smoke_tests`
+- Configure tests in `.codex/cicd.yml` under `health.smoke_tests`
 - Pair with `$cicd-health` for comprehensive verification

@@ -24,7 +24,7 @@ Build, verify, and deploy automation for Claude Code projects.
 ## How It Works
 
 ```
-$cicd-init      →  Detect framework  →  Generate Makefile  →  Generate .claude/cicd.yml
+$cicd-init      →  Detect framework  →  Generate Makefile  →  Generate .codex/cicd.yml
                                               ↓
 $cicd-check     →  Validate targets  →  Report gaps  →  Suggest fixes
                                               ↓
@@ -74,7 +74,7 @@ patterns and hard-won gotchas (Trivy DB drift, gitleaks-first, gRPC port hygiene
 
 ## Configuration
 
-Optional `.claude/cicd.yml` overrides detection defaults:
+Optional `.codex/cicd.yml` overrides detection defaults:
 
 ```yaml
 build:
@@ -162,7 +162,7 @@ $cicd-infra-pipeline  →  Generate per-tier workflows  →  Approval gates for 
 Supported IaC providers: Terraform (default), Pulumi, Bicep
 Supported clouds: AWS, Azure, GCP
 
-Configuration in `.claude/cicd.yml`:
+Configuration in `.codex/cicd.yml`:
 
 ```yaml
 infrastructure:

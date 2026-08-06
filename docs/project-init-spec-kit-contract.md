@@ -94,7 +94,7 @@ record the installed version. `specify init` remains consent-first and must not
 receive `--force` unless the user has seen the exact paths at risk and explicitly
 approves replacement.
 
-CxPP's additional readiness and issue-compilation behavior will be an official
+CxPP's additional readiness and issue-compilation behavior is implemented as an official
 Spec Kit **extension**:
 
 - An extension is additive and is the upstream mechanism for new commands,
@@ -107,9 +107,17 @@ Spec Kit **extension**:
 - A hand-authored substitute scaffold is rejected because it would immediately
   establish a second, drifting authoring product.
 
+The extension manifest is
+[`extensions/cxpp-issue-sync/extension.yml`](../extensions/cxpp-issue-sync/extension.yml)
+and its packaged mirror ships under `plugins/spec/extensions/`. It uses Spec
+Kit manifest schema `1.0`, requires exactly `0.16.0`, provides the namespaced
+`speckit.cxpp-issue-sync.preview` command, and offers only an optional
+`after_tasks` preview. It delegates all compilation and writes to `$spec-sync`;
+the extension contains no second compiler.
+
 ## Decision 3: Artifact Readiness Is a Blocking Gate
 
-`spec-sync` may preview issue groups only when it can identify one selected
+`spec-sync` previews issue groups only when it can identify one selected
 feature directory. GitHub writes require every check below to pass and the user
 to approve the analyzed commit and grouping:
 
@@ -147,7 +155,9 @@ The default unit is an independently deliverable stage or story:
 4. Create one issue per task only when the user explicitly selects task
    granularity. Task mode is a compatibility option, not the CxPP default.
 
-`spec-sync` is the only owner of compilation and synchronization. Evaluate,
+`spec-sync` is the only owner of compilation and synchronization. The canonical
+runtime is `spec_sync.py` behind the compatibility-named
+`speckit-tasks-to-issues.sh` launcher. Evaluate,
 project-init, project-next, and other skills may call or consume its public
 contract; they may not carry private compiler copies.
 
@@ -172,6 +182,11 @@ After a successful create or repair, `spec-sync` updates the selected
 `tasks.md` Issue Sync ledger with the stable group identity, issue number, URL,
 and state. A partial write reports exactly which mappings remain unresolved and
 does not claim the ledger is synchronized.
+
+`project-next` contract version `1.1` consumes only these ledger identities.
+Task IDs found incidentally in issue prose are no longer synchronization
+evidence. Missing mappings recommend synchronization; stale or ambiguous
+mappings recommend repair and remain explicit uncertainty.
 
 ## Ownership and Rollout
 

@@ -51,8 +51,8 @@ configured, verification returns **REVIEW** with "no probes configured" - it
 cannot honestly claim a deploy is healthy with nothing to probe.
 
 ```bash
-if [ ! -f ".claude/cicd.yml" ]; then
-  echo "No .claude/cicd.yml found in $(pwd)"
+if [ ! -f ".codex/cicd.yml" ]; then
+  echo "No .codex/cicd.yml found in $(pwd)"
   echo ""
   echo "Configure the probes $cicd-verify compares, e.g.:"
   echo ""
@@ -149,7 +149,7 @@ The human (or the calling flow) decides.
 
 ## Configuration
 
-Under `health.deploy_verification` in `.claude/cicd.yml`:
+Under `health.deploy_verification` in `.codex/cicd.yml`:
 
 ```yaml
 health:

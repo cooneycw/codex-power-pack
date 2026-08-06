@@ -9,7 +9,7 @@ from .classify import classify_repository, pull_request_issue_numbers
 from .config import ProjectNextConfig
 from .models import Action, Classification, Issue, RecommendationResult, RepositoryState
 
-CONTRACT_VERSION = "1.0"
+CONTRACT_VERSION = "1.1"
 PHASE = re.compile(r"\b(?:wave|phase)[-\s:]*(?P<number>\d+)\b", re.IGNORECASE)
 
 
@@ -192,12 +192,23 @@ def _top_action(
             issue_number=issue_number,
         )
 
+    invalid_mappings = tuple(task for task in state.spec_tasks if task.mapping_status in {"stale", "ambiguous"})
+    if invalid_mappings:
+        task = invalid_mappings[0]
+        return Action(
+            kind="resolve_spec_mapping",
+            title=f"Repair {task.mapping_status} Spec Kit mapping for {task.task_id}",
+            reason="Stale or ambiguous ledger state cannot safely represent synchronized work.",
+            evidence=(task.source, task.stable_identity or "identity:missing"),
+        )
+
     pending = tuple(task for task in state.spec_tasks if not task.synchronized)
     if pending:
+        group = pending[0].group_id or pending[0].task_id
         return Action(
             kind="sync_spec",
-            title=f"Sync specification task {pending[0].task_id}",
-            reason="The specification contains work that has not been synchronized to a GitHub issue.",
+            title=f"Sync specification group {group}",
+            reason="The approved specification contains a group with no stable GitHub issue mapping.",
             evidence=(pending[0].source,),
         )
     return None

@@ -142,53 +142,53 @@ prompts resolve, and priority skill activation meets the initial thresholds.
 
 ## Stage 3: Semantic Compatibility and Packaging Gates
 
-- [ ] **T301** [US3] Implement cross-skill reference extraction and resolution
+- [x] **T301** [US3] Implement cross-skill reference extraction and resolution
       against native Codex commands, packaged skills, and reviewed exclusions.
-- [ ] **T302** [US3] Implement operational host/path detection for `.claude/`,
+- [x] **T302** [US3] Implement operational host/path detection for `.claude/`,
       Claude marketplace commands, Claude-only tools, fixed CPP runtime paths,
       and unsupported invocation syntax.
-- [ ] **T303** [US3] Implement metadata validation for repository neutrality,
+- [x] **T303** [US3] Implement metadata validation for repository neutrality,
       trigger quality, truncation, starter prompts, and implicit policy.
-- [ ] **T304** [US3] Reconcile source, packaged, marketplace, and installed
+- [x] **T304** [US3] Reconcile source, packaged, marketplace, and installed
       inventories through `.agents/skill-contracts.json`.
-- [ ] **T305** [US3] Require owner, rationale, replacement, and review date for
+- [x] **T305** [US3] Require owner, rationale, replacement, and review date for
       every deliberate exclusion.
-- [ ] **T306** [US3] Repair or explicitly retire the unpackaged/dangling
+- [x] **T306** [US3] Repair or explicitly retire the unpackaged/dangling
       `flow-repair`, `flow-auto_codex`, `cicd-woodpecker`, browser, and `cpp-*`
       references identified by the baseline.
-- [ ] **T307** [P] [US3] Repair CI/CD skill state paths and runtime discovery so
+- [x] **T307** [P] [US3] Repair CI/CD skill state paths and runtime discovery so
       CxPP does not require a CPP checkout.
-- [ ] **T308** [P] [US3] Repair flow help/runtime guidance and close or re-scope
+- [x] **T308** [P] [US3] Repair flow help/runtime guidance and close or re-scope
       existing issue #140 based on verified target-repository resolution.
-- [ ] **T309** [P] [US3] Repair repository-neutral GitHub metadata and examples.
-- [ ] **T310** [US3] Resolve existing issue #135's completeness exit bar and
+- [x] **T309** [P] [US3] Repair repository-neutral GitHub metadata and examples.
+- [x] **T310** [US3] Resolve existing issue #135's completeness exit bar and
       record keep/adapt/exclude decisions for every affected surface.
-- [ ] **T311** [US3,US4] Integrate semantic validation into `make verify` and CI
+- [x] **T311** [US3,US4] Integrate semantic validation into `make verify` and CI
       while retaining hash-parity and focused harness-lint checks.
-- [ ] **T312** [US3,US7] Pin official Spec Kit adoption to the reviewed release,
+- [x] **T312** [US3,US7] Pin official Spec Kit adoption to the reviewed release,
       record the installed version, preserve the Codex integration, and require
       path-level approval before any forced replacement.
-- [ ] **T313** [US3,US7] Implement the CxPP readiness and issue-compilation
+- [x] **T313** [US3,US7] Implement the CxPP readiness and issue-compilation
       boundary as an official Spec Kit extension without overriding core
       authoring templates.
-- [ ] **T314** [US3,US7] Retire duplicate compilers from evaluate, project-init,
+- [x] **T314** [US3,US7] Retire duplicate compilers from evaluate, project-init,
       project-next, generated payloads, and plugin payloads so `spec-sync` is
       the sole owner.
-- [ ] **T315** [US7] Validate canonical task syntax and block missing artifacts,
+- [x] **T315** [US7] Validate canonical task syntax and block missing artifacts,
       consistency errors, placeholders, vague paths, missing independent tests,
       unresolved dependencies, and absent approval.
-- [ ] **T316** [US7] Implement explicit stage, story, and task grouping with
+- [x] **T316** [US7] Implement explicit stage, story, and task grouping with
       independently deliverable stage/story groups as the default.
-- [ ] **T317** [US1,US7] Render complete issue bodies with outcome, tasks,
+- [x] **T317** [US1,US7] Render complete issue bodies with outcome, tasks,
       traceability, acceptance, dependencies, constraints, quality commands,
       immutable artifact links, and stable sync identity.
-- [ ] **T318** [US1,US7] Synchronize idempotently across open and closed issues
+- [x] **T318** [US1,US7] Synchronize idempotently across open and closed issues
       and write issue number, URL, state, and stable group identity back to the
       selected feature task ledger.
-- [ ] **T319** [US7] Keep project-init limited to offering `spec-adopt` and
+- [x] **T319** [US7] Keep project-init limited to offering `spec-adopt` and
       `spec-sync` as separate handoffs; never create placeholder artifacts or
       GitHub issues automatically.
-- [ ] **T320** [US1,US7] Replace project-next's task-ID synchronization heuristic
+- [x] **T320** [US1,US7] Replace project-next's task-ID synchronization heuristic
       with stable stage/story/task mappings, follow mapped dependencies, and
       report missing, stale, or ambiguous mappings as uncertainty.
 

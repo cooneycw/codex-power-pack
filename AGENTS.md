@@ -20,12 +20,13 @@
 - `.codex/cicd.yml` - CI/CD config
 - `.codex/cicd_tasks.yml` - deterministic CI/CD task manifest
 - `plugins/<family>/` - native Codex plugin packages for per-family marketplace install
+- `extensions/cxpp-issue-sync/` - official Spec Kit extension manifest and preview command; the packaged mirror lives under `plugins/spec/extensions/`
 - `lib/` - reusable Python libraries for creds, security, and CI/CD
 - `vendor/claude-power-pack/` - pin (`PIN`) + drift manifest (`codex-skills.sha256`) for generated `.codex/skills/` copies
 - `templates/` - starter Makefiles and workflow templates
 - `templates/config.toml.example` - Codex MCP pointers for host-managed services
 - `docs/HOST_MANAGED.md` - host-owned MCP service inventory and health checks
-- `scripts/` - shell + Python helpers, incl. `codex_skills_sync.py` (pulls + drift-gates `.codex/skills/`) and `skill_contract_baseline.py` (reconciles the skill contract and baseline report)
+- `scripts/` - shell + Python helpers, incl. `codex_skills_sync.py` (pulls + drift-gates `.codex/skills/`), `skill_contract_baseline.py` (reconciles inventory), and `skill_contract_lint.py` (blocks semantic incompatibility)
 - `docs/skills/` - focused reference docs
 - `docs/skill-contract-baseline.md` - measured Wave 7 source, package, prompt, reference, and gap baseline
 - `docs/security/` - security threat models and guard designs

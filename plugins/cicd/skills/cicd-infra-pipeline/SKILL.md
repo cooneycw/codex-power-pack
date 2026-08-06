@@ -10,12 +10,12 @@ Generate separate CI/CD pipelines for each infrastructure tier with appropriate 
 
 ## Instructions
 
-1. **Read configuration** from `.claude/cicd.yml` infrastructure section.
+1. **Read configuration** from `.codex/cicd.yml` infrastructure section.
 
 2. **Generate pipelines:**
 
 ```bash
-PYTHONPATH="$CPP_DIR/lib:$PYTHONPATH" python3 -m lib.cicd infra-pipeline --path "$(pwd)" --write
+PYTHONPATH="$HOME/Projects/codex-power-pack:$PYTHONPATH" python3 -m lib.cicd infra-pipeline --path "$(pwd)" --write
 ```
 
 3. **Report what was generated** and explain the approval model:

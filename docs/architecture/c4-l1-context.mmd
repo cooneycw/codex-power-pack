@@ -5,11 +5,13 @@ flowchart TB
   developer(("Developer")):::person
   codex["Codex Client"]:::system
   cpp["Claude Power Pack Skill Source"]:::system
+  spec_kit["Official GitHub Spec Kit"]:::system
   github["GitHub Marketplace Source"]:::system
   host_mcp["Host-managed MCP Services"]:::system
   developer -->|"uses"| codex
   codex -->|"installs plugins"| cxpp
   cxpp -->|"pulls pinned generated skills from"| cpp
+  cxpp -->|"pins adoption and provides an extension for"| spec_kit
   cxpp -->|"distributed from"| github
   cxpp -->|"configures pointers to"| host_mcp
   classDef person fill:#08427b,color:#ffffff,stroke:#0f172a

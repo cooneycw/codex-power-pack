@@ -1,18 +1,27 @@
 classDiagram
-  class FrictionWriter {
-    +write(event)
-    -mask(payload)
+  class Task {
+    +task_id: str
+    +story: str
+    +dependencies: tuple
+    +paths: tuple
   }
-  class FrictionEvent {
-    +validate()
+  class Group {
+    +group_id: str
+    +granularity: str
+    +tasks: tuple
   }
-  class OutputMasker {
-    +register_secret(value)
-    +mask(text)
+  class Mapping {
+    +identity: str
+    +task_ids: tuple
+    +issue_number: int
+    +state: str
   }
-  class SecretBundle {
-    +secrets: dict
+  class SpecTask {
+    +task_id: str
+    +stable_identity: str
+    +mapping_status: str
+    +issue_numbers: tuple
   }
-  FrictionWriter --> FrictionEvent : writes
-  FrictionWriter --> OutputMasker : uses
-  OutputMasker --> SecretBundle : masks values from
+  Group *-- Task : contains
+  Mapping --> Group : records issue for
+  SpecTask --> Mapping : consumes stable identity from

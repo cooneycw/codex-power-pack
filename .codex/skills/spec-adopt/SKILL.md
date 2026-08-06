@@ -26,14 +26,16 @@ in the current repository without replacing an existing specification workspace.
 2. Inspect `.specify/` and `specify --version` without changing either. If a
    usable `.specify/` directory already exists, report that spec-kit appears
    adopted and stop unless the user requests a refresh.
-3. Explain the user-scoped install command and ask for approval:
+3. Explain the reviewed, user-scoped install command and ask for approval. The
+   release and resolved commit are part of the contract; never substitute a
+   moving branch:
 
    ```bash
-   uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
+   uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v0.16.0
    ```
 
    If `specify` is already installed, use the documented `uv tool upgrade`
-   equivalent only after the user approves the upgrade.
+   equivalent pinned to `v0.16.0` only after the user approves the upgrade.
 4. After approval and a successful install, initialize the current project with
    the Codex integration:
 
@@ -41,15 +43,25 @@ in the current repository without replacing an existing specification workspace.
    specify init --here --integration codex
    ```
 
-   When `.specify/` already exists, do not add `--force` automatically. State
-   the conflict and wait for an explicit `--force` request.
+   When `.specify/` already exists, do not add `--force` automatically. First
+   show the exact existing paths that initialization would affect, then wait for
+   an explicit approval naming those paths before using `--force`.
 5. Verify the result without exposing secrets: check the `specify` version,
-   list the created `.specify/` paths, and report the supported next steps:
+   list the created `.specify/` paths, and record the reviewed boundary in
+   `.specify/spec-kit-version.json` with release `v0.16.0`, commit
+   `5dce710ce099067c7d3f2ef47a37b9a1c300b327`, integration `codex`, and the
+   installation timestamp. Do not record mutable environment details.
+6. Offer the packaged `cxpp-issue-sync` Spec Kit extension as a separate,
+   explicitly approved installation. Preview its exact source and destination,
+   then use `specify extension add --dev <spec-plugin>/extensions/cxpp-issue-sync`.
+   Declining the extension leaves official authoring fully usable and makes no
+   project change.
+7. Report the supported next steps:
    constitution → specify → clarify → plan → tasks → `$spec-sync` →
    `$flow-auto <issue>`.
 
 ## Report
 
-Report `installed`, `already adopted`, `needs approval`, `needs uv`, or
-`initialization failed`. Include the exact non-secret next command and clearly
-separate spec adoption from GitHub issue creation.
+Report `installed`, `already adopted`, `needs approval`, `needs uv`, `version
+drift`, or `initialization failed`. Include the recorded release and commit, the
+exact non-secret next command, and clearly separate adoption from issue creation.
