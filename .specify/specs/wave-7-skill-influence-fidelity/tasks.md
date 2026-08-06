@@ -255,14 +255,18 @@ Stage 0 baseline
 
 | Stage | Tasks | Issue | Status |
 |-------|-------|-------|--------|
-| Specification | spec.md, plan.md, tasks.md | #153 | in progress |
-| 0 - Baseline | T001-T006 | pending | not synced |
-| 1 - project-next | T101-T112 | pending | not synced |
-| 2 - Invocation/metadata | T201-T208 | pending | not synced |
-| 3 - Semantic gates | T301-T311 | pending | not synced |
-| 4 - Evaluations | T401-T408 | pending | not synced |
-| 5 - Persistent influence | T501-T507 | pending | not synced |
-| 6 - Rollout | T601-T608 | pending | not synced |
+| Specification | spec.md, plan.md, tasks.md | #153 | complete |
+| 0 - Baseline | T001-T006 | #157 | open |
+| 1 - project-next | T101-T112 | #158 | open |
+| 2 - Invocation/metadata | T201-T208 | #159 | open |
+| 3 - Semantic gates | T301-T311 | #160 | open |
+| 4 - Evaluations | T401-T408 | #161 | open |
+| 5 - Persistent influence | T501-T507 | #162 | open |
+| 6 - Rollout | T601-T608 | #163 | open |
+
+Completion sequence: #157 unlocks #158 and #159 in parallel; #159 unlocks
+#160; #158 and #160 jointly unlock #161; #160 and #161 jointly unlock #162;
+all prior stage issues must close before #163 can close the wave.
 
 ---
 
