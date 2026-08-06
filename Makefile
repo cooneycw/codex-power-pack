@@ -1,5 +1,6 @@
 .PHONY: test lint format typecheck verify build update_docs clean help secret-scan dep-audit \
-	codex-skills codex-skills-check codex-skills-refresh codex-skills-currency-check harness-lint
+	codex-skills codex-skills-check codex-skills-refresh codex-skills-currency-check harness-lint \
+	project-next-check project-next-sync
 
 # claude-power-pack checkout the generated Codex skills are pulled from (codex-power-pack#75).
 CPP_ROOT ?= ../claude-power-pack
@@ -21,6 +22,12 @@ typecheck:
 
 harness-lint:
 	@python3 scripts/harness_lint.py --check
+
+project-next-check:
+	@python3 scripts/project_next_sync.py --check
+
+project-next-sync:
+	@python3 scripts/project_next_sync.py --write
 
 build:
 	uv build
@@ -48,7 +55,7 @@ codex-skills-currency-check:
 
 ## Verification gate (runs all quality checks)
 
-verify: lint test typecheck codex-skills-check harness-lint
+verify: lint test typecheck codex-skills-check harness-lint project-next-check
 
 ## Documentation (used by /flow:auto and /flow:finish)
 
@@ -80,6 +87,8 @@ help:
 	@echo "  make test        - Run pytest"
 	@echo "  make typecheck   - Run mypy"
 	@echo "  make harness-lint - Check skills for unadapted Claude-only constructs"
+	@echo "  make project-next-check - Check installed project-next runtime drift"
+	@echo "  make project-next-sync  - Refresh the installed project-next runtime"
 	@echo "  make build       - Build distribution packages"
 	@echo "  make verify      - Run all quality checks"
 	@echo ""

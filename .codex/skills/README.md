@@ -16,11 +16,13 @@ marker. `claude-md` is **not** pulled (Out-of-Scope for CxPP; the Codex-native
 ## CxPP-owned native skills
 
 The `agents-md-*` skill dirs are authored in this repo because they govern
-Codex's `AGENTS.md` instruction surface. The `project-next`, `project-lite`,
-`spec-adopt` / `spec-sync`, and `cxpp-init` / `cxpp-update` / `cxpp-status`
-skill dirs are also authored here because they are Codex-native workflow
-surfaces. These native skills
-intentionally do not carry the generated marker and are excluded from
+Codex's `AGENTS.md` instruction surface. `project-lite`, `spec-adopt` /
+`spec-sync`, and `cxpp-init` / `cxpp-update` / `cxpp-status` are also native
+workflow surfaces. `project-next` is a native adapter, but its classification
+and recommendation policy lives in `lib/project_next/` and the versioned
+`docs/project-next-contract.md`, not in the prompt. Its installed project-plugin
+runtime is generated with `scripts/project_next_sync.py`. These native skills
+do not carry the generated CPP marker and are excluded from
 `vendor/claude-power-pack/codex-skills.sha256`.
 
 Keep this native surface narrow. Add new CxPP-owned skill dirs only when the
@@ -80,6 +82,7 @@ applies this overlay deterministically and mirrors adapted payloads into existin
 native plugin packages. `make codex-skills-currency-check` compares the result
 with a current CPP checkout without flagging unrelated upstream changes.
 
-To change a CxPP-owned native skill such as `agents-md-lint`, `project-next`,
-`spec-adopt`, or `cxpp-init`,
-edit its skill package here and run the local verification gates.
+To change a CxPP-owned native skill such as `agents-md-lint`, `spec-adopt`, or
+`cxpp-init`, edit its skill package here and run the local verification gates.
+For `project-next`, change `lib/project_next/` and its behavioral fixtures,
+then run `make project-next-sync`; the skill remains a thin runtime adapter.

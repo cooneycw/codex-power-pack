@@ -1,0 +1,173 @@
+{
+  "active_pr_and_safe_issue": {
+    "state": {
+      "repository": "example/active",
+      "default_branch": "main",
+      "collected_at": "2026-08-06T20:00:00Z",
+      "issues": [
+        {"number": 1, "title": "Critical active fix", "labels": ["bug", "priority-high"]},
+        {"number": 2, "title": "Ready task", "labels": ["p2", "task"]}
+      ],
+      "pull_requests": [
+        {
+          "number": 10,
+          "title": "Fix critical active work",
+          "head_ref": "issue-1-critical-fix",
+          "closing_issue_numbers": [1],
+          "checks_state": "failure",
+          "merge_state": "BLOCKED"
+        }
+      ],
+      "worktrees": [
+        {"path": "/tmp/active", "branch": "issue-1-critical-fix", "dirty": false}
+      ]
+    },
+    "expected": {
+      "top_action": "fix_gate",
+      "top_issue": 1,
+      "next_startable": 2,
+      "in_flight": [1],
+      "blocked": [],
+      "available": [2],
+      "uncertain": []
+    }
+  },
+  "dependency_chain": {
+    "state": {
+      "repository": "example/chain",
+      "default_branch": "main",
+      "collected_at": "2026-08-06T20:00:00Z",
+      "issues": [
+        {"number": 10, "title": "Wave 1 final", "body": "Depends on #11"},
+        {"number": 11, "title": "Wave 1 middle", "body": "Requires #12"},
+        {"number": 12, "title": "Wave 1 foundation", "labels": ["task"]}
+      ]
+    },
+    "expected": {
+      "top_action": "start_issue",
+      "top_issue": 12,
+      "next_startable": 12,
+      "in_flight": [],
+      "blocked": [10, 11],
+      "available": [12],
+      "uncertain": []
+    }
+  },
+  "dependency_cycle": {
+    "state": {
+      "repository": "example/cycle",
+      "default_branch": "main",
+      "collected_at": "2026-08-06T20:00:00Z",
+      "issues": [
+        {"number": 20, "title": "Cycle A", "body": "Blocked by #21"},
+        {"number": 21, "title": "Cycle B", "body": "After #20"}
+      ]
+    },
+    "expected": {
+      "top_action": null,
+      "top_issue": null,
+      "next_startable": null,
+      "in_flight": [],
+      "blocked": [20, 21],
+      "available": [],
+      "uncertain": []
+    }
+  },
+  "ambiguous_dependency": {
+    "state": {
+      "repository": "example/uncertain",
+      "default_branch": "main",
+      "collected_at": "2026-08-06T20:00:00Z",
+      "issues": [
+        {"number": 30, "title": "Needs a decision", "body": "Blocked by design review"},
+        {"number": 31, "title": "Safe task", "labels": ["task"]}
+      ]
+    },
+    "expected": {
+      "top_action": "start_issue",
+      "top_issue": 31,
+      "next_startable": 31,
+      "in_flight": [],
+      "blocked": [],
+      "available": [31],
+      "uncertain": [30]
+    }
+  },
+  "incomplete_inventory": {
+    "state": {
+      "repository": "example/incomplete",
+      "default_branch": "main",
+      "collected_at": "2026-08-06T20:00:00Z",
+      "inventory_complete": false,
+      "collector_warnings": ["issue inventory truncated"],
+      "issues": [
+        {"number": 40, "title": "Apparently ready", "labels": ["p1"]}
+      ]
+    },
+    "expected": {
+      "top_action": "resolve_inventory",
+      "top_issue": null,
+      "next_startable": null,
+      "in_flight": [],
+      "blocked": [],
+      "available": [40],
+      "uncertain": []
+    }
+  },
+  "codex_power_pack_dogfood": {
+    "state": {
+      "repository": "cooneycw/codex-power-pack",
+      "default_branch": "main",
+      "collected_at": "2026-08-06T20:00:00Z",
+      "issues": [
+        {"number": 158, "title": "Wave 7 Stage 1", "body": "Blocked by #157"},
+        {"number": 159, "title": "Wave 7 Stage 2", "body": "After #157"},
+        {"number": 160, "title": "Wave 7 Stage 3", "body": "Depends on #159"}
+      ],
+      "branches": [
+        {"name": "issue-158-wave-7-stage-1", "remote": false}
+      ]
+    },
+    "expected": {
+      "top_action": "continue_work",
+      "top_issue": 158,
+      "next_startable": 159,
+      "in_flight": [158],
+      "blocked": [160],
+      "available": [159],
+      "uncertain": []
+    }
+  },
+  "claude_power_pack_dogfood": {
+    "state": {
+      "repository": "cooneycw/claude-power-pack",
+      "default_branch": "main",
+      "collected_at": "2026-08-06T20:00:00Z",
+      "issues": [
+        {"number": 700, "title": "Phase 2 active", "labels": ["p1"]},
+        {"number": 701, "title": "Phase 1 documentation", "labels": ["documentation"]},
+        {"number": 702, "title": "Phase 3 dependent", "body": "Requires #700"}
+      ],
+      "pull_requests": [
+        {
+          "number": 800,
+          "title": "Phase 2 active",
+          "head_ref": "issue-700-phase-2-active",
+          "closing_issue_numbers": [700],
+          "checks_state": "success",
+          "review_decision": "APPROVED",
+          "merge_state": "CLEAN"
+        }
+      ]
+    },
+    "expected": {
+      "top_action": "merge_pr",
+      "top_issue": 700,
+      "next_startable": 701,
+      "in_flight": [700],
+      "blocked": [702],
+      "available": [701],
+      "uncertain": []
+    }
+  }
+}

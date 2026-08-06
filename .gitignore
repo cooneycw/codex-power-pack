@@ -54,6 +54,8 @@ desktop.ini
 !.agents/skill-contracts.schema.json
 !.agents/skill-evaluation-cases.json
 !.agents/skill-evaluation-cases.schema.json
+!templates/project-next.schema.json
+!tests/project_next/fixtures/scenarios.json
 !plugins/**/.codex-plugin/plugin.json
 !docs/architecture/c4-model.json
 !docs/architecture/c4-manifest.json

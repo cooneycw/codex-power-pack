@@ -26,7 +26,7 @@ flowchart TB
 
 ## L2 Containers
 
-_L2 - 6 nodes, 8 edges - [`c4-l2-container.mmd`](c4-l2-container.mmd)_
+_L2 - 7 nodes, 11 edges - [`c4-l2-container.mmd`](c4-l2-container.mmd)_
 
 ```mermaid
 flowchart TB
@@ -36,12 +36,16 @@ flowchart TB
     codex_skills["Codex Skills (.codex/skills)"]:::container
     vendor_snapshot["Pinned CPP Snapshot (vendor/)"]:::container
     runtime_libraries["Deterministic Libraries (lib/)"]:::container
+    project_next_engine["Project Next Recommendation Engine"]:::container
     quality_gates["Quality Gates (Makefile + tests)"]:::container
   end
   marketplace_catalog -->|"indexes"| family_plugins
   family_plugins -->|"packages skills from"| codex_skills
   vendor_snapshot -->|"pins and integrity-checks"| codex_skills
   codex_skills -->|"uses deterministic helpers"| runtime_libraries
+  codex_skills -->|"delegates triage decisions to"| project_next_engine
+  project_next_engine -->|"is authored in"| runtime_libraries
+  family_plugins -->|"bundles generated runtime from"| project_next_engine
   quality_gates -->|"validates"| family_plugins
   quality_gates -->|"reconciles contracts"| marketplace_catalog
   quality_gates -->|"drift-checks"| codex_skills
@@ -49,9 +53,9 @@ flowchart TB
   classDef container fill:#15803d,color:#ffffff,stroke:#0f172a
 ```
 
-## L3 Skill Vendoring and Plugin Distribution
+## L3 Skill Distribution and Deterministic Project Triage
 
-_L3 - 11 nodes, 13 edges - [`c4-l3-plugin-distribution.mmd`](c4-l3-plugin-distribution.mmd)_
+_L3 - 15 nodes, 19 edges - [`c4-l3-plugin-distribution.mmd`](c4-l3-plugin-distribution.mmd)_
 
 ```mermaid
 flowchart TB
@@ -68,6 +72,10 @@ flowchart TB
   skill_contract["Skill Contract Manifest"]:::component
   baseline_collector["Skill Contract Baseline Collector"]:::component
   contract_tests["Skill Contract Tests"]:::component
+  project_next_core["Project Next Classifier and Ranker"]:::component
+  project_next_collector["Git, GitHub, and Spec Collector"]:::component
+  project_next_bundle["Installed Project Plugin Runtime"]:::component
+  project_next_sync["Project Next Bundle Drift Gate"]:::component
   marketplace_entry -->|"locates"| plugin_manifest
   plugin_manifest -->|"declares"| skill_payload
   skill_payload -->|"includes"| openai_metadata
@@ -81,6 +89,12 @@ flowchart TB
   baseline_collector -->|"reconciles"| marketplace_entry
   baseline_collector -->|"writes"| skill_contract
   contract_tests -->|"validates"| skill_contract
+  skill_payload -->|"invokes for deterministic triage"| project_next_bundle
+  project_next_collector -->|"supplies structured repository state"| project_next_core
+  project_next_core -->|"generates installed copy"| project_next_bundle
+  project_next_sync -->|"treats as source of truth"| project_next_core
+  project_next_sync -->|"writes and drift-checks"| project_next_bundle
+  package_tests -->|"checks byte parity"| project_next_bundle
   classDef component fill:#7e22ce,color:#ffffff,stroke:#0f172a
 ```
 
@@ -109,4 +123,4 @@ classDiagram
   OutputMasker --> SecretBundle : masks values from
 ```
 
-_Generated 2026-08-06T19:30:31Z_
+_Generated 2026-08-06T20:21:11Z_

@@ -12,6 +12,10 @@ flowchart TB
   skill_contract["Skill Contract Manifest"]:::component
   baseline_collector["Skill Contract Baseline Collector"]:::component
   contract_tests["Skill Contract Tests"]:::component
+  project_next_core["Project Next Classifier and Ranker"]:::component
+  project_next_collector["Git, GitHub, and Spec Collector"]:::component
+  project_next_bundle["Installed Project Plugin Runtime"]:::component
+  project_next_sync["Project Next Bundle Drift Gate"]:::component
   marketplace_entry -->|"locates"| plugin_manifest
   plugin_manifest -->|"declares"| skill_payload
   skill_payload -->|"includes"| openai_metadata
@@ -25,4 +29,10 @@ flowchart TB
   baseline_collector -->|"reconciles"| marketplace_entry
   baseline_collector -->|"writes"| skill_contract
   contract_tests -->|"validates"| skill_contract
+  skill_payload -->|"invokes for deterministic triage"| project_next_bundle
+  project_next_collector -->|"supplies structured repository state"| project_next_core
+  project_next_core -->|"generates installed copy"| project_next_bundle
+  project_next_sync -->|"treats as source of truth"| project_next_core
+  project_next_sync -->|"writes and drift-checks"| project_next_bundle
+  package_tests -->|"checks byte parity"| project_next_bundle
   classDef component fill:#7e22ce,color:#ffffff,stroke:#0f172a

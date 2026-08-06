@@ -1,6 +1,6 @@
 {
   "project": "Codex Power Pack",
-  "generated_at": "2026-08-06T19:30:31Z",
+  "generated_at": "2026-08-06T20:21:11Z",
   "engine": "c4-mermaid",
   "diagrams": [
     {
@@ -17,17 +17,17 @@
       "level": "L2",
       "title": "L2 Containers",
       "file": "c4-l2-container.mmd",
-      "node_count": 6,
-      "edge_count": 8,
+      "node_count": 7,
+      "edge_count": 11,
       "parent": null
     },
     {
       "id": "c4-l3-plugin-distribution",
       "level": "L3",
-      "title": "L3 Skill Vendoring and Plugin Distribution",
+      "title": "L3 Skill Distribution and Deterministic Project Triage",
       "file": "c4-l3-plugin-distribution.mmd",
-      "node_count": 11,
-      "edge_count": 13,
+      "node_count": 15,
+      "edge_count": 19,
       "parent": "c4-l2-container"
     },
     {

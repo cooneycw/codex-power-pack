@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import importlib.util
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "scripts" / "codex_skills_sync.py"
@@ -93,3 +95,18 @@ def test_refresh_source_selection_never_overwrites_native_skills(tmp_path: Path)
     assert "flow-auto" in selected
     assert "project-next" not in selected
     assert "project-lite" not in selected
+
+
+def test_native_project_next_has_one_executable_source_of_truth() -> None:
+    completed = subprocess.run(
+        [sys.executable, "scripts/project_next_sync.py", "--check"],
+        cwd=sync.REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    contract = (sync.REPO_ROOT / "docs" / "project-next-contract.md").read_text(encoding="utf-8")
+    assert "lib/project_next" in contract
+    assert "second prompt-only decision policy is not" in contract
