@@ -1,6 +1,6 @@
 {
   "name": "self-improvement",
-  "version": "0.1.0+codex.20260727145047",
+  "version": "0.1.1+codex.20260806203405",
   "description": "Retrospective improvement and friction review skills.",
   "author": {
     "name": "Codex Power Pack maintainers",
@@ -27,7 +27,7 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Run a friction retro with /self-improvement-retro."
+      "Use $self-improvement-retro to turn masked workflow friction into user-confirmed improvements."
     ],
     "brandColor": "#D97706"
   }

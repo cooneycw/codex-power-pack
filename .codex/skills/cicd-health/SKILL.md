@@ -11,7 +11,7 @@ Generated from a Claude Code command. Where the procedure references these Claud
 - `AskUserQuestion` tool: ask the user directly in the conversation and wait for their answer.
 - `CLAUDE.md` references: Codex reads `AGENTS.md`; treat them as the target repo's agent-context file.
 
-# /cicd-health - Health Checks
+# $cicd-health - Health Checks
 
 Run health checks against configured endpoints and processes
 

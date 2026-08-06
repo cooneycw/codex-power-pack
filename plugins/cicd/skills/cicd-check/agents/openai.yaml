@@ -3,4 +3,4 @@ interface:
   short_description: "Validate Makefile against CPP standards"
   default_prompt: "Use $cicd-check when you need validate Makefile against CPP standards"
 policy:
-  allow_implicit_invocation: true
+  allow_implicit_invocation: false

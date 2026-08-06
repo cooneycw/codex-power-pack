@@ -23,7 +23,7 @@ List and search issues in the claude-power-pack repository.
 
 ## Default Behavior
 
-If the user just runs `/github-issue-list` without specifying filters, show open issues:
+If the user just runs `$github-issue-list` without specifying filters, show open issues:
 
 ```bash
 gh issue list --repo "$REPO" --state open --limit 20
@@ -94,6 +94,6 @@ Present results in a clean table format:
 ## Follow-up Options
 
 After listing issues, offer:
-1. View a specific issue: `/github-issue-view NUMBER`
+1. View a specific issue: `$github-issue-view NUMBER`
 2. Refine search with different filters
-3. Create a new issue: `/github-issue-create`
+3. Create a new issue: `$github-issue-create`

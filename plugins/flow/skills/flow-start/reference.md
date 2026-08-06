@@ -36,13 +36,13 @@ friction the helper removes.
 
 ## Instructions
 
-When the user invokes `/flow-start <ISSUE>`, perform these steps:
+When the user invokes `$flow-start <ISSUE>`, perform these steps:
 
 ### Step 1: Resolve
 
-`/flow-start` operates on the SESSION cwd's repo, so invoke it from within the
+`$flow-start` operates on the SESSION cwd's repo, so invoke it from within the
 target repo. To drive an issue in a repo the session did not start in, use
-`/flow-auto <ISSUE> <PROJECT>`, whose Step 1 resolves the target checkout
+`$flow-auto <ISSUE> <PROJECT>`, whose Step 1 resolves the target checkout
 explicitly (issue #578). Both paths ride the same deterministic git-worktree
 lane (issue #627).
 
@@ -77,10 +77,10 @@ that exists (issue #590):
 2. `<SKILL_DIR>/scripts/flow-start-resolve.sh` from the CPP checkout.
 
 Either fallback may prompt once: the allowlist rules match only the stable
-`<SKILL_DIR>/scripts/` path. Tell the user to run **`/flow-repair`**, which
+`<SKILL_DIR>/scripts/` path. Tell the user to run **`$flow-repair`**, which
 installs the family there and restores the prompt-free lane. If BOTH fallbacks
 exit 127 there is no helper source at all - **STOP** and report that flow needs
-`/plugin install flow@cpp` (then `/flow-repair`) or a CPP checkout.
+`/plugin install flow@cpp` (then `$flow-repair`) or a CPP checkout.
 
 The helper fetches the issue, derives the `issue-<N>-<slug>` branch (slug cut
 to keep the branch name to a sane length), triages existing
@@ -96,7 +96,7 @@ drifted process cwd, issue #592), `TARGET_REPO`,
 compose-safety note below), `ISSUE_STATE`, `ISSUE_TITLE`, `BRANCH`, `WT_PATH`,
 `DEFAULT_BRANCH`, `REMOTE_BRANCH`, `WT_CREATED`, `LIVE_DRIVER` (the helper wraps
 its sibling `<SKILL_DIR>/scripts/flow-live-driver-guard.sh`, #503), `PR_HEAD`,
-`CONFIRM_REQUIRED` - the same contract `/flow-auto` Step 1 documents.
+`CONFIRM_REQUIRED` - the same contract `$flow-auto` Step 1 documents.
 
 **Compose-project safety (issue #626).** After entering the worktree, any
 `docker compose` you run by hand (`make docker-up` for a test database, etc.)
@@ -113,8 +113,8 @@ e.g. `~/.bashrc`). Either way the worktree is created via plain `git worktree
 add` + entered with `cd` - the native `EnterWorktree` tool's base dir is not
 configurable, and `EnterWorktree(path=...)` outside the repo triggers an
 approval prompt permission rules cannot suppress, so the native fresh lane is
-retired (#440 superseded). Cleanup is the git path (`/flow-merge` /
-`/flow-cleanup` / `<SKILL_DIR>/scripts/worktree-remove.sh` - all already layout-aware). The
+retired (#440 superseded). Cleanup is the git path (`$flow-merge` /
+`$flow-cleanup` / `<SKILL_DIR>/scripts/worktree-remove.sh` - all already layout-aware). The
 helper folds this in: `GIT_LANE=1` on the contract means the git lane applies.
 
 ### Step 2: Act on the contract
@@ -151,7 +151,7 @@ the worktree, run bare (literal values from the contract):
 This is the moat: it fails (`FLOW_START_VERIFY: fail`, exit 1) when the
 checkout is still on main/master, and renames a branch that does not match
 `issue-${ISSUE_NUM}-*` to the expected name so every downstream step
-(`/flow-merge`, `/flow-status`, `/flow-cleanup`) can extract the issue number
+(`$flow-merge`, `$flow-status`, `$flow-cleanup`) can extract the issue number
 from the branch. On success it prints the final `BRANCH=` and `WT_ROOT=`. If
 it fails, STOP and report.
 
@@ -160,7 +160,7 @@ main repo now (issue #627), but the guard still applies: when you edit files fro
 here, resolve paths from the worktree root - `git rev-parse --show-toplevel` - or
 use plain relative paths from the session cwd; never hand-build an absolute path
 into another checkout, which has been observed to land the edit in the MAIN repo
-working tree instead. `/flow-auto` verifies this with
+working tree instead. `$flow-auto` verifies this with
 `<SKILL_DIR>/scripts/flow-worktree-guard.sh --strict` before commit, where a fresh leak
 signature (exit 3) stops the run (issue #576).
 
@@ -180,8 +180,8 @@ Created worktree for issue #42: "Fix login bug"
 - **Issue closed:** `CONFIRM_REQUIRED=1` - warn but allow user to proceed (they may want to reopen); re-run with `--allow-closed`
 - **Worktree exists:** `LANE=resume` - report existing path, do not error
 - **Branch name collision:** Append short hash if needed
-- **Not in a git repo:** the resolve errors with the `/flow-auto <ISSUE> <PROJECT>` pointer - report it clearly
+- **Not in a git repo:** the resolve errors with the `$flow-auto <ISSUE> <PROJECT>` pointer - report it clearly
 
 ## Idempotency
 
-Running `/flow-start 42` when the worktree already exists resolves to `LANE=resume` and reports the path, not an error or a duplicate.
+Running `$flow-start 42` when the worktree already exists resolves to `LANE=resume` and reports the path, not an error or a duplicate.

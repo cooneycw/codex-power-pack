@@ -3,4 +3,4 @@ interface:
   short_description: "View GitHub issue details and comments"
   default_prompt: "Use $github-issue-view when you need view GitHub issue details and comments"
 policy:
-  allow_implicit_invocation: true
+  allow_implicit_invocation: false

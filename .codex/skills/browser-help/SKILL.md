@@ -22,14 +22,14 @@ upstream lacks (microsoft/playwright-mcp#1530), recovered without a fork.
 
 | Command | Description |
 |---------|-------------|
-| `/browser-session create <name> [url]` | Lease a free desk for a new named session |
-| `/browser-session resume <name> [url]` | Re-open a session (restores its saved login) |
-| `/browser-session save <name>` | Persist the session's cookies/localStorage to a state file |
-| `/browser-session close <name> [--discard]` | Free the desk (keep state, or `--discard` to forget) |
-| `/browser-session list` | Show sessions, status, and desk occupancy |
-| `/browser-session cleanup [--idle-seconds N]` | Release desks of idle sessions (keeps state) |
-| `/browser-session pool` | Show pool configuration and occupancy |
-| `/browser-help` | This help page |
+| `$browser-session create <name> [url]` | Lease a free desk for a new named session |
+| `$browser-session resume <name> [url]` | Re-open a session (restores its saved login) |
+| `$browser-session save <name>` | Persist the session's cookies/localStorage to a state file |
+| `$browser-session close <name> [--discard]` | Free the desk (keep state, or `--discard` to forget) |
+| `$browser-session list` | Show sessions, status, and desk occupancy |
+| `$browser-session cleanup [--idle-seconds N]` | Release desks of idle sessions (keeps state) |
+| `$browser-session pool` | Show pool configuration and occupancy |
+| `$browser-help` | This help page |
 
 ## The model in one paragraph
 
@@ -41,12 +41,12 @@ file into it. N desks multiplex unlimited named sessions.
 
 ## Setup (one time)
 
-1. Register the desk pool: `/cpp:init` -> Full tier -> **browser pool** step (writes
+1. Register the desk pool: `$cxpp-init` -> Full tier -> **browser pool** step (writes
    `.claude/playwright-pool.json` from `templates/playwright-pool.example.json` and runs
    `claude mcp add playwright-desk-N ... -- npx -y @playwright/mcp@<ver> --isolated ...`).
 2. **Restart Claude Code** so the `playwright-desk-*` MCP servers load at startup
    (mid-session registration does not take effect - see the spike doc).
-3. Verify: `/browser-session pool` and confirm `mcp__playwright-desk-1__*` tools exist.
+3. Verify: `$browser-session pool` and confirm `mcp__playwright-desk-1__*` tools exist.
 
 ## Configuration: `.claude/playwright-pool.json`
 
@@ -74,7 +74,7 @@ The live ledger `.claude/playwright-sessions.json` is managed by the wrapper - d
 
 ## When NOT to use this
 
-Single-session automation (`/qa-test`, a one-off screenshot) needs only plain upstream
+Single-session automation (`$qa-test`, a one-off screenshot) needs only plain upstream
 `playwright-mcp`. Reach for the desk pool only when you need several **named, concurrent**
 sessions - e.g. driving two logged-in accounts side by side.
 

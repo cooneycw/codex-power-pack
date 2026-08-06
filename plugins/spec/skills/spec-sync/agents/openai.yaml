@@ -3,4 +3,4 @@ interface:
   short_description: "Preview spec-kit tasks as GitHub issues"
   default_prompt: "Use $spec-sync to preview a spec-kit task list as GitHub issues."
 policy:
-  allow_implicit_invocation: true
+  allow_implicit_invocation: false

@@ -5,7 +5,7 @@ description: "Refresh Codex Power Pack host wiring additively and with explicit 
 
 # CxPP Update
 
-Use this skill for `/cxpp:update` when an installed Codex Power Pack setup needs
+Use this skill for `$cxpp-update` when an installed Codex Power Pack setup needs
 an additive refresh without overwriting user-managed configuration.
 
 ## Plugin Suite Profiles
@@ -30,7 +30,7 @@ retain their existing individual prompts.
 
 ## Procedure
 
-1. Run the read-only checks in `/cxpp:status` first and summarize missing,
+1. Run the read-only checks in `$cxpp-status` first and summarize missing,
    unhealthy, or drifted components.
 2. If the marketplace is missing or family plugins are absent, offer Minimal,
    Recommended, Full suite, and Custom. Build the desired family set as the
@@ -44,7 +44,7 @@ retain their existing individual prompts.
    resolved SHA, and exact additive marketplace/plugin commands.
 4. After explicit approval, expand the sparse marketplace snapshot and install
    only missing selected plugins. Preserve existing families and configuration.
-   Re-run `/cxpp:status` to verify the result.
+   Re-run `$cxpp-status` to verify the result.
 5. Compare requested MCP pointers with `templates/config.toml.example` using
    `codex mcp get`; do not print or parse the full global configuration file.
 6. For each host change, show the precise additive action and ask for separate

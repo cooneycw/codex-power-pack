@@ -1,6 +1,6 @@
 {
   "name": "agents-md",
-  "version": "0.1.0+codex.20260727145047",
+  "version": "0.1.1+codex.20260806203405",
   "description": "AGENTS.md governance lint and help skills.",
   "author": {
     "name": "Codex Power Pack maintainers",
@@ -28,7 +28,7 @@
       "Read"
     ],
     "defaultPrompt": [
-      "Lint AGENTS.md with /agents-md-lint."
+      "Use $agents-md-lint to audit AGENTS.md governance directives."
     ],
     "brandColor": "#7C3AED"
   }

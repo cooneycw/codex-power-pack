@@ -25,7 +25,7 @@ there is no native worktree state to reconcile here.
 
 ## Instructions
 
-When the user invokes `/flow-cleanup`, perform these steps:
+When the user invokes `$flow-cleanup`, perform these steps:
 
 ### Step 1: Detect Repository Root
 
@@ -149,5 +149,5 @@ Report how many remote tracking branches were pruned.
 - Safe to run multiple times (fully idempotent)
 - Only deletes `issue-*` pattern branches in the squash-merge detection path (other branches require `--merged` confirmation)
 - Use `git branch -d` (safe delete) for merged branches, `git branch -D` (force) only for branches whose remote was deleted
-- Run automatically after `/flow-merge` or manually anytime
+- Run automatically after `$flow-merge` or manually anytime
 - Does not require network access except for `git fetch --prune`

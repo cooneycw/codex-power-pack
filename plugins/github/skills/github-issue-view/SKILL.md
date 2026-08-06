@@ -77,14 +77,14 @@ Present the issue in a readable format:
 
 After viewing, offer:
 1. **Open in browser**: `gh issue view NUMBER --web --repo "$REPO"`
-2. **Add a comment**: `/github-issue-update NUMBER` (then add comment)
-3. **Close the issue**: `/github-issue-close NUMBER`
-4. **Edit the issue**: `/github-issue-update NUMBER`
+2. **Add a comment**: `$github-issue-update NUMBER` (then add comment)
+3. **Close the issue**: `$github-issue-close NUMBER`
+4. **Edit the issue**: `$github-issue-update NUMBER`
 
 ## Example Interaction
 
 ```
-User: /github-issue-view 42
+User: $github-issue-view 42
 
 Claude: [Fetches and displays issue #42 details]
 

@@ -1,6 +1,6 @@
 {
   "name": "woodpecker",
-  "version": "0.1.0+codex.20260727145047",
+  "version": "0.1.1+codex.20260806203405",
   "description": "Safe Woodpecker CI API client and pipeline generation skills.",
   "author": {
     "name": "Codex Power Pack maintainers",
@@ -27,7 +27,7 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Use /woodpecker-status to inspect a Woodpecker pipeline."
+      "Use $woodpecker-status to inspect recent Woodpecker pipelines without exposing credentials."
     ],
     "brandColor": "#16A34A"
   }

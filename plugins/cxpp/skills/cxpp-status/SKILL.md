@@ -5,7 +5,7 @@ description: "Report installed Codex Power Pack plugins, host pointers, health, 
 
 # CxPP Status
 
-Use this skill for `/cxpp:status` to inspect Codex Power Pack host wiring. This
+Use this skill for `$cxpp-status` to inspect Codex Power Pack host wiring. This
 skill is read-only: it must not install, update, write, restart, or delete
 anything.
 

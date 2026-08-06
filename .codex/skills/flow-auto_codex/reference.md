@@ -10,15 +10,15 @@ worktrees (or uses `FLOW_WORKTREE_BASE` when configured).
 
 # Flow: Auto Codex - Full Issue Lifecycle with a Codex Pre-PR Review Stage
 
-`/flow-auto` with one addition: after Implement and before the PR is created,
+`$flow-auto` with one addition: after Implement and before the PR is created,
 OpenAI Codex reviews the branch as an independent second model
-(`/codex:code_review`), and accepted findings are fixed in the worktree - so
+(`$claude-code-review`), and accepted findings are fixed in the worktree - so
 cross-model review lands in the same clean commit history instead of as post-PR
 churn.
 
 ## Arguments
 
-Identical to `/flow-auto`:
+Identical to `$flow-auto`:
 
 - `ISSUE` (required): GitHub issue number
 - `PROJECT` (optional): target repo when the session cwd is not the issue's repo
@@ -26,8 +26,8 @@ Identical to `/flow-auto`:
 
 ## Instructions
 
-**This command is a delta over `/flow-auto` - do NOT re-derive the lifecycle
-from this file alone.** Load the full `/flow-auto` spec first, from whichever
+**This command is a delta over `$flow-auto` - do NOT re-derive the lifecycle
+from this file alone.** Load the full `$flow-auto` spec first, from whichever
 surface this installation has (first match wins):
 
 1. the installed `flow` plugin's `auto.md` command (`${CLAUDE_PLUGIN_ROOT}/commands/auto.md`, `plugins/flow/commands/auto.md` in a marketplace checkout)
@@ -35,9 +35,9 @@ surface this installation has (first match wins):
 
 Then execute that spec **exactly**, with two changes:
 
-1. **Renumbering:** the run has 10 steps. Steps 1-4 here are `/flow-auto` Steps
+1. **Renumbering:** the run has 10 steps. Steps 1-4 here are `$flow-auto` Steps
    1-4 unchanged; Step 5 is the new Codex Review stage defined below; Steps 6-10
-   here are `/flow-auto` Steps 5-9 unchanged (Update Docs, Finish, Merge,
+   here are `$flow-auto` Steps 5-9 unchanged (Update Docs, Finish, Merge,
    Verify CI, Deploy). Every guard, helper invocation, gate, and STOP condition
    in the base spec applies at its shifted number, and friction capture records
    `--run "flow:auto_codex #$ISSUE_NUM"` with the 10-step `--step` labels.
@@ -70,7 +70,7 @@ Proceeding...
 Run from inside the worktree, after the Step-4 implementation is complete and
 before Update Docs / Finish.
 
-**5a. Run the review.** Invoke `/codex:code_review` against the branch's base,
+**5a. Run the review.** Invoke `$claude-code-review` against the branch's base,
 passing the issue as context:
 
 - `BASE`: `origin/<DEFAULT_BRANCH>` from the Step-1 contract
@@ -81,7 +81,7 @@ The command's exit contract drives the stage:
 - **Exit 3 (`CODEX_REVIEW: unavailable`) or a non-zero Codex run:** warn, record
   a friction signal (`--class red-output --outcome worked-around`), report
   `Step 5/10: Codex Review skipped (Codex unavailable)` and continue to Step 6 -
-  the run degrades to plain `/flow-auto` behavior. Codex being absent must never
+  the run degrades to plain `$flow-auto` behavior. Codex being absent must never
   fail the flow; `/codex:status` is the user's diagnostic.
 - **Empty diff or "None - no defects found":** report
   `Step 5/10: Codex Review complete - no findings` and continue to Step 6.
@@ -100,7 +100,7 @@ The command's exit contract drives the stage:
   file a follow-up issue rather than expanding this run's scope.
 
 **5c. Bounded re-review.** If any finding was accepted and fixed, run
-`/codex:code_review` **once** more over the updated diff so the fixes get the
+`$claude-code-review` **once** more over the updated diff so the fixes get the
 same independent eyes. Triage any new findings the same way, but do NOT run a
 third review - if the second pass still surfaces accepted findings, fix them and
 proceed; the Step-7 quality gates and the PR remain the backstop. Never loop
@@ -131,7 +131,7 @@ Report: `Step 5/10: Codex Review complete - X accepted (fixed), Y rejected, Z de
 
 ### Final Summary
 
-Use the `/flow-auto` final-summary template with one added line after `PR:`:
+Use the `$flow-auto` final-summary template with one added line after `PR:`:
 
 ```
   Review:   Codex X accepted / Y rejected / Z deferred (N passes) | no findings | skipped (unavailable)
@@ -139,15 +139,15 @@ Use the `/flow-auto` final-summary template with one added line after `PR:`:
 
 ## Error Handling
 
-The `/flow-auto` error template applies with the shifted numbering; for Step 5
-the resume path is `/codex:code_review` (standalone), then continue with
-`/flow-finish`. Only a worktree-guard exit 3 during 5b stops the run - review
+The `$flow-auto` error template applies with the shifted numbering; for Step 5
+the resume path is `$claude-code-review` (standalone), then continue with
+`$flow-finish`. Only a worktree-guard exit 3 during 5b stops the run - review
 unavailability or a failed Codex invocation never does.
 
 ## Notes
 
 - This command deliberately re-specifies ONLY Step 5. Everything else - lanes,
-  claims, guards, gates, merge, CI, deploy - is `/flow-auto`'s spec, loaded and
+  claims, guards, gates, merge, CI, deploy - is `$flow-auto`'s spec, loaded and
   followed at its shifted step numbers, so the two commands cannot drift apart.
 - The review is advisory and Claude stays the author: Codex proposes, Claude
   triages with reasons, and rejected findings are recorded, not hidden.

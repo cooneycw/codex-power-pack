@@ -10,7 +10,7 @@ None. This command operates on conversation context and project state.
 
 ## Instructions
 
-When the user invokes `/self-improvement-deployment`, perform these steps:
+When the user invokes `$self-improvement-deployment`, perform these steps:
 
 ### Step 1: Gather Context - Recent Errors
 
@@ -110,7 +110,7 @@ Cross-reference the errors (Step 1) with the Makefile contents (Step 3) to ident
 
 **Missing targets:**
 - Errors referencing targets that do not exist
-- Targets called by `/flow` commands but not defined (e.g., `/flow-finish` expects `lint` and `test`)
+- Targets called by `/flow` commands but not defined (e.g., `$flow-finish` expects `lint` and `test`)
 
 **Dependency gaps:**
 - Targets that should depend on others but run independently
@@ -126,11 +126,11 @@ Compare against the CPP standard set and report which are absent:
 
 | Target | Used By | Purpose |
 |--------|---------|---------|
-| `lint` | `/flow-finish` | Code linting (auto-discovered) |
-| `test` | `/flow-finish` | Test suite (auto-discovered) |
+| `lint` | `$flow-finish` | Code linting (auto-discovered) |
+| `test` | `$flow-finish` | Test suite (auto-discovered) |
 | `format` | Manual | Code formatting |
-| `deploy` | `/flow-deploy` | Production deployment |
-| `deploy-staging` | `/flow-deploy staging` | Staging deployment |
+| `deploy` | `$flow-deploy` | Production deployment |
+| `deploy-staging` | `$flow-deploy staging` | Staging deployment |
 | `clean` | Manual | Remove build artifacts |
 
 **uv integration issues:**
@@ -222,6 +222,6 @@ Apply changes? [y/N]
 - This is a **retrospective** command - it looks backward at what happened, not forward
 - It never modifies the Makefile without explicit user approval
 - The deploy.log at `.claude/deploy.log` provides historical context beyond the current session
-- Pair with `/flow-doctor` for a forward-looking health check of your workflow environment
+- Pair with `$flow-doctor` for a forward-looking health check of your workflow environment
 - Reference template: `~/Projects/claude-power-pack/templates/Makefile.example`
 - All Makefile targets should use `uv run` for Python commands to ensure environment isolation

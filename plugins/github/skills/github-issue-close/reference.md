@@ -68,7 +68,7 @@ After closing, confirm success and show final state.
 
 ### Simple Close
 ```
-User: /github-issue-close 42
+User: $github-issue-close 42
 
 Claude: [Shows issue #42 details]
 
@@ -92,7 +92,7 @@ Done! Issue #42 has been closed.
 
 ### Close with Comment
 ```
-User: /github-issue-close 38
+User: $github-issue-close 38
 
 Claude: [Shows issue #38 details]
 
@@ -120,7 +120,7 @@ Claude: Done! Issue #38 has been closed with your comment.
 
 ### Close as Duplicate
 ```
-User: /github-issue-close 45
+User: $github-issue-close 45
 
 Claude: [Shows issue details]
 

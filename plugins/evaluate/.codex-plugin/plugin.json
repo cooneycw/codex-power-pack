@@ -1,6 +1,6 @@
 {
   "name": "evaluate",
-  "version": "0.1.0+codex.20260727145047",
+  "version": "0.1.1+codex.20260806203405",
   "description": "Multi-model evaluation skills.",
   "author": {
     "name": "Codex Power Pack maintainers",
@@ -27,7 +27,7 @@
       "Read"
     ],
     "defaultPrompt": [
-      "Evaluate an issue with /evaluate-issue."
+      "Use $evaluate-issue to evaluate an issue with bounded multi-model consultation."
     ],
     "brandColor": "#9333EA"
   }

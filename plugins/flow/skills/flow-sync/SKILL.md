@@ -14,7 +14,7 @@ None. Operates on the current worktree/branch.
 
 ## Instructions
 
-When the user invokes `/flow-sync`, perform these steps:
+When the user invokes `$flow-sync`, perform these steps:
 
 ### Step 1: Validate Context
 
@@ -26,7 +26,7 @@ git rev-parse --show-toplevel
 BRANCH=$(git branch --show-current)
 ```
 
-- If on `main` or `master`: **STOP**. Report: "Cannot sync main branch. Use `/flow-start <issue>` to create a worktree first."
+- If on `main` or `master`: **STOP**. Report: "Cannot sync main branch. Use `$flow-start <issue>` to create a worktree first."
 - If not on an `issue-*` branch: Warn but allow (user may have custom branch names).
 
 ### Step 2: Check for Uncommitted Changes
@@ -42,7 +42,7 @@ git status --short
   git add -A
   git commit -m "wip: sync work in progress
 
-  Auto-committed by /flow-sync for cross-machine pickup.
+  Auto-committed by $flow-sync for cross-machine pickup.
   This commit will be squash-merged - no need to clean up."
   ```
   Report: "Auto-committed WIP changes."
@@ -64,14 +64,14 @@ Synced branch to remote.
   Remote: origin
 
   To continue on another machine:
-    /flow-start 42
+    $flow-start 42
     → Detects remote branch and creates worktree from it
 ```
 
 ## Error Handling
 
 - **Not in a git repo:** Report error clearly.
-- **On main branch:** Block sync, suggest `/flow-start`.
+- **On main branch:** Block sync, suggest `$flow-start`.
 - **Push rejected:** Suggest `git pull --rebase` to reconcile.
 - **No remote configured:** Report "No remote 'origin' found."
 
@@ -79,6 +79,6 @@ Synced branch to remote.
 
 - This command is intentionally simple - just commit WIP + push.
 - Cross-machine sync operates on the `issue-<N>-<slug>` **branch**, not on worktree paths, so the visible-sibling worktree location (per-workstation, outside the repo, issue #627) does not affect it.
-- `/flow-start` already handles the receiving end: it detects the remote branch and, on the git lane (issue #627), adds a worktree tracking it with `git worktree add` at the visible sibling `<parent>/<repo>-<branch>` (or `$FLOW_WORKTREE_BASE` when set) and enters it with `cd`.
-- WIP commits are harmless because `/flow-merge` uses squash-merge, collapsing all commits into one clean commit.
+- `$flow-start` already handles the receiving end: it detects the remote branch and, on the git lane (issue #627), adds a worktree tracking it with `git worktree add` at the visible sibling `<parent>/<repo>-<branch>` (or `$FLOW_WORKTREE_BASE` when set) and enters it with `cd`.
+- WIP commits are harmless because `$flow-merge` uses squash-merge, collapsing all commits into one clean commit.
 - No configuration required - works with any git remote.

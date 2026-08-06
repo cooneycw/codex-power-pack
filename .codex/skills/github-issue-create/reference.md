@@ -82,7 +82,7 @@ After creation:
 ## Example Interaction
 
 ```
-User: /github-issue-create
+User: $github-issue-create
 
 Claude: What type of issue would you like to create?
 1. Best Practice Suggestion

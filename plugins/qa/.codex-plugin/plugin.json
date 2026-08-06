@@ -1,6 +1,6 @@
 {
   "name": "qa",
-  "version": "0.1.0+codex.20260727145047",
+  "version": "0.1.1+codex.20260806203405",
   "description": "Automated web QA testing skills.",
   "author": {
     "name": "Codex Power Pack maintainers",
@@ -27,7 +27,7 @@
       "Read"
     ],
     "defaultPrompt": [
-      "Run web QA with /qa-test."
+      "Use $qa-test to test a web page through Playwright and report reproducible findings."
     ],
     "brandColor": "#EA580C"
   }

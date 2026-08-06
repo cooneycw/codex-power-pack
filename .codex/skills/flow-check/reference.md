@@ -12,11 +12,11 @@ worktrees (or uses `FLOW_WORKTREE_BASE` when configured).
 
 Run lint, test, typecheck and security checks to verify code quality. Does not commit, push, or create a PR.
 
-Use this to validate your changes before running `/flow-finish`.
+Use this to validate your changes before running `$flow-finish`.
 
 ## Instructions
 
-When the user invokes `/flow-check`, perform these steps:
+When the user invokes `$flow-check`, perform these steps:
 
 ### Step 1: Detect Available Checks
 
@@ -129,7 +129,7 @@ The audited gate helper owns the `lib.cicd` invocation contract (CPP-checkout
 resolution, the `uv` check, the #430 `PYTHONPATH` / `uv run --project` shape -
 issue #613). Its `--check-summary` mode is advisory and always exits 0; invoke
 it BARE (#581 discipline; on exit 127 the helper is not installed - suggest
-`/flow-repair` and count the check as SKIP):
+`$flow-repair` and count the check as SKIP):
 
 ```bash
 <SKILL_DIR>/scripts/flow-finish-gate.sh --check-summary
@@ -176,23 +176,23 @@ Present a summary report:
 Status symbols:
 - **PASS** - Check succeeded
 - **WARN** - Non-blocking issue found (proceed with caution)
-- **FAIL** - Blocking issue found (fix before `/flow-finish`)
+- **FAIL** - Blocking issue found (fix before `$flow-finish`)
 - **SKIP** - Check not available (no Makefile, lib not installed)
 
 ### Final Message
 
 Based on results:
-- **All pass:** "Ready for `/flow-finish`."
-- **Warnings only:** "Warnings found but non-blocking. Review before `/flow-finish`."
-- **Failures:** "Failing checks must be fixed before `/flow-finish`."
+- **All pass:** "Ready for `$flow-finish`."
+- **Warnings only:** "Warnings found but non-blocking. Review before `$flow-finish`."
+- **Failures:** "Failing checks must be fixed before `$flow-finish`."
 
 ## Notes
 
 - This command is **read-only** - it never commits, pushes, or modifies files
-- It runs the same checks as `/flow-finish` Step 2, extracted for standalone use
+- It runs the same checks as `$flow-finish` Step 2, extracted for standalone use
 - Lint, test and typecheck are the three steps every shipped CI template runs
   (`templates/workflows/ci-*.yml`, `woodpecker-*.yml`), and the `finish`/`check`
   runner plans carry the same three (issue #617). Keep the sets aligned: a step
   CI runs but the check omits turns this report into a false green
 - Use it to validate changes before committing or as a pre-flight check
-- The security gate uses the same `.claude/security.yml` configuration as `/flow-finish`
+- The security gate uses the same `.claude/security.yml` configuration as `$flow-finish`

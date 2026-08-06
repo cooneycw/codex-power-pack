@@ -1,6 +1,6 @@
 {
   "name": "spec",
-  "version": "0.1.0+codex.20260727145047",
+  "version": "0.1.1+codex.20260806203405",
   "description": "Official spec-kit adoption and gh-CLI issue sync for Codex.",
   "author": {
     "name": "Codex Power Pack maintainers",

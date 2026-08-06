@@ -1,6 +1,6 @@
 {
   "name": "documentation",
-  "version": "0.1.0+codex.20260727145047",
+  "version": "0.1.1+codex.20260806203405",
   "description": "Documentation, C4 diagram, and PPTX skills.",
   "author": {
     "name": "Codex Power Pack maintainers",
@@ -28,7 +28,7 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Generate C4 diagrams with /documentation-c4."
+      "Use $documentation-c4 to generate GitHub-renderable C4 architecture diagrams."
     ],
     "brandColor": "#0891B2"
   }

@@ -15,7 +15,7 @@ Secrets never appear in CLI arguments, logs, or output.
 
 ## Instructions
 
-When the user invokes `/secrets-run -- COMMAND`, run:
+When the user invokes `$secrets-run -- COMMAND`, run:
 
 ```bash
 PYTHONPATH="${HOME}/Projects/claude-power-pack/lib:${PYTHONPATH}" python3 -m lib.creds run -- $COMMAND

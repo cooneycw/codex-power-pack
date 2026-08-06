@@ -135,6 +135,48 @@
             "status": "not_run",
             "reason": "Stage 0 records the case but has no bounded live evaluator."
           }
+        },
+        {
+          "id": "CASE-006",
+          "category": "direct",
+          "prompt": "Use $flow-auto to deliver open GitHub issue 159 through the full lifecycle.",
+          "expected": {
+            "selected_skill": "flow-auto",
+            "procedure_checkpoint": "Create or resume the issue worktree and stop at every lifecycle gate.",
+            "output_contract": "Report analysis, approval, implementation, quality, PR, merge, CI, and deploy outcomes."
+          },
+          "baseline": {
+            "status": "not_run",
+            "reason": "Stage 2 adds this golden case; bounded model-backed activation remains owned by issue #161."
+          }
+        },
+        {
+          "id": "CASE-007",
+          "category": "indirect",
+          "prompt": "Please take open issue 159 from analysis all the way through a reviewed merge and CI verification.",
+          "expected": {
+            "selected_skill": "flow-auto",
+            "procedure_checkpoint": "Infer the full issue lifecycle without skipping the necessity or approval gate.",
+            "output_contract": "Deliver the issue through a PR and report each completed or blocked lifecycle step."
+          },
+          "baseline": {
+            "status": "not_run",
+            "reason": "Stage 2 adds this golden case; bounded model-backed activation remains owned by issue #161."
+          }
+        },
+        {
+          "id": "CASE-008",
+          "category": "negative",
+          "prompt": "Explain what issue 159 is asking for without changing the repository.",
+          "expected": {
+            "selected_skill": null,
+            "procedure_checkpoint": "Do not start flow-auto for a read-only explanation request.",
+            "output_contract": "Summarize the issue without creating a worktree or changing GitHub state."
+          },
+          "baseline": {
+            "status": "not_run",
+            "reason": "Stage 2 adds this golden case; bounded model-backed activation remains owned by issue #161."
+          }
         }
       ]
     }

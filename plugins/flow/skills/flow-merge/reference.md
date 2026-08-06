@@ -35,7 +35,7 @@ it and stop instead of reaching for `--steal`.
 
 ## Instructions
 
-When the user invokes `/flow-merge`, perform these steps:
+When the user invokes `$flow-merge`, perform these steps:
 
 ### Step 1: Detect Context
 
@@ -60,7 +60,7 @@ fi
 PR_JSON=$(gh pr list --head "$BRANCH" --json number,state,mergeable,reviewDecision,statusCheckRollup --jq '.[0]')
 ```
 
-- If no PR found: "No PR found for branch `$BRANCH`. Run `/flow-finish` first."
+- If no PR found: "No PR found for branch `$BRANCH`. Run `$flow-finish` first."
 - If PR is already merged: "PR is already merged. Run cleanup only? [y/N]"
 - Report PR state: checks passing, review status, mergeable
 
@@ -70,7 +70,7 @@ PR_JSON=$(gh pr list --head "$BRANCH" --json number,state,mergeable,reviewDecisi
 `main` while the PR was open; squash-merging it then fails at the last step on a
 content conflict. Bring the branch current and re-run the quality gate on the
 **post-merge tree** before merging, so the squash is deterministic and the gate
-reflects exactly what lands on `main`. (`/flow-auto` Step 7 runs the same guard;
+reflects exactly what lands on `main`. (`$flow-auto` Step 7 runs the same guard;
 this covers the standalone/resume path.)
 
 ```bash
@@ -81,7 +81,7 @@ if [[ "$(git rev-list --count HEAD..origin/main)" -gt 0 ]]; then
     if ! git merge --no-edit origin/main; then
         echo "STOP: merging origin/main hit conflicts:"
         git diff --name-only --diff-filter=U
-        echo "Resolve them, 'git add' + 'git commit', then re-run /flow-merge."
+        echo "Resolve them, 'git add' + 'git commit', then re-run $flow-merge."
         echo "(Do NOT 'git merge --abort' - that discards the resolution.)"
         exit 1
     fi
@@ -89,7 +89,7 @@ fi
 ```
 
 **If the merge above ran** (the branch was behind), re-run the FULL quality
-gate on the MERGED tree - the same audited helper `/flow-finish` uses
+gate on the MERGED tree - the same audited helper `$flow-finish` uses
 (deterministic runner with Makefile fallback built in, issue #613), invoked
 BARE as a separate call (#581 discipline - never fold it back into a compound
 block):
@@ -99,7 +99,7 @@ block):
 ```
 
 On `FLOW_FINISH_GATE: fail` (exit 1): **STOP** - the quality gate failed on
-the post-merge tree. Fix, commit, then re-run `/flow-merge`. On `ok` (or
+the post-merge tree. Fix, commit, then re-run `$flow-merge`. On `ok` (or
 `skipped` / `warn`, each with a warning - `warn` means a test step exited 0
 having executed no tests, issue #621: report its counts, do not call it "tests
 passed"), push the merge so the PR reflects the post-merge
@@ -207,7 +207,7 @@ if [[ -n "$ISSUE_NUM" ]]; then
     # Check if issue is still open (gh pr merge with Closes # may have closed it)
     ISSUE_STATE=$(gh issue view "$ISSUE_NUM" --json state --jq '.state' 2>/dev/null)
     if [[ "$ISSUE_STATE" == "OPEN" ]]; then
-        gh issue close "$ISSUE_NUM" --comment "Closed via /flow-merge - PR #${PR_NUMBER} merged."
+        gh issue close "$ISSUE_NUM" --comment "Closed via $flow-merge - PR #${PR_NUMBER} merged."
     fi
 fi
 ```
@@ -267,13 +267,13 @@ during cleanup (issue #471). Then, if that buffer recorded any signals, offer th
 codify step (do not auto-run):
 
 ```
-Friction retro: this run recorded N friction signal(s). Run /self-improvement-retro
+Friction retro: this run recorded N friction signal(s). Run $self-improvement-retro
 to codify fixes? [y/N]
 ```
 
 ## Error Handling
 
-- **PR not found:** Direct user to `/flow-finish`
+- **PR not found:** Direct user to `$flow-finish`
 - **Merge conflicts:** Report conflict, suggest manual resolution
 - **Checks failing:** Report which checks failed, ask if user wants to wait or force
 - **Inside worktree being removed:** `worktree-remove.sh` handles this safely
@@ -286,5 +286,5 @@ to codify fixes? [y/N]
 - Worktrees are visible siblings outside the repo on the git lane (issue #627: `<parent>/<repo>-<branch>`, or `$FLOW_WORKTREE_BASE` when set); cleanup uses `git worktree remove` / the safe `worktree-remove.sh` script. The native `ExitWorktree` lane is retired (#440 superseded)
 - After merge, the user ends up in the main repo on the `main` branch
 - Automatically prunes stale worktree references, merged branches, and remote tracking branches
-- For a standalone cleanup (without merging), use `/flow-cleanup`
-- Friction capture is always-on and this command offers `/self-improvement-retro` at the end to codify fixes (the grill-me cycle, issue #426)
+- For a standalone cleanup (without merging), use `$flow-cleanup`
+- Friction capture is always-on and this command offers `$self-improvement-retro` at the end to codify fixes (the grill-me cycle, issue #426)

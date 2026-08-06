@@ -55,7 +55,7 @@ flowchart TB
 
 ## L3 Skill Distribution and Deterministic Project Triage
 
-_L3 - 15 nodes, 19 edges - [`c4-l3-plugin-distribution.mmd`](c4-l3-plugin-distribution.mmd)_
+_L3 - 17 nodes, 25 edges - [`c4-l3-plugin-distribution.mmd`](c4-l3-plugin-distribution.mmd)_
 
 ```mermaid
 flowchart TB
@@ -70,8 +70,10 @@ flowchart TB
   runtime_overlay["Codex Runtime Overlay"]:::component
   currency_gate["Upstream Currency Gate"]:::component
   skill_contract["Skill Contract Manifest"]:::component
+  invocation_policy["Invocation Policy and Profiles"]:::component
   baseline_collector["Skill Contract Baseline Collector"]:::component
   contract_tests["Skill Contract Tests"]:::component
+  fresh_install_tests["Fresh Install Inventory Tests"]:::component
   project_next_core["Project Next Classifier and Ranker"]:::component
   project_next_collector["Git, GitHub, and Spec Collector"]:::component
   project_next_bundle["Installed Project Plugin Runtime"]:::component
@@ -88,7 +90,13 @@ flowchart TB
   baseline_collector -->|"measures"| openai_metadata
   baseline_collector -->|"reconciles"| marketplace_entry
   baseline_collector -->|"writes"| skill_contract
+  baseline_collector -->|"reports current policy from"| invocation_policy
   contract_tests -->|"validates"| skill_contract
+  contract_tests -->|"validates"| invocation_policy
+  invocation_policy -->|"limits implicit eligibility in"| openai_metadata
+  invocation_policy -->|"versions profiles and starters in"| plugin_manifest
+  fresh_install_tests -->|"enforces entry and byte budgets from"| invocation_policy
+  fresh_install_tests -->|"installs and inventories"| skill_payload
   skill_payload -->|"invokes for deterministic triage"| project_next_bundle
   project_next_collector -->|"supplies structured repository state"| project_next_core
   project_next_core -->|"generates installed copy"| project_next_bundle
@@ -123,4 +131,4 @@ classDiagram
   OutputMasker --> SecretBundle : masks values from
 ```
 
-_Generated 2026-08-06T20:31:44Z_
+_Generated 2026-08-06T21:00:45Z_

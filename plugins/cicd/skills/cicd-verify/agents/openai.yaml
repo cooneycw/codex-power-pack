@@ -3,4 +3,4 @@ interface:
   short_description: "Verify a deployment against a pre-deploy baseline (proceed/rollback)"
   default_prompt: "Use $cicd-verify when you need verify a deployment against a pre-deploy baseline (proceed/rollback)"
 policy:
-  allow_implicit_invocation: true
+  allow_implicit_invocation: false

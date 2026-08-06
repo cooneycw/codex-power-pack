@@ -1,6 +1,6 @@
 {
   "name": "second-opinion",
-  "version": "0.1.0+codex.20260727145047",
+  "version": "0.1.1+codex.20260806203405",
   "description": "Second-opinion model selection and review skills.",
   "author": {
     "name": "Codex Power Pack maintainers",
@@ -27,7 +27,7 @@
       "Read"
     ],
     "defaultPrompt": [
-      "Start a second opinion with /second-opinion-start."
+      "Use $second-opinion-start to obtain a bounded multi-model review."
     ],
     "brandColor": "#A855F7"
   }

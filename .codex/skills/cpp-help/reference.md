@@ -8,18 +8,18 @@ CPP provides commands for setting up and managing Claude Code enhancements.
 
 | Command | Description |
 |---------|-------------|
-| `/cpp:init` | Interactive setup wizard - install CPP components |
-| `/cpp:update` | Pull latest version, sync deps, refresh Docker/systemd runtime, offer tier upgrades |
-| `/cpp:status` | Check current installation state |
-| `/cpp-help` | This help overview |
-| `/cpp-dockers` | Docker container status, health, and project linkages |
-| `/cpp-happy-check` | Check happy-cli version (optional) |
-| `/cpp-load-best-practices` | Load the full best-practices guide (25K tokens) |
-| `/cpp-load-mcp-docs` | Load MCP Second Opinion server documentation |
+| `$cxpp-init` | Interactive setup wizard - install CPP components |
+| `$cxpp-update` | Pull latest version, sync deps, refresh Docker/systemd runtime, offer tier upgrades |
+| `$cxpp-status` | Check current installation state |
+| `$cpp-help` | This help overview |
+| `$cpp-dockers` | Docker container status, health, and project linkages |
+| `$cpp-happy-check` | Check happy-cli version (optional) |
+| `$cpp-load-best-practices` | Load the full best-practices guide (25K tokens) |
+| `$cpp-load-mcp-docs` | Load MCP Second Opinion server documentation |
 
 The four utility commands above were folded into the `cpp` family from loose
 top-level files (issue #582) so plugin and Codex-skill packaging deliver them;
-`/cpp:init|status|update` remain repo-local (not shipped in the cpp plugin).
+`$cxpp-init|status|update` remain repo-local (not shipped in the cpp plugin).
 
 ## Installation Tiers
 
@@ -37,16 +37,16 @@ CPP uses a tiered installation model:
 
 ```bash
 # Check what's installed
-/cpp:status
+$cxpp-status
 
 # Run the setup wizard
-/cpp:init
+$cxpp-init
 ```
 
 ## Components
 
 ### Tier 1 - Minimal
-- **Commands**: `/project-next`, `/flow:*`, `/spec:*`, `/github:*`
+- **Commands**: `$project-next`, `/flow:*`, `/spec:*`, `/github:*`
 - **Skills**: Best practices loaders, secrets management
 
 ### Tier 2 - Standard
@@ -62,11 +62,11 @@ CPP uses a tiered installation model:
 - **Systemd services**: Auto-start on boot (optional for native installs)
 
 ### Tier 4 - CI/CD
-- **Build System**: Framework detection, Makefile generation/validation (`/cicd-init`, `/cicd-check`)
-- **Health Checks**: Endpoint and process verification (`/cicd-health`)
-- **Smoke Tests**: Post-deploy command verification (`/cicd-smoke`)
-- **CI/CD Pipelines**: GitHub Actions workflow generation (`/cicd-pipeline`)
-- **Containers**: Dockerfile and docker-compose generation (`/cicd-container`)
+- **Build System**: Framework detection, Makefile generation/validation (`$cicd-init`, `$cicd-check`)
+- **Health Checks**: Endpoint and process verification (`$cicd-health`)
+- **Smoke Tests**: Post-deploy command verification (`$cicd-smoke`)
+- **CI/CD Pipelines**: GitHub Actions workflow generation (`$cicd-pipeline`)
+- **Containers**: Dockerfile and docker-compose generation (`$cicd-container`)
 
 ### Tier 5 - Codex
 - **Codex Auto** (`/codex:auto`): Full issue lifecycle delegated to Codex CLI
@@ -79,13 +79,13 @@ CPP uses a tiered installation model:
 
 | Command | Purpose |
 |---------|---------|
-| `/cicd-init` | Detect framework, generate Makefile and cicd.yml |
-| `/cicd-check` | Validate Makefile against CPP standards |
-| `/cicd-health` | Run health checks (endpoints + processes) |
-| `/cicd-smoke` | Run smoke tests from cicd.yml |
-| `/cicd-pipeline` | Generate GitHub Actions CI/CD workflows |
-| `/cicd-container` | Generate Dockerfile and docker-compose.yml |
-| `/cicd-help` | CI/CD command overview |
+| `$cicd-init` | Detect framework, generate Makefile and cicd.yml |
+| `$cicd-check` | Validate Makefile against CPP standards |
+| `$cicd-health` | Run health checks (endpoints + processes) |
+| `$cicd-smoke` | Run smoke tests from cicd.yml |
+| `$cicd-pipeline` | Generate GitHub Actions CI/CD workflows |
+| `$cicd-container` | Generate Dockerfile and docker-compose.yml |
+| `$cicd-help` | CI/CD command overview |
 
 ## Codex Orchestration Commands (Tier 5)
 

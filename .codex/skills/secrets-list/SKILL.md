@@ -14,7 +14,7 @@ List all secret keys for the current project (values masked).
 
 ## Instructions
 
-When the user invokes `/secrets-list`, run:
+When the user invokes `$secrets-list`, run:
 
 ```bash
 PYTHONPATH="${HOME}/Projects/claude-power-pack/lib:${PYTHONPATH}" python3 -m lib.creds list

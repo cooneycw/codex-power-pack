@@ -16,7 +16,7 @@ Complete end-to-end workflow: start worktree → analyze issue → ELI5 plan + n
 
 - `ISSUE` (required): GitHub issue number (e.g., `42`)
 - `PROJECT` (optional): target repo when the session cwd is not the repo the
-  issue belongs to (issue #578). Resolved like `/project-next`: an existing
+  issue belongs to (issue #578). Resolved like `$project-next`: an existing
   directory path first, else `~/Projects/<PROJECT>`; must be a git checkout.
   When the resolved target differs from the session repo (or the session cwd is
   not in a git repo at all), Step 1 commits the run to the deterministic
@@ -26,7 +26,7 @@ Complete end-to-end workflow: start worktree → analyze issue → ELI5 plan + n
 
 ## Instructions
 
-When the user invokes `/flow-auto <ISSUE> [PROJECT]`, perform these steps sequentially. Stop immediately if any step fails.
+When the user invokes `$flow-auto <ISSUE> [PROJECT]`, perform these steps sequentially. Stop immediately if any step fails.
 
 Report at the start:
 
@@ -68,13 +68,13 @@ append a record via the fail-open capture helper (it never blocks the flow):
 The fourth class, **permission-prompt**, is NOT model-captured here: the model
 cannot tell an approved tool call from an auto-allowed one. It is captured by the
 harness `PermissionRequest` hook (`<SKILL_DIR>/scripts/hook-permission-census.sh`, registered
-in `~/.claude/settings.json` by `/cpp:init` / `/cpp:update`), which records a
+in `~/.claude/settings.json` by `$cxpp-init` / `$cxpp-update`), which records a
 risk-rated record with a derived allow-rule candidate on every prompt shown -
 across every session, not just flow runs (issue #482). Do not log this class by
 hand.
 
 Records go to the main repo's `.codex/friction.jsonl` (a queue drained by
-`/self-improvement-retro`). The helper resolves that durable buffer automatically
+`$self-improvement-retro`). The helper resolves that durable buffer automatically
 via `git-common-dir`, so signals captured inside this run's worktree survive its
 removal at Step 7 (issue #471) - no env var or per-call path needed. It is
 invoked at the stable `<SKILL_DIR>/scripts/` path like every other helper; on exit
@@ -115,7 +115,7 @@ result. This rule applies to every flow helper in this file (see also Steps 4,
 6, 7).
 
 **1a. Resolve.** Run exactly one of these, substituting the literal issue
-number (and project, when `/flow-auto` was given a PROJECT arg):
+number (and project, when `$flow-auto` was given a PROJECT arg):
 
 ```bash
 <SKILL_DIR>/scripts/flow-start-resolve.sh 42 --session-cwd /home/user/Projects/my-repo
@@ -144,10 +144,10 @@ that exists (issue #590):
 2. `<SKILL_DIR>/scripts/flow-start-resolve.sh` from the CPP checkout.
 
 Either fallback may prompt once: the allowlist rules match only the stable
-`<SKILL_DIR>/scripts/` path. Tell the user to run **`/flow-repair`**, which
+`<SKILL_DIR>/scripts/` path. Tell the user to run **`$flow-repair`**, which
 installs the family there and restores the prompt-free lane. If BOTH fallbacks
 exit 127 there is no helper source at all - **STOP** and report that flow needs
-`/plugin install flow@cpp` (then `/flow-repair`) or a CPP checkout.
+`/plugin install flow@cpp` (then `$flow-repair`) or a CPP checkout.
 
 The helper prints a `key=value` contract ending in `FLOW_START_RESOLVE: ok`.
 On `FLOW_START_RESOLVE: error` (with an `ERROR=` line): **STOP** and report it.
@@ -299,7 +299,7 @@ Report: `Step 2/9: Analyze complete - {N} files to modify`
 
 ### Step 3: ELI5 - Plan + Necessity Gate (Approval Checkpoint)
 
-Before writing any code, run the `/flow-eli5` review using the issue and the Step 2 analysis. This is the post-analysis, pre-implementation communication and approval gate.
+Before writing any code, run the `$flow-eli5` review using the issue and the Step 2 analysis. This is the post-analysis, pre-implementation communication and approval gate.
 
 **Load the FULL gate spec first (issue #509) - the bullets below are orientation,
 not the spec.** Read it from whichever surface this installation has (first match
@@ -329,11 +329,11 @@ The three sections, for orientation:
 
 - **Verdict `No longer needed`** -> do NOT implement. Recommend closing the issue with an evidence-based comment and **STOP**:
   ```bash
-  gh issue close "$ISSUE_NUM" --comment "Closed via /flow-auto ELI5 review - <reason; cite superseding PR/issue>."
+  gh issue close "$ISSUE_NUM" --comment "Closed via $flow-auto ELI5 review - <reason; cite superseding PR/issue>."
   ```
   Run the close only with reviewer assent; surface the recommendation either way.
 - **Verdict `Partially addressed` or `Needs reframing`** -> the plan to approve is the adjusted one (remaining work / corrected approach), not the original issue body.
-- **Approval:** By default, **pause and wait for reviewer approval** of the plan before continuing to Step 4. For unattended runs, accept `--yes` (alias `--auto-approve`) on `/flow-auto`, or an `eli5: auto-approve` trailer in the issue body or HEAD commit message, to proceed without pausing. Auto-approve never overrides a `No longer needed` verdict.
+- **Approval:** By default, **pause and wait for reviewer approval** of the plan before continuing to Step 4. For unattended runs, accept `--yes` (alias `--auto-approve`) on `$flow-auto`, or an `eli5: auto-approve` trailer in the issue body or HEAD commit message, to proceed without pausing. Auto-approve never overrides a `No longer needed` verdict.
 
 Report: `Step 3/9: ELI5 complete - verdict: {Still needed|Partially addressed|No longer needed|Needs reframing}; approval: {granted|auto-granted|close recommended}`
 
@@ -378,7 +378,7 @@ applies to every helper call below):
 `${CLAUDE_PLUGIN_ROOT}/scripts/flow-stale-check.sh` (bundled with the plugin,
 #590), else `$CPP_DIR/scripts/flow-stale-check.sh` after locating the CPP
 checkout; either may prompt. This guard is advisory - if no copy exists, note it
-and continue. `/flow-repair` installs the family at the stable path.)
+and continue. `$flow-repair` installs the family at the stable path.)
 
 - If it reports `FLOW_STALE_BASE: collision` - or names a file you are about to
   touch under "Changed upstream" - bring the base in now, before piling edits on
@@ -461,7 +461,7 @@ fi
 
 Then perform these documentation tasks:
 
-1. **Regenerate C4 diagrams** - If `docs/architecture/` exists or significant code changes were made, run the `/documentation-c4` workflow:
+1. **Regenerate C4 diagrams** - If `docs/architecture/` exists or significant code changes were made, run the `$documentation-c4` workflow:
    - Analyze the project architecture
    - Generate L1-L4 C4 diagrams to `docs/architecture/`
    - Screenshot via Playwright if available
@@ -556,7 +556,7 @@ fi
    (Exit 127 - helper not installed: fall back to
    `${CLAUDE_PLUGIN_ROOT}/scripts/flow-finish-gate.sh` (bundled with the
    plugin, #590), else the CPP-checkout copy; either may prompt once - tell the
-   user to run **`/flow-repair`** to restore the prompt-free lane.)
+   user to run **`$flow-repair`** to restore the prompt-free lane.)
 
    The helper ends with a machine-readable marker:
    - `FLOW_FINISH_GATE: ok` (exit 0): gates passed - via the runner, or its
@@ -641,7 +641,7 @@ Report: `Step 6/9: Finish complete - PR #XX created`
        if ! git merge --no-edit origin/main; then
            echo "STOP: merging origin/main hit conflicts:"
            git diff --name-only --diff-filter=U
-           echo "Resolve them, 'git add' + 'git commit', then re-run /flow-merge."
+           echo "Resolve them, 'git add' + 'git commit', then re-run $flow-merge."
            echo "(Do NOT 'git merge --abort' - that discards the resolution.)"
            exit 1
        fi
@@ -676,7 +676,7 @@ Report: `Step 6/9: Finish complete - PR #XX created`
    ```
 
    On `FLOW_FINISH_GATE: fail` (exit 1): **STOP** - the quality gate failed on
-   the post-merge tree. Fix, commit, then re-run `/flow-merge`. On `ok` (or
+   the post-merge tree. Fix, commit, then re-run `$flow-merge`. On `ok` (or
    `skipped` / `warn`, each with a warning - `warn` means a test step exited 0
    having executed no tests, issue #621: report its counts, do not call it
    "tests passed"), push the merge so the PR reflects the post-merge
@@ -810,7 +810,7 @@ Report: `Step 6/9: Finish complete - PR #XX created`
    if [[ -n "$ISSUE_NUM" ]]; then
        ISSUE_STATE=$(gh issue view "$ISSUE_NUM" --json state --jq '.state' 2>/dev/null)
        if [[ "$ISSUE_STATE" == "OPEN" ]]; then
-           gh issue close "$ISSUE_NUM" --comment "Closed via /flow-auto - PR #${PR_NUMBER} merged."
+           gh issue close "$ISSUE_NUM" --comment "Closed via $flow-auto - PR #${PR_NUMBER} merged."
        fi
    fi
    ```
@@ -944,7 +944,7 @@ Report: `Step 8/9: Verify CI complete - pipeline #{N} passed` or `Step 8/9: Veri
 ### Step 9: Deploy (optional)
 
 Only if a Makefile with a `deploy` target exists in the main repo. Because
-`/flow-auto` runs `make deploy` inline (it does NOT call `/flow-deploy`), the
+`$flow-auto` runs `make deploy` inline (it does NOT call `$flow-deploy`), the
 deploy-verification gate is wired in here too - otherwise the flagship
 "one command to ship" path would deploy without validating the deployment.
 
@@ -1045,7 +1045,7 @@ elif [[ -f "Makefile" ]] && grep -q "^deploy:" Makefile; then
         VERDICT=$( [ "$VERIFY_EXIT" -eq 1 ] && echo "rollback" || echo "proceed/review" )
         if [ "$VERIFY_EXIT" -eq 1 ]; then
             echo "DEPLOY VERIFICATION: ROLLBACK - a probe that passed pre-deploy fails now."
-            echo "Recommend rolling back (redeploy previous commit) or investigating with /cicd-health + /cicd-smoke."
+            echo "Recommend rolling back (redeploy previous commit) or investigating with $cicd-health + $cicd-smoke."
         fi
     fi
 
@@ -1092,13 +1092,13 @@ After the summary, if `.codex/friction.jsonl` recorded any signals this run, off
 the codify step - do not block or auto-run it:
 
 ```
-Friction retro: this run recorded N friction signal(s). Run /self-improvement-retro
+Friction retro: this run recorded N friction signal(s). Run $self-improvement-retro
 to turn them into confirmed fixes (permission allowlist, Make targets, hooks,
 CLAUDE.md, portable learnings)? [y/N]
 ```
 
 Declining is free - capture already persisted the signals for a later retro. This
-offer also appears at the end of `/flow-merge`.
+offer also appears at the end of `$flow-merge`.
 
 ---
 
@@ -1113,15 +1113,15 @@ Flow Auto stopped at Step N/9: {Step Name}
   Fix:    [actionable suggestion]
 
   To resume manually:
-    /flow-start N    (if step 1 failed)
+    $flow-start N    (if step 1 failed)
     [investigate]    (if step 2 failed)
-    /flow-eli5 N     (if step 3 failed)
+    $flow-eli5 N     (if step 3 failed)
     [implement]      (if step 4 failed)
-    /documentation-c4 (if step 5 failed)
-    /flow-finish     (if step 6 failed)
-    /flow-merge      (if step 7 failed)
+    $documentation-c4 (if step 5 failed)
+    $flow-finish     (if step 6 failed)
+    $flow-merge      (if step 7 failed)
     [check CI dashboard] (if step 8 failed)
-    /flow-deploy     (if step 9 failed)
+    $flow-deploy     (if step 9 failed)
 ```
 
 Key failure scenarios:
@@ -1149,9 +1149,9 @@ Key failure scenarios:
 - Worktrees are visible siblings created on the git lane (issue #627): Step 1 (via `flow-start-resolve.sh`) runs `git worktree add` at `<parent>/<repo>-<branch>` (or `$FLOW_WORKTREE_BASE/<repo>-<branch>` when set), enters with `cd`, and Step 7 removes with `worktree-remove.sh`. The native `EnterWorktree`/`ExitWorktree` fresh lane is retired (#440 superseded for the default). The issue-anchored `issue-<N>-<slug>` branch name, the ELI5 gate, and quality gates are CPP policy layered on top
 - Step 1's plumbing is deterministic (issue #581): `<SKILL_DIR>/scripts/flow-start-resolve.sh` owns target-repo resolution, issue fetch, branch derivation, existing-work triage, the #503 guard, and git-lane creation, emitting a `key=value` contract; the model's only decision is `EnterWorktree` vs `cd`. Helpers are invoked bare at their stable `<SKILL_DIR>/scripts/` paths so the shipped allowlist rules match (`templates/claude-settings-permissions.json`) and Phase 1 runs prompt-free
 - The session cwd is DECLARED, not inferred (issue #592): Step 1a passes `--session-cwd <path>` so the resolver decides `CROSS_REPO`/`GIT_LANE` (and, with no PROJECT arg, `TARGET_REPO` itself) against the session's working directory rather than the Bash tool's cwd, which drifts on any earlier `cd`. Without it the resolver reports `SESSION_CWD_INFERRED=1` and fails closed to `GIT_LANE=1` - the residual #578 left behind
-- Cross-repo invocations (`/flow-auto <ISSUE> <PROJECT>`, or a session cwd outside any git repo) are first-class (issue #578): the resolver detects the mismatch (path, else `~/Projects/<PROJECT>`) and the run rides the deterministic git lane end-to-end - helper-created worktree, `cd` instead of `EnterWorktree`, git cleanup at Step 7 - with the worktree still under the target repo's `../<repo>-<branch>/` so every guard resolves unchanged
+- Cross-repo invocations (`$flow-auto <ISSUE> <PROJECT>`, or a session cwd outside any git repo) are first-class (issue #578): the resolver detects the mismatch (path, else `~/Projects/<PROJECT>`) and the run rides the deterministic git lane end-to-end - helper-created worktree, `cd` instead of `EnterWorktree`, git cleanup at Step 7 - with the worktree still under the target repo's `../<repo>-<branch>/` so every guard resolves unchanged
 - The worktree base is configurable (issue #584, ADR 0003 Option A): `FLOW_WORKTREE_BASE`, when set in host config, relocates worktrees to `$FLOW_WORKTREE_BASE/<repo>-<branch>` and commits the run to the same git lane (`GIT_LANE=1`); unset, shipped behavior is byte-identical to the in-repo default. The guard/merge/remove/friction scripts resolve via git plumbing and need no awareness of the base
 - The deploy step is always optional - it only runs if a deploy target exists
 - After completion, the user is in the main repo on the main branch
-- For step-by-step control, use individual commands: `/flow-start`, `/flow-eli5`, `/flow-finish`, `/flow-merge`, `/flow-deploy`
-- Friction capture runs throughout (always-on, fail-open, `<SKILL_DIR>/scripts/friction-log.sh` -> `.codex/friction.jsonl`) and the run offers `/self-improvement-retro` at the end to codify fixes - the grill-me cycle (issue #426)
+- For step-by-step control, use individual commands: `$flow-start`, `$flow-eli5`, `$flow-finish`, `$flow-merge`, `$flow-deploy`
+- Friction capture runs throughout (always-on, fail-open, `<SKILL_DIR>/scripts/friction-log.sh` -> `.codex/friction.jsonl`) and the run offers `$self-improvement-retro` at the end to codify fixes - the grill-me cycle (issue #426)

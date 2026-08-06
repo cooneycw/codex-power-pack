@@ -10,7 +10,7 @@ Generate CI/CD workflows from your Makefile targets. Defaults to GitHub Actions;
 set `pipeline.provider: woodpecker` (or `both`) in `.claude/cicd.yml` to emit a
 self-hosted Woodpecker `.woodpecker.yml`. For a hardened self-hosted pipeline
 (secret-scan + image-security + runtime-smoke) and to scaffold the Woodpecker
-server/agent, use `/cicd-woodpecker` instead.
+server/agent, use `$cicd-woodpecker` instead.
 
 ## Steps
 
@@ -86,4 +86,4 @@ To view: cat .github/workflows/ci.yml
       python: ["3.11", "3.12"]
   ```
 - Self-hosted Woodpecker: set `provider: woodpecker` (or `both`) and see
-  `/cicd-woodpecker` + `docs/skills/woodpecker-ci.md` for the hardening stages.
+  `$cicd-woodpecker` + `docs/skills/woodpecker-ci.md` for the hardening stages.

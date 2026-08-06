@@ -15,15 +15,15 @@ Display the following help information:
 ```
 Secrets Management Commands
 
-  /secrets-get [ID]        Get credentials (masked output)
-  /secrets-set KEY VALUE   Set or update a secret value
-  /secrets-delete KEY      Delete a secret key (with confirmation)
-  /secrets-list            List all secret keys (values masked)
-  /secrets-run -- CMD      Run command with secrets injected as env vars
-  /secrets-validate        Validate credential configuration
-  /secrets-ui              Launch web UI for secrets management
-  /secrets-rotate KEY      Rotate a secret value
-  /secrets-help            This help message
+  $secrets-get [ID]        Get credentials (masked output)
+  $secrets-set KEY VALUE   Set or update a secret value
+  $secrets-delete KEY      Delete a secret key (with confirmation)
+  $secrets-list            List all secret keys (values masked)
+  $secrets-run -- CMD      Run command with secrets injected as env vars
+  $secrets-validate        Validate credential configuration
+  $secrets-ui              Launch web UI for secrets management
+  $secrets-rotate KEY      Rotate a secret value
+  $secrets-help            This help message
 
 Tiered Architecture:
   Tier 0: .env in global config (~/.config/claude-power-pack/secrets/)

@@ -11,13 +11,23 @@
 | Packaged skills | 73 |
 | Unpackaged source skills | 10 |
 | Marketplace plugins | 16 |
-| Implicitly eligible packaged skills | 73 |
-| Extracted packaged-Markdown references | 697 |
-| Unexplained reference occurrences | 430 |
+| Implicitly eligible packaged skills | 2 |
+| Extracted packaged-Markdown references | 706 |
+| Unexplained reference occurrences | 67 |
 
 The machine-readable source of truth is [`.agents/skill-contracts.json`](../.agents/skill-contracts.json).
 
-## Full-Suite Prompt Capture
+## Current Invocation Policy
+
+Payload `0.1.1+codex.20260806203405` keeps `$flow-auto`, `$project-next` implicitly eligible. Every other packaged skill remains available through explicit `$skill-name` selection or `/skills` discovery. Plugin metadata changes require an upgrade or reinstall followed by a new Codex session.
+
+The versioned source of truth is [`.agents/skill-invocation-policy.json`](../.agents/skill-invocation-policy.json).
+
+## Current Fresh Full-Suite Capture
+
+An isolated `codex-cli 0.146.1` full-profile install captured at `2026-08-06T20:56:44Z` exposed 7 entries: 2 CxPP and 5 system entries. Skill entry lines consumed 3,281 bytes; the framed Skills section consumed 3,789 bytes. The focused fresh-install tests reproduce the profile inventory and enforce the policy budgets.
+
+## Stage 0 Full-Suite Prompt Capture
 
 An isolated `codex-cli 0.146.1` full-suite install exposed 78 entries: 73 CxPP and 5 system entries. Skill entry lines consumed 20,640 bytes; the framed Skills section consumed 21,127 bytes.
 
@@ -42,10 +52,10 @@ Prompt presence passed. Direct recall, indirect recall, and negative precision r
 
 | Classification | Occurrences | Meaning |
 |---|---:|---|
-| Resolvable | 36 | Explicit `$skill-name` resolves to a packaged skill. |
+| Resolvable | 408 | Explicit `$skill-name` resolves to a packaged skill. |
 | Native | 17 | Supported Codex host command. |
 | Adapted | 214 | The packaged skill carries an explicit Codex harness adaptation. |
-| Unexplained | 430 | Scheduled for invocation normalization or semantic review. |
+| Unexplained | 67 | Scheduled for invocation normalization or semantic review. |
 
 Unexplained occurrences are grouped below so every gap has one owner and disposition without hiding its evidence locations.
 
@@ -53,74 +63,13 @@ Unexplained occurrences are grouped below so every gap has one owner and disposi
 |---|---:|---|---|---|
 | `/plugin` | 4 | Wave 7 Stage 3 (#160) | Resolve to a packaged/native capability, add a narrow adaptation, or record a reviewed exclusion. | 2026-09-30 |
 | `.claude/` | 38 | Wave 7 Stage 3 (#160) | Resolve to a packaged/native capability, add a narrow adaptation, or record a reviewed exclusion. | 2026-09-30 |
-| `/agents-md:help` | 4 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/agents-md:lint` | 6 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/cicd-check` | 11 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/cicd-container` | 2 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/cicd-health` | 14 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/cicd-help` | 1 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/cicd-infra-discover` | 5 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/cicd-infra-init` | 5 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/cicd-infra-pipeline` | 5 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/cicd-init` | 15 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/cicd-pipeline` | 4 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/cicd-smoke` | 12 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/cicd-verify` | 10 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/cicd-woodpecker` | 5 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/codex:code_review` | 1 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/cpp-load-mcp-docs` | 1 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/cpp:init` | 4 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/cpp:update` | 5 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/cxpp:init` | 1 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/cxpp:status` | 5 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/cxpp:update` | 1 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/documentation-c4` | 5 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/documentation-help` | 1 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/documentation-pptx` | 2 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/evaluate-help` | 1 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/evaluate-issue` | 4 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/flow-auto` | 31 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/flow-auto_codex` | 1 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/flow-check` | 4 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/flow-cleanup` | 6 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/flow-deploy` | 26 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/flow-doctor` | 7 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/flow-eli5` | 6 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/flow-finish` | 37 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/flow-help` | 1 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/flow-merge` | 21 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/flow-repair` | 17 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/flow-start` | 20 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/flow-status` | 4 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/flow-sync` | 5 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/github-issue-close` | 6 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/github-issue-create` | 4 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/github-issue-list` | 3 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/github-issue-update` | 4 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/github-issue-view` | 4 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/project-init` | 3 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/project-lite` | 2 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/project-next` | 3 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/second-opinion-help` | 1 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/second-opinion-models` | 1 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/second-opinion-start` | 1 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/secrets-delete` | 2 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/secrets-get` | 2 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/secrets-help` | 1 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/secrets-list` | 2 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/secrets-rotate` | 2 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/secrets-run` | 2 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/secrets-set` | 2 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/secrets-ui` | 2 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/secrets-validate` | 2 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/security-explain` | 1 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/security-scan` | 1 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/self-improvement-deployment` | 9 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/self-improvement-help` | 1 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/self-improvement-retro` | 10 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
-| `/spec:adopt` | 1 | Wave 7 Stage 2 (#159) | Replace legacy slash-style skill invocation with `$skill-name` or `/skills`. | 2026-09-30 |
+| `$cicd-woodpecker` | 5 | Wave 7 Stage 3 (#160) | Resolve to a packaged/native capability, add a narrow adaptation, or record a reviewed exclusion. | 2026-09-30 |
+| `$cpp-load-mcp-docs` | 1 | Wave 7 Stage 3 (#160) | Resolve to a packaged/native capability, add a narrow adaptation, or record a reviewed exclusion. | 2026-09-30 |
+| `$flow-auto_codex` | 1 | Wave 7 Stage 3 (#160) | Resolve to a packaged/native capability, add a narrow adaptation, or record a reviewed exclusion. | 2026-09-30 |
+| `$flow-repair` | 17 | Wave 7 Stage 3 (#160) | Resolve to a packaged/native capability, add a narrow adaptation, or record a reviewed exclusion. | 2026-09-30 |
+| `$skill-name` | 1 | Wave 7 Stage 3 (#160) | Resolve to a packaged/native capability, add a narrow adaptation, or record a reviewed exclusion. | 2026-09-30 |
 
-## Known Failures and Owners
+## Stage 0 Known Failures and Owners
 
 | ID | Finding | Owner | Disposition |
 |---|---|---|---|

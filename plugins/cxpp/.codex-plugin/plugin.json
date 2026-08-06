@@ -1,6 +1,6 @@
 {
   "name": "cxpp",
-  "version": "0.1.0+codex.20260727145047",
+  "version": "0.1.1+codex.20260806203405",
   "description": "Consent-first bootstrap, refresh, and status skills for Codex Power Pack host configuration.",
   "author": {
     "name": "Codex Power Pack maintainers",
@@ -27,8 +27,8 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Set up Codex Power Pack host wiring with /cxpp:init.",
-      "Inspect installed CxPP components with /cxpp:status."
+      "Use $cxpp-init to review and set up Codex Power Pack host wiring.",
+      "Use $cxpp-status to inspect installed Codex Power Pack components without changing them."
     ],
     "brandColor": "#475569"
   }
