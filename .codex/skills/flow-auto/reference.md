@@ -966,7 +966,7 @@ done
 # it is a fail-open confidence gate, and there is no Makefile fallback for it
 # the way `make lint` / `make test` back the Step 6 runner.
 VERIFY_ENABLED=0
-if [ -n "$CPP_DIR" ] && grep -q "deploy_verification:" .claude/cicd.yml 2>/dev/null; then
+if [ -n "$CPP_DIR" ] && grep -q "deploy_verification:" .codex/cicd.yml 2>/dev/null; then
     if command -v uv >/dev/null 2>&1; then
         VERIFY_ENABLED=1
     else
@@ -990,12 +990,12 @@ DEPLOY_MODE=$(grep -oP '^\s*mode:\s*\K\S+' .claude/deploy.yaml 2>/dev/null | hea
 # still retried. Fail-open - no log, no skip.
 HEAD_SHA=$(git rev-parse --short HEAD)
 ALREADY_DEPLOYED=0
-if [ -f .claude/deploy.log ] && awk -F'|' -v sha="$HEAD_SHA" '$2 ~ /deploy/ && $3 ~ ("^[[:space:]]*" sha "[[:space:]]*$") && $5 ~ /^[[:space:]]*0[[:space:]]*$/ { found = 1 } END { exit !found }' .claude/deploy.log; then
+if [ -f .codex/deploy.log ] && awk -F'|' -v sha="$HEAD_SHA" '$2 ~ /deploy/ && $3 ~ ("^[[:space:]]*" sha "[[:space:]]*$") && $5 ~ /^[[:space:]]*0[[:space:]]*$/ { found = 1 } END { exit !found }' .codex/deploy.log; then
     ALREADY_DEPLOYED=1
 fi
 
 if [ "$ALREADY_DEPLOYED" -eq 1 ]; then
-    echo "Deploy skipped: $HEAD_SHA is already recorded as successfully deployed in .claude/deploy.log"
+    echo "Deploy skipped: $HEAD_SHA is already recorded as successfully deployed in .codex/deploy.log"
     echo "(issue #597 - a concurrent session deployed this same commit; re-running would be a duplicate deploy)."
 elif [ "$DEPLOY_MODE" = "external" ]; then
     echo "Deploy mode 'external' (.claude/deploy.yaml) - deploy runs out of band (host timer / CI on origin/main). Skipping inline 'make deploy'."
@@ -1050,14 +1050,14 @@ elif [[ -f "Makefile" ]] && grep -q "^deploy:" Makefile; then
     fi
 
     mkdir -p .claude
-    echo "$(date -Iseconds) | deploy | $(git rev-parse --short HEAD) | main | ${DEPLOY_EXIT} | verify:${VERDICT}" >> .claude/deploy.log
+    echo "$(date -Iseconds) | deploy | $(git rev-parse --short HEAD) | main | ${DEPLOY_EXIT} | verify:${VERDICT}" >> .codex/deploy.log
 else
     echo "No deploy target in Makefile - skipping deployment."
 fi
 ```
 
 - Verification is fail-open and inert unless `health.deploy_verification.enabled`
-  is set in `.claude/cicd.yml`. A ROLLBACK verdict is surfaced to the user but
+  is set in `.codex/cicd.yml`. A ROLLBACK verdict is surfaced to the user but
   never rolls back automatically - it is an actionable signal, not an action.
 
 Report: `Step 9/9: Deploy complete (verify: {proceed|review|rollback|none})` or

@@ -183,7 +183,7 @@ infrastructure:
 
 ## Related
 
-- `/claude-md-lint` - Audit CLAUDE.md for CI/CD and troubleshooting directives
+- `$agents-md-lint` - Audit AGENTS.md for CI/CD and troubleshooting directives
 - `$flow-doctor` - Reports Makefile target availability
 - `$flow-deploy` - Runs deploy target
 - `$self-improvement-deployment` - Analyze deploy failures and improve Makefile

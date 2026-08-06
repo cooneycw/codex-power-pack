@@ -258,7 +258,7 @@ If `CPP_DIR` is found, run these checks:
 
 ```bash
 # 1. cicd.yml config file
-[ -f ".claude/cicd.yml" ] && echo "PASS cicd.yml" || echo "MISSING cicd.yml"
+[ -f ".codex/cicd.yml" ] && echo "PASS cicd.yml" || echo "MISSING cicd.yml"
 
 # 2. Framework detection (via uv so deps resolve; PYTHONPATH=CPP_DIR, see #430)
 PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run --project "$CPP_DIR" python -m lib.cicd detect --quiet 2>/dev/null
@@ -267,8 +267,8 @@ PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run --project "$CPP_DIR" python -m lib.cicd
 PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run --project "$CPP_DIR" python -m lib.cicd check --summary 2>/dev/null
 
 # 4. Health check configuration
-grep -q "endpoints:" .claude/cicd.yml 2>/dev/null && echo "PASS health endpoints" || echo "MISSING health endpoints"
-grep -q "smoke_tests:" .claude/cicd.yml 2>/dev/null && echo "PASS smoke tests" || echo "MISSING smoke tests"
+grep -q "endpoints:" .codex/cicd.yml 2>/dev/null && echo "PASS health endpoints" || echo "MISSING health endpoints"
+grep -q "smoke_tests:" .codex/cicd.yml 2>/dev/null && echo "PASS smoke tests" || echo "MISSING smoke tests"
 
 # 5. CI pipeline files
 [ -f ".github/workflows/ci.yml" ] || [ -f ".woodpecker.yml" ] && echo "PASS CI pipeline" || echo "MISSING CI pipeline"
@@ -371,7 +371,7 @@ Output a single diagnostic report in this format:
 
 | Check | Status | Details |
 |-------|--------|---------|
-| .claude/cicd.yml | ✅/❌ | Config file present / missing |
+| .codex/cicd.yml | ✅/❌ | Config file present / missing |
 | Framework detected | ✅ | Python (uv) / Node (npm) / etc. |
 | Makefile completeness | ✅/⚠️ | 6/7 targets (typecheck missing) |
 | Health endpoints | ✅/⚠️ | 2 configured / Not configured |
@@ -401,8 +401,8 @@ Output a single diagnostic report in this format:
 4. ❌ **cicd.yml missing** - Run `$cicd-init` to auto-detect framework and generate configuration
 5. ⚠️ **Makefile gaps** - Run `$cicd-check` for details or `$cicd-init` to add missing targets
 6. ❌ **No CI pipeline** - Run `$cicd-pipeline` to generate GitHub Actions or Woodpecker CI config
-7. ⚠️ **No health endpoints** - Add `health.endpoints` to `.claude/cicd.yml` for post-deploy verification
-8. ⚠️ **No smoke tests** - Add `health.smoke_tests` to `.claude/cicd.yml` for post-deploy testing
+7. ⚠️ **No health endpoints** - Add `health.endpoints` to `.codex/cicd.yml` for post-deploy verification
+8. ⚠️ **No smoke tests** - Add `health.smoke_tests` to `.codex/cicd.yml` for post-deploy testing
 9. ⚠️ **second-opinion not registered** - It is an external server now. Run the `cooneycw/mcp-second-opinion` repo's server, then point the root `.mcp.json` `second-opinion` entry at it (`http://127.0.0.1:8080/mcp` for localhost, or a Tailscale URL).
 
 *All checks passed!* → "Environment is ready for `/flow` workflow."

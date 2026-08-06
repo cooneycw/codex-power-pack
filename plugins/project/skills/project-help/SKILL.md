@@ -18,7 +18,7 @@ goal in ordinary language when the skill is eligible for implicit selection.
 
 | Goal | Owning skill | Boundary |
 |---|---|---|
-| Create a new local Python project | `$project-init` | Explicit-only; confirms the destination and optional local Git/commit |
+| Create a new local Python project | `$project-init` | Explicit-only; confirms the path and optional Git/commit |
 | Orient quickly inside an existing repository | `$project-lite` | Read-only; never scaffolds a project |
 | Recommend the next repository action | `$project-next` | Read-only triage; never starts issue work |
 

@@ -742,6 +742,10 @@ def _adapt_invocation_text(skill_dir: Path, source_file: Path, text: str) -> str
     if source_file.suffix != ".md":
         return text
 
+    text = text.replace("/claude-md-lint", "$agents-md-lint")
+    text = text.replace("$claude-md-lint", "$agents-md-lint")
+    text = text.replace("Audit CLAUDE.md", "Audit AGENTS.md")
+
     if skill_dir.name == "flow-auto" and source_file.name == "SKILL.md":
         text = re.sub(
             r'^description:.*$',

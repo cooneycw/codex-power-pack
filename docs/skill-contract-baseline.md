@@ -12,7 +12,7 @@
 | Unpackaged source skills | 10 |
 | Marketplace plugins | 16 |
 | Implicitly eligible packaged skills | 2 |
-| Extracted packaged-Markdown references | 675 |
+| Extracted packaged-Markdown references | 654 |
 | Unexplained reference occurrences | 0 |
 
 The machine-readable source of truth is [`.agents/skill-contracts.json`](../.agents/skill-contracts.json).
@@ -52,9 +52,9 @@ Prompt presence passed. Direct recall, indirect recall, and negative precision r
 
 | Classification | Occurrences | Meaning |
 |---|---:|---|
-| Resolvable | 410 | Explicit `$skill-name` resolves to a packaged skill. |
+| Resolvable | 411 | Explicit `$skill-name` resolves to a packaged skill. |
 | Native | 17 | Supported Codex host command. |
-| Adapted | 157 | The packaged skill carries an explicit Codex harness adaptation. |
+| Adapted | 135 | The packaged skill carries an explicit Codex harness adaptation. |
 | Excluded | 24 | Target has a reviewed, owned, time-bound exclusion. |
 | Source context | 66 | Non-operational provenance or migration text. |
 | Example | 1 | Documented placeholder syntax, not a dependency. |
