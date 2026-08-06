@@ -123,4 +123,4 @@ classDiagram
   OutputMasker --> SecretBundle : masks values from
 ```
 
-_Generated 2026-08-06T20:21:11Z_
+_Generated 2026-08-06T20:31:44Z_

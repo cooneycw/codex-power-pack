@@ -215,6 +215,42 @@ workflows,
 
 ---
 
+### US7: Safe Project-to-Issue Composition [P1]
+
+**As a** maintainer starting a new project or compiling approved planning
+artifacts,
+**I want** each state-changing stage to have one truthful owner and a separate
+consent boundary,
+**So that** a local scaffold cannot silently publish, install, persist, or
+create low-context implementation issues.
+
+**Acceptance Criteria:**
+
+- [ ] `project-init` defaults to a local Python scaffold and is explicit-only;
+      GitHub publication, Spec Kit adoption, issue synchronization, and
+      persistent influence are separate reviewed handoffs.
+- [ ] Existing-repository orientation, next-work selection, publication-only,
+      adoption-only, synchronization-only, and ordinary repository changes do
+      not select `project-init`.
+- [ ] Official GitHub Spec Kit is installed from a reviewed immutable release,
+      initialized with the Codex integration, and never replaced by a
+      hand-authored `.specify/` scaffold.
+- [ ] CxPP adds artifact readiness and issue compilation through an official
+      Spec Kit extension; it does not override core authoring through a preset.
+- [ ] Missing artifacts, unresolved consistency errors, placeholders, malformed
+      tasks, vague paths, missing independent tests, unresolved dependencies,
+      or absent user approval block issue writes.
+- [ ] `spec-sync` is the sole issue compiler and defaults to independently
+      deliverable stage or story groups; per-task issues require an explicit
+      compatibility request.
+- [ ] Issue bodies carry the full outcome, task descriptions, traceability,
+      acceptance, dependencies, constraints, quality commands, immutable
+      artifact links, stable identity, and mapping write-back contract.
+- [ ] Synchronization is idempotent across open and closed issues and updates
+      the selected feature task ledger after successful writes.
+
+---
+
 ## Edge Cases
 
 | Scenario | Expected Behavior |
@@ -227,6 +263,10 @@ workflows,
 | A plugin hook changes after trust was granted | Codex's normal hash-based trust review applies; the changed hook remains inactive until reviewed |
 | A target repository already has custom AGENTS.md routing | Preview a bounded additive merge and preserve existing instructions |
 | Live model evaluation is unavailable | Deterministic gates still run; mark the live lane not checked rather than green |
+| A non-empty tasks file yields zero parsed tasks | Fail readiness and identify each malformed task-like line; never report an empty successful sync |
+| A prior mapped issue is closed or renamed | Match its stable sync identity, preserve the mapping, and do not create a replacement |
+| A task belongs to multiple stories or has ambiguous grouping | Stop at preview and require an explicit stage/story boundary or task-granularity request |
+| Spec Kit initialization would overwrite existing files | Show the affected paths and require explicit approval before any `--force` use |
 
 ---
 
@@ -263,6 +303,13 @@ workflows,
 | R9 | Offer additive target-repository AGENTS.md routing with explicit consent | Should | US5 |
 | R10 | Package owner-specific hooks with trust and status diagnostics | Should | US5 |
 | R11 | Publish migration, rollback, and immutable-pin verification | Must | US6 |
+| R12 | Keep project-init local-by-default, explicit-only, and negatively routed away from narrower existing-repository workflows | Must | US2, US7 |
+| R13 | Adopt official Spec Kit at the reviewed release pin with the Codex integration and no substitute scaffold | Must | US3, US7 |
+| R14 | Add CxPP readiness and issue compilation as a Spec Kit extension rather than a core-authoring preset | Must | US3, US7 |
+| R15 | Block issue writes until artifact presence, consistency, placeholder, path, test, dependency, and approval checks pass | Must | US7 |
+| R16 | Make spec-sync the only compiler and default to independently deliverable stage/story groups | Must | US7 |
+| R17 | Generate context-complete issue bodies with immutable artifact links and stable synchronization identities | Must | US1, US7 |
+| R18 | Synchronize idempotently across open and closed issues and write mappings back to the feature task ledger | Must | US1, US7 |
 
 ### Non-Functional Requirements
 
@@ -274,6 +321,7 @@ workflows,
 | NFR4 | Portability | Deterministic tooling uses Python 3.11+ and runs on Linux, macOS, and Windows where git/gh are available |
 | NFR5 | Auditability | Every exclusion and evaluation exception has an owner, reason, and expiry/review date |
 | NFR6 | Backward compatibility | Existing explicit skill selection remains functional during migration |
+| NFR7 | Composition safety | Each external write, installation, publication, or persistent change has one owner and a separate recorded approval |
 
 ---
 
@@ -290,6 +338,8 @@ workflows,
 - [ ] All staged implementation issues are merged with `make verify` green.
 - [ ] Documentation, release guidance, and rollback instructions match the
       installed behavior.
+- [ ] The project-init and Spec Kit composition contract remains schema-valid,
+      and every runtime responsibility is closed by its assigned Wave 7 stage.
 
 ---
 
