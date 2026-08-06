@@ -1,0 +1,376 @@
+{
+  "$schema": "./project-init-spec-kit-contract.schema.json",
+  "schema_version": "1.0",
+  "tracking_issue": 166,
+  "status": "accepted",
+  "runtime_changes": false,
+  "audit": {
+    "surfaces": [
+      {
+        "repository": "codex-power-pack",
+        "path": ".codex/skills/project-init/SKILL.md",
+        "kind": "skill"
+      },
+      {
+        "repository": "codex-power-pack",
+        "path": "plugins/project/skills/project-init/agents/openai.yaml",
+        "kind": "agent-metadata"
+      },
+      {
+        "repository": "codex-power-pack",
+        "path": "plugins/project/skills/project-help/SKILL.md",
+        "kind": "help"
+      },
+      {
+        "repository": "codex-power-pack",
+        "path": "plugins/project/.codex-plugin/plugin.json",
+        "kind": "plugin-manifest"
+      },
+      {
+        "repository": "codex-power-pack",
+        "path": "plugins/spec/skills/spec-adopt/SKILL.md",
+        "kind": "skill"
+      },
+      {
+        "repository": "codex-power-pack",
+        "path": "plugins/spec/skills/spec-sync/SKILL.md",
+        "kind": "skill"
+      },
+      {
+        "repository": "claude-power-pack",
+        "path": ".claude/commands/project/init.md",
+        "kind": "workflow"
+      }
+    ],
+    "contradictions": [
+      {
+        "id": "PIC-001",
+        "promise": "Project help and metadata advertise a zero-to-GitHub, multi-language orchestrator.",
+        "actual": "The native project-init helper creates only a local Python scaffold and an optional local commit.",
+        "owner_issue": 159
+      },
+      {
+        "id": "PIC-002",
+        "promise": "Project help says project-init installs Power Pack state, hooks, and Spec Kit automatically.",
+        "actual": "The native skill correctly delegates publication, Spec Kit adoption, issue sync, and persistent influence to separate workflows.",
+        "owner_issue": 159
+      },
+      {
+        "id": "PIC-003",
+        "promise": "Every parsed Spec Kit task becomes a useful, independently actionable GitHub issue.",
+        "actual": "The duplicate helpers emit one low-context issue per matching line and silently ignore malformed task-like lines.",
+        "owner_issue": 160
+      },
+      {
+        "id": "PIC-004",
+        "promise": "Spec Kit adoption follows a durable upstream boundary.",
+        "actual": "spec-adopt currently installs from the moving upstream repository without a reviewed release pin.",
+        "owner_issue": 160
+      }
+    ],
+    "duplicate_helpers": [
+      {
+        "repository": "codex-power-pack",
+        "path": ".codex/skills/evaluate-help/scripts/speckit-tasks-to-issues.sh",
+        "sha256": "bcc4296e59d6d2d3d8f63b52103e3a5b9af8616009d4664ff49db08d0353d45f",
+        "disposition": "retire-in-favor-of-spec-sync",
+        "owner_issue": 160
+      },
+      {
+        "repository": "codex-power-pack",
+        "path": ".codex/skills/evaluate-issue/scripts/speckit-tasks-to-issues.sh",
+        "sha256": "bcc4296e59d6d2d3d8f63b52103e3a5b9af8616009d4664ff49db08d0353d45f",
+        "disposition": "retire-in-favor-of-spec-sync",
+        "owner_issue": 160
+      },
+      {
+        "repository": "codex-power-pack",
+        "path": ".codex/skills/project-init/scripts/speckit-tasks-to-issues.sh",
+        "sha256": "bcc4296e59d6d2d3d8f63b52103e3a5b9af8616009d4664ff49db08d0353d45f",
+        "disposition": "retire-in-favor-of-spec-sync",
+        "owner_issue": 160
+      },
+      {
+        "repository": "codex-power-pack",
+        "path": ".codex/skills/spec-sync/scripts/speckit-tasks-to-issues.sh",
+        "sha256": "e26721af333fc466cae9e42b5394489ab55f814903650229b72829657bae03a1",
+        "disposition": "retire-in-favor-of-spec-sync",
+        "owner_issue": 160
+      },
+      {
+        "repository": "codex-power-pack",
+        "path": "plugins/evaluate/skills/evaluate-help/scripts/speckit-tasks-to-issues.sh",
+        "sha256": "bcc4296e59d6d2d3d8f63b52103e3a5b9af8616009d4664ff49db08d0353d45f",
+        "disposition": "retire-in-favor-of-spec-sync",
+        "owner_issue": 160
+      },
+      {
+        "repository": "codex-power-pack",
+        "path": "plugins/evaluate/skills/evaluate-issue/scripts/speckit-tasks-to-issues.sh",
+        "sha256": "bcc4296e59d6d2d3d8f63b52103e3a5b9af8616009d4664ff49db08d0353d45f",
+        "disposition": "retire-in-favor-of-spec-sync",
+        "owner_issue": 160
+      },
+      {
+        "repository": "codex-power-pack",
+        "path": "plugins/project/skills/project-init/scripts/speckit-tasks-to-issues.sh",
+        "sha256": "bcc4296e59d6d2d3d8f63b52103e3a5b9af8616009d4664ff49db08d0353d45f",
+        "disposition": "retire-in-favor-of-spec-sync",
+        "owner_issue": 160
+      },
+      {
+        "repository": "codex-power-pack",
+        "path": "plugins/spec/skills/spec-sync/scripts/speckit-tasks-to-issues.sh",
+        "sha256": "e26721af333fc466cae9e42b5394489ab55f814903650229b72829657bae03a1",
+        "disposition": "retire-in-favor-of-spec-sync",
+        "owner_issue": 160
+      },
+      {
+        "repository": "claude-power-pack",
+        "path": "scripts/speckit-tasks-to-issues.sh",
+        "sha256": "bcc4296e59d6d2d3d8f63b52103e3a5b9af8616009d4664ff49db08d0353d45f",
+        "disposition": "retire-in-favor-of-spec-sync",
+        "owner_issue": 160
+      },
+      {
+        "repository": "claude-power-pack",
+        "path": "codex/skills/evaluate-help/scripts/speckit-tasks-to-issues.sh",
+        "sha256": "bcc4296e59d6d2d3d8f63b52103e3a5b9af8616009d4664ff49db08d0353d45f",
+        "disposition": "retire-in-favor-of-spec-sync",
+        "owner_issue": 160
+      },
+      {
+        "repository": "claude-power-pack",
+        "path": "codex/skills/evaluate-issue/scripts/speckit-tasks-to-issues.sh",
+        "sha256": "bcc4296e59d6d2d3d8f63b52103e3a5b9af8616009d4664ff49db08d0353d45f",
+        "disposition": "retire-in-favor-of-spec-sync",
+        "owner_issue": 160
+      },
+      {
+        "repository": "claude-power-pack",
+        "path": "codex/skills/project-init/scripts/speckit-tasks-to-issues.sh",
+        "sha256": "bcc4296e59d6d2d3d8f63b52103e3a5b9af8616009d4664ff49db08d0353d45f",
+        "disposition": "retire-in-favor-of-spec-sync",
+        "owner_issue": 160
+      },
+      {
+        "repository": "claude-power-pack",
+        "path": "codex/skills/project-next/scripts/speckit-tasks-to-issues.sh",
+        "sha256": "bcc4296e59d6d2d3d8f63b52103e3a5b9af8616009d4664ff49db08d0353d45f",
+        "disposition": "retire-in-favor-of-spec-sync",
+        "owner_issue": 160
+      }
+    ]
+  },
+  "routing": {
+    "default": "safe-local-scaffold",
+    "project_init_selection": "explicit-only",
+    "routes": [
+      {
+        "intent": "new-local-python-project",
+        "owner": "project-init",
+        "selection": "explicit",
+        "consent": "target-path",
+        "project_init_negative": false
+      },
+      {
+        "intent": "existing-repository-orientation",
+        "owner": "project-lite",
+        "selection": "explicit-or-narrow-implicit",
+        "consent": "read-only",
+        "project_init_negative": true
+      },
+      {
+        "intent": "next-work-recommendation",
+        "owner": "project-next",
+        "selection": "explicit-or-narrow-implicit",
+        "consent": "read-only",
+        "project_init_negative": true
+      },
+      {
+        "intent": "github-publication",
+        "owner": "github-publication-workflow",
+        "selection": "explicit",
+        "consent": "separate-explicit",
+        "project_init_negative": true
+      },
+      {
+        "intent": "spec-kit-adoption",
+        "owner": "spec-adopt",
+        "selection": "explicit",
+        "consent": "separate-explicit",
+        "project_init_negative": true
+      },
+      {
+        "intent": "issue-compilation",
+        "owner": "spec-sync",
+        "selection": "explicit",
+        "consent": "separate-explicit",
+        "project_init_negative": true
+      },
+      {
+        "intent": "persistent-influence",
+        "owner": "cxpp-init",
+        "selection": "explicit",
+        "consent": "separate-explicit",
+        "project_init_negative": true
+      }
+    ]
+  },
+  "spec_kit": {
+    "upstream": "https://github.com/github/spec-kit",
+    "release": "v0.16.0",
+    "commit": "5dce710ce099067c7d3f2ef47a37b9a1c300b327",
+    "install": "uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v0.16.0",
+    "initialization": "specify init --here --integration codex",
+    "composition": {
+      "choice": "extension",
+      "rationale": "Readiness analysis and GitHub issue compilation add capabilities after official authoring; they do not replace core Spec Kit commands or templates.",
+      "rejected": [
+        {
+          "choice": "preset",
+          "reason": "A preset would override or compose core authoring files and create an unnecessary fork of the official workflow."
+        },
+        {
+          "choice": "bundle",
+          "reason": "A bundle only distributes multiple primitives; it is unnecessary until CxPP has more than the single issue-compilation extension to compose."
+        },
+        {
+          "choice": "hand-authored-scaffold",
+          "reason": "A substitute .specify scaffold would drift from the pinned official Codex integration."
+        }
+      ]
+    },
+    "readiness_gate": {
+      "approval_required": true,
+      "result": "ready-only-when-all-checks-pass",
+      "checks": [
+        {
+          "id": "spec-exists",
+          "failure": "The selected feature must contain .specify/specs/<feature>/spec.md."
+        },
+        {
+          "id": "plan-exists",
+          "failure": "The selected feature must contain .specify/specs/<feature>/plan.md."
+        },
+        {
+          "id": "tasks-exist",
+          "failure": "The selected feature must contain a non-empty .specify/specs/<feature>/tasks.md with canonical task identifiers."
+        },
+        {
+          "id": "consistency-analysis-clean",
+          "failure": "The official consistency analysis must report no unresolved errors across spec, plan, and tasks."
+        },
+        {
+          "id": "no-placeholders",
+          "failure": "Unresolved template markers, empty required sections, and placeholder tests block compilation."
+        },
+        {
+          "id": "exact-paths",
+          "failure": "Implementation tasks must name exact repository-relative paths or explicitly identify path discovery as their outcome."
+        },
+        {
+          "id": "independent-tests",
+          "failure": "Every issue group must carry an independently runnable acceptance checkpoint and quality commands."
+        },
+        {
+          "id": "dependencies-explicit",
+          "failure": "Cross-group prerequisites and blockers must be explicit and acyclic."
+        },
+        {
+          "id": "user-approved",
+          "failure": "The analyzed artifact set and proposed grouping require explicit approval before GitHub writes."
+        }
+      ]
+    }
+  },
+  "issue_compilation": {
+    "owner": "spec-sync",
+    "default_granularity": "stage-or-story",
+    "task_granularity": "explicit-request-only",
+    "stable_identity": "spec-sync:v1:<repo>:<tasks-path>:<stage-or-story-id>",
+    "required_body_sections": [
+      "outcome",
+      "tasks",
+      "user-story-traceability",
+      "acceptance-checkpoint",
+      "dependencies",
+      "constraints",
+      "quality-commands",
+      "immutable-artifact-links",
+      "sync-identity",
+      "mapping-write-back"
+    ],
+    "immutable_links": "Use GitHub blob URLs pinned to the approved artifact commit for spec.md, plan.md, and tasks.md.",
+    "mapping_write_back": "Update the selected tasks.md Issue Sync ledger with stable group identity, issue number, URL, and state after successful synchronization.",
+    "idempotency_scope": "open-and-closed-issues"
+  },
+  "rollout_ownership": [
+    {
+      "issue": 158,
+      "stage": "project-next fidelity foundation (complete)",
+      "responsibilities": [
+        "Provide the deterministic project-next models, collector, ranking core, and structured uncertainty boundary consumed by the mapping integration.",
+        "Leave stable mapping consumption to issue #160 because #158 merged before the prerequisite contract."
+      ],
+      "acceptance_evidence": [
+        "PR #167 merged the deterministic foundation and closed #158 while issue #166 was in progress."
+      ]
+    },
+    {
+      "issue": 159,
+      "stage": "invocation and metadata",
+      "responsibilities": [
+        "Align project-init skill, metadata, help, manifest, and prompts to the local-only default.",
+        "Make project-init explicit-only and enforce negative routing."
+      ],
+      "acceptance_evidence": [
+        "Fresh prompt inventory contains no contradictory project-init promises."
+      ]
+    },
+    {
+      "issue": 160,
+      "stage": "semantic compatibility and implementation",
+      "responsibilities": [
+        "Implement pinned Spec Kit adoption and the CxPP extension boundary.",
+        "Make spec-sync the only issue compiler and implement readiness, grouping, rich bodies, idempotency, and mapping write-back.",
+        "Replace project-next task-ID heuristics with stable mapping consumption and mapped dependency handling.",
+        "Retire every duplicate helper recorded by this contract."
+      ],
+      "acceptance_evidence": [
+        "Invalid artifacts fail loudly and approved artifacts compile into dependency-aware Flow issues."
+      ]
+    },
+    {
+      "issue": 161,
+      "stage": "evaluation",
+      "responsibilities": [
+        "Test positive and negative routing, scaffold consent, artifact parsing, grouping, rich bodies, idempotency, and end-to-end handoff."
+      ],
+      "acceptance_evidence": [
+        "Evaluation results distinguish routing, artifact, parser, grouping, body, mapping, and runtime failures."
+      ]
+    },
+    {
+      "issue": 162,
+      "stage": "persistent influence",
+      "responsibilities": [
+        "Keep AGENTS.md guidance, hooks, permissions, trust, and plugin state behind the separate cxpp-init consent boundary."
+      ],
+      "acceptance_evidence": [
+        "Declining persistent influence leaves only the ordinary local scaffold."
+      ]
+    },
+    {
+      "issue": 163,
+      "stage": "rollout",
+      "responsibilities": [
+        "Document migration and prove a clean-project workflow against immutable releases.",
+        "Keep task-granular synchronization an explicit compatibility option."
+      ],
+      "acceptance_evidence": [
+        "Dogfood demonstrates actionable, sequenced issues without hidden publication, installation, or persistence."
+      ]
+    }
+  ]
+}

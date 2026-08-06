@@ -44,33 +44,60 @@ No runtime behavior changes in this stage.
 
 ---
 
+## Prerequisite: `project-init` and Spec Kit Composition Contract
+
+- [x] **T090** [US7] Audit the native project-init skill, scaffold helper,
+      agent metadata, generated help, project manifest, CPP orchestration, Spec
+      Kit skills, and every bundled task-to-issues helper.
+- [x] **T091** [US7] Define the safe local scaffold default and separate consent
+      boundaries for local Git, GitHub publication, Spec Kit adoption, issue
+      compilation, and persistent influence.
+- [x] **T092** [US2,US7] Define positive and negative routing, including
+      explicit-only project-init selection.
+- [x] **T093** [US3,US7] Pin the reviewed official Spec Kit Codex integration and
+      select an additive CxPP extension rather than a preset, bundle, or
+      hand-authored substitute scaffold.
+- [x] **T094** [US7] Define the blocking artifact-readiness checks and explicit
+      approval boundary.
+- [x] **T095** [US1,US7] Define stage/story grouping, rich issue bodies, stable
+      sync identity, open/closed idempotency, and feature-ledger write-back.
+- [x] **T096** [US1-US7] Assign implementation, evaluation, consent, and rollout
+      responsibilities to issues #158 through #163.
+- [x] **T097** [US3,US7] Publish and test the versioned machine-readable
+      composition contract without changing runtime behavior.
+
+**Checkpoint:** Issue #166 has one reviewed decision record and schema-validated
+contract; every runtime change has exactly one open Wave 7 owner.
+
+---
+
 ## Stage 1: `project-next` Fidelity Vertical Slice
 
-- [ ] **T101** [US1] Write a shared `project-next` behavioral contract covering
+- [x] **T101** [US1] Write a shared `project-next` behavioral contract covering
       inputs, classification sets, ranking, top action, next startable issue,
       modes, uncertainty, and failure states.
-- [ ] **T102** [US1] Decide and document the durable CPP/CxPP source-of-truth and
+- [x] **T102** [US1] Decide and document the durable CPP/CxPP source-of-truth and
       generation boundary; create/link a CPP twin issue if required.
-- [ ] **T103** [US1] Add structured repository-state and recommendation models
+- [x] **T103** [US1] Add structured repository-state and recommendation models
       under `lib/project_next/`.
-- [ ] **T104** [US1] Implement deterministic in-flight mapping, dependency graph,
+- [x] **T104** [US1] Implement deterministic in-flight mapping, dependency graph,
       transitive/cycle blocking, availability validation, and uncertainty.
-- [ ] **T105** [US1] Implement stable ranking for critical work, priority,
+- [x] **T105** [US1] Implement stable ranking for critical work, priority,
       phase/wave, issue type, quick wins, staleness, and tie-breaks.
-- [ ] **T106** [US1] Implement top-action selection separately from the next new
+- [x] **T106** [US1] Implement top-action selection separately from the next new
       issue that is safe to start.
-- [ ] **T107** [US1] Add a git/gh/spec collection adapter that reports incomplete
+- [x] **T107** [US1] Add a git/gh/spec collection adapter that reports incomplete
       inventories and rate-limit/authentication failures without false certainty.
-- [ ] **T108** [US1] Add harness-neutral project-next configuration with schema,
+- [x] **T108** [US1] Add harness-neutral project-next configuration with schema,
       defaults, validation, and examples.
-- [ ] **T109** [US1] Update the Codex skill to call the deterministic core and
+- [x] **T109** [US1] Update the Codex skill to call the deterministic core and
       render versioned `--brief`, compact, and `--full` outputs.
-- [ ] **T110** [P] [US1,US4] Add fixtures for active PRs, remote branches, dirty
+- [x] **T110** [P] [US1,US4] Add fixtures for active PRs, remote branches, dirty
       worktrees, reviews, CI failures, epics, priorities, dependency chains,
       cycles, ambiguity, and unsynchronized spec tasks.
-- [ ] **T111** [US1,US4] Add end-to-end fixture and dogfood tests against both
+- [x] **T111** [US1,US4] Add end-to-end fixture and dogfood tests against both
       power-pack repositories.
-- [ ] **T112** [US1] Reconcile or retire the conflicting generated/native
+- [x] **T112** [US1] Reconcile or retire the conflicting generated/native
       `project-next` exception so only the documented ownership model remains.
 
 **Checkpoint:** The deterministic fixtures select the expected top action and
@@ -99,6 +126,14 @@ all three output modes pass; CxPP dogfood no longer needs a Claude rerun.
       uniqueness, priority-preservation, and metadata-budget tests.
 - [ ] **T208** [US2,US6] Version plugin payloads and document the new-session or
       reinstall boundary required to pick up metadata changes.
+- [ ] **T209** [US2,US7] Align project-init skill, help, agent metadata, plugin
+      manifest, and starter prompts to the explicit local Python scaffold.
+- [ ] **T210** [US2,US7] Add negative routing for existing-repository
+      orientation, next-work analysis, publication, Spec Kit adoption, issue
+      synchronization, and ordinary repository changes.
+- [ ] **T211** [US7] Present publication, adoption, synchronization, and
+      persistent influence only as separately consented owning-workflow
+      handoffs.
 
 **Checkpoint:** All advertised invocation paths work in a fresh session, starter
 prompts resolve, and priority skill activation meets the initial thresholds.
@@ -130,6 +165,32 @@ prompts resolve, and priority skill activation meets the initial thresholds.
       record keep/adapt/exclude decisions for every affected surface.
 - [ ] **T311** [US3,US4] Integrate semantic validation into `make verify` and CI
       while retaining hash-parity and focused harness-lint checks.
+- [ ] **T312** [US3,US7] Pin official Spec Kit adoption to the reviewed release,
+      record the installed version, preserve the Codex integration, and require
+      path-level approval before any forced replacement.
+- [ ] **T313** [US3,US7] Implement the CxPP readiness and issue-compilation
+      boundary as an official Spec Kit extension without overriding core
+      authoring templates.
+- [ ] **T314** [US3,US7] Retire duplicate compilers from evaluate, project-init,
+      project-next, generated payloads, and plugin payloads so `spec-sync` is
+      the sole owner.
+- [ ] **T315** [US7] Validate canonical task syntax and block missing artifacts,
+      consistency errors, placeholders, vague paths, missing independent tests,
+      unresolved dependencies, and absent approval.
+- [ ] **T316** [US7] Implement explicit stage, story, and task grouping with
+      independently deliverable stage/story groups as the default.
+- [ ] **T317** [US1,US7] Render complete issue bodies with outcome, tasks,
+      traceability, acceptance, dependencies, constraints, quality commands,
+      immutable artifact links, and stable sync identity.
+- [ ] **T318** [US1,US7] Synchronize idempotently across open and closed issues
+      and write issue number, URL, state, and stable group identity back to the
+      selected feature task ledger.
+- [ ] **T319** [US7] Keep project-init limited to offering `spec-adopt` and
+      `spec-sync` as separate handoffs; never create placeholder artifacts or
+      GitHub issues automatically.
+- [ ] **T320** [US1,US7] Replace project-next's task-ID synchronization heuristic
+      with stable stage/story/task mappings, follow mapped dependencies, and
+      report missing, stale, or ambiguous mappings as uncertainty.
 
 **Checkpoint:** Every published family passes semantic validation; all links
 resolve; operational host mismatches require narrow reviewed adaptations; the
@@ -155,6 +216,17 @@ source/package/marketplace inventory is complete.
       manual/scheduled live cadence and release-gating policy.
 - [ ] **T408** [US4] Publish a concise baseline-versus-current scorecard for
       priority skills without storing prompts or data that contain secrets.
+- [ ] **T409** [US2,US4,US7] Add direct project-init activation and negative
+      orientation, publication-only, adoption-only, sync-only, and existing-repo
+      activation cases.
+- [ ] **T410** [US4,US7] Add local scaffold and separate-consent fixtures for
+      publication, Spec Kit adoption, and declined handoffs.
+- [ ] **T411** [US4,US7] Add canonical, malformed, multiline, placeholder,
+      zero-task, multiple-feature, and dependency parser fixtures.
+- [ ] **T412** [US4,US7] Add golden stage/story/task issue bodies, open/closed
+      idempotency, mapping write-back, and stale-mapping repair fixtures.
+- [ ] **T413** [US1,US4,US7] Add an isolated dry run from local scaffold through
+      pinned adoption, readiness, preview, mapping, and project-next consumption.
 
 **Checkpoint:** Direct recall is 100%, indirect recall is at least 90% for
 implicit priority skills, negative precision is at least 95%, and evaluation
@@ -180,6 +252,8 @@ failures identify the failing contract layer.
       untrusted, disabled, removal, and plugin-uninstall tests.
 - [ ] **T507** [P] [US5] Add security tests proving hooks fail open, mask output,
       avoid secrets, and never grant permissions or invoke shipping actions.
+- [ ] **T508** [US5,US7] Prove project-init never installs persistent influence
+      and that declining its `cxpp-init` handoff leaves only the local scaffold.
 
 **Checkpoint:** Persistent influence is transparent, consent-first, trust-
 reviewed, status-visible, and fully removable; declining it leaves the ordinary
@@ -207,6 +281,16 @@ skill workflow intact.
       verify `cxpp-status` against the installed payload in a fresh session.
 - [ ] **T608** [US6] Mark the wave complete only after all spec success criteria
       and repository quality gates pass.
+- [ ] **T609** [US6,US7] Dogfood a clean project through local scaffold,
+      optional publication, pinned adoption, readiness, stage/story sync,
+      project-next, and flow-auto.
+- [ ] **T610** [US6,US7] Verify adoption install and rollback against immutable
+      Spec Kit and CxPP release refs.
+- [ ] **T611** [US6,US7] Publish migration from duplicate compilers and one-line
+      task issues, retaining task-granular sync only as an explicit option.
+- [ ] **T612** [US6,US7] Include issue outcome, traceability, independent
+      acceptance, dependency, command, and immutable-link quality in rollout
+      evidence.
 
 **Checkpoint:** Migration and rollback are proven, 20 dogfood sessions meet the
 quality thresholds, and repository documentation matches an immutable released
@@ -257,18 +341,18 @@ Stage 0 baseline
 |-------|-------|-------|--------|
 | Specification | spec.md, plan.md, tasks.md | #153 | complete |
 | 0 - Baseline | T001-T006 | #157 | complete |
-| Contract augmentation | project-init / Spec Kit | #166 | open |
-| 1 - project-next | T101-T112 | #158 | open |
-| 2 - Invocation/metadata | T201-T208 | #159 | open |
-| 3 - Semantic gates | T301-T311 | #160 | open |
-| 4 - Evaluations | T401-T408 | #161 | open |
-| 5 - Persistent influence | T501-T507 | #162 | open |
-| 6 - Rollout | T601-T608 | #163 | open |
+| Composition prerequisite | T090-T097 | #166 | in progress |
+| 1 - project-next | T101-T112 | #158 | complete |
+| 2 - Invocation/metadata | T201-T211 | #159 | open |
+| 3 - Semantic gates | T301-T320 | #160 | open |
+| 4 - Evaluations | T401-T413 | #161 | open |
+| 5 - Persistent influence | T501-T508 | #162 | open |
+| 6 - Rollout | T601-T612 | #163 | open |
 
-Completion sequence: #157 is complete. The #158 core and #166 may proceed in
-parallel; #166 unlocks #159 and the issue-mapping slice of #158; #159 unlocks
-#160; #158 and #160 jointly unlock #161; #160 and #161 jointly unlock #162;
-#158 through #162 plus #166 must close before #163 can close the wave.
+Completion sequence: #157 and #158 are complete. #166 unlocks #159 and the
+project-next mapping integration now assigned to #160; #159 unlocks #160; #160
+unlocks #161; #160 and #161 jointly unlock #162; #158 through #162 plus #166
+must close before #163 can close the wave.
 
 ---
 

@@ -30,6 +30,9 @@ mergeable and has a hard checkpoint before dependent work begins.
 | Lifecycle integration | Plugin-bundled Codex hooks | Native, trust-reviewed, and scoped to owning plugins |
 | Deterministic contracts | JSON fixtures and structured engine output | Separates data classification from model explanation |
 | Live evaluation | Bounded `codex exec --json` lane | Tests real selection and workflow adherence without burdening every PR |
+| Project creation | Explicit local Python scaffold | Makes the safe implemented behavior the default and separates later external effects |
+| Spec Kit boundary | Official `v0.16.0` Codex integration plus CxPP extension | Pins upstream authoring and adds compilation without replacing core templates |
+| Issue unit | Stage/story by default; task only by explicit request | Produces independently deliverable work suitable for `flow-auto` |
 
 ---
 
@@ -77,6 +80,22 @@ plugin source ----> semantic contract validator ----> packaged plugin
 
 target AGENTS.md routing + trusted plugin hooks
              -> optional durable session influence
+
+local project scaffold --separate consent--> GitHub publication
+         |
+         +--separate consent--> pinned official Spec Kit adoption
+                                      |
+                                      v
+                         spec/plan/tasks authoring
+                                      |
+                           blocking readiness gate
+                                      |
+                                      v
+                    CxPP Spec Kit extension (`spec-sync`)
+                                      |
+                         stage/story GitHub issues
+                                      |
+                         project-next -> flow-auto
 ```
 
 ### Key Design Decisions
@@ -91,6 +110,10 @@ target AGENTS.md routing + trusted plugin hooks
 | Compatibility validation | Hash parity, denylist lint, semantic graph | Keep parity plus semantic graph validation | Existing checks remain useful but no longer define completeness |
 | Persistent influence | Global prompt injection, target AGENTS.md, hooks only | Consent-first AGENTS.md routing plus narrowly owned hooks | Uses native durable surfaces while keeping changes transparent and removable |
 | Evaluation cadence | All live on every PR, deterministic only, split lane | Deterministic per PR; bounded live manual/scheduled lane | Preserves reliable CI without external-model flakiness or uncontrolled cost |
+| Project-init product | CPP zero-to-GitHub orchestration, native local scaffold, hybrid automatic pipeline | Native local scaffold with separately consented handoffs | Matches tested behavior and prevents one prompt from authorizing unrelated external state |
+| Spec Kit composition | Hand-authored scaffold, preset, extension, bundle | Official pinned authoring plus one CxPP extension | Readiness and issue compilation are additive capabilities, not core-template replacements or a multi-component distribution stack |
+| Issue compiler ownership | Copies in evaluate/project/project-next, spec-sync, shared helper | `spec-sync` only | One parser, grouping policy, idempotency model, and mapping writer can be tested and evolved coherently |
+| Sync identity | Title/task ID, artifact commit, stable ledger identity | Stable repo + task-ledger path + group ID | Survives title edits and artifact revisions while immutable links preserve the approved source commit |
 
 ### Behavioral Contract Boundaries
 
@@ -106,6 +129,26 @@ The wave distinguishes four contracts:
    visible, trusted, scoped, and removable.
 
 No single hash, metadata flag, or prompt-inventory assertion satisfies all four.
+
+### Project-to-Issue Composition Boundary
+
+Issue #166 publishes the normative contract in
+`.agents/project-init-spec-kit-contract.json` and its schema. The corresponding
+decision record is `docs/project-init-spec-kit-contract.md`. This prerequisite
+changes no runtime behavior; Stages 1 through 6 consume its assigned slices.
+
+The composition is sequential but not automatic. A successful local scaffold
+does not authorize publication. Publication does not authorize Spec Kit
+installation. Adoption does not authorize issue creation. A readiness result
+does not authorize GitHub writes until the user approves the artifact commit,
+grouping, and repository. Persistent AGENTS.md or hook influence remains a
+separate `cxpp-init` decision throughout.
+
+The Spec Kit integration is pinned to `v0.16.0` at commit
+`5dce710ce099067c7d3f2ef47a37b9a1c300b327`. CxPP will implement readiness and
+issue compilation as an extension. The extension preserves official spec,
+plan, and task authoring, rejects incomplete artifacts, and emits stable
+stage/story mappings for `project-next` and `flow-auto`.
 
 ---
 
@@ -126,9 +169,12 @@ scripts/
 
 .agents/
 ├── skill-contracts.json      # published skills, aliases, ownership, exclusions
+├── project-init-spec-kit-contract.schema.json
+├── project-init-spec-kit-contract.json
 └── routing-block.md          # concise target-repository AGENTS.md fragment
 
 tests/
+├── test_project_init_spec_kit_contract.py
 ├── project_next/
 │   ├── fixtures/
 │   ├── test_classification.py
@@ -149,6 +195,7 @@ plugins/<family>/
 └── hooks/                    # only where the family owns a reviewed hook
 
 docs/
+├── project-init-spec-kit-contract.md
 ├── skill-quality.md
 └── migration/skill-influence-wave-7.md
 ```
@@ -181,6 +228,11 @@ The stage must decide the final cross-repository source-of-truth location. If a
 CPP change is required, land the CPP contract/generator change first, pin it,
 and then adopt it in CxPP without leaving a second prompt-only fork.
 
+PR #167 merged this foundation and closed #158 while issue #166 was in progress.
+Stable stage/story/task mapping did not yet exist, so the consumer integration
+is assigned to Stage 3 alongside the compiler. Task IDs remain traceability
+keys, not proof that every task owns a GitHub issue.
+
 **Exit gate:** fixture outcomes are deterministic; blocked and in-flight issues
 cannot leak into startable choices; brief/compact/full outputs pass; live dogfood
 chooses the expected action on both power-pack repositories.
@@ -191,6 +243,11 @@ Replace faux plugin slash-command guidance with supported Codex selection,
 rewrite trigger descriptions and starter prompts, and select the initial
 implicit-entrypoint set using golden prompts. Add per-plugin and full-suite
 prompt-inventory tests.
+
+Align project-init's skill text, help, metadata, plugin manifest, and starter
+prompts to the local-only explicit contract. Add negative activation cases for
+orientation, next-work analysis, publication, Spec Kit adoption, issue sync,
+and ordinary changes in existing repositories.
 
 **Exit gate:** every advertised invocation is valid, every starter prompt
 selects a bundled skill, and activation thresholds pass for the changed
@@ -206,6 +263,14 @@ surfaces. Integrate the validator into `make verify` and CI.
 Existing issues #135 and #140 are inputs to this stage; the stage issues must
 either satisfy their exit bars or explicitly narrow the remaining work.
 
+This stage owns the runtime implementation of the project-to-issue contract:
+pin official Spec Kit adoption, add the CxPP extension, implement the readiness
+gate and stage/story compiler, write rich issue bodies and stable mappings, and
+retire every duplicate compiler payload inventoried by issue #166. Replace the
+new project-next task-ID heuristic with those mappings; missing, stale, or
+ambiguous mappings remain uncertainty and cannot make blocked or represented
+work appear startable.
+
 **Exit gate:** source, packaged, and marketplace inventories reconcile; all
 cross-skill links resolve; operational Claude-only constructs require reviewed
 adaptations; every published family passes the semantic gate.
@@ -216,6 +281,10 @@ Add deterministic evaluation cases across priority skills and a bounded live
 Codex lane. Separate activation failures from instruction-following and runtime
 failures so metadata tuning does not mask procedure defects. Store only
 non-secret summaries and aggregate metrics.
+
+Add distinct fixtures for project routing, scaffold consent, pinned adoption,
+artifact readiness, malformed tasks, grouping, issue bodies, idempotency,
+mapping repair, and the complete scaffold-to-Flow dry run.
 
 **Exit gate:** priority entrypoints meet the spec thresholds; deterministic
 evaluations run on every PR; the live lane has a documented manual/scheduled
@@ -228,6 +297,10 @@ Create the concise target-repository `AGENTS.md` routing block and additive
 capture with the owning plugins, preserve Codex's hook trust flow, and extend
 `cxpp-status` with safe diagnostics.
 
+Project creation may offer this stage only as a handoff to `cxpp-init`.
+Declining the handoff leaves the ordinary local scaffold unchanged and never
+installs AGENTS.md routing, hooks, permissions, trust, or plugin state.
+
 **Exit gate:** clean install, upgrade, decline, untrusted-hook, changed-hook,
 disable, and removal scenarios are tested; no persistent component turns itself
 on without approval.
@@ -238,6 +311,11 @@ Publish migration guidance, update help and architecture documentation, cut a
 pinned release, and run representative dogfood sessions. Review the implicit
 set and remaining exclusions against measured results. Close or re-scope legacy
 issues only after their exit bars are demonstrably met.
+
+Dogfood at least one clean project through local scaffold, optional publication,
+pinned Spec Kit adoption, approved artifact readiness, stage/story issue sync,
+`project-next`, and `flow-auto`. Migration guidance must explain retirement of
+duplicate helpers and one-line per-task issues.
 
 **Exit gate:** immutable install and rollback transcripts pass, 20
 representative sessions meet the success criteria, and all wave documentation
@@ -254,7 +332,7 @@ matches the released payload.
 | git | Repository, branch, and worktree state | Stop repository-state workflows with an actionable prerequisite |
 | GitHub CLI (`gh`) | Issues, PRs, checks, and repository identity | Report authentication or rate-limit state; never rank an incomplete inventory as complete |
 | Codex CLI | Prompt inventory and bounded live evaluation | Deterministic gates continue; live lane reports not checked |
-| Optional spec-kit | Detect unsynchronized specification tasks | Skip with an explicit not-configured status |
+| Official Spec Kit `v0.16.0` | Author spec, plan, and task artifacts through the Codex integration | Adoption stops on pin/install/init failure; repository analysis reports not configured when absent |
 | Optional MCP services | Skill-specific live tools | Declare/check dependency and degrade per owning skill |
 
 ### Internal Dependencies
@@ -279,6 +357,8 @@ matches the released payload.
   path classification, and metadata policies.
 - AGENTS.md block generation and additive merge behavior.
 - Hook payload validation, masking, failure-open behavior, and status reporting.
+- Project routing, artifact-readiness checks, grouping, stable sync identity,
+  issue-body rendering, open/closed idempotency, and mapping write-back.
 
 ### Integration Tests
 
