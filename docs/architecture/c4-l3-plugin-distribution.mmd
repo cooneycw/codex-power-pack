@@ -9,6 +9,9 @@ flowchart TB
   skill_sync["Skill Sync"]:::component
   runtime_overlay["Codex Runtime Overlay"]:::component
   currency_gate["Upstream Currency Gate"]:::component
+  skill_contract["Skill Contract Manifest"]:::component
+  baseline_collector["Skill Contract Baseline Collector"]:::component
+  contract_tests["Skill Contract Tests"]:::component
   marketplace_entry -->|"locates"| plugin_manifest
   plugin_manifest -->|"declares"| skill_payload
   skill_payload -->|"includes"| openai_metadata
@@ -17,4 +20,9 @@ flowchart TB
   currency_gate -->|"compares current CPP through"| runtime_overlay
   package_tests -->|"validates"| marketplace_entry
   package_tests -->|"checks parity"| skill_payload
+  baseline_collector -->|"inventories"| skill_payload
+  baseline_collector -->|"measures"| openai_metadata
+  baseline_collector -->|"reconciles"| marketplace_entry
+  baseline_collector -->|"writes"| skill_contract
+  contract_tests -->|"validates"| skill_contract
   classDef component fill:#7e22ce,color:#ffffff,stroke:#0f172a

@@ -26,12 +26,12 @@ flowchart TB
 
 ## L2 Containers
 
-_L2 - 6 nodes, 7 edges - [`c4-l2-container.mmd`](c4-l2-container.mmd)_
+_L2 - 6 nodes, 8 edges - [`c4-l2-container.mmd`](c4-l2-container.mmd)_
 
 ```mermaid
 flowchart TB
   subgraph repo["codex-power-pack repository"]
-    marketplace_catalog["Marketplace Catalog (.agents)"]:::container
+    marketplace_catalog["Marketplace and Skill Contracts (.agents)"]:::container
     family_plugins["Family Plugins (plugins/)"]:::container
     codex_skills["Codex Skills (.codex/skills)"]:::container
     vendor_snapshot["Pinned CPP Snapshot (vendor/)"]:::container
@@ -43,6 +43,7 @@ flowchart TB
   vendor_snapshot -->|"pins and integrity-checks"| codex_skills
   codex_skills -->|"uses deterministic helpers"| runtime_libraries
   quality_gates -->|"validates"| family_plugins
+  quality_gates -->|"reconciles contracts"| marketplace_catalog
   quality_gates -->|"drift-checks"| codex_skills
   quality_gates -->|"checks upstream currency"| vendor_snapshot
   classDef container fill:#15803d,color:#ffffff,stroke:#0f172a
@@ -50,7 +51,7 @@ flowchart TB
 
 ## L3 Skill Vendoring and Plugin Distribution
 
-_L3 - 8 nodes, 8 edges - [`c4-l3-plugin-distribution.mmd`](c4-l3-plugin-distribution.mmd)_
+_L3 - 11 nodes, 13 edges - [`c4-l3-plugin-distribution.mmd`](c4-l3-plugin-distribution.mmd)_
 
 ```mermaid
 flowchart TB
@@ -64,6 +65,9 @@ flowchart TB
   skill_sync["Skill Sync"]:::component
   runtime_overlay["Codex Runtime Overlay"]:::component
   currency_gate["Upstream Currency Gate"]:::component
+  skill_contract["Skill Contract Manifest"]:::component
+  baseline_collector["Skill Contract Baseline Collector"]:::component
+  contract_tests["Skill Contract Tests"]:::component
   marketplace_entry -->|"locates"| plugin_manifest
   plugin_manifest -->|"declares"| skill_payload
   skill_payload -->|"includes"| openai_metadata
@@ -72,6 +76,11 @@ flowchart TB
   currency_gate -->|"compares current CPP through"| runtime_overlay
   package_tests -->|"validates"| marketplace_entry
   package_tests -->|"checks parity"| skill_payload
+  baseline_collector -->|"inventories"| skill_payload
+  baseline_collector -->|"measures"| openai_metadata
+  baseline_collector -->|"reconciles"| marketplace_entry
+  baseline_collector -->|"writes"| skill_contract
+  contract_tests -->|"validates"| skill_contract
   classDef component fill:#7e22ce,color:#ffffff,stroke:#0f172a
 ```
 
@@ -100,4 +109,4 @@ classDiagram
   OutputMasker --> SecretBundle : masks values from
 ```
 
-_Generated 2026-07-19T10:19:13Z_
+_Generated 2026-08-06T19:30:31Z_

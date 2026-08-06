@@ -29,7 +29,7 @@
       "title": "L2 Containers",
       "kind": "flowchart",
       "nodes": [
-        {"id": "marketplace-catalog", "label": "Marketplace Catalog (.agents)", "type": "container"},
+        {"id": "marketplace-catalog", "label": "Marketplace and Skill Contracts (.agents)", "type": "container"},
         {"id": "family-plugins", "label": "Family Plugins (plugins/)", "type": "container"},
         {"id": "codex-skills", "label": "Codex Skills (.codex/skills)", "type": "container"},
         {"id": "vendor-snapshot", "label": "Pinned CPP Snapshot (vendor/)", "type": "container"},
@@ -42,6 +42,7 @@
         {"source": "vendor-snapshot", "target": "codex-skills", "label": "pins and integrity-checks"},
         {"source": "codex-skills", "target": "runtime-libraries", "label": "uses deterministic helpers"},
         {"source": "quality-gates", "target": "family-plugins", "label": "validates"},
+        {"source": "quality-gates", "target": "marketplace-catalog", "label": "reconciles contracts"},
         {"source": "quality-gates", "target": "codex-skills", "label": "drift-checks"},
         {"source": "quality-gates", "target": "vendor-snapshot", "label": "checks upstream currency"}
       ],
@@ -61,7 +62,10 @@
         {"id": "package-tests", "label": "Plugin Package Tests", "type": "component"},
         {"id": "skill-sync", "label": "Skill Sync", "type": "component"},
         {"id": "runtime-overlay", "label": "Codex Runtime Overlay", "type": "component"},
-        {"id": "currency-gate", "label": "Upstream Currency Gate", "type": "component"}
+        {"id": "currency-gate", "label": "Upstream Currency Gate", "type": "component"},
+        {"id": "skill-contract", "label": "Skill Contract Manifest", "type": "component"},
+        {"id": "baseline-collector", "label": "Skill Contract Baseline Collector", "type": "component"},
+        {"id": "contract-tests", "label": "Skill Contract Tests", "type": "component"}
       ],
       "edges": [
         {"source": "marketplace-entry", "target": "plugin-manifest", "label": "locates"},
@@ -71,7 +75,12 @@
         {"source": "runtime-overlay", "target": "skill-payload", "label": "writes adapted payload"},
         {"source": "currency-gate", "target": "runtime-overlay", "label": "compares current CPP through"},
         {"source": "package-tests", "target": "marketplace-entry", "label": "validates"},
-        {"source": "package-tests", "target": "skill-payload", "label": "checks parity"}
+        {"source": "package-tests", "target": "skill-payload", "label": "checks parity"},
+        {"source": "baseline-collector", "target": "skill-payload", "label": "inventories"},
+        {"source": "baseline-collector", "target": "openai-metadata", "label": "measures"},
+        {"source": "baseline-collector", "target": "marketplace-entry", "label": "reconciles"},
+        {"source": "baseline-collector", "target": "skill-contract", "label": "writes"},
+        {"source": "contract-tests", "target": "skill-contract", "label": "validates"}
       ],
       "boundaries": [{"id": "plugin-package", "label": "One family plugin", "nodes": ["plugin-manifest", "skill-payload", "openai-metadata"]}]
     },

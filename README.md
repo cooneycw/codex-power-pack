@@ -8,6 +8,7 @@ generated command skills, and tests for Codex-centric workflows.
 
 - `.codex/skills/` - Codex skill packages: generated shared families from claude-power-pack plus CxPP-owned native skills; see `.codex/skills/README.md`
 - `.agents/plugins/marketplace.json` and `plugins/<family>/` - native Codex marketplace catalog and per-family plugin packages
+- `.agents/skill-contracts.json` and `.agents/skill-evaluation-cases.json` - versioned skill inventory, reference classifications, prompt measurements, and evaluation cases
 - `vendor/claude-power-pack/` - pin + drift manifest for the generated skills
 - `.codex/cicd.yml` and `.codex/cicd_tasks.yml` - Codex-local CI/CD manifests
 - `AGENTS.md` - the canonical repo instructions for Codex
@@ -159,7 +160,13 @@ make lint
 make test
 make typecheck
 make verify
+uv run --extra dev python scripts/skill_contract_baseline.py --check
 ```
+
+The dated baseline and owned gap dispositions are summarized in
+`docs/skill-contract-baseline.md`. The contract check reconciles current source,
+package, marketplace, implicit, alias, dependency, and reference state without
+changing skill runtime behavior.
 
 ## Development Checkout
 
