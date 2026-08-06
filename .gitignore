@@ -50,6 +50,10 @@ desktop.ini
 !tsconfig.json
 !.codex/hooks.json
 !.agents/plugins/marketplace.json
+!.agents/skill-contracts.json
+!.agents/skill-contracts.schema.json
+!.agents/skill-evaluation-cases.json
+!.agents/skill-evaluation-cases.schema.json
 !plugins/**/.codex-plugin/plugin.json
 !docs/architecture/c4-model.json
 !docs/architecture/c4-manifest.json
