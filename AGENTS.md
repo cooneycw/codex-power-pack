@@ -13,6 +13,7 @@
 - `AGENTS.md` - canonical Codex instructions
 - `.codex/skills/` - Codex skill packages. Shared families are generated from claude-power-pack and pinned by commit SHA (pull model, codex-power-pack#75), with narrow CxPP-owned runtime adaptations; CxPP-owned native skills such as `agents-md-*`, `project-next`, and `project-lite` are authored here. See `.codex/skills/README.md`.
 - `.agents/plugins/marketplace.json` - repo-scoped native Codex marketplace catalog
+- `.agents/skill-contracts.json` and `.agents/skill-evaluation-cases.json` - versioned source/package/reference inventory and dated prompt/evaluation captures; schemas live beside them
 - `.codex/cicd.yml` - CI/CD config
 - `.codex/cicd_tasks.yml` - deterministic CI/CD task manifest
 - `plugins/<family>/` - native Codex plugin packages for per-family marketplace install
@@ -21,8 +22,9 @@
 - `templates/` - starter Makefiles and workflow templates
 - `templates/config.toml.example` - Codex MCP pointers for host-managed services
 - `docs/HOST_MANAGED.md` - host-owned MCP service inventory and health checks
-- `scripts/` - shell + Python helpers, incl. `codex_skills_sync.py` (pulls + drift-gates `.codex/skills/`)
+- `scripts/` - shell + Python helpers, incl. `codex_skills_sync.py` (pulls + drift-gates `.codex/skills/`) and `skill_contract_baseline.py` (reconciles the skill contract and baseline report)
 - `docs/skills/` - focused reference docs
+- `docs/skill-contract-baseline.md` - measured Wave 7 source, package, prompt, reference, and gap baseline
 - `docs/security/` - security threat models and guard designs
 
 ## Runtime Boundary

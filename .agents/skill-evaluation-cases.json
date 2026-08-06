@@ -1,0 +1,142 @@
+{
+  "$schema": "./skill-evaluation-cases.schema.json",
+  "schema_version": "1.0",
+  "captures": [
+    {
+      "id": "wave7_stage0_20260806",
+      "captured_at": "2026-08-06T19:21:59Z",
+      "source_commit": "b98934be8f8a654d65d1728207fadc1597ad8c7c",
+      "codex_version": "codex-cli 0.146.1",
+      "profile": "isolated full-suite marketplace install",
+      "inventory": {
+        "source_skills": 83,
+        "packaged_skills": 73,
+        "unpackaged_skills": 10,
+        "marketplace_plugins": 16,
+        "implicit_skills": 73,
+        "system_entries": 5,
+        "cxpp_entries": 73,
+        "total_entries": 78,
+        "entry_metadata_bytes": 20640,
+        "skills_section_bytes": 21127,
+        "method": "Install all 16 plugins into an isolated CODEX_HOME, run `codex debug prompt-input`, and byte-count skill entry lines and the enclosing Skills section."
+      },
+      "activation": {
+        "prompt_presence": "passed",
+        "direct_recall": null,
+        "indirect_recall": null,
+        "negative_precision": null,
+        "reason": "Stage 0 proves prompt presence only. Model-backed activation and outcome scoring is deliberately not claimed before the Stage 4 bounded evaluation harness exists."
+      },
+      "known_failures": [
+        {
+          "id": "KF-001",
+          "summary": "Ten source skills have no plugin package or marketplace publication path.",
+          "owner": "Wave 7 Stage 3",
+          "tracking_issue": 160,
+          "disposition": "Package, replace, or explicitly retire every source-only skill."
+        },
+        {
+          "id": "KF-002",
+          "summary": "All 73 packaged skills are implicitly eligible without evidence that the set meets an ambiguity or metadata budget.",
+          "owner": "Wave 7 Stage 2",
+          "tracking_issue": 159,
+          "disposition": "Curate implicit entrypoints using the versioned evaluation cases."
+        },
+        {
+          "id": "KF-003",
+          "summary": "Packaged guidance still presents historical slash-style skill commands that Codex does not expose as first-class custom commands.",
+          "owner": "Wave 7 Stage 2",
+          "tracking_issue": 159,
+          "disposition": "Normalize user-facing invocation to `$skill-name` and `/skills`."
+        },
+        {
+          "id": "KF-004",
+          "summary": "Packaged Markdown contains host-specific commands and `.claude/` runtime paths whose safety currently depends on prose adaptations.",
+          "owner": "Wave 7 Stage 3",
+          "tracking_issue": 160,
+          "disposition": "Validate each reference semantically and repair or time-bound every unexplained occurrence."
+        },
+        {
+          "id": "KF-005",
+          "summary": "Direct recall, indirect recall, negative precision, procedure adherence, and output fidelity have no reproducible measured baseline.",
+          "owner": "Wave 7 Stage 4",
+          "tracking_issue": 161,
+          "disposition": "Run the cases through the bounded live evaluation lane and publish aggregate results."
+        }
+      ],
+      "cases": [
+        {
+          "id": "CASE-001",
+          "category": "direct",
+          "prompt": "Use $project-next to recommend what I should work on next in this repository.",
+          "expected": {
+            "selected_skill": "project-next",
+            "procedure_checkpoint": "Collect repository, issue, PR, branch, worktree, review, and CI evidence.",
+            "output_contract": "Report the top action separately from the next startable issue."
+          },
+          "baseline": {
+            "status": "not_run",
+            "reason": "Stage 0 records the case but has no bounded live evaluator."
+          }
+        },
+        {
+          "id": "CASE-002",
+          "category": "indirect",
+          "prompt": "What is the most useful thing for me to do next in this GitHub project?",
+          "expected": {
+            "selected_skill": "project-next",
+            "procedure_checkpoint": "Distinguish active work, blocked work, and available work.",
+            "output_contract": "Give one evidence-backed top action and one safe-to-start issue when available."
+          },
+          "baseline": {
+            "status": "not_run",
+            "reason": "Stage 0 records the case but has no bounded live evaluator."
+          }
+        },
+        {
+          "id": "CASE-003",
+          "category": "negative",
+          "prompt": "Explain how to rename my current Git branch.",
+          "expected": {
+            "selected_skill": null,
+            "procedure_checkpoint": "Do not invoke project triage or issue lifecycle skills.",
+            "output_contract": "Answer the narrow Git question directly."
+          },
+          "baseline": {
+            "status": "not_run",
+            "reason": "Stage 0 records the case but has no bounded live evaluator."
+          }
+        },
+        {
+          "id": "CASE-004",
+          "category": "incomplete",
+          "prompt": "Use $flow-auto.",
+          "expected": {
+            "selected_skill": "flow-auto",
+            "procedure_checkpoint": "Detect that the required issue number is missing before creating a worktree.",
+            "output_contract": "Ask for the missing issue number without mutating repository state."
+          },
+          "baseline": {
+            "status": "not_run",
+            "reason": "Stage 0 records the case but has no bounded live evaluator."
+          }
+        },
+        {
+          "id": "CASE-005",
+          "category": "edge",
+          "prompt": "Use $flow-auto for a closed issue.",
+          "expected": {
+            "selected_skill": "flow-auto",
+            "procedure_checkpoint": "Stop at the issue-state confirmation gate.",
+            "output_contract": "Warn that the issue is closed and require explicit approval before proceeding."
+          },
+          "baseline": {
+            "status": "not_run",
+            "reason": "Stage 0 records the case but has no bounded live evaluator."
+          }
+        }
+      ]
+    }
+  ]
+}

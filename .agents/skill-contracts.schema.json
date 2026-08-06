@@ -1,0 +1,222 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/cooneycw/codex-power-pack/blob/main/.agents/skill-contracts.schema.json",
+  "title": "Codex Power Pack skill contracts",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "generated_at",
+    "baseline",
+    "summary",
+    "marketplace",
+    "skills",
+    "references",
+    "gaps"
+  ],
+  "properties": {
+    "$schema": {"type": "string"},
+    "schema_version": {"const": "1.0"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_commit", "tracking_issue", "owner"],
+      "properties": {
+        "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "tracking_issue": {"type": "integer", "minimum": 1},
+        "owner": {"type": "string", "minLength": 1}
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_skills",
+        "packaged_skills",
+        "unpackaged_skills",
+        "marketplace_plugins",
+        "implicit_skills",
+        "references",
+        "unexplained_references"
+      ],
+      "properties": {
+        "source_skills": {"type": "integer", "minimum": 0},
+        "packaged_skills": {"type": "integer", "minimum": 0},
+        "unpackaged_skills": {"type": "integer", "minimum": 0},
+        "marketplace_plugins": {"type": "integer", "minimum": 0},
+        "implicit_skills": {"type": "integer", "minimum": 0},
+        "references": {"type": "integer", "minimum": 0},
+        "unexplained_references": {"type": "integer", "minimum": 0}
+      }
+    },
+    "marketplace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "name", "plugins"],
+      "properties": {
+        "path": {"type": "string"},
+        "name": {"type": "string"},
+        "plugins": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "path", "state"],
+            "properties": {
+              "name": {"type": "string"},
+              "path": {"type": "string"},
+              "state": {"enum": ["published", "missing"]}
+            }
+          }
+        }
+      }
+    },
+    "skills": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/skill"}
+    },
+    "references": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/reference"}
+    },
+    "gaps": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/gap"}
+    }
+  },
+  "$defs": {
+    "skill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "source",
+        "package",
+        "marketplace",
+        "implicit",
+        "aliases",
+        "dependencies",
+        "exclusion"
+      ],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*$"},
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "ownership"],
+          "properties": {
+            "path": {"type": "string"},
+            "ownership": {"enum": ["generated", "native"]}
+          }
+        },
+        "package": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "plugin", "path"],
+          "properties": {
+            "state": {"enum": ["packaged", "unpackaged"]},
+            "plugin": {"type": ["string", "null"]},
+            "path": {"type": ["string", "null"]}
+          }
+        },
+        "marketplace": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "plugin"],
+          "properties": {
+            "state": {"enum": ["published", "unpublished"]},
+            "plugin": {"type": ["string", "null"]}
+          }
+        },
+        "implicit": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "metadata_path", "metadata_bytes"],
+          "properties": {
+            "state": {"enum": ["enabled", "disabled", "not_packaged"]},
+            "metadata_path": {"type": ["string", "null"]},
+            "metadata_bytes": {"type": "integer", "minimum": 0}
+          }
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["value", "state"],
+            "properties": {
+              "value": {"type": "string"},
+              "state": {"enum": ["supported", "display_only", "legacy_unsupported"]}
+            }
+          }
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {"type": "string"},
+          "uniqueItems": true
+        },
+        "exclusion": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "owner", "reason", "replacement", "review_by", "tracking_issue"],
+          "properties": {
+            "state": {"enum": ["not_excluded", "gap", "reviewed_exclusion"]},
+            "owner": {"type": ["string", "null"]},
+            "reason": {"type": ["string", "null"]},
+            "replacement": {"type": ["string", "null"]},
+            "review_by": {"type": ["string", "null"], "format": "date"},
+            "tracking_issue": {"type": ["integer", "null"]}
+          }
+        }
+      }
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "source_skill", "path", "line", "token", "kind", "target", "classification"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^REF-[0-9]{4}$"},
+        "source_skill": {"type": "string"},
+        "path": {"type": "string"},
+        "line": {"type": "integer", "minimum": 1},
+        "token": {"type": "string"},
+        "kind": {"enum": ["skill", "legacy_skill_command", "native_command", "host_command", "host_path"]},
+        "target": {"type": "string"},
+        "classification": {"enum": ["resolvable", "native", "adapted", "unexplained"]}
+      }
+    },
+    "gap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "subject",
+        "owner",
+        "disposition",
+        "tracking_issue",
+        "review_by",
+        "status",
+        "evidence"
+      ],
+      "properties": {
+        "id": {"type": "string", "pattern": "^GAP-[0-9]{3}$"},
+        "type": {"enum": ["unpackaged_skill", "unexplained_reference"]},
+        "subject": {"type": "string"},
+        "owner": {"type": "string", "minLength": 1},
+        "disposition": {"type": "string", "minLength": 1},
+        "tracking_issue": {"type": "integer", "minimum": 1},
+        "review_by": {"type": "string", "format": "date"},
+        "status": {"enum": ["scheduled", "time_bounded_exception", "resolved"]},
+        "evidence": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

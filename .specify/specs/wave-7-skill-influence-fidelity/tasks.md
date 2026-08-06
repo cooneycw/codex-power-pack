@@ -24,18 +24,18 @@
 
 ## Stage 0: Baseline and Contract Inventory
 
-- [ ] **T001** [US3] Define `.agents/skill-contracts.json` schema for source,
+- [x] **T001** [US3] Define `.agents/skill-contracts.json` schema for source,
       packaged, marketplace, implicit, dependency, alias, and exclusion state.
-- [ ] **T002** [US3] Inventory every `.codex/skills/` source and every packaged
+- [x] **T002** [US3] Inventory every `.codex/skills/` source and every packaged
       plugin skill, including the ten currently unpackaged source skills.
-- [ ] **T003** [P] [US3] Extract all cross-skill and host-command references from
+- [x] **T003** [P] [US3] Extract all cross-skill and host-command references from
       packaged Markdown and classify each as resolvable, native, adapted, or
       unexplained.
-- [ ] **T004** [P] [US2,US4] Define the versioned golden-prompt/evaluation-case
+- [x] **T004** [P] [US2,US4] Define the versioned golden-prompt/evaluation-case
       schema for direct, indirect, negative, incomplete, and edge prompts.
-- [ ] **T005** [US2,US4] Capture the current full-suite prompt inventory,
+- [x] **T005** [US2,US4] Capture the current full-suite prompt inventory,
       metadata byte count, activation baseline, and known failure examples.
-- [ ] **T006** [US3] Add a baseline report that assigns an owner and disposition
+- [x] **T006** [US3] Add a baseline report that assigns an owner and disposition
       to every unexplained gap; do not silently grandfather findings.
 
 **Checkpoint:** The inventory reconciles all known source and package surfaces,
@@ -256,7 +256,8 @@ Stage 0 baseline
 | Stage | Tasks | Issue | Status |
 |-------|-------|-------|--------|
 | Specification | spec.md, plan.md, tasks.md | #153 | complete |
-| 0 - Baseline | T001-T006 | #157 | open |
+| 0 - Baseline | T001-T006 | #157 | complete |
+| Contract augmentation | project-init / Spec Kit | #166 | open |
 | 1 - project-next | T101-T112 | #158 | open |
 | 2 - Invocation/metadata | T201-T208 | #159 | open |
 | 3 - Semantic gates | T301-T311 | #160 | open |
@@ -264,9 +265,10 @@ Stage 0 baseline
 | 5 - Persistent influence | T501-T507 | #162 | open |
 | 6 - Rollout | T601-T608 | #163 | open |
 
-Completion sequence: #157 unlocks #158 and #159 in parallel; #159 unlocks
+Completion sequence: #157 is complete. The #158 core and #166 may proceed in
+parallel; #166 unlocks #159 and the issue-mapping slice of #158; #159 unlocks
 #160; #158 and #160 jointly unlock #161; #160 and #161 jointly unlock #162;
-all prior stage issues must close before #163 can close the wave.
+#158 through #162 plus #166 must close before #163 can close the wave.
 
 ---
 
