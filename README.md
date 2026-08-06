@@ -140,9 +140,13 @@ Families carried: `browser`, `cicd`, `cpp`, `documentation`, `evaluate`, `flow`,
 `github`, `project`, `qa`, `second-opinion`, `secrets`, `security`,
 `self-improvement`. `claude-md` is not carried - the CxPP-owned `agents-md` family
 covers the AGENTS.md world with native `.codex/skills/agents-md-*` packages.
-`project-next` and `project-lite` are CxPP-owned native project skills because
-their Codex-first repository inventory behavior remains locally owned; refreshes
-explicitly preserve them even when CPP generates skills with the same names.
+`project-lite` is a CxPP-owned native orientation skill. `project-next` is a
+CxPP-owned native adapter backed by the deterministic, harness-neutral
+`lib/project_next/` engine and [versioned behavioral contract](docs/project-next-contract.md).
+It returns both the top action now and the next new issue that is safe to start;
+brief, compact, full, and structured JSON modes share the same classification
+and ranking result. Refreshes preserve this adapter when CPP generates a skill
+with the same name, without preserving a competing prompt-only decision policy.
 
 **Do not hand-edit generated skill dirs.** The drift gate (`make codex-skills-check`)
 fails CI on any divergence from the manifest. To change shared generated skill
@@ -161,7 +165,14 @@ make test
 make typecheck
 make verify
 uv run --extra dev python scripts/skill_contract_baseline.py --check
+python3 scripts/project-next.py --brief
+python3 scripts/project-next.py --json
 ```
+
+Repositories can add a harness-neutral `.project-next.json` policy using
+`templates/project-next.json.example`; unknown or invalid settings fail with an
+actionable error. Installed project plugins carry a generated runtime bundle,
+and `make project-next-check` verifies it against `lib/project_next/`.
 
 The dated baseline and owned gap dispositions are summarized in
 `docs/skill-contract-baseline.md`. The contract check reconciles current source,

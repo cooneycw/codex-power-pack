@@ -215,6 +215,21 @@ def test_plugin_skill_payloads_match_generated_source_with_metadata_overlay() ->
             assert sha256(plugin_files[rel]) == sha256(source_file), rel
 
 
+def test_project_next_runtime_bundle_matches_authoritative_library() -> None:
+    source_package = REPO_ROOT / "lib" / "project_next"
+    bundled_package = PLUGINS_ROOT / "project" / "lib" / "project_next"
+
+    source_files = {path.name: path for path in source_package.glob("*.py")}
+    bundled_files = {path.name: path for path in bundled_package.glob("*.py")}
+    assert set(bundled_files) == set(source_files)
+    for name, source in source_files.items():
+        assert sha256(bundled_files[name]) == sha256(source), name
+
+    assert sha256(PLUGINS_ROOT / "project" / "scripts" / "project-next.py") == sha256(
+        REPO_ROOT / "scripts" / "project-next.py"
+    )
+
+
 def test_packaged_skills_advertise_implicit_invocation() -> None:
     for family, expected_skills in FAMILY_SKILLS.items():
         for skill_name in expected_skills:
@@ -224,9 +239,7 @@ def test_packaged_skills_advertise_implicit_invocation() -> None:
             assert interface["display_name"]
             assert interface["short_description"]
             assert interface["default_prompt"].startswith(f"Use ${skill_name}")
-            assert payload["policy"]["allow_implicit_invocation"] is (
-                skill_name in IMPLICIT_SKILLS
-            )
+            assert payload["policy"]["allow_implicit_invocation"] is (skill_name in IMPLICIT_SKILLS)
 
 
 def test_fresh_flow_plugin_install_advertises_flow_auto(tmp_path: Path) -> None:
@@ -266,9 +279,7 @@ def test_github_issue_skills_resolve_the_target_repository() -> None:
     github_skills = FAMILY_SKILLS["github"]
 
     for skill_name in github_skills:
-        text = (GENERATED_SKILLS_ROOT / skill_name / "SKILL.md").read_text(
-            encoding="utf-8"
-        )
+        text = (GENERATED_SKILLS_ROOT / skill_name / "SKILL.md").read_text(encoding="utf-8")
         reference = GENERATED_SKILLS_ROOT / skill_name / "reference.md"
         if reference.exists():
             text += reference.read_text(encoding="utf-8")
@@ -282,14 +293,12 @@ def test_github_issue_skills_resolve_the_target_repository() -> None:
         "github-issue-update",
         "github-issue-close",
     ]:
-        text = (GENERATED_SKILLS_ROOT / skill_name / "SKILL.md").read_text(
-            encoding="utf-8"
-        )
+        text = (GENERATED_SKILLS_ROOT / skill_name / "SKILL.md").read_text(encoding="utf-8")
         reference = GENERATED_SKILLS_ROOT / skill_name / "reference.md"
         if reference.exists():
             text += reference.read_text(encoding="utf-8")
 
-        assert 'gh repo view --json nameWithOwner --jq .nameWithOwner' in text
+        assert "gh repo view --json nameWithOwner --jq .nameWithOwner" in text
         assert '--repo "$REPO"' in text
 
 

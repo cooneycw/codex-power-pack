@@ -34,6 +34,7 @@
         {"id": "codex-skills", "label": "Codex Skills (.codex/skills)", "type": "container"},
         {"id": "vendor-snapshot", "label": "Pinned CPP Snapshot (vendor/)", "type": "container"},
         {"id": "runtime-libraries", "label": "Deterministic Libraries (lib/)", "type": "container"},
+        {"id": "project-next-engine", "label": "Project Next Recommendation Engine", "type": "container"},
         {"id": "quality-gates", "label": "Quality Gates (Makefile + tests)", "type": "container"}
       ],
       "edges": [
@@ -41,17 +42,20 @@
         {"source": "family-plugins", "target": "codex-skills", "label": "packages skills from"},
         {"source": "vendor-snapshot", "target": "codex-skills", "label": "pins and integrity-checks"},
         {"source": "codex-skills", "target": "runtime-libraries", "label": "uses deterministic helpers"},
+        {"source": "codex-skills", "target": "project-next-engine", "label": "delegates triage decisions to"},
+        {"source": "project-next-engine", "target": "runtime-libraries", "label": "is authored in"},
+        {"source": "family-plugins", "target": "project-next-engine", "label": "bundles generated runtime from"},
         {"source": "quality-gates", "target": "family-plugins", "label": "validates"},
         {"source": "quality-gates", "target": "marketplace-catalog", "label": "reconciles contracts"},
         {"source": "quality-gates", "target": "codex-skills", "label": "drift-checks"},
         {"source": "quality-gates", "target": "vendor-snapshot", "label": "checks upstream currency"}
       ],
-      "boundaries": [{"id": "repo", "label": "codex-power-pack repository", "nodes": ["marketplace-catalog", "family-plugins", "codex-skills", "vendor-snapshot", "runtime-libraries", "quality-gates"]}]
+      "boundaries": [{"id": "repo", "label": "codex-power-pack repository", "nodes": ["marketplace-catalog", "family-plugins", "codex-skills", "vendor-snapshot", "runtime-libraries", "project-next-engine", "quality-gates"]}]
     },
     {
       "id": "c4-l3-plugin-distribution",
       "level": "L3",
-      "title": "L3 Skill Vendoring and Plugin Distribution",
+      "title": "L3 Skill Distribution and Deterministic Project Triage",
       "kind": "flowchart",
       "parent": "c4-l2-container",
       "nodes": [
@@ -65,7 +69,11 @@
         {"id": "currency-gate", "label": "Upstream Currency Gate", "type": "component"},
         {"id": "skill-contract", "label": "Skill Contract Manifest", "type": "component"},
         {"id": "baseline-collector", "label": "Skill Contract Baseline Collector", "type": "component"},
-        {"id": "contract-tests", "label": "Skill Contract Tests", "type": "component"}
+        {"id": "contract-tests", "label": "Skill Contract Tests", "type": "component"},
+        {"id": "project-next-core", "label": "Project Next Classifier and Ranker", "type": "component"},
+        {"id": "project-next-collector", "label": "Git, GitHub, and Spec Collector", "type": "component"},
+        {"id": "project-next-bundle", "label": "Installed Project Plugin Runtime", "type": "component"},
+        {"id": "project-next-sync", "label": "Project Next Bundle Drift Gate", "type": "component"}
       ],
       "edges": [
         {"source": "marketplace-entry", "target": "plugin-manifest", "label": "locates"},
@@ -80,7 +88,13 @@
         {"source": "baseline-collector", "target": "openai-metadata", "label": "measures"},
         {"source": "baseline-collector", "target": "marketplace-entry", "label": "reconciles"},
         {"source": "baseline-collector", "target": "skill-contract", "label": "writes"},
-        {"source": "contract-tests", "target": "skill-contract", "label": "validates"}
+        {"source": "contract-tests", "target": "skill-contract", "label": "validates"},
+        {"source": "skill-payload", "target": "project-next-bundle", "label": "invokes for deterministic triage"},
+        {"source": "project-next-collector", "target": "project-next-core", "label": "supplies structured repository state"},
+        {"source": "project-next-core", "target": "project-next-bundle", "label": "generates installed copy"},
+        {"source": "project-next-sync", "target": "project-next-core", "label": "treats as source of truth"},
+        {"source": "project-next-sync", "target": "project-next-bundle", "label": "writes and drift-checks"},
+        {"source": "package-tests", "target": "project-next-bundle", "label": "checks byte parity"}
       ],
       "boundaries": [{"id": "plugin-package", "label": "One family plugin", "nodes": ["plugin-manifest", "skill-payload", "openai-metadata"]}]
     },

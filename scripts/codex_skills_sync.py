@@ -14,7 +14,8 @@ Surfaces:
                                       [+ scripts/*]), byte-identical to CPP output.
     .codex/skills/agents-md-*/        CxPP-authored native AGENTS.md skills (not
                                       vendored; not covered by the drift manifest).
-    .codex/skills/project-next/       CxPP-authored native project triage skill
+    .codex/skills/project-next/       CxPP-authored deterministic project triage
+                                      adapter; lib/project_next owns decisions
     .codex/skills/project-lite/       CxPP-authored native project orientation skill
     .codex/skills/cxpp-*/             CxPP-authored host bootstrap/status skills
     .codex/skills/spec-*/             CxPP-authored spec-kit workflow skills
@@ -79,8 +80,11 @@ PULL_EXCLUDE_FAMILIES = {"claude-md", "agents-md"}
 LOCAL_FILES = {"README.md"}
 
 # CxPP-owned native skill dirs under .codex/skills/. These are edited in this repo
-# and intentionally do not carry the CPP GENERATED marker. Keep this narrow and
-# explicit so generated CPP skill drift remains protected.
+# and intentionally do not carry the CPP GENERATED marker. project-next is not a
+# prompt-policy fork: docs/project-next-contract.md and lib/project_next are the
+# authoritative cross-harness behavioral contract, while this native skill is a
+# thin Codex adapter. Keep this allowlist narrow so generated CPP drift stays
+# protected.
 LOCAL_SKILL_DIRS = {
     "agents-md-help",
     "agents-md-lint",

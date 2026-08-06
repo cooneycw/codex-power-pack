@@ -1,0 +1,20 @@
+"""Deterministic project-next classification and recommendation engine."""
+
+from .classify import classify_repository
+from .config import ConfigError, ProjectNextConfig, load_config
+from .models import RepositoryState
+from .rank import recommend
+from .render import render_result
+
+CONTRACT_VERSION = "1.0"
+
+__all__ = [
+    "CONTRACT_VERSION",
+    "ConfigError",
+    "ProjectNextConfig",
+    "RepositoryState",
+    "classify_repository",
+    "load_config",
+    "recommend",
+    "render_result",
+]

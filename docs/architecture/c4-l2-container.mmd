@@ -5,12 +5,16 @@ flowchart TB
     codex_skills["Codex Skills (.codex/skills)"]:::container
     vendor_snapshot["Pinned CPP Snapshot (vendor/)"]:::container
     runtime_libraries["Deterministic Libraries (lib/)"]:::container
+    project_next_engine["Project Next Recommendation Engine"]:::container
     quality_gates["Quality Gates (Makefile + tests)"]:::container
   end
   marketplace_catalog -->|"indexes"| family_plugins
   family_plugins -->|"packages skills from"| codex_skills
   vendor_snapshot -->|"pins and integrity-checks"| codex_skills
   codex_skills -->|"uses deterministic helpers"| runtime_libraries
+  codex_skills -->|"delegates triage decisions to"| project_next_engine
+  project_next_engine -->|"is authored in"| runtime_libraries
+  family_plugins -->|"bundles generated runtime from"| project_next_engine
   quality_gates -->|"validates"| family_plugins
   quality_gates -->|"reconciles contracts"| marketplace_catalog
   quality_gates -->|"drift-checks"| codex_skills
