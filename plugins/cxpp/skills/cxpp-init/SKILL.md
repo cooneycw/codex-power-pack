@@ -5,7 +5,7 @@ description: "Bootstrap Codex Power Pack host wiring with explicit consent for e
 
 # CxPP Init
 
-Use this skill for `/cxpp:init` or when setting up Codex Power Pack on a new
+Use this skill for `$cxpp-init` or when setting up Codex Power Pack on a new
 machine after installing family plugins from the pinned marketplace.
 
 ## Safety Contract
@@ -47,7 +47,7 @@ published family plugins are missing:
    to configure: CxPP marketplace/plugins, host-managed MCP pointers, spec-kit,
    secrets-provider guidance, and reviewed hooks/rules. Do not assume all are
    wanted.
-2. For marketplace/plugins, run the read-only `/cxpp:status` checks first. If
+2. For marketplace/plugins, run the read-only `$cxpp-status` checks first. If
    the marketplace is missing or family plugins are absent, offer Minimal,
    Recommended, Full suite, and Custom; otherwise report the suite as
    `already current` without prompting for a reinstall.
@@ -65,7 +65,7 @@ published family plugins are missing:
 4. After explicit approval, add the pinned marketplace snapshot and install
    only selected plugins that are missing. Do not use a floating ref, install an
    unselected family, or change host configuration as a side effect. Re-run
-   `/cxpp:status` to verify the result.
+   `$cxpp-status` to verify the result.
 5. For MCP pointers, show the two entries from the CxPP config pointer template
    (`templates/config.toml.example` in a checkout or `config.toml.example` in
    the installed plugin): `second-opinion` at

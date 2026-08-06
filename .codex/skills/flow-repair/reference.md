@@ -15,10 +15,10 @@ commands invoke and the permission allowlist matches.
 
 ## Why this exists (issue #590)
 
-The flow commands are only half the product: Step 1 of `/flow-start` and
-`/flow-auto` runs `<SKILL_DIR>/scripts/flow-start-resolve.sh`, `/flow-merge` runs
-`gh-pr-merge.sh`, and so on. Historically only the repo-local `/cpp:init` /
-`/cpp:update` installer put those there, so a user who installed flow from the
+The flow commands are only half the product: Step 1 of `$flow-start` and
+`$flow-auto` runs `<SKILL_DIR>/scripts/flow-start-resolve.sh`, `$flow-merge` runs
+`gh-pr-merge.sh`, and so on. Historically only the repo-local `$cxpp-init` /
+`$cxpp-update` installer put those there, so a user who installed flow from the
 marketplace (`/plugin install flow@cpp` - the canonical path since ADR 0001
 Phase B5) hit exit 127 with no clone to fall back to.
 
@@ -35,7 +35,7 @@ time, and after a plugin upgrade.
 
 ## Instructions
 
-When the user invokes `/flow-repair`, resolve the installer through this chain
+When the user invokes `$flow-repair`, resolve the installer through this chain
 and run the FIRST one that exists. Invoke it bare, with no arguments (the #581
 invocation discipline: a compound invocation defeats the allowlist prefix rule).
 
@@ -70,7 +70,7 @@ The installer prints one line per helper and a verdict:
 - `FLOW_HELPERS: error` - report the message and stop.
 
 It picks its own delivery: **symlink** when the source is a CPP checkout, so the
-helpers follow `git pull` exactly as `/cpp:init` Tier 2 does; **copy** when the
+helpers follow `git pull` exactly as `$cxpp-init` Tier 2 does; **copy** when the
 source is a plugin bundle, because plugin cache paths are version-stamped and a
 symlink into one dangles at the next upgrade.
 
@@ -84,7 +84,7 @@ jq '.permissions.allow | map(select(startswith("Bash(<SKILL_DIR>/scripts/"))) | 
 ```
 
 If the count is 0 (or the file is missing), tell the user the helpers will now
-run but will prompt on each call, and that `/cpp:init` / `/cpp:update` merges the
+run but will prompt on each call, and that `$cxpp-init` / `$cxpp-update` merges the
 rules - or they can copy them from
 `templates/claude-settings-permissions.json` (bundled documentation:
 `templates/claude-settings-permissions.md`).
@@ -99,14 +99,14 @@ Flow Repair
   Installed: 9 helpers to <SKILL_DIR>/scripts/ | already current
   Allowlist: 6 rules present | not merged (flow will prompt on each helper call)
 
-  Verify with /flow-doctor.
+  Verify with $flow-doctor.
 ```
 
 ## Notes
 
-- Read-only alternative: `/flow-doctor` reports the same helper state without
+- Read-only alternative: `$flow-doctor` reports the same helper state without
   changing anything (it calls `flow-helpers-install.sh --check`).
 - This is the only flow command that writes outside the repo. It touches exactly
   `<SKILL_DIR>/scripts/`, and only the helper family listed in the installer.
-- Clone users do not need this - `/cpp:init` Tier 2 and `/cpp:update` Step 5b
+- Clone users do not need this - `$cxpp-init` Tier 2 and `$cxpp-update` Step 5b
   already link every `scripts/*.sh`. Running it anyway is harmless and idempotent.

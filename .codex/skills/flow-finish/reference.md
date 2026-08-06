@@ -14,7 +14,7 @@ Run quality checks, commit changes, push the branch, and create a pull request.
 
 ## Instructions
 
-When the user invokes `/flow-finish`, perform these steps:
+When the user invokes `$flow-finish`, perform these steps:
 
 ### Step 1: Validate Context
 
@@ -57,13 +57,13 @@ if [ "$(git rev-list --count HEAD..origin/main)" -gt 0 ]; then
         git stash push -u -m "flow-finish-pre-stale-merge" && STASHED=1
     fi
     if ! git merge --no-edit origin/main; then
-        echo "STOP: 'git merge origin/main' hit CONFLICTS. Resolve them, 'git add' + 'git commit', then re-run /flow-finish."
+        echo "STOP: 'git merge origin/main' hit CONFLICTS. Resolve them, 'git add' + 'git commit', then re-run $flow-finish."
         git diff --name-only --diff-filter=U
         [ "$STASHED" -eq 1 ] && echo "NOTE: your work is stashed ('git stash list') - pop it after resolving."
         exit 1
     fi
     if [ "$STASHED" -eq 1 ] && ! git stash pop; then
-        echo "STOP: restoring your stashed work onto the merged base hit conflicts. Resolve them and 'git add' (do NOT 'git merge --abort'), then re-run /flow-finish."
+        echo "STOP: restoring your stashed work onto the merged base hit conflicts. Resolve them and 'git add' (do NOT 'git merge --abort'), then re-run $flow-finish."
         git diff --name-only --diff-filter=U
         exit 1
     fi
@@ -82,7 +82,7 @@ if [ "$(git rev-list --count HEAD..origin/main)" -gt 0 ]; then
 fi
 ```
 
-This is the early half of the #462 stale-branch guard; the Step-7 `/flow-merge`
+This is the early half of the #462 stale-branch guard; the Step-7 `$flow-merge`
 guard remains the final backstop.
 
 ### Step 2: Run Quality Gates via Deterministic Runner (primary path)
@@ -103,7 +103,7 @@ the inline shape prompts on every run. Invoke it BARE (#581 discipline):
 (Exit 127 - helper not installed: fall back to
 `${CLAUDE_PLUGIN_ROOT}/scripts/flow-finish-gate.sh` (bundled with the plugin,
 #590), else the CPP-checkout copy; either may prompt once - tell the user to
-run **`/flow-repair`** to restore the prompt-free lane.)
+run **`$flow-repair`** to restore the prompt-free lane.)
 
 The helper ends with a machine-readable marker:
 
@@ -140,9 +140,9 @@ PYTHONPATH="${HOME}/Projects/claude-power-pack/lib" python3 -m lib.security gate
 
 **Gate behavior by severity (defaults - configurable in `.claude/security.yml`):**
 
-| Severity | Effect on `/flow-finish` | What to do |
+| Severity | Effect on `$flow-finish` | What to do |
 |----------|--------------------------|------------|
-| CRITICAL | **BLOCKS** - flow stops, no PR created | Fix the finding, then re-run `/flow-finish` |
+| CRITICAL | **BLOCKS** - flow stops, no PR created | Fix the finding, then re-run `$flow-finish` |
 | HIGH | **WARNS** - displayed, flow continues | Review finding; fix if real, suppress if false positive |
 | MEDIUM | Passes silently | No action needed |
 | LOW | Passes silently | No action needed |
@@ -171,7 +171,7 @@ When this target exists, check documentation freshness:
 1. **C4 diagrams** - If `docs/architecture/` exists, check if C4 HTML files are older than recent code changes. If stale, warn:
    ```
    Docs may be stale - C4 diagrams last updated {date}, code changed since then.
-   Run /documentation-c4 to regenerate.
+   Run $documentation-c4 to regenerate.
    ```
 
 2. **CLAUDE.md / README.md** - Scan for obviously stale references (e.g., commands that no longer exist, file paths that don't match). Report as non-blocking warnings.
@@ -192,7 +192,7 @@ BARE (#581 discipline):
 - `FLOW_FINISH_GATE: warn` - **missing required targets**: display as a warning but **do NOT block**.
   ```
   ⚠️  Makefile check: 1 required target missing (typecheck)
-      Run /cicd-check for details or /cicd-init to fix
+      Run $cicd-check for details or $cicd-init to fix
   ```
 - `FLOW_FINISH_GATE: ok` - report briefly - `"Makefile check: OK (6/6 targets present)"`
 - `FLOW_FINISH_GATE: skipped` - `lib/cicd` unavailable or no Makefile: skip silently (Step 2 already handles the no-Makefile case)

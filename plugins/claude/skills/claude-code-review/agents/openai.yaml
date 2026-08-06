@@ -3,4 +3,4 @@ interface:
   short_description: "Read-only cross-model review via Claude"
   default_prompt: "Use $claude-code-review to ask Claude Code for a read-only review of the current issue diff."
 policy:
-  allow_implicit_invocation: true
+  allow_implicit_invocation: false

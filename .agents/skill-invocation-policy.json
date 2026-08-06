@@ -1,0 +1,86 @@
+{
+  "$schema": "./skill-invocation-policy.schema.json",
+  "schema_version": "1.0",
+  "payload_version": "0.1.1+codex.20260806203405",
+  "tracking_issue": 159,
+  "invocation": {
+    "explicit": "$skill-name",
+    "discovery": "/skills",
+    "natural_language": "Describe the user goal in ordinary language; Codex may select only an implicitly eligible skill whose boundaries match.",
+    "historical": "Historical CPP /family:command and faux /skill-name spellings are documentation-only and unsupported by Codex."
+  },
+  "implicit_entrypoints": [
+    {
+      "name": "flow-auto",
+      "plugin": "flow",
+      "evidence_cases": ["CASE-004", "CASE-005", "CASE-006", "CASE-007", "CASE-008"],
+      "rationale": "The lifecycle is a high-value entrypoint with mandatory issue, worktree, approval, and issue-state gates."
+    },
+    {
+      "name": "project-next",
+      "plugin": "project",
+      "evidence_cases": ["CASE-001", "CASE-002", "CASE-003"],
+      "rationale": "Read-only repository triage has direct, indirect, and negative golden prompts and a deterministic behavioral core."
+    }
+  ],
+  "explicit_only": {
+    "default": true,
+    "reason": "Secondary, help, administrative, and state-changing skills remain selectable with $skill-name or /skills without consuming every session's implicit inventory.",
+    "project_init": "project-init writes a new local scaffold and is explicit-only under the accepted project-init composition contract."
+  },
+  "profiles": {
+    "minimal": ["cxpp"],
+    "recommended": [
+      "project",
+      "spec",
+      "flow",
+      "github",
+      "cicd",
+      "secrets",
+      "security",
+      "agents-md",
+      "documentation",
+      "qa",
+      "self-improvement",
+      "cxpp",
+      "claude"
+    ],
+    "full": [
+      "project",
+      "spec",
+      "flow",
+      "github",
+      "cicd",
+      "secrets",
+      "woodpecker",
+      "security",
+      "agents-md",
+      "documentation",
+      "qa",
+      "evaluate",
+      "second-opinion",
+      "self-improvement",
+      "cxpp",
+      "claude"
+    ]
+  },
+  "budgets": {
+    "recommended_max_implicit_entries": 2,
+    "full_max_implicit_entries": 2,
+    "full_max_entry_metadata_bytes": 4096
+  },
+  "fresh_full_suite_capture": {
+    "captured_at": "2026-08-06T20:56:44Z",
+    "codex_version": "codex-cli 0.146.1",
+    "total_entries": 7,
+    "cxpp_entries": 2,
+    "system_entries": 5,
+    "entry_metadata_bytes": 3281,
+    "skills_section_bytes": 3789,
+    "method": "Install the full profile into an isolated CODEX_HOME and capture codex debug prompt-input."
+  },
+  "refresh_boundary": {
+    "metadata_updates_require": ["plugin-upgrade-or-reinstall", "new-codex-session"],
+    "reason": "An existing session retains the skill inventory and metadata captured when that session started."
+  }
+}

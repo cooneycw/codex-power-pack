@@ -20,7 +20,7 @@ def _frontmatter_value(text: str, key: str) -> str:
 
 def test_agents_md_native_skill_trigger_parity() -> None:
     for command, skill_name in AGENTS_MD_SKILLS.items():
-        trigger = f"/agents-md:{command}"
+        trigger = f"$agents-md-{command}"
         skill_md = SKILLS_DIR / skill_name / "SKILL.md"
 
         assert skill_md.is_file(), f"Missing skill file for {trigger}: {skill_md}"

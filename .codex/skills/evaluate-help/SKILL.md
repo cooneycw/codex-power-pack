@@ -19,8 +19,8 @@ Multi-model evaluation flow for structured decision-making and spec generation.
 
 | Command | Purpose |
 |---------|---------|
-| `/evaluate-issue` | Full 4-phase evaluation: divergence scan, reasoning, validation, spec output |
-| `/evaluate-help` | This help page |
+| `$evaluate-issue` | Full 4-phase evaluation: divergence scan, reasoning, validation, spec output |
+| `$evaluate-help` | This help page |
 
 ## How It Works
 
@@ -57,7 +57,7 @@ Phase 4: Spec Output
 
 ## Prerequisites
 
-- **Required:** the Second Opinion MCP server, connected via the root `.mcp.json` (external `cooneycw/mcp-second-opinion` server; see `/second-opinion-help` for setup)
+- **Required:** the Second Opinion MCP server, connected via the root `.mcp.json` (external `cooneycw/mcp-second-opinion` server; see `$second-opinion-help` for setup)
 - **Optional:** Sequential Thinking MCP (enhances Phase 2 reasoning; falls back to inline reasoning if not installed)
 - **Skill:** `evaluate` skill provides domain-specific prompts (loaded automatically)
 
@@ -65,13 +65,13 @@ Phase 4: Spec Output
 
 ```bash
 # Evaluate an architectural decision
-/evaluate-issue "Should we use event sourcing or CRUD for the order system?"
+$evaluate-issue "Should we use event sourcing or CRUD for the order system?"
 
 # Evaluate a feature concept
-/evaluate-issue "Add real-time collaboration to the document editor"
+$evaluate-issue "Add real-time collaboration to the document editor"
 
 # No arguments - interactive prompts guide you
-/evaluate-issue
+$evaluate-issue
 ```
 
 ## Output
@@ -93,7 +93,7 @@ Typical evaluation costs $0.10-0.30 depending on model selection and depth. Phas
 
 ## Related Commands
 
-- `/second-opinion-start` - Quick single-file code review
-- `/second-opinion-models` - Interactive model selection for reviews
-- `/spec:adopt` - Install the official spec-kit for structured spec authoring
+- `$second-opinion-start` - Quick single-file code review
+- `$second-opinion-models` - Interactive model selection for reviews
+- `$spec-adopt` - Install the official spec-kit for structured spec authoring
 - `scripts/speckit-tasks-to-issues.sh` - Turn a spec `tasks.md` into GitHub issues

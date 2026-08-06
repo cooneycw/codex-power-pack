@@ -16,7 +16,7 @@ to the audit log (never the value).
 
 ## Instructions
 
-When the user invokes `/secrets-rotate KEY [VALUE]`, run:
+When the user invokes `$secrets-rotate KEY [VALUE]`, run:
 
 ```bash
 PYTHONPATH="${HOME}/Projects/claude-power-pack/lib:${PYTHONPATH}" python3 -m lib.creds rotate "$KEY" "$VALUE"

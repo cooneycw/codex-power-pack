@@ -1,6 +1,6 @@
 interface:
   display_name: "Project Help"
-  short_description: "Overview of project management commands"
-  default_prompt: "Use $project-help when you need overview of project management commands"
+  short_description: "Explain which project skill owns scaffolding, orientation, and next-work triage"
+  default_prompt: "Use $project-help to compare the explicit project scaffolding, orientation, and next-work skills."
 policy:
-  allow_implicit_invocation: true
+  allow_implicit_invocation: false

@@ -3,4 +3,4 @@ interface:
   short_description: "Flow: Status of Active Worktrees - Show all active worktrees with their issue, branch, dirty state, and PR status."
   default_prompt: "Use $flow-status when you need flow: Status of Active Worktrees - Show all active worktrees with their issue, branch, dirty state, and PR status."
 policy:
-  allow_implicit_invocation: true
+  allow_implicit_invocation: false

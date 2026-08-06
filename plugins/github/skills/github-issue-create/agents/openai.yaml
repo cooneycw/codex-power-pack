@@ -3,4 +3,4 @@ interface:
   short_description: "Create a new GitHub issue in claude-power-pack"
   default_prompt: "Use $github-issue-create when you need create a new GitHub issue in claude-power-pack"
 policy:
-  allow_implicit_invocation: true
+  allow_implicit_invocation: false

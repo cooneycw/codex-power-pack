@@ -10,7 +10,7 @@ Generated from a Claude Code command. Where the procedure references these Claud
 
 - MCP tools: use the MCP servers configured in `~/.codex/config.toml`, or fall back to the referenced repo scripts and CLI entry points.
 
-# /cpp-dockers - Docker Container Status
+# $cpp-dockers - Docker Container Status
 
 Show Docker container status, health, and project linkages
 

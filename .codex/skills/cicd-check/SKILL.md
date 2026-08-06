@@ -10,7 +10,7 @@ Generated from a Claude Code command. Where the procedure references these Claud
 
 - `CLAUDE.md` references: Codex reads `AGENTS.md`; treat them as the target repo's agent-context file.
 
-# /cicd-check - Makefile Validation
+# $cicd-check - Makefile Validation
 
 Validate Makefile against CPP standards
 

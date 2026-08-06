@@ -10,7 +10,7 @@ Run deployment using the project's Makefile targets.
 
 ## Instructions
 
-When the user invokes `/flow-deploy [TARGET]`, perform these steps:
+When the user invokes `$flow-deploy [TARGET]`, perform these steps:
 
 ### Step 1: Verify on Main Branch
 
@@ -18,7 +18,7 @@ When the user invokes `/flow-deploy [TARGET]`, perform these steps:
 BRANCH=$(git branch --show-current)
 if [[ "$BRANCH" != "main" && "$BRANCH" != "master" ]]; then
     echo "WARNING: Deploying from branch '$BRANCH' (not main)."
-    echo "Consider merging first with /flow-merge."
+    echo "Consider merging first with $flow-merge."
     # Ask user to confirm or abort
 fi
 ```
@@ -65,7 +65,7 @@ DEPLOY_MODE=$(grep -oP '^\s*mode:\s*\K\S+' .claude/deploy.yaml 2>/dev/null | hea
 #    throwaway per-worktree compose stack from a dev box.
 if [ "$DEPLOY_MODE" = "external" ]; then
     echo "Deploy mode 'external' (.claude/deploy.yaml) - deploy runs out of band (host timer / CI on origin/main)."
-    echo "Nothing to do here; skipping /flow-deploy."
+    echo "Nothing to do here; skipping $flow-deploy."
     exit 0
 fi
 
@@ -285,15 +285,15 @@ If `CPP_DIR` is found and `.claude/cicd.yml` exists:
    - `VERIFY_EXIT == 1` (ROLLBACK): a probe that passed in the baseline fails
      now. **Report the regression prominently** and recommend rolling back
      (redeploy the previous commit or run the rollback target) or investigating
-     with `/cicd-health` + `/cicd-smoke`. Verification does not roll back
+     with `$cicd-health` + `$cicd-smoke`. Verification does not roll back
      automatically - the human decides.
 
 4. **Report results:**
    - If verification PROCEEDs (or health + smoke pass with no baseline):
      `"Deploy verified ✅ - no regression vs baseline"`
    - If verification returns ROLLBACK: Report the regression and recommend
-     rollback + `/self-improvement-deployment`
-   - If any raw check fails: Report failures and suggest `/self-improvement-deployment`
+     rollback + `$self-improvement-deployment`
+   - If any raw check fails: Report failures and suggest `$self-improvement-deployment`
 
 5. **Log verification results** (extends deploy.log format):
    ```bash

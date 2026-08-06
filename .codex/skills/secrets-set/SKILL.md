@@ -15,7 +15,7 @@ Set or update a secret value in the project's global config store.
 
 ## Instructions
 
-When the user invokes `/secrets-set KEY VALUE`, run:
+When the user invokes `$secrets-set KEY VALUE`, run:
 
 ```bash
 PYTHONPATH="${HOME}/Projects/claude-power-pack/lib:${PYTHONPATH}" python3 -m lib.creds set "$KEY" "$VALUE"

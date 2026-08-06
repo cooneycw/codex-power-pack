@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/cooneycw/codex-power-pack/blob/main/.agents/skill-invocation-policy.schema.json",
+  "title": "Codex Power Pack skill invocation policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "payload_version",
+    "tracking_issue",
+    "invocation",
+    "implicit_entrypoints",
+    "explicit_only",
+    "profiles",
+    "budgets",
+    "fresh_full_suite_capture",
+    "refresh_boundary"
+  ],
+  "properties": {
+    "$schema": {"type": "string"},
+    "schema_version": {"const": "1.0"},
+    "payload_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+\\+codex\\.[0-9]+$"},
+    "tracking_issue": {"const": 159},
+    "invocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["explicit", "discovery", "natural_language", "historical"],
+      "properties": {
+        "explicit": {"const": "$skill-name"},
+        "discovery": {"const": "/skills"},
+        "natural_language": {"type": "string", "minLength": 1},
+        "historical": {"type": "string", "minLength": 1}
+      }
+    },
+    "implicit_entrypoints": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "plugin", "evidence_cases", "rationale"],
+        "properties": {
+          "name": {"type": "string", "pattern": "^[a-z][a-z0-9-]+$"},
+          "plugin": {"type": "string", "pattern": "^[a-z][a-z0-9-]+$"},
+          "evidence_cases": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {"type": "string", "pattern": "^CASE-[0-9]{3}$"}
+          },
+          "rationale": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "explicit_only": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["default", "reason", "project_init"],
+      "properties": {
+        "default": {"const": true},
+        "reason": {"type": "string", "minLength": 1},
+        "project_init": {"type": "string", "minLength": 1}
+      }
+    },
+    "profiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimal", "recommended", "full"],
+      "properties": {
+        "minimal": {"$ref": "#/$defs/pluginList"},
+        "recommended": {"$ref": "#/$defs/pluginList"},
+        "full": {"$ref": "#/$defs/pluginList"}
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recommended_max_implicit_entries", "full_max_implicit_entries", "full_max_entry_metadata_bytes"],
+      "properties": {
+        "recommended_max_implicit_entries": {"type": "integer", "minimum": 0},
+        "full_max_implicit_entries": {"type": "integer", "minimum": 0},
+        "full_max_entry_metadata_bytes": {"type": "integer", "minimum": 1}
+      }
+    },
+    "fresh_full_suite_capture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "captured_at",
+        "codex_version",
+        "total_entries",
+        "cxpp_entries",
+        "system_entries",
+        "entry_metadata_bytes",
+        "skills_section_bytes",
+        "method"
+      ],
+      "properties": {
+        "captured_at": {"type": "string", "format": "date-time"},
+        "codex_version": {"type": "string", "minLength": 1},
+        "total_entries": {"type": "integer", "minimum": 1},
+        "cxpp_entries": {"type": "integer", "minimum": 0},
+        "system_entries": {"type": "integer", "minimum": 0},
+        "entry_metadata_bytes": {"type": "integer", "minimum": 1},
+        "skills_section_bytes": {"type": "integer", "minimum": 1},
+        "method": {"type": "string", "minLength": 1}
+      }
+    },
+    "refresh_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metadata_updates_require", "reason"],
+      "properties": {
+        "metadata_updates_require": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {"enum": ["plugin-upgrade-or-reinstall", "new-codex-session"]}
+        },
+        "reason": {"type": "string", "minLength": 1}
+      }
+    }
+  },
+  "$defs": {
+    "pluginList": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[a-z][a-z0-9-]+$"}
+    }
+  }
+}

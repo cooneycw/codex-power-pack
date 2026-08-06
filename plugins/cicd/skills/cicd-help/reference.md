@@ -8,41 +8,41 @@ Build, verify, and deploy automation for Claude Code projects.
 
 | Command | Purpose |
 |---------|---------|
-| `/cicd-init` | Detect framework, generate Makefile and cicd.yml |
-| `/cicd-check` | Validate Makefile against CPP standards |
-| `/cicd-health` | Run health checks (endpoints + processes) |
-| `/cicd-smoke` | Run smoke tests from cicd.yml |
-| `/cicd-verify` | Verify a deployment against a pre-deploy baseline (proceed/rollback) |
-| `/cicd-pipeline` | Generate CI/CD workflows (GitHub Actions, or Woodpecker via provider) |
-| `/cicd-woodpecker` | Generate a hardened self-hosted Woodpecker pipeline + scaffold server/agent |
-| `/cicd-container` | Generate Dockerfile and docker-compose.yml |
-| `/cicd-infra-init` | Scaffold IaC directory with tiered structure (foundation/platform/app) |
-| `/cicd-infra-discover` | Generate cloud resource discovery script for IaC import |
-| `/cicd-infra-pipeline` | Generate CI/CD pipelines for infrastructure tiers with approval gates |
-| `/cicd-help` | This help page |
+| `$cicd-init` | Detect framework, generate Makefile and cicd.yml |
+| `$cicd-check` | Validate Makefile against CPP standards |
+| `$cicd-health` | Run health checks (endpoints + processes) |
+| `$cicd-smoke` | Run smoke tests from cicd.yml |
+| `$cicd-verify` | Verify a deployment against a pre-deploy baseline (proceed/rollback) |
+| `$cicd-pipeline` | Generate CI/CD workflows (GitHub Actions, or Woodpecker via provider) |
+| `$cicd-woodpecker` | Generate a hardened self-hosted Woodpecker pipeline + scaffold server/agent |
+| `$cicd-container` | Generate Dockerfile and docker-compose.yml |
+| `$cicd-infra-init` | Scaffold IaC directory with tiered structure (foundation/platform/app) |
+| `$cicd-infra-discover` | Generate cloud resource discovery script for IaC import |
+| `$cicd-infra-pipeline` | Generate CI/CD pipelines for infrastructure tiers with approval gates |
+| `$cicd-help` | This help page |
 
 ## How It Works
 
 ```
-/cicd-init      →  Detect framework  →  Generate Makefile  →  Generate .claude/cicd.yml
+$cicd-init      →  Detect framework  →  Generate Makefile  →  Generate .claude/cicd.yml
                                               ↓
-/cicd-check     →  Validate targets  →  Report gaps  →  Suggest fixes
+$cicd-check     →  Validate targets  →  Report gaps  →  Suggest fixes
                                               ↓
-/flow-finish    → make lint + make test       (quality gates)
-/flow-deploy    → make deploy                 (deployment)
+$flow-finish    → make lint + make test       (quality gates)
+$flow-deploy    → make deploy                 (deployment)
                                               ↓
-/cicd-health    →  Check endpoints  →  Check processes  →  Report status
-/cicd-smoke     →  Run smoke tests  →  Check results    →  Report pass/fail
-/cicd-verify    →  Baseline (pre)   →  Re-run (post)    →  Verdict: proceed/rollback
+$cicd-health    →  Check endpoints  →  Check processes  →  Report status
+$cicd-smoke     →  Run smoke tests  →  Check results    →  Report pass/fail
+$cicd-verify    →  Baseline (pre)   →  Re-run (post)    →  Verdict: proceed/rollback
                                               ↓
-/cicd-pipeline  →  Read Makefile targets  →  Generate .github/workflows/ci.yml (or .woodpecker.yml)
-/cicd-woodpecker→  Framework + gates      →  Generate hardened .woodpecker.yml + server/agent scaffold
-/cicd-container →  Detect framework       →  Generate Dockerfile + docker-compose.yml
+$cicd-pipeline  →  Read Makefile targets  →  Generate .github/workflows/ci.yml (or .woodpecker.yml)
+$cicd-woodpecker→  Framework + gates      →  Generate hardened .woodpecker.yml + server/agent scaffold
+$cicd-container →  Detect framework       →  Generate Dockerfile + docker-compose.yml
 ```
 
 ## Self-Hosted Woodpecker CI
 
-Most CI tooling assumes GitHub Actions. `/cicd-woodpecker` covers the uncovered
+Most CI tooling assumes GitHub Actions. `$cicd-woodpecker` covers the uncovered
 ground: it generates a hardened `.woodpecker.yml` (opt-in secret-scan +
 image-security + runtime-smoke stages) and scaffolds the Woodpecker server/agent
 from `templates/woodpecker/`. See `docs/skills/woodpecker-ci.md` for the full
@@ -62,12 +62,12 @@ patterns and hard-won gotchas (Trivy DB drift, gitleaks-first, gRPC port hygiene
 
 | Target | Required | Used By |
 |--------|----------|---------|
-| `lint` | Yes | `/flow-finish` |
-| `test` | Yes | `/flow-finish` |
+| `lint` | Yes | `$flow-finish` |
+| `test` | Yes | `$flow-finish` |
 | `format` | No | Manual / IDE |
-| `typecheck` | No | `/cicd-check` reports |
+| `typecheck` | No | `$cicd-check` reports |
 | `build` | No | Build artifacts |
-| `deploy` | No | `/flow-deploy` |
+| `deploy` | No | `$flow-deploy` |
 | `clean` | No | Cleanup |
 | `verify` | No | Pre-deploy gate (lint + test + typecheck) |
 | `troubleshoot` | No | Diagnostic pass (clean + lint + test) |
@@ -113,7 +113,7 @@ health:
     - name: CLI version
       command: "python -m myapp --version"
       expected_output: "v\\d+\\.\\d+"
-  # Deploy verification (used by /cicd-verify, /flow-deploy, /flow-auto):
+  # Deploy verification (used by $cicd-verify, $flow-deploy, $flow-auto):
   # capture the endpoints/smoke_tests above as a baseline before deploy,
   # re-run them after, and emit a proceed/rollback verdict.
   deploy_verification:
@@ -127,24 +127,24 @@ See `templates/cicd.yml.example` for full documentation.
 
 ```bash
 # Detect framework and generate Makefile
-/cicd-init
+$cicd-init
 
 # Validate your Makefile
-/cicd-check
+$cicd-check
 
 # Run health checks (after services are running)
-/cicd-health
+$cicd-health
 
 # Run smoke tests
-/cicd-smoke
+$cicd-smoke
 
 # Capture a pre-deploy baseline, deploy, then verify (proceed/rollback)
-/cicd-verify --baseline
-/cicd-verify
+$cicd-verify --baseline
+$cicd-verify
 
 # Use with /flow
-/flow-finish    # Runs make lint + make test
-/flow-deploy    # Runs make deploy, then verifies against the baseline
+$flow-finish    # Runs make lint + make test
+$flow-deploy    # Runs make deploy, then verifies against the baseline
 ```
 
 ## Infrastructure as Code
@@ -152,11 +152,11 @@ See `templates/cicd.yml.example` for full documentation.
 Three-tier IaC model with separate pipelines and approval gates:
 
 ```
-/cicd-infra-init      →  Scaffold infra/ directory  →  foundation/ + platform/ + app/
+$cicd-infra-init      →  Scaffold infra/ directory  →  foundation/ + platform/ + app/
                                     ↓
-/cicd-infra-discover  →  Audit cloud resources  →  Generate terraform import commands
+$cicd-infra-discover  →  Audit cloud resources  →  Generate terraform import commands
                                     ↓
-/cicd-infra-pipeline  →  Generate per-tier workflows  →  Approval gates for foundation
+$cicd-infra-pipeline  →  Generate per-tier workflows  →  Approval gates for foundation
 ```
 
 Supported IaC providers: Terraform (default), Pulumi, Bicep
@@ -184,6 +184,6 @@ infrastructure:
 ## Related
 
 - `/claude-md-lint` - Audit CLAUDE.md for CI/CD and troubleshooting directives
-- `/flow-doctor` - Reports Makefile target availability
-- `/flow-deploy` - Runs deploy target
-- `/self-improvement-deployment` - Analyze deploy failures and improve Makefile
+- `$flow-doctor` - Reports Makefile target availability
+- `$flow-deploy` - Runs deploy target
+- `$self-improvement-deployment` - Analyze deploy failures and improve Makefile

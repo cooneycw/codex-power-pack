@@ -27,12 +27,12 @@ def test_host_managed_doc_records_boundary_and_health_checks() -> None:
 
 
 def test_host_managed_doc_records_cxpp_fallback_scope() -> None:
-    # The cxpp:init pointer scope is CxPP-native governance, so it lives in
+    # The cxpp-init pointer scope is CxPP-native governance, so it lives in
     # HOST_MANAGED.md and the native cxpp skill packages, not a generated CPP skill.
     text = (ROOT / "docs" / "HOST_MANAGED.md").read_text()
 
-    assert "cxpp:init" in text
-    assert "cxpp:update" in text
-    assert "cxpp:status" in text
+    assert "$cxpp-init" in text
+    assert "$cxpp-update" in text
+    assert "$cxpp-status" in text
     assert "templates/config.toml.example" in text
     assert "not own external MCP server lifecycle" in text

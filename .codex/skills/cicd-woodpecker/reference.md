@@ -3,7 +3,7 @@
 # Woodpecker Self-Hosted CI
 
 Generate a hardened `.woodpecker.yml` and scaffold a self-hosted Woodpecker CI
-server + agent. This is the self-hosted counterpart to `/cicd-pipeline` (which
+server + agent. This is the self-hosted counterpart to `$cicd-pipeline` (which
 defaults to GitHub Actions). The whole ecosystem assumes hosted runners; this
 covers the uncovered ground.
 
@@ -114,7 +114,7 @@ To stand up the server/agent: see templates/woodpecker/README.md
 
 ## Related
 
-- `/cicd-pipeline` - GitHub Actions (or Woodpecker via `provider`)
-- `/cicd-smoke` - run the smoke tests the runtime-smoke stage invokes
+- `$cicd-pipeline` - GitHub Actions (or Woodpecker via `provider`)
+- `$cicd-smoke` - run the smoke tests the runtime-smoke stage invokes
 - `docs/skills/woodpecker-ci.md` - full self-hosted CI patterns and gotchas
 - `templates/woodpecker/` - server + agent compose and secrets bootstrap

@@ -10,7 +10,7 @@ Generated from a Claude Code command. Where the procedure references these Claud
 
 - `CLAUDE.md` references: Codex reads `AGENTS.md`; treat them as the target repo's agent-context file.
 
-# /cicd-verify - Deploy Verification
+# $cicd-verify - Deploy Verification
 
 Verify a deployment against a pre-deploy baseline (proceed/rollback)
 

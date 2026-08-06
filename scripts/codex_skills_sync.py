@@ -133,6 +133,47 @@ FLOW_RUNTIME_HELPERS = {
     "worktree-remove.sh",
 }
 
+FLOW_AUTO_DESCRIPTION = (
+    "Deliver an open GitHub issue end to end through an isolated worktree, "
+    "necessity and approval gates, implementation, tests, PR, merge, CI, and "
+    "optional deployment. Use for issue-lifecycle requests; do not use for "
+    "questions, ordinary repository edits, or closed issues without approval."
+)
+
+LEGACY_SKILL_REPLACEMENTS = {
+    "cpp-init": "cxpp-init",
+    "cpp-status": "cxpp-status",
+    "cpp-update": "cxpp-update",
+    "codex-code_review": "claude-code-review",
+}
+
+_CODEX_PROJECT_HELP_BODY = """# Project Skills
+
+Use project skills for three distinct goals. Select one explicitly with
+`$skill-name`, discover installed skills with `/skills`, or describe the matching
+goal in ordinary language when the skill is eligible for implicit selection.
+
+| Goal | Owning skill | Boundary |
+|---|---|---|
+| Create a new local Python project | `$project-init` | Explicit-only; confirms the path and optional Git/commit |
+| Orient quickly inside an existing repository | `$project-lite` | Read-only; never scaffolds a project |
+| Recommend the next repository action | `$project-next` | Read-only triage; never starts issue work |
+
+`$project-init` creates only a local Python scaffold. It does not publish to
+GitHub, install Codex Power Pack, adopt Spec Kit, create issues, or add persistent
+guidance. Those are separate, consented handoffs:
+
+- GitHub publication: use a repository-aware GitHub workflow after reviewing
+  owner, name, visibility, remote, and first push.
+- Spec Kit adoption: use `$spec-adopt`.
+- Approved spec-to-issue synchronization: use `$spec-sync`.
+- Persistent Codex Power Pack guidance or hooks: use `$cxpp-init`.
+
+Do not select `$project-init` for existing-repository orientation, next-work
+analysis, publication, Spec Kit operations, ordinary repository changes, or any
+request that does not explicitly ask for a new local Python project.
+"""
+
 SKILL_DIR_TOKEN = "<SKILL_DIR>"
 _GENERIC_WORKTREE_ADAPTATION = (
     "- Native worktrees (`EnterWorktree`/`ExitWorktree` tool calls,"
@@ -647,6 +688,58 @@ def _adapt_github_text(skill_dir: Path, source_file: Path, text: str) -> str:
     return text
 
 
+def _adapt_invocation_text(skill_dir: Path, source_file: Path, text: str) -> str:
+    """Normalize generated user guidance to native Codex skill selection."""
+    if source_file.suffix != ".md":
+        return text
+
+    if skill_dir.name == "flow-auto" and source_file.name == "SKILL.md":
+        text = re.sub(
+            r'^description:.*$',
+            f'description: "{FLOW_AUTO_DESCRIPTION}"',
+            text,
+            count=1,
+            flags=re.MULTILINE,
+        )
+
+    if skill_dir.name == "project-help" and source_file.name == "SKILL.md":
+        text = re.sub(
+            r'^description:.*$',
+            'description: "Explain which project skill owns scaffolding, orientation, and next-work triage"',
+            text,
+            count=1,
+            flags=re.MULTILINE,
+        )
+        heading = text.find("# Project Commands")
+        if heading != -1:
+            text = text[:heading] + _CODEX_PROJECT_HELP_BODY
+
+    skill_names = {
+        path.name
+        for path in skill_dir.parent.iterdir()
+        if path.is_dir() and (path / "SKILL.md").is_file()
+    } | LOCAL_SKILL_DIRS
+
+    def replace_namespaced(match: re.Match[str]) -> str:
+        candidate = f"{match.group(1)}-{match.group(2)}"
+        selected = LEGACY_SKILL_REPLACEMENTS.get(candidate, candidate)
+        return f"${selected}" if selected in skill_names else match.group(0)
+
+    text = re.sub(
+        r"(?<![A-Za-z0-9./])/(?!/)([a-z][a-z0-9_-]+):([a-z][a-z0-9_-]+)",
+        replace_namespaced,
+        text,
+    )
+    if skill_names:
+        bare = re.compile(
+            r"(?<![A-Za-z0-9./])/(?!/)("
+            + "|".join(re.escape(name) for name in sorted(skill_names, key=len, reverse=True))
+            + r")(?![A-Za-z0-9_-])"
+        )
+        text = bare.sub(lambda match: f"${match.group(1)}", text)
+    return text
+
+
 def _adapted_source_files(skill_dir: Path) -> dict[str, bytes]:
     files: dict[str, bytes] = {}
     for source_file in sorted(path for path in skill_dir.rglob("*") if path.is_file()):
@@ -663,6 +756,7 @@ def _adapted_source_files(skill_dir: Path) -> dict[str, bytes]:
         text = _adapt_flow_cicd_runtime(skill_dir, source_file, text)
         text = _adapt_flow_claude_review(skill_dir, source_file, text)
         text = _adapt_github_text(skill_dir, source_file, text)
+        text = _adapt_invocation_text(skill_dir, source_file, text)
         files[rel] = text.encode()
     return files
 

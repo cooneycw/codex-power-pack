@@ -1,7 +1,7 @@
 {
   "name": "project",
-  "version": "0.1.0+codex.20260727145047",
-  "description": "Codex Power Pack project scaffolding skills.",
+  "version": "0.1.1+codex.20260806203405",
+  "description": "Codex Power Pack local Python scaffolding, repository orientation, and next-work skills.",
   "author": {
     "name": "Codex Power Pack maintainers",
     "url": "https://github.com/cooneycw/codex-power-pack"
@@ -20,7 +20,7 @@
   "interface": {
     "displayName": "Project",
     "shortDescription": "Scaffold and orient Codex projects.",
-    "longDescription": "Project packages Codex Power Pack skills for zero-to-GitHub project scaffolding and project workflow orientation.",
+    "longDescription": "Project packages an explicit-only local Python scaffold plus read-only repository orientation and next-work analysis. GitHub publication, Spec Kit, issue synchronization, and persistent configuration are separate workflows.",
     "developerName": "Codex Power Pack",
     "category": "Developer Tools",
     "capabilities": [
@@ -28,8 +28,8 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Scaffold a new project with /project-init.",
-      "Show project workflow help."
+      "Use $project-init only when explicitly asked to create a new local Python project.",
+      "Use $project-help to compare project scaffolding, orientation, and next-work skills."
     ],
     "brandColor": "#2563EB"
   }

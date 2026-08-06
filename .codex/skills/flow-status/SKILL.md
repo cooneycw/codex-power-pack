@@ -16,7 +16,7 @@ Show all active worktrees with their issue, branch, dirty state, and PR status.
 
 ## Instructions
 
-When the user invokes `/flow-status`, perform these steps:
+When the user invokes `$flow-status`, perform these steps:
 
 ### Step 1: Detect Repository
 
@@ -72,7 +72,7 @@ ISSUE_TITLE=$(gh issue view "$ISSUE_NUM" --json title --jq '.title' 2>/dev/null 
 
 ### Suggestions
 - **#42**: Has uncommitted work - commit or stash before switching
-- **#55**: PR is open - check for reviews, then `/flow-merge`
+- **#55**: PR is open - check for reviews, then `$flow-merge`
 ```
 
 ### Step 6: Detect Stale Branches
@@ -99,13 +99,13 @@ If stale branches or prunable references exist, append to output:
 - {N} local issue branches with no active worktree
 - {M} stale worktree references
 
-Run `/flow-cleanup` to remove stale branches and references.
+Run `$flow-cleanup` to remove stale branches and references.
 ```
 
 ## Notes
 
 - Worktrees are visible siblings outside the repo (issue #627): `git worktree list` shows them at `<parent>/<repo>-<branch>`, or under `$FLOW_WORKTREE_BASE` when set - not `../<repo>-<branch>/`
 - Worktrees on `main` or non-issue branches are listed but marked as "(not issue-linked)"
-- If no worktrees exist besides main, report "No active worktrees. Run `/flow-start <issue>` to begin."
+- If no worktrees exist besides main, report "No active worktrees. Run `$flow-start <issue>` to begin."
 - Keep output concise - this is a quick status check
 - Stale branch detection helps identify cleanup opportunities

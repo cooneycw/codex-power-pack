@@ -1,6 +1,6 @@
 {
   "name": "flow",
-  "version": "0.1.0+codex.20260727145047",
+  "version": "0.1.1+codex.20260806203405",
   "description": "Issue-driven development lifecycle skills.",
   "author": {
     "name": "Codex Power Pack maintainers",
@@ -28,8 +28,8 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Start issue work with /flow-start.",
-      "Run a full lifecycle with /flow-auto."
+      "Use $flow-start to create an issue-anchored worktree and branch.",
+      "Use $flow-auto to deliver a specific open GitHub issue through the full reviewed lifecycle."
     ],
     "brandColor": "#4F46E5"
   }

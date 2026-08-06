@@ -11,7 +11,7 @@ Retrieve credentials from the configured provider with automatic masking.
 ## Usage
 
 ```
-/secrets-get [secret_id] [--provider aws|env] [--json]
+$secrets-get [secret_id] [--provider aws|env] [--json]
 ```
 
 ## Arguments

@@ -14,6 +14,7 @@ CONTRACT_PATH = REPO_ROOT / ".agents" / "skill-contracts.json"
 CONTRACT_SCHEMA_PATH = REPO_ROOT / ".agents" / "skill-contracts.schema.json"
 EVALUATION_PATH = REPO_ROOT / ".agents" / "skill-evaluation-cases.json"
 EVALUATION_SCHEMA_PATH = REPO_ROOT / ".agents" / "skill-evaluation-cases.schema.json"
+INVOCATION_POLICY_SCHEMA_PATH = REPO_ROOT / ".agents" / "skill-invocation-policy.schema.json"
 
 _spec = importlib.util.spec_from_file_location("skill_contract_baseline", MODULE_PATH)
 assert _spec is not None and _spec.loader is not None
@@ -30,8 +31,9 @@ def load_json(path: Path) -> dict[str, Any]:
 def test_versioned_json_schemas_are_published() -> None:
     contract_schema = load_json(CONTRACT_SCHEMA_PATH)
     evaluation_schema = load_json(EVALUATION_SCHEMA_PATH)
+    invocation_policy_schema = load_json(INVOCATION_POLICY_SCHEMA_PATH)
 
-    for schema in (contract_schema, evaluation_schema):
+    for schema in (contract_schema, evaluation_schema, invocation_policy_schema):
         assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
         assert schema["$id"].startswith("https://github.com/cooneycw/codex-power-pack/")
         assert schema["type"] == "object"
@@ -39,6 +41,7 @@ def test_versioned_json_schemas_are_published() -> None:
 
     assert contract_schema["properties"]["schema_version"]["const"] == "1.0"
     assert evaluation_schema["properties"]["schema_version"]["const"] == "1.0"
+    assert invocation_policy_schema["properties"]["schema_version"]["const"] == "1.0"
 
 
 def test_committed_contract_matches_current_source_and_package_surfaces() -> None:
@@ -55,7 +58,7 @@ def test_inventory_reconciles_the_stage_zero_baseline() -> None:
     assert summary["packaged_skills"] == 73
     assert summary["unpackaged_skills"] == 10
     assert summary["marketplace_plugins"] == 16
-    assert summary["implicit_skills"] == 73
+    assert summary["implicit_skills"] == 2
 
     skills = contract["skills"]
     names = [skill["name"] for skill in skills]
@@ -67,7 +70,10 @@ def test_inventory_reconciles_the_stage_zero_baseline() -> None:
     assert len(packaged) == summary["packaged_skills"]
     assert len(unpackaged) == summary["unpackaged_skills"]
     assert all(skill["marketplace"]["state"] == "published" for skill in packaged)
-    assert all(skill["implicit"]["state"] == "enabled" for skill in packaged)
+    enabled = {skill["name"] for skill in packaged if skill["implicit"]["state"] == "enabled"}
+    disabled = {skill["name"] for skill in packaged if skill["implicit"]["state"] == "disabled"}
+    assert enabled == {"flow-auto", "project-next"}
+    assert enabled | disabled == {skill["name"] for skill in packaged}
 
 
 def test_every_unpublished_source_skill_has_a_time_bounded_owner() -> None:

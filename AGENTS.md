@@ -13,7 +13,10 @@
 - `AGENTS.md` - canonical Codex instructions
 - `.codex/skills/` - Codex skill packages. Shared families are generated from claude-power-pack and pinned by commit SHA (pull model, codex-power-pack#75), with narrow CxPP-owned runtime adaptations; CxPP-owned native skills such as `agents-md-*` and `project-lite` are authored here. `project-next` is a thin native adapter over the deterministic `lib/project_next/` contract. See `.codex/skills/README.md`.
 - `.agents/plugins/marketplace.json` - repo-scoped native Codex marketplace catalog
-- `.agents/skill-contracts.json` and `.agents/skill-evaluation-cases.json` - versioned source/package/reference inventory and dated prompt/evaluation captures; schemas live beside them
+- `.agents/skill-invocation-policy.json`, `.agents/skill-contracts.json`, and
+  `.agents/skill-evaluation-cases.json` - versioned invocation policy,
+  source/package/reference inventory, and dated prompt/evaluation captures;
+  schemas live beside them
 - `.codex/cicd.yml` - CI/CD config
 - `.codex/cicd_tasks.yml` - deterministic CI/CD task manifest
 - `plugins/<family>/` - native Codex plugin packages for per-family marketplace install
@@ -52,13 +55,17 @@ tool integrations, with client-side pointers documented in `docs/HOST_MANAGED.md
 
 - The shared command families live as generated Codex skills under `.codex/skills/<family>-<command>/`,
   pulled from claude-power-pack's `.claude/commands/` single source (codex-power-pack#75).
-  The skill dir name is the trigger: `/flow:auto` -> `.codex/skills/flow-auto/`.
+  The skill dir name is the explicit selector: `$flow-auto` ->
+  `.codex/skills/flow-auto/`; `/skills` discovers installed skills. Historical
+  CPP `/family:command` and faux `/skill-name` spellings are unsupported.
   CxPP applies narrow runtime-state path adaptations where Codex-owned workflow
   state must live under `.codex/` instead of `.claude/`.
 - Plugin-packaged copies of generated skills under `plugins/<family>/skills/`
   keep their skill payload files byte-identical to `.codex/skills/`. The only
   package-local overlay is `agents/openai.yaml`, which supplies Codex plugin UI
-  metadata and enables implicit invocation by default.
+  metadata. Implicit invocation is restricted to the entrypoints in
+  `.agents/skill-invocation-policy.json`; secondary, help, administrative, and
+  state-changing skills remain explicitly selectable.
 - Reconcile by editing the upstream source, never the generated copy: edit
   `.claude/commands/<family>/` in claude-power-pack, regenerate there (`make codex-skills`),
   then re-pull here (`make codex-skills-refresh`). The drift gate `make codex-skills-check`

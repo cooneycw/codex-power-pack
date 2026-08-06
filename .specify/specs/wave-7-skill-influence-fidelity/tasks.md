@@ -108,30 +108,30 @@ all three output modes pass; CxPP dogfood no longer needs a Claude rerun.
 
 ## Stage 2: Invocation and Metadata Normalization
 
-- [ ] **T201** [US2] Replace user-facing faux skill slash commands with
+- [x] **T201** [US2] Replace user-facing faux skill slash commands with
       `$skill-name` or `/skills` across CxPP skills, plugin manifests, README,
       AGENTS.md, and focused docs.
-- [ ] **T202** [US2] Add a migration table for historical CPP command syntax,
+- [x] **T202** [US2] Add a migration table for historical CPP command syntax,
       current Codex explicit selection, and natural-language invocation.
-- [ ] **T203** [US2] Rewrite priority skill descriptions around user goals,
+- [x] **T203** [US2] Rewrite priority skill descriptions around user goals,
       trigger terms, boundaries, and negative cases; remove truncation and fixed
       repository names.
-- [ ] **T204** [US2] Validate that every plugin and skill `default_prompt`
+- [x] **T204** [US2] Validate that every plugin and skill `default_prompt`
       selects a capability bundled by that plugin.
-- [ ] **T205** [US2,US4] Establish the first curated implicit-entrypoint set from
+- [x] **T205** [US2,US4] Establish the first curated implicit-entrypoint set from
       golden-prompt results; keep secondary/help/admin skills explicit unless
       measured evidence supports implicit use.
-- [ ] **T206** [P] [US2] Add per-plugin fresh-install prompt-inventory tests.
-- [ ] **T207** [P] [US2] Add recommended-profile and full-suite inventory,
+- [x] **T206** [P] [US2] Add per-plugin fresh-install prompt-inventory tests.
+- [x] **T207** [P] [US2] Add recommended-profile and full-suite inventory,
       uniqueness, priority-preservation, and metadata-budget tests.
-- [ ] **T208** [US2,US6] Version plugin payloads and document the new-session or
+- [x] **T208** [US2,US6] Version plugin payloads and document the new-session or
       reinstall boundary required to pick up metadata changes.
-- [ ] **T209** [US2,US7] Align project-init skill, help, agent metadata, plugin
+- [x] **T209** [US2,US7] Align project-init skill, help, agent metadata, plugin
       manifest, and starter prompts to the explicit local Python scaffold.
-- [ ] **T210** [US2,US7] Add negative routing for existing-repository
+- [x] **T210** [US2,US7] Add negative routing for existing-repository
       orientation, next-work analysis, publication, Spec Kit adoption, issue
       synchronization, and ordinary repository changes.
-- [ ] **T211** [US7] Present publication, adoption, synchronization, and
+- [x] **T211** [US7] Present publication, adoption, synchronization, and
       persistent influence only as separately consented owning-workflow
       handoffs.
 

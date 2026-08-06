@@ -1,6 +1,6 @@
 {
   "name": "cicd",
-  "version": "0.1.0+codex.20260727145047",
+  "version": "0.1.1+codex.20260806203405",
   "description": "Makefile, pipeline, smoke, health, and infrastructure CI/CD skills.",
   "author": {
     "name": "Codex Power Pack maintainers",
@@ -28,8 +28,8 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Initialize CI/CD with /cicd-init.",
-      "Check a project with /cicd-check."
+      "Use $cicd-init to detect the project framework and initialize CI/CD automation.",
+      "Use $cicd-check to validate the project's Makefile contract."
     ],
     "brandColor": "#0EA5E9"
   }

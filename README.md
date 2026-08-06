@@ -8,7 +8,9 @@ generated command skills, and tests for Codex-centric workflows.
 
 - `.codex/skills/` - Codex skill packages: generated shared families from claude-power-pack plus CxPP-owned native skills; see `.codex/skills/README.md`
 - `.agents/plugins/marketplace.json` and `plugins/<family>/` - native Codex marketplace catalog and per-family plugin packages
-- `.agents/skill-contracts.json` and `.agents/skill-evaluation-cases.json` - versioned skill inventory, reference classifications, prompt measurements, and evaluation cases
+- `.agents/skill-invocation-policy.json`, `.agents/skill-contracts.json`, and
+  `.agents/skill-evaluation-cases.json` - versioned invocation policy, skill
+  inventory, reference classifications, prompt measurements, and golden cases
 - `vendor/claude-power-pack/` - pin + drift manifest for the generated skills
 - `.codex/cicd.yml` and `.codex/cicd_tasks.yml` - Codex-local CI/CD manifests
 - `AGENTS.md` - the canonical repo instructions for Codex
@@ -36,7 +38,7 @@ codex plugin add github@codex-power-pack
 codex plugin add cxpp@codex-power-pack
 ```
 
-Run `/cxpp:init` to review and selectively configure host-managed pointers.
+Select `$cxpp-init` to review and selectively configure host-managed pointers.
 It asks before changing global Codex configuration.
 
 Install only the family plugins you need from the repo marketplace with a
@@ -59,11 +61,11 @@ The catalog currently exposes per-family packages for `project`, `spec`,
 `cxpp`, plus `claude` for OAuth-backed, read-only `$claude-code-review`
 escalations. Install `spec` for consent-first `$spec-adopt` setup of official
 spec-kit and `$spec-sync` task-to-issue previews. Install `cxpp` when a fresh
-machine needs the consent-first `/cxpp:init`, `/cxpp:update`, and
-`/cxpp:status` fallback skills.
+machine needs the consent-first `$cxpp-init`, `$cxpp-update`, and
+`$cxpp-status` fallback skills.
 
-When the marketplace or family plugins are missing, `/cxpp:init` and
-`/cxpp:update` offer four suite profiles:
+When the marketplace or family plugins are missing, `$cxpp-init` and
+`$cxpp-update` offer four suite profiles:
 
 - **Minimal** installs only `cxpp`.
 - **Recommended** installs `project`, `spec`, `flow`, `github`, `cicd`,
@@ -75,7 +77,7 @@ When the marketplace or family plugins are missing, `/cxpp:init` and
 Before writing, the workflow shows the exact sparse paths and plugins plus the
 previous, requested, and resolved immutable refs. Suite approval covers only
 marketplace and plugin installation; MCP pointers, credentials, hooks/rules,
-and external services retain separate consent prompts. `/cxpp:status` reports
+and external services retain separate consent prompts. `$cxpp-status` reports
 every family as installed or missing without changing the machine.
 
 Release installs and upgrades follow `docs/release-process.md`: use a signed
@@ -86,7 +88,7 @@ See `docs/plugin-marketplace-project-e2e.md` and
 `docs/plugin-marketplace-spec-e2e.md` for the project and spec-plugin E2E
 transcripts.
 
-For host-managed MCP tools, `/cxpp:init` applies the selected pointers. Manual
+For host-managed MCP tools, `$cxpp-init` applies the selected pointers. Manual
 setup remains available:
 
 ```bash
@@ -121,8 +123,10 @@ checkout.
 
 Each plugin packages one workflow family so users can install and remove them
 independently. Packaged skill payloads stay byte-identical to `.codex/skills/`;
-the package-local `agents/openai.yaml` files supply display metadata and set
-`allow_implicit_invocation: true` by default.
+the package-local `agents/openai.yaml` files supply display metadata. Only the
+curated entrypoints in `.agents/skill-invocation-policy.json` set
+`allow_implicit_invocation: true`; all other installed skills remain available
+through explicit `$skill-name` selection or `/skills` discovery.
 
 ## Command Skills
 
@@ -133,8 +137,9 @@ and pinned by commit SHA in `vendor/claude-power-pack/PIN`. CxPP carries narrow
 runtime adaptations for Codex-owned workflow state and native services. Installed
 flow helpers resolve from the loaded skill package, and finish lanes prefer CxPP's
 `lib/cicd` runner before the explicit claude-power-pack compatibility fallback.
-The skill dir name is the trigger: `/flow:auto` maps to
-`.codex/skills/flow-auto/`.
+The skill dir name is the explicit selector: `$flow-auto` maps to
+`.codex/skills/flow-auto/`. Historical CPP `/family:command` and faux
+`/skill-name` spellings are not Codex custom commands.
 
 Families carried: `browser`, `cicd`, `cpp`, `documentation`, `evaluate`, `flow`,
 `github`, `project`, `qa`, `second-opinion`, `secrets`, `security`,
@@ -178,6 +183,10 @@ The dated baseline and owned gap dispositions are summarized in
 `docs/skill-contract-baseline.md`. The contract check reconciles current source,
 package, marketplace, implicit, alias, dependency, and reference state without
 changing skill runtime behavior.
+
+See `docs/skill-invocation-migration.md` for the CPP slash-syntax migration,
+initial implicit-entrypoint set, and plugin-upgrade plus new-session refresh
+boundary.
 
 ## Development Checkout
 

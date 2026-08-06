@@ -1,6 +1,6 @@
 {
   "project": "Codex Power Pack",
-  "generated_at": "2026-08-06T20:31:44Z",
+  "generated_at": "2026-08-06T21:00:45Z",
   "engine": "c4-mermaid",
   "diagrams": [
     {
@@ -26,8 +26,8 @@
       "level": "L3",
       "title": "L3 Skill Distribution and Deterministic Project Triage",
       "file": "c4-l3-plugin-distribution.mmd",
-      "node_count": 15,
-      "edge_count": 19,
+      "node_count": 17,
+      "edge_count": 25,
       "parent": "c4-l2-container"
     },
     {

@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -18,6 +17,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 MARKETPLACE_PATH = REPO_ROOT / ".agents" / "plugins" / "marketplace.json"
 PLUGINS_ROOT = REPO_ROOT / "plugins"
 GENERATED_SKILLS_ROOT = REPO_ROOT / ".codex" / "skills"
+INVOCATION_POLICY_PATH = REPO_ROOT / ".agents" / "skill-invocation-policy.json"
 
 PINNING_POLICY = {
     "required": True,
@@ -109,11 +109,9 @@ FAMILY_SKILLS = {
 EXPECTED_FAMILIES = list(FAMILY_SKILLS)
 CORE_BUDGET_FAMILIES = ("project", "spec", "github")
 SKILL_LIST_BUDGET_CHARS = 8_000
-# Every packaged skill is advertised to Codex. Skills only reach the session
-# prompt inventory when implicit invocation is enabled, so a `false` here means
-# the skill is installed but invisible to the model (issue #150 for flow-auto).
-# Narrow this back to a subset if a family should become opt-in again.
-IMPLICIT_SKILLS = {skill for skills in FAMILY_SKILLS.values() for skill in skills}
+INVOCATION_POLICY = json.loads(INVOCATION_POLICY_PATH.read_text(encoding="utf-8"))
+IMPLICIT_SKILLS = {entry["name"] for entry in INVOCATION_POLICY["implicit_entrypoints"]}
+PAYLOAD_VERSION = INVOCATION_POLICY["payload_version"]
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -185,7 +183,7 @@ def test_each_family_plugin_manifest_is_native_codex_shape() -> None:
         manifest = load_json(PLUGINS_ROOT / family / ".codex-plugin" / "plugin.json")
 
         assert manifest["name"] == family
-        assert re.fullmatch(r"0\.1\.0(?:\+codex\.[A-Za-z0-9.-]+)?", manifest["version"])
+        assert manifest["version"] == PAYLOAD_VERSION
         assert manifest["skills"] == "./skills/"
         assert manifest["repository"] == "https://github.com/cooneycw/codex-power-pack"
         assert manifest["license"] == "MIT"
@@ -230,7 +228,7 @@ def test_project_next_runtime_bundle_matches_authoritative_library() -> None:
     )
 
 
-def test_packaged_skills_advertise_implicit_invocation() -> None:
+def test_packaged_skills_follow_curated_implicit_invocation_policy() -> None:
     for family, expected_skills in FAMILY_SKILLS.items():
         for skill_name in expected_skills:
             payload = load_agent_manifest(family, skill_name)

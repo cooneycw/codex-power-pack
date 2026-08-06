@@ -24,6 +24,7 @@ PLUGINS_ROOT = REPO_ROOT / "plugins"
 MARKETPLACE_PATH = REPO_ROOT / ".agents" / "plugins" / "marketplace.json"
 CONTRACT_PATH = REPO_ROOT / ".agents" / "skill-contracts.json"
 EVALUATION_PATH = REPO_ROOT / ".agents" / "skill-evaluation-cases.json"
+INVOCATION_POLICY_PATH = REPO_ROOT / ".agents" / "skill-invocation-policy.json"
 REPORT_PATH = REPO_ROOT / "docs" / "skill-contract-baseline.md"
 
 SCHEMA_VERSION = "1.0"
@@ -116,6 +117,21 @@ def _marketplace() -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
     payload = _load_json(MARKETPLACE_PATH)
     entries = {entry["name"]: entry for entry in payload["plugins"]}
     return payload, entries
+
+
+def _invocation_policy(packaged: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    policy = _load_json(INVOCATION_POLICY_PATH)
+    expected = {entry["name"] for entry in policy["implicit_entrypoints"]}
+    actual = {name for name, package in packaged.items() if package["implicit"]}
+    if actual != expected:
+        raise ValueError(
+            "implicit metadata differs from .agents/skill-invocation-policy.json: "
+            f"expected={sorted(expected)}, actual={sorted(actual)}"
+        )
+    unknown = expected - set(packaged)
+    if unknown:
+        raise ValueError(f"implicit policy names unpackaged skills: {sorted(unknown)}")
+    return policy
 
 
 def _adapted_skills(sources: dict[str, Path]) -> set[str]:
@@ -370,6 +386,7 @@ def _gaps(
 def build_contract() -> dict[str, Any]:
     sources = _source_skills()
     packaged = _packaged_skills()
+    _invocation_policy(packaged)
     marketplace, marketplace_entries = _marketplace()
     references = _extract_references(sources, packaged)
     refs_by_skill: dict[str, set[str]] = defaultdict(set)
@@ -459,6 +476,9 @@ def build_contract() -> dict[str, Any]:
 
 def render_report(contract: dict[str, Any]) -> str:
     evaluation = _load_json(EVALUATION_PATH)["captures"][0]
+    policy = _load_json(INVOCATION_POLICY_PATH)
+    fresh_capture = policy["fresh_full_suite_capture"]
+    implicit_names = ", ".join(f"`${entry['name']}`" for entry in policy["implicit_entrypoints"])
     summary = contract["summary"]
     classifications = Counter(reference["classification"] for reference in contract["references"])
     unpackaged = [gap for gap in contract["gaps"] if gap["type"] == "unpackaged_skill"]
@@ -484,7 +504,26 @@ def render_report(contract: dict[str, Any]) -> str:
         "",
         "The machine-readable source of truth is [`.agents/skill-contracts.json`](../.agents/skill-contracts.json).",
         "",
-        "## Full-Suite Prompt Capture",
+        "## Current Invocation Policy",
+        "",
+        f"Payload `{policy['payload_version']}` keeps {implicit_names} "
+        "implicitly eligible. Every other packaged skill remains available through explicit "
+        "`$skill-name` selection or `/skills` discovery. Plugin metadata changes require an "
+        "upgrade or reinstall followed by a new Codex session.",
+        "",
+        "The versioned source of truth is "
+        "[`.agents/skill-invocation-policy.json`](../.agents/skill-invocation-policy.json).",
+        "",
+        "## Current Fresh Full-Suite Capture",
+        "",
+        f"An isolated `{fresh_capture['codex_version']}` full-profile install captured at "
+        f"`{fresh_capture['captured_at']}` exposed {fresh_capture['total_entries']} entries: "
+        f"{fresh_capture['cxpp_entries']} CxPP and {fresh_capture['system_entries']} system entries. "
+        f"Skill entry lines consumed {fresh_capture['entry_metadata_bytes']:,} bytes; the framed Skills section "
+        f"consumed {fresh_capture['skills_section_bytes']:,} bytes. The focused fresh-install tests reproduce "
+        "the profile inventory and enforce the policy budgets.",
+        "",
+        "## Stage 0 Full-Suite Prompt Capture",
         "",
         f"An isolated `{evaluation['codex_version']}` full-suite install exposed "
         f"{evaluation['inventory']['total_entries']} entries: {evaluation['inventory']['cxpp_entries']} CxPP and "
@@ -535,7 +574,7 @@ def render_report(contract: dict[str, Any]) -> str:
     lines.extend(
         [
             "",
-            "## Known Failures and Owners",
+            "## Stage 0 Known Failures and Owners",
             "",
             "| ID | Finding | Owner | Disposition |",
             "|---|---|---|---|",

@@ -57,11 +57,11 @@ logs. Codex Power Pack only records the client-side connection contract.
 
 Install the `cxpp` plugin when plugins need a thin, host-side bootstrap layer:
 
-1. `/cxpp:init` presents independently selectable setup components and asks
+1. `$cxpp-init` presents independently selectable setup components and asks
    before every write to global Codex configuration, hooks, or rules.
-2. `/cxpp:update` rechecks those components and proposes additive refreshes;
+2. `$cxpp-update` rechecks those components and proposes additive refreshes;
    it never overwrites existing configuration or removes user entries.
-3. `/cxpp:status` is read-only. It reports installed CxPP plugins, MCP pointer
+3. `$cxpp-status` is read-only. It reports installed CxPP plugins, MCP pointer
    presence and health, optional bootstrap state, and pin/drift warnings.
 
 When the marketplace or family plugins are missing, init and update offer

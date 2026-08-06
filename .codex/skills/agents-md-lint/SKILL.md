@@ -1,11 +1,11 @@
 ---
 name: "agents-md-lint"
-description: "Trigger /agents-md:lint to audit AGENTS.md governance directives"
+description: "Trigger $agents-md-lint to audit AGENTS.md governance directives"
 ---
 
 # agents-md-lint
 
-Use this skill when the user asks for `/agents-md:lint`, `agents-md:lint`, an
+Use this skill when the user asks for `$agents-md-lint`, `agents-md:lint`, an
 AGENTS.md audit, or help checking whether AGENTS.md contains the governance
 directives Codex needs for a repository.
 

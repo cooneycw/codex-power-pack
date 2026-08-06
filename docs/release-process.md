@@ -83,7 +83,7 @@ tags, resolved through `codex plugin marketplace add --ref`.
 
 ## Suite Profiles And Sparse Expansion
 
-The consent-first `/cxpp:init` and `/cxpp:update` skills can expand a pinned
+The consent-first `$cxpp-init` and `$cxpp-update` skills can expand a pinned
 marketplace snapshot using Minimal, Recommended, Full suite, or Custom profiles.
 For any profile, the preview and command must include `.agents` plus one
 `plugins/<family>` sparse path for every selected or already-preserved family.

@@ -11,7 +11,7 @@ Test that credentials are configured and accessible without displaying actual va
 ## Usage
 
 ```
-/secrets-validate [--env] [--aws] [--db]
+$secrets-validate [--env] [--aws] [--db]
 ```
 
 ## Options

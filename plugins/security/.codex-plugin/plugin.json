@@ -1,6 +1,6 @@
 {
   "name": "security",
-  "version": "0.1.0+codex.20260727145047",
+  "version": "0.1.1+codex.20260806203405",
   "description": "Deterministic security scanning and permission audit skills.",
   "author": {
     "name": "Codex Power Pack maintainers",
@@ -28,8 +28,8 @@
       "Read"
     ],
     "defaultPrompt": [
-      "Run a quick scan with /security-quick.",
-      "Audit permissions with /security-permissions."
+      "Use $security-quick to run fast deterministic source and configuration security checks.",
+      "Use $security-permissions to audit permission rules by risk tier."
     ],
     "brandColor": "#DC2626"
   }

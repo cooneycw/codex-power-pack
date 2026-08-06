@@ -1,6 +1,6 @@
 {
   "name": "github",
-  "version": "0.1.0+codex.20260727145047",
+  "version": "0.1.1+codex.20260806203405",
   "description": "GitHub issue management skills.",
   "author": {
     "name": "Codex Power Pack maintainers",
@@ -27,7 +27,7 @@
       "Write"
     ],
     "defaultPrompt": [
-      "List GitHub issues with /github-issue-list."
+      "Use $github-issue-list to list and search issues in the target repository."
     ],
     "brandColor": "#24292F"
   }

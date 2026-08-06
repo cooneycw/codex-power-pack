@@ -116,7 +116,7 @@ Before applying changes:
 ## Example Interaction
 
 ```
-User: /github-issue-update 42
+User: $github-issue-update 42
 
 Claude: [Shows current state of issue #42]
 

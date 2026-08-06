@@ -54,6 +54,8 @@ desktop.ini
 !.agents/skill-contracts.schema.json
 !.agents/skill-evaluation-cases.json
 !.agents/skill-evaluation-cases.schema.json
+!.agents/skill-invocation-policy.json
+!.agents/skill-invocation-policy.schema.json
 !templates/project-next.schema.json
 !tests/project_next/fixtures/scenarios.json
 !.agents/project-init-spec-kit-contract.json

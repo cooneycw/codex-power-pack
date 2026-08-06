@@ -15,7 +15,7 @@ Launch a local web interface for managing project secrets.
 
 ## Instructions
 
-When the user invokes `/secrets-ui`, run:
+When the user invokes `$secrets-ui`, run:
 
 ```bash
 PYTHONPATH="${HOME}/Projects/claude-power-pack/lib:${PYTHONPATH}" python3 -m lib.creds ui

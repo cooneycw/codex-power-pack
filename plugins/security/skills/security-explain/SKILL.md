@@ -31,7 +31,7 @@ Get a detailed explanation of a specific security finding type.
 ## Example
 
 ```
-/security-explain HARDCODED_PASSWORD
+$security-explain HARDCODED_PASSWORD
 ```
 
 ## Run Command

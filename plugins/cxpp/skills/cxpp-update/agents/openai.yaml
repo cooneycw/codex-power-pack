@@ -3,4 +3,4 @@ interface:
   short_description: "Refresh CxPP host wiring without overwriting user settings."
   default_prompt: "Use $cxpp-update when you need to refresh Codex Power Pack host wiring"
 policy:
-  allow_implicit_invocation: true
+  allow_implicit_invocation: false

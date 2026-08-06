@@ -12,11 +12,11 @@ connection. This is the one capability upstream lacks
 - Format: `<verb> [name] [url]`
 - Verbs: `create`, `resume`, `save`, `close`, `list`, `cleanup`, `pool`
 - Examples:
-  - `/browser-session create gmail https://mail.google.com` - start a named session
-  - `/browser-session resume gmail` - re-open it later (restores saved login)
-  - `/browser-session save gmail` - persist its cookies/localStorage
-  - `/browser-session close gmail` - free its desk, keep its state
-  - `/browser-session list` - show sessions and desk occupancy
+  - `$browser-session create gmail https://mail.google.com` - start a named session
+  - `$browser-session resume gmail` - re-open it later (restores saved login)
+  - `$browser-session save gmail` - persist its cookies/localStorage
+  - `$browser-session close gmail` - free its desk, keep its state
+  - `$browser-session list` - show sessions and desk occupancy
 
 ---
 
@@ -58,9 +58,9 @@ $DESK pool
 **If no `mcp__playwright-desk-*` tools are available in this session**, the desk pool was
 not registered before startup. STOP and tell the user:
 
-> The desk pool is not registered. Run `/cpp:init` (Full tier -> "browser pool"), then
+> The desk pool is not registered. Run `$cxpp-init` (Full tier -> "browser pool"), then
 > **restart Claude Code** so the `playwright-desk-*` MCP servers load at startup.
-> (`/qa-test` and single-session work do not need the pool - they use plain upstream
+> (`$qa-test` and single-session work do not need the pool - they use plain upstream
 > `playwright-mcp`.)
 
 Do not attempt dynamic `claude mcp add` mid-session - it will not take effect until restart.
@@ -152,7 +152,7 @@ Seated at: playwright-desk-1  (mcp__playwright-desk-1__browser_*)
 State:     .claude/playwright-state/gmail.json (restored)
 Pool:      1/3 desks free
 
-Next: `/browser-session save gmail` to persist, or `/browser-session close gmail` when done.
+Next: `$browser-session save gmail` to persist, or `$browser-session close gmail` when done.
 ```
 
 ---
@@ -162,9 +162,9 @@ Next: `/browser-session save gmail` to persist, or `/browser-session close gmail
 - **Isolation:** each desk runs `--isolated` (blank context per lease); cross-session
   bleed-through is prevented by starting blank and restoring only the named session's state.
   Enlarge the pool by adding desks in `.claude/playwright-pool.json` and registering the
-  matching `playwright-desk-N` MCP servers via `/cpp:init` (then restart).
+  matching `playwright-desk-N` MCP servers via `$cxpp-init` (then restart).
 - **Never** hand-edit `.claude/playwright-sessions.json`; it is the lease ledger the helper
   owns. The pool config `.claude/playwright-pool.json` is yours to edit (desk count, idle
   timeout).
-- **Not needed for single-session work.** `/qa-test` uses one plain upstream session; only
+- **Not needed for single-session work.** `$qa-test` uses one plain upstream session; only
   reach for the pool when you genuinely need several named sessions concurrently.

@@ -12,7 +12,7 @@ def test_readme_quick_start_uses_marketplace_plugins_and_cxpp_bootstrap() -> Non
     assert "codex plugin marketplace add" in quick_start
     assert "codex plugin add project@codex-power-pack" in quick_start
     assert "codex plugin add cxpp@codex-power-pack" in quick_start
-    assert "/cxpp:init" in quick_start
+    assert "$cxpp-init" in quick_start
     assert "git clone" not in quick_start
 
 

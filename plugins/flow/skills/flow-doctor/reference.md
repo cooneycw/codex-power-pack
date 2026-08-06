@@ -14,7 +14,7 @@ Check that the environment is properly configured for the `/flow` workflow.
 
 ## Instructions
 
-When the user invokes `/flow-doctor`, run all diagnostic checks and present a single report.
+When the user invokes `$flow-doctor`, run all diagnostic checks and present a single report.
 
 ### Step 1: Environment Prerequisites
 
@@ -162,9 +162,9 @@ for script in flow-start-resolve.sh flow-stale-check.sh flow-worktree-guard.sh f
   elif [ -f "$HOME/.claude/scripts/$script" ]; then
     echo "WARN $script (flow helper present but not executable)"
   elif [ -n "$CPP_DIR" ]; then
-    echo "WARN $script (flow helper not at <SKILL_DIR>/scripts/ - zero-prompt lane degraded; run /flow-repair or /cpp:update)"
+    echo "WARN $script (flow helper not at <SKILL_DIR>/scripts/ - zero-prompt lane degraded; run $flow-repair or $cxpp-update)"
   else
-    echo "FAIL $script (flow helper missing and no CPP checkout to fall back to - /flow-start and /flow-auto will exit 127; run /flow-repair)"
+    echo "FAIL $script (flow helper missing and no CPP checkout to fall back to - $flow-start and $flow-auto will exit 127; run $flow-repair)"
   fi
 done
 ```
@@ -188,7 +188,7 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/flow-helpers-install.sh --check
 
 Verdict line: `FLOW_HELPERS: ok` (nothing to do) | `missing` | `stale`
 (installed copies differ from the bundled source - a plugin upgrade landed).
-Both non-ok verdicts are repaired by `/flow-repair`. If both invocations exit
+Both non-ok verdicts are repaired by `$flow-repair`. If both invocations exit
 127, this is neither a plugin nor a clone install - report that flow has no
 helper source at all.
 
@@ -356,7 +356,7 @@ Output a single diagnostic report in this format:
 | ../{repo}-issue-42 | #42 | issue-42-fix-auth | 3 dirty, 1 unpushed |
 | ../{repo}-issue-55 | #55 | issue-55-add-tests | Clean |
 
-*No worktrees* → "No active worktrees. Run `/flow-start <issue>` to begin."
+*No worktrees* → "No active worktrees. Run `$flow-start <issue>` to begin."
 
 ### GitHub Integration
 
@@ -383,7 +383,7 @@ Output a single diagnostic report in this format:
 
 (Only if there are failures or warnings)
 
-1. ❌ **Makefile missing** - Create a Makefile with `lint`, `test`, and `deploy` targets for `/flow-finish` and `/flow-deploy`. Run `/cicd-init` to auto-generate from a stack-specific template, or copy one manually:
+1. ❌ **Makefile missing** - Create a Makefile with `lint`, `test`, and `deploy` targets for `$flow-finish` and `$flow-deploy`. Run `$cicd-init` to auto-generate from a stack-specific template, or copy one manually:
    - Python (uv): `cp ~/Projects/claude-power-pack/templates/makefiles/python-uv.mk Makefile`
    - Python (pip): `cp ~/Projects/claude-power-pack/templates/makefiles/python-pip.mk Makefile`
    - Django (uv): `cp ~/Projects/claude-power-pack/templates/makefiles/django-uv.mk Makefile`
@@ -393,14 +393,14 @@ Output a single diagnostic report in this format:
    - Rust: `cp ~/Projects/claude-power-pack/templates/makefiles/rust.mk Makefile`
    - Monorepo: `cp ~/Projects/claude-power-pack/templates/makefiles/multi.mk Makefile`
 2. ⚠️ **worktree-remove.sh not found** - `/flow` creates worktrees outside the repo on the git lane (issue #627) and removes them with this script; without it, cleanup falls back to inline `git worktree remove` (no #597 claim check). Install it: `ln -sf ~/Projects/claude-power-pack/scripts/worktree-remove.sh <SKILL_DIR>/scripts/`
-2b. ⚠️ **Flow allowlist missing/incomplete** - `/flow:*` will prompt for read-only git/gh plumbing on every run. Merge via `/cpp:update` or `/cpp:init`; rationale and caveats in `templates/claude-settings-permissions.md`
-2c. ⚠️ **Flow helper(s) not at <SKILL_DIR>/scripts/ (clone install)** - the #581 zero-prompt lane degrades to CPP-checkout fallback paths, which prompt. Run `/flow-repair`, `/cpp:update` (Step 5b re-links new scripts), or `/cpp:init` Tier 2
-2d. ❌ **Flow helper(s) missing, no CPP checkout (marketplace-only install)** - `/flow-start` and `/flow-auto` will exit 127 at Step 1 (issue #590). Run `/flow-repair` to install the bundled helpers into `<SKILL_DIR>/scripts/`
-2e. ⚠️ **Flow helpers stale** - `flow-helpers-install.sh --check` reports installed copies differing from the bundled source, i.e. the plugin was upgraded but the copies at `<SKILL_DIR>/scripts/` were not. Run `/flow-repair`
+2b. ⚠️ **Flow allowlist missing/incomplete** - `/flow:*` will prompt for read-only git/gh plumbing on every run. Merge via `$cxpp-update` or `$cxpp-init`; rationale and caveats in `templates/claude-settings-permissions.md`
+2c. ⚠️ **Flow helper(s) not at <SKILL_DIR>/scripts/ (clone install)** - the #581 zero-prompt lane degrades to CPP-checkout fallback paths, which prompt. Run `$flow-repair`, `$cxpp-update` (Step 5b re-links new scripts), or `$cxpp-init` Tier 2
+2d. ❌ **Flow helper(s) missing, no CPP checkout (marketplace-only install)** - `$flow-start` and `$flow-auto` will exit 127 at Step 1 (issue #590). Run `$flow-repair` to install the bundled helpers into `<SKILL_DIR>/scripts/`
+2e. ⚠️ **Flow helpers stale** - `flow-helpers-install.sh --check` reports installed copies differing from the bundled source, i.e. the plugin was upgraded but the copies at `<SKILL_DIR>/scripts/` were not. Run `$flow-repair`
 3. ⚠️ **uv not installed** - Install: `curl -LsSf https://astral.sh/uv/install.sh | sh`
-4. ❌ **cicd.yml missing** - Run `/cicd-init` to auto-detect framework and generate configuration
-5. ⚠️ **Makefile gaps** - Run `/cicd-check` for details or `/cicd-init` to add missing targets
-6. ❌ **No CI pipeline** - Run `/cicd-pipeline` to generate GitHub Actions or Woodpecker CI config
+4. ❌ **cicd.yml missing** - Run `$cicd-init` to auto-detect framework and generate configuration
+5. ⚠️ **Makefile gaps** - Run `$cicd-check` for details or `$cicd-init` to add missing targets
+6. ❌ **No CI pipeline** - Run `$cicd-pipeline` to generate GitHub Actions or Woodpecker CI config
 7. ⚠️ **No health endpoints** - Add `health.endpoints` to `.claude/cicd.yml` for post-deploy verification
 8. ⚠️ **No smoke tests** - Add `health.smoke_tests` to `.claude/cicd.yml` for post-deploy testing
 9. ⚠️ **second-opinion not registered** - It is an external server now. Run the `cooneycw/mcp-second-opinion` repo's server, then point the root `.mcp.json` `second-opinion` entry at it (`http://127.0.0.1:8080/mcp` for localhost, or a Tailscale URL).

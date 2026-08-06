@@ -15,7 +15,7 @@ to the audit log (never the value).
 
 ## Instructions
 
-When the user invokes `/secrets-delete KEY`, run:
+When the user invokes `$secrets-delete KEY`, run:
 
 ```bash
 PYTHONPATH="${HOME}/Projects/claude-power-pack/lib:${PYTHONPATH}" python3 -m lib.creds delete "$KEY" --force

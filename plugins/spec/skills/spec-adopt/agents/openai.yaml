@@ -3,4 +3,4 @@ interface:
   short_description: "Adopt official spec-kit for Codex"
   default_prompt: "Use $spec-adopt to set up official spec-kit in this repository."
 policy:
-  allow_implicit_invocation: true
+  allow_implicit_invocation: false
