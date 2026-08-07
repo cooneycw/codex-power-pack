@@ -12,7 +12,10 @@ from typing import Any, Iterable, Mapping
 from .models import FrictionEvent, FrictionEventError
 
 REPEATED_FAILURE_TYPES = {"command_failure", "gate_failure", "tool_error", "red_output"}
-BOOTSTRAP_PATTERN = re.compile(r"\b(admin[- ]only|bootstrap|manual (?:iam|permission|apply))\b", re.IGNORECASE)
+ADMIN_BOOTSTRAP_PATTERN = re.compile(
+    r"\b(?:admin[- ]only|manual (?:iam|permission|apply))\b",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -59,31 +62,7 @@ def analyze_events(events: Iterable[Mapping[str, Any]], repeat_threshold: int = 
             )
             break
 
-    # Exact fingerprints are the strongest same-root-cause signal. Some legacy
-    # hooks, however, attach volatile wording to every failure. When a failure
-    # class itself repeats, propose a generic preflight/triage gate without
-    # pretending the individual summaries are identical or exposing them.
-    if not any(proposal.kind == "validation-gate" for proposal in proposals):
-        type_counts: dict[str, int] = {}
-        for event in normalized:
-            if event.event_type in REPEATED_FAILURE_TYPES:
-                type_counts[event.event_type] = type_counts.get(event.event_type, 0) + 1
-        for event_type, count in type_counts.items():
-            if count >= repeat_threshold:
-                proposals.append(
-                    RetroProposal(
-                        kind="validation-gate",
-                        title=f"Add a preflight gate for repeated {event_type.replace('_', ' ')} events",
-                        action=(
-                            "Add a deterministic preflight or canary check to the Makefile and "
-                            "make CI run it before the affected workflow."
-                        ),
-                        evidence_count=count,
-                    )
-                )
-                break
-
-    bootstrap_count = sum(1 for event in normalized if BOOTSTRAP_PATTERN.search(event.summary))
+    bootstrap_count = sum(1 for event in normalized if ADMIN_BOOTSTRAP_PATTERN.search(event.summary))
     if bootstrap_count:
         proposals.append(
             RetroProposal(
