@@ -49,12 +49,22 @@ or repository/authentication suggestion.
 - Failing checks or requested review changes on active work outrank broad new
   work.
 - Unsynchronized spec tasks are surfaced but are not treated as GitHub issues.
-- Structured JSON and brief/compact/full renderers use contract version `1.2`.
+- Structured JSON and brief/compact/full renderers use contract version `1.3`.
 - Compact output shows at most three safe candidates with structured rank evidence,
   a deterministic rationale, and a copyable `$flow-auto <issue>` command.
 - Full output adds categorized and tiered backlog state, Spec Kit readiness,
   recent worktree commits, and evidence-based cleanup candidates. Renderers only
   format engine-owned fields; they never reclassify or re-rank issues.
+- Dependencies are parsed from lead-in phrases with their punctuation and Markdown
+  intact (`**Depends on:** #12`, `Blocked by: #12, #13`, `(depends on T004)`).
+  Ordinary sequencing prose such as "run this after the release" is not a blocker,
+  and code blocks declare nothing.
 - Spec Kit synchronization is trusted only through `spec-sync:v1` Issue Sync
   ledger mappings. Missing, stale, or ambiguous mappings remain explicit
-  uncertainty and never make represented work appear safely startable.
+  uncertainty and never make represented work appear safely startable. Task IDs
+  additionally resolve dependency references through issue titles, which is not
+  synchronization evidence.
+- A warning, not a silent fallback, reports a backlog whose labels match no
+  configured ranking vocabulary; report it so the user can add `.project-next.json`.
+- Untracked files alone are never "work in progress"; only tracked modifications
+  produce `continue_work`.

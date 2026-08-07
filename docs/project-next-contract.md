@@ -10,7 +10,7 @@ authoritative implementation. CPP adoption is tracked by
 
 ## Version and entry points
 
-Contract version `1.2` accepts a structured `RepositoryState` and emits a
+Contract version `1.3` accepts a structured `RepositoryState` and emits a
 structured `RecommendationResult`. Run it from a CxPP checkout with:
 
 ```bash
@@ -41,10 +41,35 @@ Every open issue appears in exactly one disjoint set:
 - `uncertain`: dependency wording or dependency state cannot be resolved;
 - `available`: belongs to none of the preceding sets.
 
-Only explicit `Depends on #N`, `Blocked by #N`, `Requires #N`, or `After #N`
-relationships are executable dependencies. Ambiguous wording is uncertainty,
-not availability. In-flight issues remain in the dependency graph so their
-dependents stay blocked.
+A dependency is a lead-in phrase followed immediately by one or more references.
+The phrase tolerates the punctuation and Markdown emphasis real issue bodies
+use, so `Depends on #12`, `**Depends on:** #12`, `Blocked by: #12, #13`,
+`**Depends on:** #367, #369–#371`, and `(depends on T004)` are all executable.
+Reference runs accept comma, `and`, and dash-range separators; a range wider
+than fifty issues collapses to its first endpoint.
+
+Phrases are graded, because English sequencing is not a declaration:
+
+- strong (`depends on`, `depends upon`, `blocked by`, and the field-label forms
+  `Blockers:` / `Prerequisites:`) assert a blocker, so a strong phrase that
+  names no resolvable reference is uncertainty;
+- weak (`requires`, `needs`, `after`, `follows`) counts only when a reference
+  actually follows, and never raises uncertainty on its own. "Run this after
+  the v0.2.0 release" is prose, not a blocker.
+
+Fenced code blocks and inline code spans are removed before any of this runs,
+so a comment such as `# starts after the label gutter` declares nothing.
+
+Spec task IDs resolve to issues through the `spec-sync:v1` Issue Sync ledger
+first, then through an open issue whose title begins with that task ID; a task
+ID claimed by two open issues resolves to neither. Task IDs an issue defines
+itself describe its own internal ordering and are not blockers. An unresolved
+task ID with a complete inventory is read the same way as a reference to a
+closed issue — already satisfied — and becomes uncertainty only when the
+inventory is incomplete.
+
+In-flight issues remain in the dependency graph so their dependents stay
+blocked.
 
 The engine validates that the sets are exhaustive and non-overlapping. Neither
 the top action's `start_issue` variant nor `next_startable_issue` may reference
@@ -66,13 +91,26 @@ The collected timestamp makes fixture ranking repeatable. Repository policy can
 override label aliases, limits, mode, and staleness in `.project-next.json`,
 validated against `templates/project-next.schema.json`.
 
+Labels are matched after separator normalization, so `priority:high`,
+`priority/high`, `priority_high`, and `Priority High` all reach the
+`priority-high` entry. When no open issue carries a label in any configured
+vocabulary, ranking has no priority signal and degenerates to issue type, age,
+and issue number. The engine says so in a warning naming the labels actually in
+use rather than presenting issue order as a ranking.
+
 ## Top action and next startable issue
 
 `top_action` answers what should happen now. In priority order it restores an
 incomplete inventory, fixes failing PR checks, addresses requested changes,
 merges a ready PR, continues active work, repairs a known repository gate,
-starts the highest-ranked available issue, or synchronizes a specification
-task.
+starts the highest-ranked available issue, reviews untracked files, or
+synchronizes a specification task.
+
+`continue_work` requires tracked modifications. Untracked files alone are not
+work in progress: a worktree holding only untracked files is reported as
+`untracked_only` and surfaces as `review_untracked` only after every real
+recommendation is exhausted, so a stray build artifact never becomes the
+headline of the report.
 
 `next_startable_issue` is a separate field. It is the highest-ranked available
 issue only when the repository inventory is complete. Active work may therefore
@@ -98,10 +136,22 @@ fields and do not parse issue prose, classify work, or re-rank candidates.
 Incomplete inventory produces no candidates or startable tiers even when the
 partial inventory contains apparently available issues.
 
-Spec Kit work is represented only by the `spec-sync:v1` Issue Sync ledger.
-Task-ID searches in issue titles or bodies are not synchronization evidence.
+Spec Kit *synchronization* is represented only by the `spec-sync:v1` Issue Sync
+ledger. Task-ID searches in issue titles or bodies are not synchronization
+evidence; they resolve dependency references only, and never mark a task
+synchronized or a specification group complete.
 Missing mappings produce `sync_spec`; stale or ambiguous identities produce
 `resolve_spec_mapping`. Neither state is silently treated as completed work.
 
-All modes name the `1.2` contract. Missing prerequisites and incomplete state
+All modes name the `1.3` contract. Missing prerequisites and incomplete state
 are explicit failure states; they never become a confident recommendation.
+
+Renderers cap long collector output: warnings list the first five entries and
+per-issue uncertainty lists the first two reasons, each truncated. `--json`
+always carries the complete lists.
+
+## Compatibility notes
+
+`1.3` keeps every `1.2` field and adds `untracked_only` to worktree state and
+worktree details, plus the `review_untracked` top-action kind. Consumers that
+ignore unknown fields and unknown action kinds read `1.3` payloads unchanged.

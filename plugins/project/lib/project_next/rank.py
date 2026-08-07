@@ -20,7 +20,7 @@ from .models import (
     WorktreeDetail,
 )
 
-CONTRACT_VERSION = "1.2"
+CONTRACT_VERSION = "1.3"
 PHASE = re.compile(r"\b(?:wave|phase)[-\s:]*(?P<number>\d+)\b", re.IGNORECASE)
 
 
@@ -264,6 +264,16 @@ def _top_action(
             issue_number=issue_number,
         )
 
+    untracked = [worktree for worktree in state.worktrees if worktree.untracked_only]
+    if untracked:
+        worktree = min(untracked, key=lambda item: item.path)
+        return Action(
+            kind="review_untracked",
+            title=f"Review untracked files in {worktree.branch or worktree.path}",
+            reason="No issue is startable and a worktree holds untracked files that may be unfinished work.",
+            evidence=(f"worktree:{worktree.path}", "untracked_only:true"),
+        )
+
     invalid_mappings = tuple(task for task in state.spec_tasks if task.mapping_status in {"stale", "ambiguous"})
     if invalid_mappings:
         task = invalid_mappings[0]
@@ -407,6 +417,7 @@ def _worktree_report(
                 issue_number=number,
                 issue_state=issue_state,
                 dirty=worktree.dirty,
+                untracked_only=worktree.untracked_only,
                 recent_commits=worktree.recent_commits,
                 cleanup_recommended=cleanup_recommended,
                 cleanup_reason=cleanup_reason,
@@ -434,6 +445,19 @@ def _worktree_report(
     return tuple(details), tuple(cleanup)
 
 
+def _vocabulary_warnings(state: RepositoryState, config: ProjectNextConfig) -> tuple[str, ...]:
+    """Say so when ranking has no label signal, instead of presenting issue order as rank."""
+    used = {label for issue in state.issues for label in issue.normalized_labels}
+    if not used or used & config.known_labels:
+        return ()
+    sample = ", ".join(sorted(used)[:8])
+    return (
+        "no issue label matches the configured priority, quick-win, or planning vocabulary, "
+        f"so ranking falls back to issue type and age (labels in use: {sample}). "
+        "Map this repository's labels in .project-next.json to restore priority ranking.",
+    )
+
+
 def recommend(state: RepositoryState, config: ProjectNextConfig | None = None) -> RecommendationResult:
     config = config or ProjectNextConfig()
     classification = classify_repository(state)
@@ -447,7 +471,10 @@ def recommend(state: RepositoryState, config: ProjectNextConfig | None = None) -
     )
     next_startable = ranked[0] if ranked and state.inventory_complete and not state.collector_errors else None
     pending = tuple(task for task in state.spec_tasks if not task.synchronized)
-    warnings = tuple(state.collector_warnings) + tuple(state.collector_errors)
+    # Engine-level advice first: it is what the reader can act on, and collector warnings
+    # can run long enough to push it past the rendered cap.
+    warnings = _vocabulary_warnings(state, config) + tuple(state.collector_errors)
+    warnings += tuple(state.collector_warnings)
     if classification.unmapped_worktrees:
         warnings += tuple(f"unmapped worktree: {item}" for item in classification.unmapped_worktrees)
     candidates = (

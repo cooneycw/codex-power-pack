@@ -2,8 +2,16 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import asdict, dataclass, field
 from typing import Any
+
+LABEL_SEPARATOR = re.compile(r"[\s:/_]+")
+
+
+def normalize_label(label: str) -> str:
+    """Fold `priority:high`, `priority/high`, and `Priority High` onto one spelling."""
+    return LABEL_SEPARATOR.sub("-", str(label).strip().casefold()).strip("-")
 
 
 def _tuple_of_strings(value: Any) -> tuple[str, ...]:
@@ -48,7 +56,7 @@ class Issue:
 
     @property
     def normalized_labels(self) -> frozenset[str]:
-        return frozenset(label.casefold() for label in self.labels)
+        return frozenset(normalize_label(label) for label in self.labels)
 
 
 @dataclass(frozen=True)
@@ -85,6 +93,7 @@ class Worktree:
     path: str
     branch: str
     dirty: bool = False
+    untracked_only: bool = False
     recent_commits: tuple[str, ...] = ()
 
     @classmethod
@@ -93,6 +102,7 @@ class Worktree:
             path=str(data["path"]),
             branch=str(data.get("branch") or ""),
             dirty=bool(data.get("dirty", False)),
+            untracked_only=bool(data.get("untracked_only", False)),
             recent_commits=_tuple_of_strings(data.get("recent_commits")),
         )
 
@@ -280,6 +290,7 @@ class WorktreeDetail:
     issue_number: int | None
     issue_state: str
     dirty: bool
+    untracked_only: bool = False
     recent_commits: tuple[str, ...] = ()
     cleanup_recommended: bool = False
     cleanup_reason: str = ""

@@ -4,6 +4,27 @@ from __future__ import annotations
 
 from .models import Action, Candidate, RecommendationResult, RepositoryState
 
+MAX_LISTED_WARNINGS = 5
+MAX_UNCERTAINTY_REASONS = 2
+MAX_REASON_CHARS = 160
+
+
+def _capped(items: tuple[str, ...], limit: int) -> list[str]:
+    listed = [f"- {item}" for item in items[:limit]]
+    if len(items) > limit:
+        listed.append(f"- …and {len(items) - limit} more (use `--json` for the full list)")
+    return listed
+
+
+def _reasons(reasons: tuple[str, ...]) -> str:
+    shown = [
+        reason if len(reason) <= MAX_REASON_CHARS else f"{reason[:MAX_REASON_CHARS].rstrip()}…"
+        for reason in reasons[:MAX_UNCERTAINTY_REASONS]
+    ]
+    if len(reasons) > MAX_UNCERTAINTY_REASONS:
+        shown.append(f"and {len(reasons) - MAX_UNCERTAINTY_REASONS} more")
+    return "; ".join(shown)
+
 
 def _action(action: Action | None) -> str:
     if action is None:
@@ -106,12 +127,12 @@ def render_compact(result: RecommendationResult, state: RepositoryState) -> str:
     if result.classification.uncertain:
         lines.extend(("", "### Uncertain (not startable)"))
         lines.extend(
-            f"- #{number} {issues[number].title} — {'; '.join(result.classification.uncertainty[number])}"
+            f"- #{number} {issues[number].title} — {_reasons(result.classification.uncertainty[number])}"
             for number in result.classification.uncertain
         )
     if result.warnings:
         lines.extend(("", "### Warnings"))
-        lines.extend(f"- {warning}" for warning in result.warnings)
+        lines.extend(_capped(result.warnings, MAX_LISTED_WARNINGS))
     return "\n".join(lines)
 
 
@@ -198,16 +219,22 @@ def render_full(result: RecommendationResult, state: RepositoryState) -> str:
     if result.worktree_details:
         lines.extend(
             (
-                "| Path | Branch | Issue | State | Dirty | Recent commits |",
-                "|---|---|---:|---|---:|---|",
+                "| Path | Branch | Issue | State | Working tree | Recent commits |",
+                "|---|---|---:|---|---|---|",
             )
         )
         for worktree in result.worktree_details:
             issue = f"#{worktree.issue_number}" if worktree.issue_number is not None else "—"
             commits = "<br>".join(worktree.recent_commits) or "none"
+            if worktree.dirty:
+                tree = "modified"
+            elif worktree.untracked_only:
+                tree = "untracked only"
+            else:
+                tree = "clean"
             lines.append(
                 f"| {worktree.path} | {worktree.branch or '(detached)'} | {issue} | "
-                f"{worktree.issue_state} | {'yes' if worktree.dirty else 'no'} | {commits} |"
+                f"{worktree.issue_state} | {tree} | {commits} |"
             )
     else:
         lines.append("- none")

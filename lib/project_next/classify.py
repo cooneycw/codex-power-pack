@@ -8,16 +8,36 @@ from collections import defaultdict
 from .models import Classification, Issue, PullRequest, RepositoryState
 
 ISSUE_BRANCH = re.compile(r"(?:^|/)issue-(?P<number>\d+)(?:-|$)", re.IGNORECASE)
-DEPENDENCY = re.compile(
-    r"\b(?:depends\s+on|blocked\s+by|requires|after)\s+#(?P<number>\d+)\b",
+
+# A declaration is only a dependency when a lead-in phrase is immediately followed by a
+# reference. "Strong" phrases assert a blocker outright, so a strong phrase that names no
+# machine-readable target is genuine uncertainty. "Weak" phrases are ordinary English that
+# happens to read like sequencing ("run after the release"), so they only count when a
+# reference actually follows and never raise uncertainty on their own.
+# "Blocker" and "prerequisite" are ordinary nouns, so they only count as a declaration in
+# their field-label form ("**Blockers:** #12"), never mid-sentence ("heavy blocker overlap").
+STRONG_DEPENDENCY_LEAD = re.compile(
+    r"\b(?:depends?\s+(?:on|upon)|depending\s+on|blocked\s+by)\b|\b(?:blockers?|prerequisites?)\b(?=[\s*_]*[:\-])",
     re.IGNORECASE,
 )
-DEPENDENCY_WORDS = re.compile(r"\b(?:depends\s+on|blocked\s+by|requires|after)\b", re.IGNORECASE)
+WEAK_DEPENDENCY_LEAD = re.compile(r"\b(?:requires?|required\s+by|needs|after|follows)\b", re.IGNORECASE)
+# Markdown emphasis and punctuation routinely sit between the phrase and its references,
+# as in "**Depends on:** #367" or "(depends on T004)".
+REFERENCE_CONNECTOR = re.compile(r"[\s:*_>()\[\]]*")
+ISSUE_REFERENCE = re.compile(r"#(?P<start>\d+)(?:\s*[-–—]\s*#?(?P<end>\d+))?")
+TASK_REFERENCE = re.compile(r"(?P<task>[A-Z]{1,4}(?:-[A-Z]{1,4})?\d{2,4})\b")
+REFERENCE_SEPARATOR = re.compile(r"[\s,;&/–—-]*(?:and|plus|then)?[\s]*", re.IGNORECASE)
+DANGLING_REFERENCE = re.compile(r"#(?!\d)")
+CODE_FENCE = re.compile(r"^\s*(?:```|~~~)")
+INLINE_CODE = re.compile(r"`[^`\n]*`")
+DECLARED_TASK = re.compile(r"^-\s*\[[ xX]\]\s+(?:\*\*)?(?P<id>[A-Za-z]{1,4}(?:-[A-Za-z]{1,4})?\d{1,4})(?:\*\*)?\b")
 CHECKLIST_ISSUE = re.compile(r"^-\s*\[\s\]\s+.*?#(?P<number>\d+)\b", re.IGNORECASE)
 EXPLICIT_PR_ISSUE = re.compile(
     r"\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?|issue)\s*:?[\s#]+(?P<number>\d+)\b",
     re.IGNORECASE,
 )
+# Guards an "#367-#376" style range from expanding into an implausible span.
+MAX_REFERENCE_RANGE = 50
 
 
 def issue_number_from_branch(branch: str) -> int | None:
@@ -34,19 +54,119 @@ def pull_request_issue_numbers(pr: PullRequest) -> tuple[int, ...]:
     return tuple(sorted(numbers))
 
 
-def _dependencies(issue: Issue) -> tuple[set[int], list[str]]:
-    dependencies = {int(match.group("number")) for match in DEPENDENCY.finditer(issue.body)}
-    for line in issue.body.splitlines():
+def strip_code(text: str) -> str:
+    """Drop fenced blocks and inline spans so code never reads as dependency prose."""
+    kept: list[str] = []
+    fenced = False
+    for line in text.splitlines():
+        if CODE_FENCE.match(line):
+            fenced = not fenced
+            continue
+        kept.append("" if fenced else INLINE_CODE.sub(" ", line))
+    return "\n".join(kept)
+
+
+def _skip(pattern: re.Pattern[str], line: str, position: int) -> int:
+    match = pattern.match(line, position)
+    return match.end() if match else position
+
+
+def _reference_list(line: str, position: int) -> tuple[set[int], set[str], int]:
+    """Consume a comma/range separated run of issue and task references at `position`."""
+    issues: set[int] = set()
+    tasks: set[str] = set()
+    consumed = 0
+    while position < len(line):
+        issue_match = ISSUE_REFERENCE.match(line, position)
+        task_match = None if issue_match else TASK_REFERENCE.match(line, position)
+        if issue_match:
+            start = int(issue_match.group("start"))
+            end = int(issue_match.group("end") or start)
+            span = end - start
+            issues.update(range(start, end + 1) if 0 < span <= MAX_REFERENCE_RANGE else (start,))
+            position = issue_match.end()
+        elif task_match:
+            tasks.add(task_match.group("task").upper())
+            position = task_match.end()
+        else:
+            break
+        consumed += 1
+        position = _skip(REFERENCE_SEPARATOR, line, position)
+    return issues, tasks, consumed
+
+
+def _line_references(line: str) -> tuple[set[int], set[str], list[str]]:
+    issues: set[int] = set()
+    tasks: set[str] = set()
+    unresolved: list[str] = []
+    for pattern, strong in ((STRONG_DEPENDENCY_LEAD, True), (WEAK_DEPENDENCY_LEAD, False)):
+        for lead in pattern.finditer(line):
+            start = _skip(REFERENCE_CONNECTOR, line, lead.end())
+            found_issues, found_tasks, consumed = _reference_list(line, start)
+            issues |= found_issues
+            tasks |= found_tasks
+            if consumed or not strong:
+                continue
+            detail = "an issue reference is present but not attached to the phrase"
+            if not ISSUE_REFERENCE.search(line) and not DANGLING_REFERENCE.search(line):
+                detail = "the blocker names no issue or spec task"
+            unresolved.append(f"'{lead.group(0).strip()}' declares a dependency but {detail}: {line.strip()}")
+    return issues, tasks, unresolved
+
+
+def _dependencies(issue: Issue, task_issues: dict[str, set[int]]) -> tuple[set[int], list[str], set[str]]:
+    text = strip_code(f"{issue.title}\n{issue.body}")
+    lines = text.splitlines()
+    declared_tasks = set()
+    for line in lines:
+        match = DECLARED_TASK.match(line.strip())
+        if match:
+            declared_tasks.add(match.group("id").upper())
+
+    dependencies: set[int] = set()
+    referenced_tasks: set[str] = set()
+    uncertainty: list[str] = []
+    for line in lines:
+        found_issues, found_tasks, unresolved = _line_references(line)
+        dependencies |= found_issues
+        referenced_tasks |= found_tasks
+        uncertainty.extend(unresolved)
+
+    for line in lines:
         match = CHECKLIST_ISSUE.search(line.strip())
         if match and re.search(r"\b(?:wave|phase|epic|parent)\b", issue.title, re.IGNORECASE):
             dependencies.add(int(match.group("number")))
 
-    uncertainty: list[str] = []
-    for line in issue.body.splitlines():
-        if DEPENDENCY_WORDS.search(line) and not DEPENDENCY.search(line):
-            uncertainty.append(f"ambiguous dependency wording: {line.strip()}")
+    # Task IDs the issue defines itself describe its own internal ordering, not a blocker.
+    unresolved_tasks: set[str] = set()
+    for task in sorted(referenced_tasks - declared_tasks):
+        mapped = task_issues.get(task)
+        if mapped:
+            dependencies |= mapped
+        else:
+            unresolved_tasks.add(task)
+
     dependencies.discard(issue.number)
-    return dependencies, uncertainty
+    return dependencies, uncertainty, unresolved_tasks
+
+
+def _task_issue_index(state: RepositoryState) -> dict[str, set[int]]:
+    """Map spec task IDs onto open issues via the Issue Sync ledger, then issue titles."""
+    from_titles: dict[str, set[int]] = defaultdict(set)
+    for issue in state.issues:
+        match = TASK_REFERENCE.match(issue.title.strip())
+        if match and re.match(r"[\s:.·|—-]", issue.title.strip()[match.end() : match.end() + 1] or " "):
+            from_titles[match.group("task").upper()].add(issue.number)
+
+    index: dict[str, set[int]] = defaultdict(set)
+    # A task ID claimed by two open issues identifies nothing, so it stays unresolved.
+    for task, numbers in from_titles.items():
+        if len(numbers) == 1:
+            index[task].update(numbers)
+    for task in state.spec_tasks:
+        if task.issue_numbers and task.mapping_status not in {"stale", "ambiguous"}:
+            index[task.task_id.upper()] = set(task.issue_numbers)
+    return dict(index)
 
 
 def _cycle_members(graph: dict[int, set[int]]) -> set[int]:
@@ -115,10 +235,11 @@ def classify_repository(state: RepositoryState) -> Classification:
             if number in issue_numbers:
                 evidence[number].add(f"pr:#{pr.number}")
 
+    task_issues = _task_issue_index(state)
     dependency_map: dict[int, set[int]] = {}
     uncertainty: dict[int, list[str]] = defaultdict(list)
     for issue in state.issues:
-        dependencies, reasons = _dependencies(issue)
+        dependencies, reasons, unresolved_tasks = _dependencies(issue, task_issues)
         dependency_map[issue.number] = dependencies
         uncertainty[issue.number].extend(reasons)
         if not state.inventory_complete:
@@ -126,6 +247,12 @@ def classify_repository(state: RepositoryState) -> Classification:
             if unknown:
                 uncertainty[issue.number].append(
                     "dependency state unavailable for " + ", ".join(f"#{number}" for number in unknown)
+                )
+            # With a complete inventory an unmatched task ID means the work is not an open
+            # issue, which is the same "already satisfied" reading a closed #reference gets.
+            if unresolved_tasks:
+                uncertainty[issue.number].append(
+                    "dependency state unavailable for spec " + ", ".join(sorted(unresolved_tasks))
                 )
 
     cycles = _cycle_members(dependency_map)

@@ -3,10 +3,8 @@
 from .classify import classify_repository
 from .config import ConfigError, ProjectNextConfig, load_config
 from .models import RepositoryState
-from .rank import recommend
+from .rank import CONTRACT_VERSION, recommend
 from .render import render_result
-
-CONTRACT_VERSION = "1.2"
 
 __all__ = [
     "CONTRACT_VERSION",

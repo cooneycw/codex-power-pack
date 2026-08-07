@@ -90,8 +90,18 @@ def _parse_worktrees(output: str, repository: Path, runner: CommandRunner, warni
             warnings.append(str(exc))
             status = ""
             commits = []
+        entries_changed = [line for line in status.splitlines() if line.strip()]
+        # A stray untracked file is not work in progress, so it must not outrank a real
+        # recommendation the way a tracked modification does.
+        tracked = [line for line in entries_changed if not line.startswith("??")]
         worktrees.append(
-            Worktree(path=str(path), branch=branch, dirty=bool(status.strip()), recent_commits=tuple(commits))
+            Worktree(
+                path=str(path),
+                branch=branch,
+                dirty=bool(tracked),
+                untracked_only=bool(entries_changed) and not tracked,
+                recent_commits=tuple(commits),
+            )
         )
     return tuple(worktrees)
 
@@ -196,8 +206,6 @@ def _spec_inventory(
                     and candidate["url"].endswith(f"/issues/{issue_numbers[0]}")
                 )
                 status = "mapped" if expected else "stale"
-            if status != "mapped":
-                warnings.append(f"{relative}:{task_id}: spec-sync mapping is {status}")
             feature_tasks.append(
                 SpecTask(
                     task_id=task_id,
@@ -212,6 +220,17 @@ def _spec_inventory(
                     mapping_state=mapping_state,
                 )
             )
+        # One warning per file and status; a per-task warning buries everything else.
+        unmapped: dict[str, list[str]] = {}
+        for task in feature_tasks:
+            if task.mapping_status != "mapped":
+                unmapped.setdefault(task.mapping_status, []).append(task.task_id)
+        for status, task_ids in sorted(unmapped.items()):
+            listed = ", ".join(task_ids[:6])
+            if len(task_ids) > 6:
+                listed += f", and {len(task_ids) - 6} more"
+            warnings.append(f"{relative}: spec-sync mapping is {status} for {len(task_ids)} task(s): {listed}")
+
         tasks.extend(feature_tasks)
         statuses = {task.mapping_status for task in feature_tasks}
         mapped = sum(task.synchronized for task in feature_tasks)
