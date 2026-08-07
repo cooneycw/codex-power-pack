@@ -5,9 +5,12 @@ from pathlib import Path
 
 def test_friction_retro_dogfood_records_safe_real_ledger_result() -> None:
     text = (Path(__file__).resolve().parents[1] / "docs" / "friction-retro-e2e.md").read_text()
+    normalized = " ".join(text.split())
 
     assert ".claude/friction.jsonl" in text
     assert "`8`" in text
     assert "validation-gate" in text
     assert "explicit user decision" in text
-    assert "source summaries" in text
+    assert "source summaries" in normalized
+    assert "same masked" in normalized
+    assert "No workflow" in normalized

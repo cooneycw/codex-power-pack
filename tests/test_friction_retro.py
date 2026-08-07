@@ -34,6 +34,14 @@ def test_admin_bootstrap_dependency_proposes_blocking_reminder() -> None:
     assert "exits non-zero" in proposal.action
 
 
+def test_dependency_bootstrap_does_not_propose_admin_reminder() -> None:
+    proposals = analyze_events([
+        _event("dependency bootstrap needs a populated uv cache", "manual_intervention"),
+    ])
+
+    assert not any(item.kind == "bootstrap-reminder" for item in proposals)
+
+
 def test_retro_never_returns_secret_bearing_summary() -> None:
     proposals = analyze_events([
         _event("bootstrap blocked password=supersecret"),
@@ -69,14 +77,13 @@ def test_retro_ignores_invalid_utf8_rows_without_stopping_analysis(tmp_path) -> 
     assert any(item.kind == "validation-gate" for item in proposals)
 
 
-def test_repeated_failure_class_proposes_gate_when_legacy_summaries_vary() -> None:
+def test_repeated_failure_class_does_not_conflate_distinct_summaries() -> None:
     proposals = analyze_events([
         _event("first volatile failure"),
         _event("second volatile failure"),
     ])
 
-    proposal = next(item for item in proposals if item.kind == "validation-gate")
-    assert proposal.evidence_count == 2
+    assert not any(item.kind == "validation-gate" for item in proposals)
 
 
 def test_retro_skill_uses_codex_queue_and_requires_confirmation() -> None:
