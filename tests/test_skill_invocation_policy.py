@@ -79,11 +79,7 @@ def test_curated_implicit_metadata_matches_versioned_policy() -> None:
     assert "project-init" not in actual
 
     evaluation = load_json(ROOT / ".agents" / "skill-evaluation-cases.json")
-    case_ids = {
-        case["id"]
-        for capture in evaluation["captures"]
-        for case in capture["cases"]
-    }
+    case_ids = {case["id"] for case in evaluation["suite"]["cases"]}
     for entry in policy()["implicit_entrypoints"]:
         assert set(entry["evidence_cases"]) <= case_ids
 

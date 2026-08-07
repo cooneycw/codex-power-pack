@@ -1,6 +1,6 @@
 {
   "project": "Codex Power Pack",
-  "generated_at": "2026-08-06T21:33:57Z",
+  "generated_at": "2026-08-07T00:09:30Z",
   "engine": "c4-mermaid",
   "diagrams": [
     {
@@ -17,8 +17,8 @@
       "level": "L2",
       "title": "L2 Containers",
       "file": "c4-l2-container.mmd",
-      "node_count": 8,
-      "edge_count": 13,
+      "node_count": 9,
+      "edge_count": 16,
       "parent": null
     },
     {
@@ -31,6 +31,15 @@
       "parent": "c4-l2-container"
     },
     {
+      "id": "c4-l3-skill-evaluation",
+      "level": "L3",
+      "title": "L3 Skill Activation and Outcome Evaluation",
+      "file": "c4-l3-skill-evaluation.mmd",
+      "node_count": 8,
+      "edge_count": 8,
+      "parent": "c4-l2-container"
+    },
+    {
       "id": "c4-l4-security-runtime",
       "level": "L4",
       "title": "L4 Spec Synchronization Data Model",
@@ -38,6 +47,15 @@
       "node_count": 4,
       "edge_count": 3,
       "parent": "c4-l3-plugin-distribution"
+    },
+    {
+      "id": "c4-l4-skill-evaluation",
+      "level": "L4",
+      "title": "L4 Skill Evaluation Data Model",
+      "file": "c4-l4-skill-evaluation.mmd",
+      "node_count": 3,
+      "edge_count": 2,
+      "parent": "c4-l3-skill-evaluation"
     }
   ]
 }

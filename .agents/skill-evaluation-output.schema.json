@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/cooneycw/codex-power-pack/blob/main/.agents/skill-evaluation-output.schema.json",
+  "title": "Bounded Codex skill evaluation response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["selected_skill", "checkpoints", "output_fields", "actions", "contracts", "summary"],
+  "properties": {
+    "selected_skill": {"type": ["string", "null"]},
+    "checkpoints": {"type": "array", "items": {"type": "string"}},
+    "output_fields": {"type": "array", "items": {"type": "string"}},
+    "actions": {"type": "array", "items": {"type": "string"}},
+    "contracts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "routing",
+        "procedure",
+        "artifact",
+        "parser",
+        "grouping",
+        "issue-body",
+        "mapping",
+        "runtime",
+        "output"
+      ],
+      "properties": {
+        "routing": {"type": "boolean"},
+        "procedure": {"type": "boolean"},
+        "artifact": {"type": "boolean"},
+        "parser": {"type": "boolean"},
+        "grouping": {"type": "boolean"},
+        "issue-body": {"type": "boolean"},
+        "mapping": {"type": "boolean"},
+        "runtime": {"type": "boolean"},
+        "output": {"type": "boolean"}
+      }
+    },
+    "summary": {"type": "string", "maxLength": 500}
+  }
+}

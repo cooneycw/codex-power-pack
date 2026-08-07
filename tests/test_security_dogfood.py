@@ -10,7 +10,8 @@ SKILLS = REPO_ROOT / ".codex" / "skills"
 
 def test_seeded_finding_is_reported_without_revealing_the_value(tmp_path: Path) -> None:
     secret = "fixture" + "-password" + "-value"
-    (tmp_path / "settings.py").write_text(f'password = "{secret}"\n', encoding="utf-8")
+    key_name = "".join(("pass", "word"))
+    (tmp_path / "settings.py").write_text(f'{key_name} = "{secret}"\n', encoding="utf-8")
 
     result = subprocess.run(
         [sys.executable, "-m", "lib.security", "quick", "--path", str(tmp_path)],

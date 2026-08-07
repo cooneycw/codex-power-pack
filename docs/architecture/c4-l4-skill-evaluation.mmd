@@ -1,0 +1,21 @@
+classDiagram
+  class EvaluationCase {
+    +case_id: str
+    +category: Category
+    +lanes: tuple
+    +expectation: Expectation
+  }
+  class Observation {
+    +selected_skill: str
+    +checkpoints: tuple
+    +runtime_error: str
+    +total_tokens: int
+  }
+  class EvaluationResult {
+    +outcome: Outcome
+    +contract_layer: ContractLayer
+    +reasons: tuple
+    +activation_checked: bool
+  }
+  Observation --> EvaluationCase : records evidence for
+  EvaluationResult --> Observation : classifies

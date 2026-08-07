@@ -19,7 +19,7 @@
     {
       "name": "project-next",
       "plugin": "project",
-      "evidence_cases": ["CASE-001", "CASE-002", "CASE-003"],
+      "evidence_cases": ["CASE-001", "CASE-002", "CASE-003", "CASE-022", "CASE-023"],
       "rationale": "Read-only repository triage has direct, indirect, and negative golden prompts and a deterministic behavioral core."
     }
   ],

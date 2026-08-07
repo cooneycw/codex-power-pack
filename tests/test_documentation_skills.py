@@ -13,14 +13,16 @@ SKILLS = REPO_ROOT / ".codex" / "skills"
 def test_c4_dogfood_outputs_are_github_renderable_mermaid() -> None:
     model = json.loads((ARCHITECTURE / "c4-model.json").read_text(encoding="utf-8"))
     assert {level["level"] for level in model["levels"]} == {"L1", "L2", "L3", "L4"}
+    model_ids = {level["id"] for level in model["levels"]}
 
     index = (ARCHITECTURE / "index.md").read_text(encoding="utf-8")
-    assert index.count("```mermaid") == 4
+    assert index.count("```mermaid") == len(model["levels"])
     assert "flowchart" in index
     assert "classDiagram" in index
 
     manifest = json.loads((ARCHITECTURE / "c4-manifest.json").read_text(encoding="utf-8"))
-    assert len(manifest["diagrams"]) == 4
+    assert len(manifest["diagrams"]) == len(model["levels"])
+    assert {diagram["id"] for diagram in manifest["diagrams"]} == model_ids
     for diagram in manifest["diagrams"]:
         assert (ARCHITECTURE / diagram["file"]).is_file()
 

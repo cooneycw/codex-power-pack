@@ -10,11 +10,12 @@ generated command skills, and tests for Codex-centric workflows.
 - `.agents/plugins/marketplace.json` and `plugins/<family>/` - native Codex marketplace catalog and per-family plugin packages
 - `.agents/skill-invocation-policy.json`, `.agents/skill-contracts.json`, and
   `.agents/skill-evaluation-cases.json` - versioned invocation policy, skill
-  inventory, reference classifications, prompt measurements, and golden cases
+  inventory, reference classifications, prompt measurements, runnable cases,
+  bounded-live controls, and golden expectations
 - `vendor/claude-power-pack/` - pin + drift manifest for the generated skills
 - `.codex/cicd.yml` and `.codex/cicd_tasks.yml` - Codex-local CI/CD manifests
 - `AGENTS.md` - the canonical repo instructions for Codex
-- `lib/creds/`, `lib/security/`, `lib/cicd/` - reusable Python libraries
+- `lib/creds/`, `lib/security/`, `lib/cicd/`, and `lib/skill_eval/` - reusable Python libraries
 - `templates/`, `scripts/`, `docs/skills/`, `tests/` - supporting workflow assets
 - `extensions/cxpp-issue-sync/` - official Spec Kit v0.16.0 extension that previews the separate `$spec-sync` handoff
 - `templates/config.toml.example` and `docs/HOST_MANAGED.md` - client-side
@@ -88,6 +89,15 @@ rollback refs in the release notes.
 See `docs/plugin-marketplace-project-e2e.md` and
 `docs/plugin-marketplace-spec-e2e.md` for the project and spec-plugin E2E
 transcripts.
+
+## Skill Evaluation
+
+`make skill-eval-check` runs the deterministic procedure and output-contract
+suite without network or model cost and is part of `make verify`. The optional
+`make skill-eval-live` lane invokes Codex only after an explicit acknowledgement;
+it uses an ephemeral read-only workspace, bounded case/time/token/output limits,
+and stores only redacted result summaries. See `docs/skill-evaluation.md` and the
+aggregate `docs/skill-evaluation-scorecard.md`.
 
 For host-managed MCP tools, `$cxpp-init` applies the selected pointers. Manual
 setup remains available:

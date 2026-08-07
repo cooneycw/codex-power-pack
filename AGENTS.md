@@ -22,6 +22,8 @@
 - `plugins/<family>/` - native Codex plugin packages for per-family marketplace install
 - `extensions/cxpp-issue-sync/` - official Spec Kit extension manifest and preview command; the packaged mirror lives under `plugins/spec/extensions/`
 - `lib/` - reusable Python libraries for creds, security, and CI/CD
+- `lib/skill_eval/` and `scripts/skill-eval.py` - deterministic and explicitly
+  enabled bounded-live skill activation, procedure, runtime, and output evaluation
 - `vendor/claude-power-pack/` - pin (`PIN`) + drift manifest (`codex-skills.sha256`) for generated `.codex/skills/` copies
 - `templates/` - starter Makefiles and workflow templates
 - `templates/config.toml.example` - Codex MCP pointers for host-managed services
@@ -29,6 +31,7 @@
 - `scripts/` - shell + Python helpers, incl. `codex_skills_sync.py` (pulls + drift-gates `.codex/skills/`), `skill_contract_baseline.py` (reconciles inventory), and `skill_contract_lint.py` (blocks semantic incompatibility)
 - `docs/skills/` - focused reference docs
 - `docs/skill-contract-baseline.md` - measured Wave 7 source, package, prompt, reference, and gap baseline
+- `docs/skill-evaluation.md` and `docs/skill-evaluation-scorecard.md` - evaluation safety, cadence, release policy, and aggregate results
 - `docs/security/` - security threat models and guard designs
 
 ## Runtime Boundary

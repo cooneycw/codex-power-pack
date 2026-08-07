@@ -1,0 +1,50 @@
+{
+  "artifact": {
+    "activation_checked": false,
+    "selected_skill": "project-init",
+    "checkpoints": ["local-only"],
+    "output_fields": ["created_files"],
+    "contracts": {"artifact": true},
+    "summary": "Local scaffold contract fixture passed."
+  },
+  "parser": {
+    "activation_checked": false,
+    "selected_skill": "spec-sync",
+    "checkpoints": ["canonical-parser"],
+    "output_fields": ["tasks"],
+    "contracts": {"parser": true},
+    "summary": "Canonical and malformed parser fixtures passed."
+  },
+  "grouping": {
+    "activation_checked": false,
+    "selected_skill": "spec-sync",
+    "checkpoints": ["independent-groups"],
+    "output_fields": ["groups"],
+    "contracts": {"grouping": true},
+    "summary": "Stage, story, and task grouping fixtures passed."
+  },
+  "issue-body": {
+    "activation_checked": false,
+    "selected_skill": "spec-sync",
+    "checkpoints": ["immutable-traceability"],
+    "output_fields": ["issue_body"],
+    "contracts": {"issue-body": true},
+    "summary": "Golden issue-body fixtures passed."
+  },
+  "mapping": {
+    "activation_checked": false,
+    "selected_skill": "spec-sync",
+    "checkpoints": ["stable-identity"],
+    "output_fields": ["mapping"],
+    "contracts": {"mapping": true},
+    "summary": "Open, closed, and stale mapping fixtures passed."
+  },
+  "runtime": {
+    "activation_checked": false,
+    "selected_skill": "project-next",
+    "checkpoints": ["isolated-dry-run"],
+    "output_fields": ["top_action"],
+    "contracts": {"runtime": true},
+    "summary": "Isolated composition dry run passed."
+  }
+}

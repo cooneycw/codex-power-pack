@@ -28,7 +28,7 @@ flowchart TB
 
 ## L2 Containers
 
-_L2 - 8 nodes, 13 edges - [`c4-l2-container.mmd`](c4-l2-container.mmd)_
+_L2 - 9 nodes, 16 edges - [`c4-l2-container.mmd`](c4-l2-container.mmd)_
 
 ```mermaid
 flowchart TB
@@ -40,6 +40,7 @@ flowchart TB
     runtime_libraries["Deterministic Libraries (lib/)"]:::container
     project_next_engine["Project Next Recommendation Engine"]:::container
     spec_workflow["Spec Kit Extension and Issue Compiler"]:::container
+    skill_evaluation["Skill Evaluation Harness"]:::container
     quality_gates["Quality Gates (Makefile + tests)"]:::container
   end
   marketplace_catalog -->|"indexes"| family_plugins
@@ -49,11 +50,14 @@ flowchart TB
   codex_skills -->|"delegates triage decisions to"| project_next_engine
   codex_skills -->|"offers adoption and synchronization through"| spec_workflow
   spec_workflow -->|"publishes stable issue mappings for"| project_next_engine
+  skill_evaluation -->|"executes deterministic fixtures against"| project_next_engine
+  skill_evaluation -->|"measures activation and procedure contracts for"| codex_skills
   project_next_engine -->|"is authored in"| runtime_libraries
   family_plugins -->|"bundles generated runtime from"| project_next_engine
   quality_gates -->|"validates"| family_plugins
   quality_gates -->|"reconciles contracts"| marketplace_catalog
   quality_gates -->|"drift-checks"| codex_skills
+  quality_gates -->|"runs deterministic lane in"| skill_evaluation
   quality_gates -->|"checks upstream currency"| vendor_snapshot
   classDef container fill:#15803d,color:#ffffff,stroke:#0f172a
 ```
@@ -118,6 +122,34 @@ flowchart TB
   classDef component fill:#7e22ce,color:#ffffff,stroke:#0f172a
 ```
 
+## L3 Skill Activation and Outcome Evaluation
+
+_L3 - 8 nodes, 8 edges - [`c4-l3-skill-evaluation.mmd`](c4-l3-skill-evaluation.mmd)_
+
+```mermaid
+flowchart TB
+  subgraph evaluation_boundary["Skill Evaluation Harness"]
+    evaluation_suite["Versioned Evaluation Suite"]:::component
+    deterministic_evaluator["Deterministic Contract Evaluator"]:::component
+    live_evaluator["Bounded Codex Live Evaluator"]:::component
+    evaluation_scorecard["Redacted Aggregate Scorecard"]:::component
+  end
+  evaluation_skill_contracts["Skill Procedure and Output Contracts"]:::external
+  evaluation_project_next["Project Next Fixtures"]:::external
+  evaluation_codex_cli["Codex Exec JSON Lane"]:::external
+  evaluation_ci["Make Verify and Woodpecker"]:::external
+  evaluation_suite -->|"supplies cases and expected contracts to"| deterministic_evaluator
+  evaluation_suite -->|"supplies bounded activation prompts to"| live_evaluator
+  deterministic_evaluator -->|"checks procedure markers in"| evaluation_skill_contracts
+  deterministic_evaluator -->|"executes versioned scenarios from"| evaluation_project_next
+  live_evaluator -->|"runs ephemeral read-only cases through"| evaluation_codex_cli
+  evaluation_ci -->|"runs on every change"| deterministic_evaluator
+  deterministic_evaluator -->|"publishes aggregate results to"| evaluation_scorecard
+  live_evaluator -->|"publishes redacted summaries to"| evaluation_scorecard
+  classDef component fill:#7e22ce,color:#ffffff,stroke:#0f172a
+  classDef external fill:#334155,color:#ffffff,stroke:#0f172a
+```
+
 ## L4 Spec Synchronization Data Model
 
 _L4 - 4 nodes, 3 edges - [`c4-l4-security-runtime.mmd`](c4-l4-security-runtime.mmd)_
@@ -152,4 +184,32 @@ classDiagram
   SpecTask --> Mapping : consumes stable identity from
 ```
 
-_Generated 2026-08-06T21:33:57Z_
+## L4 Skill Evaluation Data Model
+
+_L4 - 3 nodes, 2 edges - [`c4-l4-skill-evaluation.mmd`](c4-l4-skill-evaluation.mmd)_
+
+```mermaid
+classDiagram
+  class EvaluationCase {
+    +case_id: str
+    +category: Category
+    +lanes: tuple
+    +expectation: Expectation
+  }
+  class Observation {
+    +selected_skill: str
+    +checkpoints: tuple
+    +runtime_error: str
+    +total_tokens: int
+  }
+  class EvaluationResult {
+    +outcome: Outcome
+    +contract_layer: ContractLayer
+    +reasons: tuple
+    +activation_checked: bool
+  }
+  Observation --> EvaluationCase : records evidence for
+  EvaluationResult --> Observation : classifies
+```
+
+_Generated 2026-08-07T00:09:30Z_

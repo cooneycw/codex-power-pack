@@ -1,6 +1,6 @@
 {
   "$schema": "./skill-evaluation-cases.schema.json",
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "captures": [
     {
       "id": "wave7_stage0_20260806",
@@ -180,5 +180,489 @@
         }
       ]
     }
-  ]
+  ],
+  "suite": {
+    "id": "wave7_stage4_priority_skills",
+    "tracking_issue": 161,
+    "thresholds": {
+      "direct_recall": 1.0,
+      "indirect_recall": 0.9,
+      "negative_precision": 0.95
+    },
+    "live_defaults": {
+      "timeout_seconds": 120,
+      "max_cases": 15,
+      "max_total_tokens": 240000,
+      "max_output_bytes": 262144,
+      "retention_days": 14,
+      "model": null
+    },
+    "cases": [
+      {
+        "id": "CASE-001",
+        "skill": "project-next",
+        "category": "direct",
+        "prompt": "Use $project-next to recommend what I should work on next in this repository.",
+        "lanes": ["deterministic", "live"],
+        "tags": ["implicit", "priority", "project-next"],
+        "expected": {
+          "selected_skill": "project-next",
+          "required_checkpoints": ["collect-repository-state", "separate-top-action"],
+          "required_output_fields": ["top_action", "next_startable_issue"],
+          "forbidden_actions": ["write-repository", "write-github"]
+        },
+        "deterministic": {
+          "adapter": "project_next",
+          "fixture": "tests/project_next/fixtures/scenarios.json",
+          "scenario": "active_pr_and_safe_issue"
+        }
+      },
+      {
+        "id": "CASE-002",
+        "skill": "project-next",
+        "category": "indirect",
+        "prompt": "What is the most useful thing for me to do next in this GitHub project?",
+        "lanes": ["deterministic", "live"],
+        "tags": ["implicit", "priority", "project-next"],
+        "expected": {
+          "selected_skill": "project-next",
+          "required_checkpoints": ["classify-work", "separate-top-action"],
+          "required_output_fields": ["top_action", "next_startable_issue"],
+          "forbidden_actions": ["write-repository", "write-github"]
+        },
+        "deterministic": {
+          "adapter": "project_next",
+          "fixture": "tests/project_next/fixtures/scenarios.json",
+          "scenario": "codex_power_pack_dogfood"
+        }
+      },
+      {
+        "id": "CASE-003",
+        "skill": "project-next",
+        "category": "negative",
+        "prompt": "Explain how to rename my current Git branch.",
+        "lanes": ["deterministic", "live"],
+        "tags": ["implicit", "negative", "project-next"],
+        "expected": {
+          "selected_skill": null,
+          "required_checkpoints": [],
+          "required_output_fields": [],
+          "forbidden_actions": ["project-triage"]
+        },
+        "deterministic": {
+          "adapter": "skill_text",
+          "paths": [".codex/skills/project-next/SKILL.md"],
+          "required_text": ["This workflow is read-only", "do not use for a narrow Git question"],
+          "forbidden_text": [],
+          "contract_layer": "routing"
+        }
+      },
+      {
+        "id": "CASE-004",
+        "skill": "flow-auto",
+        "category": "incomplete",
+        "prompt": "Use $flow-auto.",
+        "lanes": ["deterministic", "live"],
+        "tags": ["implicit", "flow-auto", "missing-input"],
+        "expected": {
+          "selected_skill": "flow-auto",
+          "required_checkpoints": ["require-issue-number"],
+          "required_output_fields": ["missing_input"],
+          "forbidden_actions": ["create-worktree"]
+        },
+        "deterministic": {
+          "adapter": "skill_text",
+          "paths": [".codex/skills/flow-auto/SKILL.md", ".codex/skills/flow-auto/reference.md"],
+          "required_text": ["`ISSUE` (required)", "Issue not found"],
+          "forbidden_text": [],
+          "contract_layer": "procedure"
+        }
+      },
+      {
+        "id": "CASE-005",
+        "skill": "flow-auto",
+        "category": "edge",
+        "prompt": "Use $flow-auto for a closed issue.",
+        "lanes": ["deterministic", "live"],
+        "tags": ["implicit", "flow-auto", "closed-issue"],
+        "expected": {
+          "selected_skill": "flow-auto",
+          "required_checkpoints": ["confirm-closed-issue"],
+          "required_output_fields": ["warning", "approval_required"],
+          "forbidden_actions": ["implement-before-approval"]
+        },
+        "deterministic": {
+          "adapter": "skill_text",
+          "paths": [".codex/skills/flow-auto/SKILL.md", ".codex/skills/flow-auto/reference.md"],
+          "required_text": ["ISSUE_STATE` not `OPEN`", "--allow-closed"],
+          "forbidden_text": [],
+          "contract_layer": "procedure"
+        }
+      },
+      {
+        "id": "CASE-006",
+        "skill": "flow-auto",
+        "category": "direct",
+        "prompt": "Use $flow-auto to deliver open GitHub issue 159 through the full lifecycle.",
+        "lanes": ["deterministic", "live"],
+        "tags": ["implicit", "priority", "flow-auto"],
+        "expected": {
+          "selected_skill": "flow-auto",
+          "required_checkpoints": ["isolated-worktree", "necessity-gate", "quality-gate", "ci-verification"],
+          "required_output_fields": ["analysis", "approval", "implementation", "pr", "merge", "ci", "deploy"],
+          "forbidden_actions": ["edit-main", "skip-approval"]
+        },
+        "deterministic": {
+          "adapter": "skill_text",
+          "paths": [".codex/skills/flow-auto/SKILL.md", ".codex/skills/flow-auto/reference.md"],
+          "required_text": ["Step 1/9: Start", "Step 3/9: ELI5", "Step 6/9: Finish", "Step 8/9: Verify CI"],
+          "forbidden_text": [],
+          "contract_layer": "procedure"
+        }
+      },
+      {
+        "id": "CASE-007",
+        "skill": "flow-auto",
+        "category": "indirect",
+        "prompt": "Please take open issue 159 from analysis all the way through a reviewed merge and CI verification.",
+        "lanes": ["deterministic", "live"],
+        "tags": ["implicit", "priority", "flow-auto"],
+        "expected": {
+          "selected_skill": "flow-auto",
+          "required_checkpoints": ["necessity-gate", "approval-gate", "quality-gate"],
+          "required_output_fields": ["completed_steps", "blocked_step"],
+          "forbidden_actions": ["skip-approval"]
+        },
+        "deterministic": {
+          "adapter": "skill_text",
+          "paths": [".codex/skills/flow-auto/SKILL.md", ".codex/skills/flow-auto/reference.md"],
+          "required_text": ["Necessity / staleness analysis", "pause and wait for reviewer approval", "Quality gates"],
+          "forbidden_text": [],
+          "contract_layer": "procedure"
+        }
+      },
+      {
+        "id": "CASE-008",
+        "skill": "flow-auto",
+        "category": "negative",
+        "prompt": "Explain what issue 159 is asking for without changing the repository.",
+        "lanes": ["deterministic", "live"],
+        "tags": ["implicit", "negative", "flow-auto"],
+        "expected": {
+          "selected_skill": null,
+          "required_checkpoints": [],
+          "required_output_fields": [],
+          "forbidden_actions": ["create-worktree", "write-repository", "write-github"]
+        },
+        "deterministic": {
+          "adapter": "skill_text",
+          "paths": [".codex/skills/flow-auto/SKILL.md"],
+          "required_text": ["do not use for questions"],
+          "forbidden_text": [],
+          "contract_layer": "routing"
+        }
+      },
+      {
+        "id": "CASE-009",
+        "skill": "project-init",
+        "category": "direct",
+        "prompt": "Use $project-init to create a new local Python project named demo after confirming its destination.",
+        "lanes": ["deterministic", "live"],
+        "tags": ["explicit", "project-init", "scaffold"],
+        "expected": {
+          "selected_skill": "project-init",
+          "required_checkpoints": ["confirm-destination", "local-scaffold-only"],
+          "required_output_fields": ["created_files", "verification"],
+          "forbidden_actions": ["publish-github", "adopt-spec-kit", "persist-influence"]
+        },
+        "deterministic": {
+          "adapter": "skill_text",
+          "paths": [".codex/skills/project-init/SKILL.md"],
+          "required_text": ["new local Python", "Confirm the project name and destination", "only as separate"],
+          "forbidden_text": ["zero to GitHub"],
+          "contract_layer": "artifact"
+        }
+      },
+      {
+        "id": "CASE-010",
+        "skill": "project-init",
+        "category": "negative",
+        "prompt": "Orient me to this existing repository and explain its commands.",
+        "lanes": ["deterministic", "live"],
+        "tags": ["explicit", "negative", "project-init", "orientation"],
+        "expected": {
+          "selected_skill": null,
+          "required_checkpoints": [],
+          "required_output_fields": [],
+          "forbidden_actions": ["write-repository"]
+        },
+        "deterministic": {
+          "adapter": "skill_text",
+          "paths": [".codex/skills/project-init/SKILL.md"],
+          "required_text": ["existing-repository orientation", "$project-lite"],
+          "forbidden_text": [],
+          "contract_layer": "routing"
+        }
+      },
+      {
+        "id": "CASE-011",
+        "skill": "project-init",
+        "category": "negative",
+        "prompt": "Publish this existing local repository to GitHub.",
+        "lanes": ["deterministic", "live"],
+        "tags": ["explicit", "negative", "project-init", "publication"],
+        "expected": {
+          "selected_skill": null,
+          "required_checkpoints": [],
+          "required_output_fields": [],
+          "forbidden_actions": ["create-scaffold", "publish-github"]
+        },
+        "deterministic": {
+          "adapter": "skill_text",
+          "paths": [".codex/skills/project-init/SKILL.md"],
+          "required_text": ["GitHub publication or remote creation"],
+          "forbidden_text": [],
+          "contract_layer": "routing"
+        }
+      },
+      {
+        "id": "CASE-012",
+        "skill": "project-init",
+        "category": "negative",
+        "prompt": "Adopt official Spec Kit in this existing repository.",
+        "lanes": ["deterministic", "live"],
+        "tags": ["explicit", "negative", "project-init", "adoption"],
+        "expected": {
+          "selected_skill": null,
+          "required_checkpoints": [],
+          "required_output_fields": [],
+          "forbidden_actions": ["create-scaffold", "adopt-spec-kit"]
+        },
+        "deterministic": {
+          "adapter": "skill_text",
+          "paths": [".codex/skills/project-init/SKILL.md"],
+          "required_text": ["Spec Kit adoption (`$spec-adopt`)"],
+          "forbidden_text": [],
+          "contract_layer": "routing"
+        }
+      },
+      {
+        "id": "CASE-013",
+        "skill": "project-init",
+        "category": "negative",
+        "prompt": "Compile these approved Spec Kit tasks into GitHub issues.",
+        "lanes": ["deterministic", "live"],
+        "tags": ["explicit", "negative", "project-init", "synchronization"],
+        "expected": {
+          "selected_skill": null,
+          "required_checkpoints": [],
+          "required_output_fields": [],
+          "forbidden_actions": ["create-scaffold", "write-github"]
+        },
+        "deterministic": {
+          "adapter": "skill_text",
+          "paths": [".codex/skills/project-init/SKILL.md"],
+          "required_text": ["issue synchronization (`$spec-sync`)"],
+          "forbidden_text": [],
+          "contract_layer": "routing"
+        }
+      },
+      {
+        "id": "CASE-014",
+        "skill": "project-init",
+        "category": "incomplete",
+        "prompt": "Use $project-init to make my new project.",
+        "lanes": ["deterministic", "live"],
+        "tags": ["explicit", "project-init", "missing-input"],
+        "expected": {
+          "selected_skill": "project-init",
+          "required_checkpoints": ["confirm-name", "confirm-destination"],
+          "required_output_fields": ["missing_input"],
+          "forbidden_actions": ["write-before-confirmation"]
+        },
+        "deterministic": {
+          "adapter": "skill_text",
+          "paths": [".codex/skills/project-init/SKILL.md"],
+          "required_text": ["Confirm the project name and destination"],
+          "forbidden_text": [],
+          "contract_layer": "procedure"
+        }
+      },
+      {
+        "id": "CASE-015",
+        "skill": "project-init",
+        "category": "negative",
+        "prompt": "Add one unit test to this existing Python repository.",
+        "lanes": ["deterministic", "live"],
+        "tags": ["explicit", "negative", "project-init", "ordinary-edit"],
+        "expected": {
+          "selected_skill": null,
+          "required_checkpoints": [],
+          "required_output_fields": [],
+          "forbidden_actions": ["create-scaffold"]
+        },
+        "deterministic": {
+          "adapter": "skill_text",
+          "paths": [".codex/skills/project-init/SKILL.md"],
+          "required_text": ["ordinary changes to an existing project"],
+          "forbidden_text": [],
+          "contract_layer": "routing"
+        }
+      },
+      {
+        "id": "CASE-016",
+        "skill": "project-init",
+        "category": "edge",
+        "prompt": "Evaluate the local-only scaffold artifact contract.",
+        "lanes": ["deterministic"],
+        "tags": ["composition", "artifact"],
+        "expected": {
+          "selected_skill": "project-init",
+          "required_checkpoints": ["local-only"],
+          "required_output_fields": ["created_files"],
+          "forbidden_actions": []
+        },
+        "deterministic": {
+          "adapter": "observation",
+          "fixture": "tests/skill_evals/fixtures/observations.json",
+          "key": "artifact"
+        }
+      },
+      {
+        "id": "CASE-017",
+        "skill": "spec-sync",
+        "category": "edge",
+        "prompt": "Evaluate canonical and malformed Spec Kit task parsing.",
+        "lanes": ["deterministic"],
+        "tags": ["composition", "parser"],
+        "expected": {
+          "selected_skill": "spec-sync",
+          "required_checkpoints": ["canonical-parser"],
+          "required_output_fields": ["tasks"],
+          "forbidden_actions": []
+        },
+        "deterministic": {
+          "adapter": "observation",
+          "fixture": "tests/skill_evals/fixtures/observations.json",
+          "key": "parser"
+        }
+      },
+      {
+        "id": "CASE-018",
+        "skill": "spec-sync",
+        "category": "edge",
+        "prompt": "Evaluate stage, story, and task grouping.",
+        "lanes": ["deterministic"],
+        "tags": ["composition", "grouping"],
+        "expected": {
+          "selected_skill": "spec-sync",
+          "required_checkpoints": ["independent-groups"],
+          "required_output_fields": ["groups"],
+          "forbidden_actions": []
+        },
+        "deterministic": {
+          "adapter": "observation",
+          "fixture": "tests/skill_evals/fixtures/observations.json",
+          "key": "grouping"
+        }
+      },
+      {
+        "id": "CASE-019",
+        "skill": "spec-sync",
+        "category": "edge",
+        "prompt": "Evaluate rich issue-body rendering.",
+        "lanes": ["deterministic"],
+        "tags": ["composition", "issue-body"],
+        "expected": {
+          "selected_skill": "spec-sync",
+          "required_checkpoints": ["immutable-traceability"],
+          "required_output_fields": ["issue_body"],
+          "forbidden_actions": []
+        },
+        "deterministic": {
+          "adapter": "observation",
+          "fixture": "tests/skill_evals/fixtures/observations.json",
+          "key": "issue-body"
+        }
+      },
+      {
+        "id": "CASE-020",
+        "skill": "spec-sync",
+        "category": "edge",
+        "prompt": "Evaluate idempotent issue mapping and repair.",
+        "lanes": ["deterministic"],
+        "tags": ["composition", "mapping"],
+        "expected": {
+          "selected_skill": "spec-sync",
+          "required_checkpoints": ["stable-identity"],
+          "required_output_fields": ["mapping"],
+          "forbidden_actions": []
+        },
+        "deterministic": {
+          "adapter": "observation",
+          "fixture": "tests/skill_evals/fixtures/observations.json",
+          "key": "mapping"
+        }
+      },
+      {
+        "id": "CASE-021",
+        "skill": "project-next",
+        "category": "edge",
+        "prompt": "Evaluate the isolated scaffold-to-project-next dry run.",
+        "lanes": ["deterministic"],
+        "tags": ["composition", "runtime", "e2e"],
+        "expected": {
+          "selected_skill": "project-next",
+          "required_checkpoints": ["isolated-dry-run"],
+          "required_output_fields": ["top_action"],
+          "forbidden_actions": []
+        },
+        "deterministic": {
+          "adapter": "observation",
+          "fixture": "tests/skill_evals/fixtures/observations.json",
+          "key": "runtime"
+        }
+      },
+      {
+        "id": "CASE-022",
+        "skill": "project-next",
+        "category": "incomplete",
+        "prompt": "What should I work on next?",
+        "lanes": ["deterministic", "live"],
+        "tags": ["implicit", "project-next", "missing-input"],
+        "expected": {
+          "selected_skill": "project-next",
+          "required_checkpoints": ["resolve-repository"],
+          "required_output_fields": ["repository_or_error"],
+          "forbidden_actions": ["invent-inventory", "write-repository"]
+        },
+        "deterministic": {
+          "adapter": "skill_text",
+          "paths": [".codex/skills/project-next/SKILL.md"],
+          "required_text": ["Optional repository path or project name", "A missing runtime"],
+          "forbidden_text": [],
+          "contract_layer": "procedure"
+        }
+      },
+      {
+        "id": "CASE-023",
+        "skill": "project-next",
+        "category": "edge",
+        "prompt": "Recommend the next action even though the issue inventory is incomplete.",
+        "lanes": ["deterministic", "live"],
+        "tags": ["implicit", "project-next", "incomplete-inventory"],
+        "expected": {
+          "selected_skill": "project-next",
+          "required_checkpoints": ["detect-incomplete-inventory"],
+          "required_output_fields": ["top_action", "warnings"],
+          "forbidden_actions": ["claim-safe-global-pick"]
+        },
+        "deterministic": {
+          "adapter": "project_next",
+          "fixture": "tests/project_next/fixtures/scenarios.json",
+          "scenario": "incomplete_inventory"
+        }
+      }
+    ]
+  }
 }

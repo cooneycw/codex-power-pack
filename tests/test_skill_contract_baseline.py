@@ -40,7 +40,7 @@ def test_versioned_json_schemas_are_published() -> None:
         assert schema["additionalProperties"] is False
 
     assert contract_schema["properties"]["schema_version"]["const"] == "1.0"
-    assert evaluation_schema["properties"]["schema_version"]["const"] == "1.0"
+    assert evaluation_schema["properties"]["schema_version"]["const"] == "2.0"
     assert invocation_policy_schema["properties"]["schema_version"]["const"] == "1.0"
 
 
@@ -157,7 +157,7 @@ def test_alias_and_dependency_state_is_explicit() -> None:
 
 def test_evaluation_capture_is_versioned_and_honest_about_unmeasured_activation() -> None:
     evaluation = load_json(EVALUATION_PATH)
-    assert evaluation["schema_version"] == "1.0"
+    assert evaluation["schema_version"] == "2.0"
     capture = evaluation["captures"][0]
     inventory = capture["inventory"]
 

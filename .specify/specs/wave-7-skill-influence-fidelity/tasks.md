@@ -200,32 +200,32 @@ source/package/marketplace inventory is complete.
 
 ## Stage 4: Activation and Outcome Evaluation Harness
 
-- [ ] **T401** [US4] Implement evaluation-case parsing, validation, filtering,
+- [x] **T401** [US4] Implement evaluation-case parsing, validation, filtering,
       and machine-readable results.
-- [ ] **T402** [US4] Add deterministic procedure and output-contract evaluators
+- [x] **T402** [US4] Add deterministic procedure and output-contract evaluators
       for `project-next` and other priority skills.
-- [ ] **T403** [P] [US4] Add direct, indirect, negative, incomplete, and edge
+- [x] **T403** [P] [US4] Add direct, indirect, negative, incomplete, and edge
       activation cases for every implicit entrypoint.
-- [ ] **T404** [US4] Implement an isolated, bounded `codex exec --json` live lane
+- [x] **T404** [US4] Implement an isolated, bounded `codex exec --json` live lane
       that records selected skill and safe contract checkpoints.
-- [ ] **T405** [US4] Classify results as unavailable, activation failure,
+- [x] **T405** [US4] Classify results as unavailable, activation failure,
       procedure failure, runtime failure, output failure, or pass.
-- [ ] **T406** [US4] Add timeout, case-count, model, cost/budget, redaction, and
+- [x] **T406** [US4] Add timeout, case-count, model, cost/budget, redaction, and
       artifact-retention controls for live runs.
-- [ ] **T407** [US4] Run deterministic evaluations on every PR and document the
+- [x] **T407** [US4] Run deterministic evaluations on every PR and document the
       manual/scheduled live cadence and release-gating policy.
-- [ ] **T408** [US4] Publish a concise baseline-versus-current scorecard for
+- [x] **T408** [US4] Publish a concise baseline-versus-current scorecard for
       priority skills without storing prompts or data that contain secrets.
-- [ ] **T409** [US2,US4,US7] Add direct project-init activation and negative
+- [x] **T409** [US2,US4,US7] Add direct project-init activation and negative
       orientation, publication-only, adoption-only, sync-only, and existing-repo
       activation cases.
-- [ ] **T410** [US4,US7] Add local scaffold and separate-consent fixtures for
+- [x] **T410** [US4,US7] Add local scaffold and separate-consent fixtures for
       publication, Spec Kit adoption, and declined handoffs.
-- [ ] **T411** [US4,US7] Add canonical, malformed, multiline, placeholder,
+- [x] **T411** [US4,US7] Add canonical, malformed, multiline, placeholder,
       zero-task, multiple-feature, and dependency parser fixtures.
-- [ ] **T412** [US4,US7] Add golden stage/story/task issue bodies, open/closed
+- [x] **T412** [US4,US7] Add golden stage/story/task issue bodies, open/closed
       idempotency, mapping write-back, and stale-mapping repair fixtures.
-- [ ] **T413** [US1,US4,US7] Add an isolated dry run from local scaffold through
+- [x] **T413** [US1,US4,US7] Add an isolated dry run from local scaffold through
       pinned adoption, readiness, preview, mapping, and project-next consumption.
 
 **Checkpoint:** Direct recall is 100%, indirect recall is at least 90% for
