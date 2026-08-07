@@ -6,6 +6,7 @@ Usage:
     python -m lib.creds delete KEY [--project PROJECT] [--force]
     python -m lib.creds list [--project PROJECT]
     python -m lib.creds run -- COMMAND [ARGS...]
+    python -m lib.creds masked-read PATH [PATH...]
     python -m lib.creds validate [OPTIONS]
     python -m lib.creds ui [--port PORT]
     python -m lib.creds rotate KEY [--project PROJECT]
@@ -184,6 +185,13 @@ def cmd_run(args: argparse.Namespace) -> int:
         project_id=args.project,
         provider_name=args.provider,
     )
+
+
+def cmd_masked_read(args: argparse.Namespace) -> int:
+    """Read selected repository files without emitting raw secret-shaped text."""
+    from .masked_read import read_masked_paths
+
+    return read_masked_paths(args.paths)
 
 
 def cmd_ui(args: argparse.Namespace) -> int:
@@ -564,6 +572,20 @@ def create_parser() -> argparse.ArgumentParser:
         help="Command to run (use -- before command)",
     )
 
+    masked_read_parser = subparsers.add_parser(
+        "masked-read",
+        help="Read repository files through the shared output masker",
+        description=(
+            "Read selected text files, mask credential-shaped values in memory, "
+            "and emit only sanitized content."
+        ),
+    )
+    masked_read_parser.add_argument(
+        "paths",
+        nargs="+",
+        help="Text files to read through the masker",
+    )
+
     # 'validate' subcommand
     validate_parser = subparsers.add_parser(
         "validate",
@@ -651,6 +673,7 @@ def main(argv: list[str] | None = None) -> int:
         "delete": cmd_delete,
         "list": cmd_list,
         "run": cmd_run,
+        "masked-read": cmd_masked_read,
         "validate": cmd_validate,
         "ui": cmd_ui,
         "rotate": cmd_rotate,
