@@ -1,6 +1,6 @@
 {
   "project": "Codex Power Pack",
-  "generated_at": "2026-08-07T12:04:14Z",
+  "generated_at": "2026-08-07T15:18:30Z",
   "engine": "c4-mermaid",
   "diagrams": [
     {
@@ -35,8 +35,8 @@
       "level": "L3",
       "title": "L3 Consent-first Influence and Release Validation",
       "file": "c4-l3-influence-release.mmd",
-      "node_count": 7,
-      "edge_count": 6,
+      "node_count": 8,
+      "edge_count": 9,
       "parent": "c4-l2-container"
     },
     {

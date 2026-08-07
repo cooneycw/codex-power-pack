@@ -46,18 +46,38 @@ retain their existing individual prompts.
    the ref changes, preview the bounded `codex plugin marketplace remove
    codex-power-pack --json` followed immediately by the pinned `marketplace
    add` and plugin reinstalls. This replaces only the marketplace snapshot;
-   it does not remove installed plugins or authorize any other deletion. When
-   the ref changes and the update includes either hook-bearing family,
-   `secrets` or `self-improvement`, warn before approval that replacing its
-   versioned plugin directory can disrupt every running Codex session that
-   loaded those hooks. Tell the operator to finish or restart affected sessions
-   before applying the update.
+   it does not remove installed plugins or authorize any other deletion.
+
+   Resolve the hook-transition helper from checkout
+   `scripts/cxpp-hook-transition.py` or installed
+   `${PLUGIN_ROOT}/scripts/cxpp-hook-transition.py`. Before approval, run its
+   read-only `preflight` operation with one `--family` argument for every
+   preserved/selected family. If it reports unfinished recovery snapshots,
+   stop before changing the marketplace and use the recovery procedure below.
+   When `secrets` or `self-improvement` is selected, explain that the approved
+   reinstall will retain byte-identical copies at every old versioned hook path;
+   it will not symlink or repoint an already reviewed path to new bytes. Preview
+   the single helper command as well as each `codex plugin add` it will execute.
 4. After explicit approval, expand an unchanged sparse marketplace snapshot,
    or perform the previewed marketplace-source replacement when the ref
-   changes, then reinstall every preserved/selected family at the new snapshot.
-   If the new snapshot cannot be added, restore the recorded previous ref;
-   existing plugin installs remain in place during recovery. Preserve all
-   other configuration and re-run `$cxpp-status` to verify the result.
+   changes. If any preserved/selected family is hook-bearing, reinstall the
+   complete family union in one process with:
+
+   ```text
+   python3 HELPER reinstall --marketplace codex-power-pack \
+     --family FAMILY [--family FAMILY ...] --approve
+   ```
+
+   The helper snapshots every existing `secrets` and `self-improvement` cache
+   version before the first reinstall, runs each previewed `codex plugin add`,
+   restores missing old roots before returning control to Codex, and rejects a
+   reused version path whose bytes changed. Never replace this command with
+   separate hook-family installs: the first missing `secrets` path could block
+   the command that would restore it. If no hook-bearing family is selected,
+   use the ordinary previewed plugin commands. If the new snapshot cannot be
+   added, restore the recorded previous ref; existing plugin installs remain in
+   place during recovery. Preserve all other configuration and re-run
+   `$cxpp-status` to verify the result.
 5. Inspect optional target routing with the checkout
    `scripts/cxpp-influence.py` or installed
    `${PLUGIN_ROOT}/scripts/cxpp-influence.py`. For `absent` or `upgrade`,
@@ -75,11 +95,25 @@ retain their existing individual prompts.
 8. Re-run `codex execpolicy check` before adding or changing any rule. Plugin
    installation does not authorize hook trust or enablement; use `/hooks` for
    exact-hash review, and require a new review whenever a hook changes.
-9. Re-run the non-secret MCP checks. If `secrets` or `self-improvement` changed,
-   report that every Codex session started before the update must be restarted
-   to load the new hook paths; do not describe that restart as optional. Report
-   whether a fresh session is needed for other changes. Do not manage the
-   lifecycle of an external host service.
+9. Re-run the non-secret MCP checks. Existing sessions continue using the exact
+   old hook bytes restored at their original paths. If `secrets` or
+   `self-improvement` changed, require a new Codex session plus `/hooks`
+   exact-hash review before claiming the new hook bytes are active; other old
+   sessions may finish normally and must not be told they are already running
+   the new hook version. Report whether a fresh session is needed for other
+   changes. Do not manage the lifecycle of an external host service.
+
+## Recovery
+
+The helper restores snapshots in `finally` on command failure, interruption,
+SIGINT, or SIGTERM. A hard process or host failure can leave snapshots under the
+Codex plugin retention directory. Run the same `preflight` command from an
+external terminal. After reviewing the reported snapshot count, run `python3
+HELPER recover --marketplace codex-power-pack --approve`; this recreates only
+missing reviewed roots and digest-checks them. Do not manually recreate cache
+files or point an old path at a new plugin version. If the active Secrets hook
+prevents in-session commands, recovery must be launched from that external
+terminal before the session is used again.
 
 ## Report
 
@@ -87,5 +121,7 @@ Separate `updated`, `already current`, `skipped by user`, and
 `needs host prerequisite`. Include the previous ref, requested signed tag or
 immutable SHA, and resolved SHA whenever a marketplace or plugin changes so
 rollback remains possible. Re-running an unchanged selection at the same
-resolved SHA must be idempotent and report `already current`. Include target
-routing state and hook trust/enabled state without printing file contents.
+resolved SHA must be idempotent and report `already current`. Include the number
+of old reviewed hook roots retained/restored, whether recovery snapshots remain,
+the new-session exact-hash review boundary, target routing state, and hook
+trust/enabled state without printing file contents.

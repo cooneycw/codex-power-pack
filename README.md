@@ -91,6 +91,13 @@ trust or enablement. Review exact hashes in `/hooks`; changed hooks require a
 new review. `$cxpp-status` reports routing, presence, enabled, trust, and drift
 states without printing configuration contents.
 
+When `$cxpp-update` upgrades or rolls back a suite containing `secrets` or
+`self-improvement`, its transition helper restores byte-identical old hook
+roots before returning control to Codex. Existing sessions can finish on the
+bytes they already reviewed; a new session and `/hooks` review are required to
+activate changed hook bytes. See `docs/release-process.md` for recovery from an
+interrupted transition.
+
 Release installs and upgrades follow `docs/release-process.md`: use a signed
 release tag or immutable commit SHA, record the resolved SHA, and preserve
 rollback refs in the release notes.
