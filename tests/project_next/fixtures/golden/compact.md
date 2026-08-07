@@ -1,4 +1,4 @@
-## example/operations — Project Next 1.2
+## example/operations — Project Next 1.3
 
 **Top action:** continue_pr: Build active foundation (issue #2, PR #20) — PR #20 is active and should be completed before broad new work. Evidence: head:issue-2-active-foundation, checks:pending, review:unknown.
 **Next safe issue:** #3 Wave 1 feature
@@ -22,7 +22,7 @@
 - #1 Critical security repair — blocked by #2
 
 ### Uncertain (not startable)
-- #6 Choose storage — ambiguous dependency wording: Blocked by design review
+- #6 Choose storage — 'Blocked by' declares a dependency but the blocker names no issue or spec task: Blocked by design review
 
 ### Warnings
 - unmapped worktree: /repo-issue-99 (issue-99-old-work)

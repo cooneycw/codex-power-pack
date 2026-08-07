@@ -146,3 +146,76 @@ def test_dirty_unmapped_worktree_cleanup_requires_inspection() -> None:
     candidate = recommend(state).cleanup_candidates[0]
 
     assert candidate.action == "Inspect uncommitted changes; do not remove automatically"
+
+
+def test_unmatched_label_vocabulary_is_reported_instead_of_passing_issue_order_as_rank(
+    project_next_scenarios: dict[str, Any],
+) -> None:
+    state = RepositoryState.from_dict(project_next_scenarios["unlabeled_backlog"]["state"])
+
+    result = recommend(state)
+
+    assert result.warnings[0].startswith("no issue label matches the configured")
+    assert ".project-next.json" in result.warnings[0]
+
+
+def test_recognised_label_vocabulary_raises_no_warning(project_next_scenarios: dict[str, Any]) -> None:
+    state = RepositoryState.from_dict(project_next_scenarios["operational_report"]["state"])
+
+    assert not any(warning.startswith("no issue label matches") for warning in recommend(state).warnings)
+
+
+def test_label_separators_are_normalized_before_matching() -> None:
+    state = RepositoryState(
+        repository="example/labels",
+        default_branch="main",
+        collected_at="2026-08-07T13:00:00Z",
+        issues=(
+            Issue(1, "Spelled with a colon", labels=("Priority: High",)),
+            Issue(2, "Spelled with a slash", labels=("priority/medium",)),
+        ),
+    )
+
+    result = recommend(state)
+
+    assert result.ranked_available == (1, 2)
+    assert result.candidates[0].priority == "high (priority-high)"
+
+
+def test_untracked_files_alone_never_outrank_a_startable_issue(
+    project_next_scenarios: dict[str, Any],
+) -> None:
+    state = RepositoryState.from_dict(project_next_scenarios["untracked_only_worktree"]["state"])
+
+    result = recommend(state)
+
+    assert result.top_action is not None
+    assert result.top_action.kind == "start_issue"
+    assert result.top_action.issue_number == 90
+
+
+def test_untracked_files_surface_once_nothing_else_is_actionable(
+    project_next_scenarios: dict[str, Any],
+) -> None:
+    state = RepositoryState.from_dict(project_next_scenarios["untracked_only_with_no_startable_work"]["state"])
+
+    result = recommend(state)
+
+    assert result.top_action is not None
+    assert result.top_action.kind == "review_untracked"
+    assert result.worktree_details[0].untracked_only is True
+
+
+def test_tracked_modifications_still_outrank_new_work() -> None:
+    state = RepositoryState(
+        repository="example/dirty",
+        default_branch="main",
+        collected_at="2026-08-07T13:00:00Z",
+        issues=(Issue(90, "Ready work", labels=("task",)),),
+        worktrees=(Worktree("/repo", "main", dirty=True),),
+    )
+
+    result = recommend(state)
+
+    assert result.top_action is not None
+    assert result.top_action.kind == "continue_work"

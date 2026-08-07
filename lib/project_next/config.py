@@ -7,6 +7,8 @@ from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Any
 
+from .models import normalize_label
+
 
 class ConfigError(ValueError):
     """Raised when project-next configuration is invalid."""
@@ -16,12 +18,33 @@ class ConfigError(ValueError):
 class ProjectNextConfig:
     issue_limit: int = 200
     default_mode: str = "compact"
-    critical_labels: tuple[str, ...] = ("security", "blocker")
-    high_priority_labels: tuple[str, ...] = ("p0", "p1", "priority-high")
-    medium_priority_labels: tuple[str, ...] = ("p2", "priority-medium")
-    quick_win_labels: tuple[str, ...] = ("documentation", "docs", "chore", "small", "size-s")
-    planning_labels: tuple[str, ...] = ("epic", "planning", "discussion")
+    # Vocabularies are matched against normalize_label() output, so `priority:high`,
+    # `priority/high`, and `Priority High` all reach the `priority-high` entry.
+    critical_labels: tuple[str, ...] = ("security", "blocker", "critical", "urgent", "sev-1", "p0")
+    high_priority_labels: tuple[str, ...] = ("p0", "p1", "priority-high", "high-priority", "high")
+    medium_priority_labels: tuple[str, ...] = ("p2", "priority-medium", "medium-priority", "medium")
+    quick_win_labels: tuple[str, ...] = (
+        "documentation",
+        "docs",
+        "chore",
+        "small",
+        "size-s",
+        "good-first-issue",
+        "quick-win",
+        "easy",
+    )
+    planning_labels: tuple[str, ...] = ("epic", "planning", "discussion", "tracking", "meta")
     stale_after_days: int = 30
+
+    @property
+    def known_labels(self) -> frozenset[str]:
+        return frozenset(
+            self.critical_labels
+            + self.high_priority_labels
+            + self.medium_priority_labels
+            + self.quick_win_labels
+            + self.planning_labels
+        )
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> ProjectNextConfig:
@@ -44,7 +67,7 @@ class ProjectNextConfig:
                 value = values[name]
                 if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
                     raise ConfigError(f"{name} must be an array of strings")
-                values[name] = tuple(item.casefold() for item in value)
+                values[name] = tuple(normalize_label(item) for item in value)
 
         issue_limit = values.get("issue_limit", cls.issue_limit)
         if not isinstance(issue_limit, int) or isinstance(issue_limit, bool) or issue_limit < 1:
