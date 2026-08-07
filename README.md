@@ -82,6 +82,15 @@ marketplace and plugin installation; MCP pointers, credentials, hooks/rules,
 and external services retain separate consent prompts. `$cxpp-status` reports
 every family as installed or missing without changing the machine.
 
+The `cxpp` plugin also includes an optional, bounded `AGENTS.md` routing block.
+`$cxpp-init` and `$cxpp-update` always show the exact diff and require separate
+approval before adding, upgrading, or removing it; edited managed blocks become
+conflicts and are never overwritten. The `secrets` and `self-improvement`
+plugins package reviewed hooks, but plugin installation never implies hook
+trust or enablement. Review exact hashes in `/hooks`; changed hooks require a
+new review. `$cxpp-status` reports routing, presence, enabled, trust, and drift
+states without printing configuration contents.
+
 Release installs and upgrades follow `docs/release-process.md`: use a signed
 release tag or immutable commit SHA, record the resolved SHA, and preserve
 rollback refs in the release notes.

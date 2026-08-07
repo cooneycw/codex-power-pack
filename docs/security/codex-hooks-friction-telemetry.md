@@ -255,6 +255,29 @@ Open uncertainty for E2 to verify with fixture hooks:
   public manual where possible and treat binary-string observations as
   non-contractual.
 
+## Stage 5 Packaged Contract
+
+Issue #162 packages the reviewed surface with the owning plugins. The `secrets`
+plugin uses a `${PLUGIN_ROOT}`-relative `PostToolUse` hook. Current Codex does
+not support rewriting tool output inline, so a secret-shaped result is blocked
+and replaced with generic safe feedback; the hook never echoes the candidate
+output. Malformed input and internal errors return an empty, successful hook
+result.
+
+The `self-improvement` plugin packages only `PermissionRequest`, `PostToolUse`,
+and `UserPromptSubmit` capture. It derives allowlisted metadata and writes no
+raw prompt, tool input, or tool output. Persistent capture is off unless the
+operator explicitly sets `CXPP_FRICTION_QUEUE`; the resulting local JSONL file
+uses mode `0600`. Capture never invokes codification, shared-memory writes,
+shipping, permission grants, or external services. Plugin installation does
+not trust or enable either hook surface: exact hashes remain subject to the
+normal `/hooks` review, and changed hooks require review again.
+
+The companion `cxpp-influence.py` helper manages only its marked routing block.
+Preview, application, upgrade, decline, conflict, and removal are deterministic;
+all writes require `--approve`, and blocks whose body no longer matches their
+recorded hash are preserved as user-owned conflicts.
+
 ## Conclusion
 
 E1 remains necessary after Phase 0: the threat model says what must be safe, and
