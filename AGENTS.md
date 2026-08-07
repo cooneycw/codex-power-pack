@@ -32,6 +32,7 @@
 - `docs/skills/` - focused reference docs
 - `docs/skill-contract-baseline.md` - measured Wave 7 source, package, prompt, reference, and gap baseline
 - `docs/skill-evaluation.md` and `docs/skill-evaluation-scorecard.md` - evaluation safety, cadence, release policy, and aggregate results
+- `docs/wave-7-release-validation.md` and `scripts/release_validate.py` - immutable release, profile-install, upgrade, rollback, and clean-project acceptance evidence
 - `docs/security/` - security threat models and guard designs
 
 ## Runtime Boundary

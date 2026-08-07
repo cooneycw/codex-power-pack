@@ -101,8 +101,12 @@ changes; those use separate consent prompts.
 1. Read the release notes and `CHANGELOG.md`.
 2. Record the currently installed marketplace ref and plugin versions with
    `codex plugin list --json`.
-3. Add or update the marketplace source with `codex plugin marketplace add` and
-   the new `--ref`.
+3. Preview the marketplace ref transition. Codex CLI 0.146.1 cannot retarget an
+   existing source with another `marketplace add`; after approval, run `codex
+   plugin marketplace remove codex-power-pack --json`, immediately re-add the
+   same source with the new immutable `--ref` and complete sparse family union,
+   then reinstall the preserved plugin set. This replaces the marketplace
+   snapshot, not the already installed plugins.
 4. Reinstall only the selected family plugins with `codex plugin add`.
 5. Confirm the installed plugin versions and marketplace source with
    `codex plugin list --json`.
@@ -111,6 +115,16 @@ changes; those use separate consent prompts.
 
 The transcript should be created from a fresh Codex config for release
 acceptance so cached state does not hide install defects.
+
+Use the repository validator to exercise Minimal, Recommended, Full, upgrade,
+and rollback in separate temporary Codex homes:
+
+```bash
+make release-validate CANDIDATE_REF=<tag-or-sha> ROLLBACK_REF=<previous-sha>
+```
+
+The validator retains only resolved refs, selected families, versions, counts,
+and pass/fail state. It does not retain configuration contents.
 
 ## Rollback
 
@@ -131,3 +145,8 @@ Every release note must preserve:
 - resolved commit SHA for the new ref
 - reason for the upgrade
 - reason for rollback, if a rollback is performed
+
+If adding the new marketplace snapshot fails after the previewed source
+replacement, re-add the previous immutable ref and reinstall the recorded
+family union. Starting a new Codex session remains required after either
+upgrade or rollback.

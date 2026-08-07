@@ -8,6 +8,8 @@ flowchart TB
     project_next_engine["Project Next Recommendation Engine"]:::container
     spec_workflow["Spec Kit Extension and Issue Compiler"]:::container
     skill_evaluation["Skill Evaluation Harness"]:::container
+    persistent_influence["Consent-first Routing and Hooks"]:::container
+    release_validation["Isolated Release Validator"]:::container
     quality_gates["Quality Gates (Makefile + tests)"]:::container
   end
   marketplace_catalog -->|"indexes"| family_plugins
@@ -19,11 +21,17 @@ flowchart TB
   spec_workflow -->|"publishes stable issue mappings for"| project_next_engine
   skill_evaluation -->|"executes deterministic fixtures against"| project_next_engine
   skill_evaluation -->|"measures activation and procedure contracts for"| codex_skills
+  codex_skills -->|"previews separately consented changes through"| persistent_influence
+  family_plugins -->|"packages reviewed routing and hooks for"| persistent_influence
+  release_validation -->|"installs immutable snapshots from"| marketplace_catalog
+  release_validation -->|"validates profile, upgrade, and rollback installs of"| family_plugins
   project_next_engine -->|"is authored in"| runtime_libraries
   family_plugins -->|"bundles generated runtime from"| project_next_engine
   quality_gates -->|"validates"| family_plugins
   quality_gates -->|"reconciles contracts"| marketplace_catalog
   quality_gates -->|"drift-checks"| codex_skills
   quality_gates -->|"runs deterministic lane in"| skill_evaluation
+  quality_gates -->|"checks consent and removal contracts for"| persistent_influence
+  quality_gates -->|"tests release scenarios in"| release_validation
   quality_gates -->|"checks upstream currency"| vendor_snapshot
   classDef container fill:#15803d,color:#ffffff,stroke:#0f172a

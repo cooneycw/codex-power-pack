@@ -13,7 +13,8 @@
         {"id": "cpp", "label": "Claude Power Pack Skill Source", "type": "system"},
         {"id": "spec-kit", "label": "Official GitHub Spec Kit", "type": "system"},
         {"id": "github", "label": "GitHub Marketplace Source", "type": "system"},
-        {"id": "host-mcp", "label": "Host-managed MCP Services", "type": "system"}
+        {"id": "host-mcp", "label": "Host-managed MCP Services", "type": "system"},
+        {"id": "target-repository", "label": "Target Repository", "type": "system"}
       ],
       "edges": [
         {"source": "developer", "target": "codex", "label": "uses"},
@@ -21,7 +22,8 @@
         {"source": "cxpp", "target": "cpp", "label": "pulls pinned generated skills from"},
         {"source": "cxpp", "target": "spec-kit", "label": "pins adoption and provides an extension for"},
         {"source": "cxpp", "target": "github", "label": "distributed from"},
-        {"source": "cxpp", "target": "host-mcp", "label": "configures pointers to"}
+        {"source": "cxpp", "target": "host-mcp", "label": "configures pointers to"},
+        {"source": "cxpp", "target": "target-repository", "label": "optionally manages reviewed routing in"}
       ],
       "boundaries": [{"id": "cxpp-boundary", "label": "Codex Power Pack", "nodes": ["cxpp"]}]
     },
@@ -39,6 +41,8 @@
         {"id": "project-next-engine", "label": "Project Next Recommendation Engine", "type": "container"},
         {"id": "spec-workflow", "label": "Spec Kit Extension and Issue Compiler", "type": "container"},
         {"id": "skill-evaluation", "label": "Skill Evaluation Harness", "type": "container"},
+        {"id": "persistent-influence", "label": "Consent-first Routing and Hooks", "type": "container"},
+        {"id": "release-validation", "label": "Isolated Release Validator", "type": "container"},
         {"id": "quality-gates", "label": "Quality Gates (Makefile + tests)", "type": "container"}
       ],
       "edges": [
@@ -51,15 +55,21 @@
         {"source": "spec-workflow", "target": "project-next-engine", "label": "publishes stable issue mappings for"},
         {"source": "skill-evaluation", "target": "project-next-engine", "label": "executes deterministic fixtures against"},
         {"source": "skill-evaluation", "target": "codex-skills", "label": "measures activation and procedure contracts for"},
+        {"source": "codex-skills", "target": "persistent-influence", "label": "previews separately consented changes through"},
+        {"source": "family-plugins", "target": "persistent-influence", "label": "packages reviewed routing and hooks for"},
+        {"source": "release-validation", "target": "marketplace-catalog", "label": "installs immutable snapshots from"},
+        {"source": "release-validation", "target": "family-plugins", "label": "validates profile, upgrade, and rollback installs of"},
         {"source": "project-next-engine", "target": "runtime-libraries", "label": "is authored in"},
         {"source": "family-plugins", "target": "project-next-engine", "label": "bundles generated runtime from"},
         {"source": "quality-gates", "target": "family-plugins", "label": "validates"},
         {"source": "quality-gates", "target": "marketplace-catalog", "label": "reconciles contracts"},
         {"source": "quality-gates", "target": "codex-skills", "label": "drift-checks"},
         {"source": "quality-gates", "target": "skill-evaluation", "label": "runs deterministic lane in"},
+        {"source": "quality-gates", "target": "persistent-influence", "label": "checks consent and removal contracts for"},
+        {"source": "quality-gates", "target": "release-validation", "label": "tests release scenarios in"},
         {"source": "quality-gates", "target": "vendor-snapshot", "label": "checks upstream currency"}
       ],
-      "boundaries": [{"id": "repo", "label": "codex-power-pack repository", "nodes": ["marketplace-catalog", "family-plugins", "codex-skills", "vendor-snapshot", "runtime-libraries", "project-next-engine", "spec-workflow", "skill-evaluation", "quality-gates"]}]
+      "boundaries": [{"id": "repo", "label": "codex-power-pack repository", "nodes": ["marketplace-catalog", "family-plugins", "codex-skills", "vendor-snapshot", "runtime-libraries", "project-next-engine", "spec-workflow", "skill-evaluation", "persistent-influence", "release-validation", "quality-gates"]}]
     },
     {
       "id": "c4-l3-plugin-distribution",
@@ -121,6 +131,31 @@
         {"source": "package-tests", "target": "project-next-bundle", "label": "checks byte parity"}
       ],
       "boundaries": [{"id": "plugin-package", "label": "One family plugin", "nodes": ["plugin-manifest", "skill-payload", "openai-metadata"]}]
+    },
+    {
+      "id": "c4-l3-influence-release",
+      "level": "L3",
+      "title": "L3 Consent-first Influence and Release Validation",
+      "kind": "flowchart",
+      "parent": "c4-l2-container",
+      "nodes": [
+        {"id": "influence-cxpp-skills", "label": "CxPP Init, Update, and Status Skills", "type": "external"},
+        {"id": "influence-routing-template", "label": "Bounded AGENTS.md Routing Template", "type": "component"},
+        {"id": "influence-manager", "label": "Routing Status and Merge Helper", "type": "component"},
+        {"id": "influence-reviewed-hooks", "label": "Secrets and Friction Hooks", "type": "component"},
+        {"id": "release-validator", "label": "Profile, Upgrade, and Rollback Validator", "type": "component"},
+        {"id": "release-marketplace", "label": "Immutable Marketplace Snapshot", "type": "external"},
+        {"id": "release-isolated-home", "label": "Temporary CODEX_HOME", "type": "external"}
+      ],
+      "edges": [
+        {"source": "influence-cxpp-skills", "target": "influence-manager", "label": "previews separately approved routing changes through"},
+        {"source": "influence-routing-template", "target": "influence-manager", "label": "supplies hashed managed content to"},
+        {"source": "influence-reviewed-hooks", "target": "influence-cxpp-skills", "label": "reports trust and enablement state through"},
+        {"source": "release-validator", "target": "release-marketplace", "label": "resolves a signed tag or immutable SHA from"},
+        {"source": "release-validator", "target": "release-isolated-home", "label": "installs each release scenario in"},
+        {"source": "release-isolated-home", "target": "influence-cxpp-skills", "label": "exposes the installed payload for fresh-session status"}
+      ],
+      "boundaries": [{"id": "release-acceptance", "label": "Release Acceptance", "nodes": ["release-validator", "influence-routing-template", "influence-manager", "influence-reviewed-hooks"]}]
     },
     {
       "id": "c4-l3-skill-evaluation",

@@ -1,6 +1,7 @@
 .PHONY: test lint format typecheck verify build update_docs clean help secret-scan dep-audit \
 	codex-skills codex-skills-check codex-skills-refresh codex-skills-currency-check harness-lint \
-	project-next-check project-next-sync skill-contract-lint skill-eval-check skill-eval-live
+	project-next-check project-next-sync skill-contract-lint skill-eval-check skill-eval-live \
+	release-validate
 
 # claude-power-pack checkout the generated Codex skills are pulled from (codex-power-pack#75).
 CPP_ROOT ?= ../claude-power-pack
@@ -38,6 +39,12 @@ skill-eval-check:
 
 skill-eval-live:
 	@uv run --extra dev python scripts/skill-eval.py live --allow-live
+
+release-validate:
+	@test -n "$(CANDIDATE_REF)" || (echo "CANDIDATE_REF is required" >&2; exit 2)
+	@test -n "$(ROLLBACK_REF)" || (echo "ROLLBACK_REF is required" >&2; exit 2)
+	@uv run --extra dev python scripts/release_validate.py \
+		--candidate-ref "$(CANDIDATE_REF)" --rollback-ref "$(ROLLBACK_REF)"
 
 build:
 	uv build
@@ -102,6 +109,7 @@ help:
 	@echo "  make project-next-sync  - Refresh the installed project-next runtime"
 	@echo "  make skill-eval-check   - Run deterministic skill procedure and output evaluations"
 	@echo "  make skill-eval-live    - Run the bounded, model-backed evaluation lane"
+	@echo "  make release-validate   - Validate isolated profiles/upgrades (CANDIDATE_REF= ROLLBACK_REF=)"
 	@echo "  make build       - Build distribution packages"
 	@echo "  make verify      - Run all quality checks"
 	@echo ""

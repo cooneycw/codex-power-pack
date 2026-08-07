@@ -95,7 +95,7 @@ def test_scaffold_to_mapping_to_project_next_dry_run_is_local(tmp_path: Path) ->
     feature.mkdir(parents=True)
     (feature / "spec.md").write_text("# Spec\n\nApproved behavior.\n", encoding="utf-8")
     (feature / "plan.md").write_text("# Plan\n\nPinned Spec Kit adoption fixture.\n", encoding="utf-8")
-    (project / ".specify" / ".cxpp-spec-kit.json").write_text(
+    (project / ".specify" / "spec-kit-version.json").write_text(
         json.dumps(
             {
                 "version": "v0.16.0",
