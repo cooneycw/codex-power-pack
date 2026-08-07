@@ -38,6 +38,7 @@
         {"id": "runtime-libraries", "label": "Deterministic Libraries (lib/)", "type": "container"},
         {"id": "project-next-engine", "label": "Project Next Recommendation Engine", "type": "container"},
         {"id": "spec-workflow", "label": "Spec Kit Extension and Issue Compiler", "type": "container"},
+        {"id": "skill-evaluation", "label": "Skill Evaluation Harness", "type": "container"},
         {"id": "quality-gates", "label": "Quality Gates (Makefile + tests)", "type": "container"}
       ],
       "edges": [
@@ -48,14 +49,17 @@
         {"source": "codex-skills", "target": "project-next-engine", "label": "delegates triage decisions to"},
         {"source": "codex-skills", "target": "spec-workflow", "label": "offers adoption and synchronization through"},
         {"source": "spec-workflow", "target": "project-next-engine", "label": "publishes stable issue mappings for"},
+        {"source": "skill-evaluation", "target": "project-next-engine", "label": "executes deterministic fixtures against"},
+        {"source": "skill-evaluation", "target": "codex-skills", "label": "measures activation and procedure contracts for"},
         {"source": "project-next-engine", "target": "runtime-libraries", "label": "is authored in"},
         {"source": "family-plugins", "target": "project-next-engine", "label": "bundles generated runtime from"},
         {"source": "quality-gates", "target": "family-plugins", "label": "validates"},
         {"source": "quality-gates", "target": "marketplace-catalog", "label": "reconciles contracts"},
         {"source": "quality-gates", "target": "codex-skills", "label": "drift-checks"},
+        {"source": "quality-gates", "target": "skill-evaluation", "label": "runs deterministic lane in"},
         {"source": "quality-gates", "target": "vendor-snapshot", "label": "checks upstream currency"}
       ],
-      "boundaries": [{"id": "repo", "label": "codex-power-pack repository", "nodes": ["marketplace-catalog", "family-plugins", "codex-skills", "vendor-snapshot", "runtime-libraries", "project-next-engine", "spec-workflow", "quality-gates"]}]
+      "boundaries": [{"id": "repo", "label": "codex-power-pack repository", "nodes": ["marketplace-catalog", "family-plugins", "codex-skills", "vendor-snapshot", "runtime-libraries", "project-next-engine", "spec-workflow", "skill-evaluation", "quality-gates"]}]
     },
     {
       "id": "c4-l3-plugin-distribution",
@@ -119,6 +123,34 @@
       "boundaries": [{"id": "plugin-package", "label": "One family plugin", "nodes": ["plugin-manifest", "skill-payload", "openai-metadata"]}]
     },
     {
+      "id": "c4-l3-skill-evaluation",
+      "level": "L3",
+      "title": "L3 Skill Activation and Outcome Evaluation",
+      "kind": "flowchart",
+      "parent": "c4-l2-container",
+      "nodes": [
+        {"id": "evaluation-suite", "label": "Versioned Evaluation Suite", "type": "component"},
+        {"id": "deterministic-evaluator", "label": "Deterministic Contract Evaluator", "type": "component"},
+        {"id": "live-evaluator", "label": "Bounded Codex Live Evaluator", "type": "component"},
+        {"id": "evaluation-scorecard", "label": "Redacted Aggregate Scorecard", "type": "component"},
+        {"id": "evaluation-skill-contracts", "label": "Skill Procedure and Output Contracts", "type": "external"},
+        {"id": "evaluation-project-next", "label": "Project Next Fixtures", "type": "external"},
+        {"id": "evaluation-codex-cli", "label": "Codex Exec JSON Lane", "type": "external"},
+        {"id": "evaluation-ci", "label": "Make Verify and Woodpecker", "type": "external"}
+      ],
+      "edges": [
+        {"source": "evaluation-suite", "target": "deterministic-evaluator", "label": "supplies cases and expected contracts to"},
+        {"source": "evaluation-suite", "target": "live-evaluator", "label": "supplies bounded activation prompts to"},
+        {"source": "deterministic-evaluator", "target": "evaluation-skill-contracts", "label": "checks procedure markers in"},
+        {"source": "deterministic-evaluator", "target": "evaluation-project-next", "label": "executes versioned scenarios from"},
+        {"source": "live-evaluator", "target": "evaluation-codex-cli", "label": "runs ephemeral read-only cases through"},
+        {"source": "evaluation-ci", "target": "deterministic-evaluator", "label": "runs on every change"},
+        {"source": "deterministic-evaluator", "target": "evaluation-scorecard", "label": "publishes aggregate results to"},
+        {"source": "live-evaluator", "target": "evaluation-scorecard", "label": "publishes redacted summaries to"}
+      ],
+      "boundaries": [{"id": "evaluation-boundary", "label": "Skill Evaluation Harness", "nodes": ["evaluation-suite", "deterministic-evaluator", "live-evaluator", "evaluation-scorecard"]}]
+    },
+    {
       "id": "c4-l4-security-runtime",
       "level": "L4",
       "title": "L4 Spec Synchronization Data Model",
@@ -134,6 +166,22 @@
         {"source": "Group", "target": "Task", "kind": "*--", "label": "contains"},
         {"source": "Mapping", "target": "Group", "kind": "-->", "label": "records issue for"},
         {"source": "SpecTask", "target": "Mapping", "kind": "-->", "label": "consumes stable identity from"}
+      ]
+    },
+    {
+      "id": "c4-l4-skill-evaluation",
+      "level": "L4",
+      "title": "L4 Skill Evaluation Data Model",
+      "kind": "classdiagram",
+      "parent": "c4-l3-skill-evaluation",
+      "classes": [
+        {"name": "EvaluationCase", "members": ["+case_id: str", "+category: Category", "+lanes: tuple", "+expectation: Expectation"]},
+        {"name": "Observation", "members": ["+selected_skill: str", "+checkpoints: tuple", "+runtime_error: str", "+total_tokens: int"]},
+        {"name": "EvaluationResult", "members": ["+outcome: Outcome", "+contract_layer: ContractLayer", "+reasons: tuple", "+activation_checked: bool"]}
+      ],
+      "relations": [
+        {"source": "Observation", "target": "EvaluationCase", "kind": "-->", "label": "records evidence for"},
+        {"source": "EvaluationResult", "target": "Observation", "kind": "-->", "label": "classifies"}
       ]
     }
   ]

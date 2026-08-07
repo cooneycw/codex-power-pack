@@ -7,6 +7,7 @@ flowchart TB
     runtime_libraries["Deterministic Libraries (lib/)"]:::container
     project_next_engine["Project Next Recommendation Engine"]:::container
     spec_workflow["Spec Kit Extension and Issue Compiler"]:::container
+    skill_evaluation["Skill Evaluation Harness"]:::container
     quality_gates["Quality Gates (Makefile + tests)"]:::container
   end
   marketplace_catalog -->|"indexes"| family_plugins
@@ -16,10 +17,13 @@ flowchart TB
   codex_skills -->|"delegates triage decisions to"| project_next_engine
   codex_skills -->|"offers adoption and synchronization through"| spec_workflow
   spec_workflow -->|"publishes stable issue mappings for"| project_next_engine
+  skill_evaluation -->|"executes deterministic fixtures against"| project_next_engine
+  skill_evaluation -->|"measures activation and procedure contracts for"| codex_skills
   project_next_engine -->|"is authored in"| runtime_libraries
   family_plugins -->|"bundles generated runtime from"| project_next_engine
   quality_gates -->|"validates"| family_plugins
   quality_gates -->|"reconciles contracts"| marketplace_catalog
   quality_gates -->|"drift-checks"| codex_skills
+  quality_gates -->|"runs deterministic lane in"| skill_evaluation
   quality_gates -->|"checks upstream currency"| vendor_snapshot
   classDef container fill:#15803d,color:#ffffff,stroke:#0f172a

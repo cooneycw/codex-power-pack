@@ -17,9 +17,11 @@ def test_verify_composes_every_required_local_quality_gate() -> None:
         "harness-lint",
         "skill-contract-lint",
         "project-next-check",
+        "skill-eval-check",
     ]
 
 
 def test_drift_and_harness_gates_have_repo_local_implementations() -> None:
     assert (REPO_ROOT / "scripts" / "codex_skills_sync.py").is_file()
     assert (REPO_ROOT / "scripts" / "harness_lint.py").is_file()
+    assert (REPO_ROOT / "scripts" / "skill-eval.py").is_file()

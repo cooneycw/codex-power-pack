@@ -1,6 +1,6 @@
 .PHONY: test lint format typecheck verify build update_docs clean help secret-scan dep-audit \
 	codex-skills codex-skills-check codex-skills-refresh codex-skills-currency-check harness-lint \
-	project-next-check project-next-sync skill-contract-lint
+	project-next-check project-next-sync skill-contract-lint skill-eval-check skill-eval-live
 
 # claude-power-pack checkout the generated Codex skills are pulled from (codex-power-pack#75).
 CPP_ROOT ?= ../claude-power-pack
@@ -33,6 +33,12 @@ project-next-check:
 project-next-sync:
 	@python3 scripts/project_next_sync.py --write
 
+skill-eval-check:
+	@python3 scripts/skill-eval.py deterministic
+
+skill-eval-live:
+	@python3 scripts/skill-eval.py live --allow-live
+
 build:
 	uv build
 
@@ -59,7 +65,7 @@ codex-skills-currency-check:
 
 ## Verification gate (runs all quality checks)
 
-verify: lint test typecheck codex-skills-check harness-lint skill-contract-lint project-next-check
+verify: lint test typecheck codex-skills-check harness-lint skill-contract-lint project-next-check skill-eval-check
 
 ## Documentation (used by /flow:auto and /flow:finish)
 
@@ -94,6 +100,8 @@ help:
 	@echo "  make skill-contract-lint - Check semantic references, metadata, packaging, and exclusions"
 	@echo "  make project-next-check - Check installed project-next runtime drift"
 	@echo "  make project-next-sync  - Refresh the installed project-next runtime"
+	@echo "  make skill-eval-check   - Run deterministic skill procedure and output evaluations"
+	@echo "  make skill-eval-live    - Run the bounded, model-backed evaluation lane"
 	@echo "  make build       - Build distribution packages"
 	@echo "  make verify      - Run all quality checks"
 	@echo ""

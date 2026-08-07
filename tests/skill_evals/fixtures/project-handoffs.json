@@ -1,0 +1,25 @@
+{
+  "local_default": {
+    "requested": ["scaffold"],
+    "allowed": ["local-files"],
+    "forbidden": ["github-publication", "spec-kit-adoption", "issue-sync", "persistent-influence"]
+  },
+  "explicit_publication": {
+    "requested": ["github-publication"],
+    "requires": ["owner", "visibility", "remote", "approval"]
+  },
+  "declined_publication": {
+    "requested": ["scaffold"],
+    "declined": ["github-publication"],
+    "allowed": ["local-files"]
+  },
+  "spec_kit_opt_in": {
+    "requested": ["spec-kit-adoption"],
+    "requires": ["immutable-ref", "path-approval", "codex-integration"]
+  },
+  "declined_adoption": {
+    "requested": ["scaffold"],
+    "declined": ["spec-kit-adoption"],
+    "allowed": ["local-files"]
+  }
+}

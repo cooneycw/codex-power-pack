@@ -54,10 +54,12 @@ desktop.ini
 !.agents/skill-contracts.schema.json
 !.agents/skill-evaluation-cases.json
 !.agents/skill-evaluation-cases.schema.json
+!.agents/skill-evaluation-output.schema.json
 !.agents/skill-invocation-policy.json
 !.agents/skill-invocation-policy.schema.json
 !templates/project-next.schema.json
 !tests/project_next/fixtures/scenarios.json
+!tests/skill_evals/fixtures/*.json
 !.agents/project-init-spec-kit-contract.json
 !.agents/project-init-spec-kit-contract.schema.json
 !plugins/**/.codex-plugin/plugin.json

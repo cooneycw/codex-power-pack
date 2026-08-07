@@ -1,0 +1,21 @@
+flowchart TB
+  subgraph evaluation_boundary["Skill Evaluation Harness"]
+    evaluation_suite["Versioned Evaluation Suite"]:::component
+    deterministic_evaluator["Deterministic Contract Evaluator"]:::component
+    live_evaluator["Bounded Codex Live Evaluator"]:::component
+    evaluation_scorecard["Redacted Aggregate Scorecard"]:::component
+  end
+  evaluation_skill_contracts["Skill Procedure and Output Contracts"]:::external
+  evaluation_project_next["Project Next Fixtures"]:::external
+  evaluation_codex_cli["Codex Exec JSON Lane"]:::external
+  evaluation_ci["Make Verify and Woodpecker"]:::external
+  evaluation_suite -->|"supplies cases and expected contracts to"| deterministic_evaluator
+  evaluation_suite -->|"supplies bounded activation prompts to"| live_evaluator
+  deterministic_evaluator -->|"checks procedure markers in"| evaluation_skill_contracts
+  deterministic_evaluator -->|"executes versioned scenarios from"| evaluation_project_next
+  live_evaluator -->|"runs ephemeral read-only cases through"| evaluation_codex_cli
+  evaluation_ci -->|"runs on every change"| deterministic_evaluator
+  deterministic_evaluator -->|"publishes aggregate results to"| evaluation_scorecard
+  live_evaluator -->|"publishes redacted summaries to"| evaluation_scorecard
+  classDef component fill:#7e22ce,color:#ffffff,stroke:#0f172a
+  classDef external fill:#334155,color:#ffffff,stroke:#0f172a

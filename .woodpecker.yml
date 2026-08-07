@@ -27,6 +27,9 @@ steps:
       # Harness gate: generated/authored skills must not carry unadapted
       # Claude-only constructs into Codex.
       - uv run python scripts/harness_lint.py --check
+      # Deterministic activation/procedure/output contracts run on every PR;
+      # model-backed evaluation remains an explicit manual/scheduled lane.
+      - uv run python scripts/skill-eval.py deterministic
 
   # Live currency gate (#139): the local manifest detects hand edits, while
   # this compares the adopted payload with current CPP main. Unrelated CPP
