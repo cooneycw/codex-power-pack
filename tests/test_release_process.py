@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RELEASE_DOC = REPO_ROOT / "docs" / "release-process.md"
 MARKETPLACE_PATH = REPO_ROOT / ".agents" / "plugins" / "marketplace.json"
+sys.path.insert(0, str(REPO_ROOT / "scripts"))
+
+import release_validate  # noqa: E402
 
 
 def read_text(path: Path) -> str:
@@ -75,3 +79,40 @@ def test_distribution_docs_link_release_process() -> None:
         "docs/plugin-marketplace-project-e2e.md",
     ]:
         assert "docs/release-process.md" in read_text(REPO_ROOT / relative)
+
+
+def test_release_validation_profiles_match_documented_family_order() -> None:
+    assert release_validate.PROFILES["minimal"] == ("cxpp",)
+    assert release_validate.RECOMMENDED == (
+        "project",
+        "spec",
+        "flow",
+        "github",
+        "cicd",
+        "secrets",
+        "security",
+        "agents-md",
+        "documentation",
+        "qa",
+        "self-improvement",
+        "cxpp",
+        "claude",
+    )
+    assert len(release_validate.FULL) == 16
+
+
+def test_release_validation_marketplace_command_is_pinned_and_sparse() -> None:
+    command = release_validate.marketplace_command(
+        "cooneycw/codex-power-pack",
+        "a" * 40,
+        ("project", "cxpp"),
+    )
+
+    assert command[:5] == ["codex", "plugin", "marketplace", "add", "cooneycw/codex-power-pack"]
+    assert command[command.index("--ref") + 1] == "a" * 40
+    assert [command[index + 1] for index, item in enumerate(command) if item == "--sparse"] == [
+        ".agents",
+        "plugins/project",
+        "plugins/cxpp",
+    ]
+    assert command[-1] == "--json"

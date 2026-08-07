@@ -2,7 +2,7 @@
 
 ## L1 System Context
 
-_L1 - 7 nodes, 6 edges - [`c4-l1-context.mmd`](c4-l1-context.mmd)_
+_L1 - 8 nodes, 7 edges - [`c4-l1-context.mmd`](c4-l1-context.mmd)_
 
 ```mermaid
 flowchart TB
@@ -15,12 +15,14 @@ flowchart TB
   spec_kit["Official GitHub Spec Kit"]:::system
   github["GitHub Marketplace Source"]:::system
   host_mcp["Host-managed MCP Services"]:::system
+  target_repository["Target Repository"]:::system
   developer -->|"uses"| codex
   codex -->|"installs plugins"| cxpp
   cxpp -->|"pulls pinned generated skills from"| cpp
   cxpp -->|"pins adoption and provides an extension for"| spec_kit
   cxpp -->|"distributed from"| github
   cxpp -->|"configures pointers to"| host_mcp
+  cxpp -->|"optionally manages reviewed routing in"| target_repository
   classDef person fill:#08427b,color:#ffffff,stroke:#0f172a
   classDef system fill:#6b7280,color:#ffffff,stroke:#0f172a
   classDef system_focus fill:#1168bd,color:#ffffff,stroke:#0f172a
@@ -28,7 +30,7 @@ flowchart TB
 
 ## L2 Containers
 
-_L2 - 9 nodes, 16 edges - [`c4-l2-container.mmd`](c4-l2-container.mmd)_
+_L2 - 11 nodes, 22 edges - [`c4-l2-container.mmd`](c4-l2-container.mmd)_
 
 ```mermaid
 flowchart TB
@@ -41,6 +43,8 @@ flowchart TB
     project_next_engine["Project Next Recommendation Engine"]:::container
     spec_workflow["Spec Kit Extension and Issue Compiler"]:::container
     skill_evaluation["Skill Evaluation Harness"]:::container
+    persistent_influence["Consent-first Routing and Hooks"]:::container
+    release_validation["Isolated Release Validator"]:::container
     quality_gates["Quality Gates (Makefile + tests)"]:::container
   end
   marketplace_catalog -->|"indexes"| family_plugins
@@ -52,12 +56,18 @@ flowchart TB
   spec_workflow -->|"publishes stable issue mappings for"| project_next_engine
   skill_evaluation -->|"executes deterministic fixtures against"| project_next_engine
   skill_evaluation -->|"measures activation and procedure contracts for"| codex_skills
+  codex_skills -->|"previews separately consented changes through"| persistent_influence
+  family_plugins -->|"packages reviewed routing and hooks for"| persistent_influence
+  release_validation -->|"installs immutable snapshots from"| marketplace_catalog
+  release_validation -->|"validates profile, upgrade, and rollback installs of"| family_plugins
   project_next_engine -->|"is authored in"| runtime_libraries
   family_plugins -->|"bundles generated runtime from"| project_next_engine
   quality_gates -->|"validates"| family_plugins
   quality_gates -->|"reconciles contracts"| marketplace_catalog
   quality_gates -->|"drift-checks"| codex_skills
   quality_gates -->|"runs deterministic lane in"| skill_evaluation
+  quality_gates -->|"checks consent and removal contracts for"| persistent_influence
+  quality_gates -->|"tests release scenarios in"| release_validation
   quality_gates -->|"checks upstream currency"| vendor_snapshot
   classDef container fill:#15803d,color:#ffffff,stroke:#0f172a
 ```
@@ -120,6 +130,31 @@ flowchart TB
   project_next_sync -->|"writes and drift-checks"| project_next_bundle
   package_tests -->|"checks byte parity"| project_next_bundle
   classDef component fill:#7e22ce,color:#ffffff,stroke:#0f172a
+```
+
+## L3 Consent-first Influence and Release Validation
+
+_L3 - 7 nodes, 6 edges - [`c4-l3-influence-release.mmd`](c4-l3-influence-release.mmd)_
+
+```mermaid
+flowchart TB
+  subgraph release_acceptance["Release Acceptance"]
+    influence_routing_template["Bounded AGENTS.md Routing Template"]:::component
+    influence_manager["Routing Status and Merge Helper"]:::component
+    influence_reviewed_hooks["Secrets and Friction Hooks"]:::component
+    release_validator["Profile, Upgrade, and Rollback Validator"]:::component
+  end
+  influence_cxpp_skills["CxPP Init, Update, and Status Skills"]:::external
+  release_marketplace["Immutable Marketplace Snapshot"]:::external
+  release_isolated_home["Temporary CODEX_HOME"]:::external
+  influence_cxpp_skills -->|"previews separately approved routing changes through"| influence_manager
+  influence_routing_template -->|"supplies hashed managed content to"| influence_manager
+  influence_reviewed_hooks -->|"reports trust and enablement state through"| influence_cxpp_skills
+  release_validator -->|"resolves a signed tag or immutable SHA from"| release_marketplace
+  release_validator -->|"installs each release scenario in"| release_isolated_home
+  release_isolated_home -->|"exposes the installed payload for fresh-session status"| influence_cxpp_skills
+  classDef component fill:#7e22ce,color:#ffffff,stroke:#0f172a
+  classDef external fill:#334155,color:#ffffff,stroke:#0f172a
 ```
 
 ## L3 Skill Activation and Outcome Evaluation
@@ -212,4 +247,4 @@ classDiagram
   EvaluationResult --> Observation : classifies
 ```
 
-_Generated 2026-08-07T00:09:30Z_
+_Generated 2026-08-07T11:21:04Z_

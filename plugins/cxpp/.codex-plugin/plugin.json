@@ -1,6 +1,6 @@
 {
   "name": "cxpp",
-  "version": "0.1.1+codex.20260806203405",
+  "version": "0.2.0+codex.20260807012317",
   "description": "Consent-first bootstrap, refresh, and status skills for Codex Power Pack host configuration.",
   "author": {
     "name": "Codex Power Pack maintainers",

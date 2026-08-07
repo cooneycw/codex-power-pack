@@ -95,6 +95,11 @@ Release installs and upgrades follow `docs/release-process.md`: use a signed
 release tag or immutable commit SHA, record the resolved SHA, and preserve
 rollback refs in the release notes.
 
+The Wave 7 v0.2.0 aggregate acceptance record—including 20 bounded dogfood
+sessions, isolated Minimal/Recommended/Full installs, upgrade and rollback,
+Spec Kit pin verification, and clean-project composition—is in
+`docs/wave-7-release-validation.md`.
+
 See `docs/plugin-marketplace-project-e2e.md` and
 `docs/plugin-marketplace-spec-e2e.md` for the project and spec-plugin E2E
 transcripts.

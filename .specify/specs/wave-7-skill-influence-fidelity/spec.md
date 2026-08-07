@@ -327,30 +327,30 @@ create low-context implementation issues.
 
 ## Success Criteria
 
-- [ ] `project-next` is preferred over rerunning the same task in Claude Code in
+- [x] `project-next` is preferred over rerunning the same task in Claude Code in
       dogfood feedback.
-- [ ] No packaged help or workflow text references an unavailable capability.
-- [ ] No operational Claude-only path or command reaches a CxPP release without
+- [x] No packaged help or workflow text references an unavailable capability.
+- [x] No operational Claude-only path or command reaches a CxPP release without
       a reviewed adaptation.
-- [ ] Priority skills meet the activation and outcome thresholds in US4.
-- [ ] CxPP's optional persistent influence layer is transparent, consent-first,
+- [x] Priority skills meet the activation and outcome thresholds in US4.
+- [x] CxPP's optional persistent influence layer is transparent, consent-first,
       removable, and visible in status output.
-- [ ] All staged implementation issues are merged with `make verify` green.
-- [ ] Documentation, release guidance, and rollback instructions match the
+- [x] All staged implementation issues are merged with `make verify` green.
+- [x] Documentation, release guidance, and rollback instructions match the
       installed behavior.
-- [ ] The project-init and Spec Kit composition contract remains schema-valid,
+- [x] The project-init and Spec Kit composition contract remains schema-valid,
       and every runtime responsibility is closed by its assigned Wave 7 stage.
 
 ---
 
 ## Open Questions
 
-- [ ] After baseline evaluation, which one to three skills per family should
-      remain implicitly eligible by default?
-- [ ] Should the cross-repository `project-next` behavioral contract ultimately
-      live in CxPP, CPP, or a small harness-neutral package consumed by both?
-- [ ] Which live evaluation cadence provides useful signal without making
-      ordinary PR verification depend on model availability?
+- [x] Keep `$flow-auto` and `$project-next` as the two implicit entrypoints;
+      preserve explicit selection for state-changing and administrative skills.
+- [x] Keep the harness-neutral `project-next` contract and deterministic core in
+      CxPP, with installed adapters consuming that source of truth.
+- [x] Run deterministic evaluation on every PR and the bounded live lane before
+      releases and weekly while the rollout remains under review.
 
 ---
 

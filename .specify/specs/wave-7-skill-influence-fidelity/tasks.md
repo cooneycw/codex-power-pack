@@ -263,32 +263,32 @@ skill workflow intact.
 
 ## Stage 6: Rollout, Documentation, and Closeout
 
-- [ ] **T601** [US6] Update README, AGENTS.md, plugin help, architecture, and
+- [x] **T601** [US6] Update README, AGENTS.md, plugin help, architecture, and
       troubleshooting documentation to match the released invocation and
       influence model.
-- [ ] **T602** [US6] Publish migration and rollback guidance covering explicit
+- [x] **T602** [US6] Publish migration and rollback guidance covering explicit
       selection, implicit-policy changes, hook trust, new-session requirements,
       and persistent-guidance removal.
-- [ ] **T603** [US6] Validate minimal, recommended, full, upgrade, and rollback
+- [x] **T603** [US6] Validate minimal, recommended, full, upgrade, and rollback
       installs at immutable commit SHAs or signed release tags.
-- [ ] **T604** [US4,US6] Run at least 20 representative dogfood sessions and
+- [x] **T604** [US4,US6] Run at least 20 representative dogfood sessions and
       record aggregate activation and fidelity results.
-- [ ] **T605** [US2,US4] Revisit the implicit-entrypoint set using measured
+- [x] **T605** [US2,US4] Revisit the implicit-entrypoint set using measured
       precision, recall, catalogue budget, and user feedback.
-- [ ] **T606** [US3,US6] Close, re-scope, or create follow-ups for #135, #140,
+- [x] **T606** [US3,US6] Close, re-scope, or create follow-ups for #135, #140,
       exclusions, and any deferred family-specific repairs based on evidence.
-- [ ] **T607** [US6] Cut the release, record resolved and rollback refs, and
+- [x] **T607** [US6] Cut the release, record resolved and rollback refs, and
       verify `cxpp-status` against the installed payload in a fresh session.
-- [ ] **T608** [US6] Mark the wave complete only after all spec success criteria
+- [x] **T608** [US6] Mark the wave complete only after all spec success criteria
       and repository quality gates pass.
-- [ ] **T609** [US6,US7] Dogfood a clean project through local scaffold,
+- [x] **T609** [US6,US7] Dogfood a clean project through local scaffold,
       optional publication, pinned adoption, readiness, stage/story sync,
       project-next, and flow-auto.
-- [ ] **T610** [US6,US7] Verify adoption install and rollback against immutable
+- [x] **T610** [US6,US7] Verify adoption install and rollback against immutable
       Spec Kit and CxPP release refs.
-- [ ] **T611** [US6,US7] Publish migration from duplicate compilers and one-line
+- [x] **T611** [US6,US7] Publish migration from duplicate compilers and one-line
       task issues, retaining task-granular sync only as an explicit option.
-- [ ] **T612** [US6,US7] Include issue outcome, traceability, independent
+- [x] **T612** [US6,US7] Include issue outcome, traceability, independent
       acceptance, dependency, command, and immutable-link quality in rollout
       evidence.
 
@@ -341,18 +341,17 @@ Stage 0 baseline
 |-------|-------|-------|--------|
 | Specification | spec.md, plan.md, tasks.md | #153 | complete |
 | 0 - Baseline | T001-T006 | #157 | complete |
-| Composition prerequisite | T090-T097 | #166 | in progress |
+| Composition prerequisite | T090-T097 | #166 | complete |
 | 1 - project-next | T101-T112 | #158 | complete |
-| 2 - Invocation/metadata | T201-T211 | #159 | open |
-| 3 - Semantic gates | T301-T320 | #160 | open |
-| 4 - Evaluations | T401-T413 | #161 | open |
-| 5 - Persistent influence | T501-T508 | #162 | open |
-| 6 - Rollout | T601-T612 | #163 | open |
+| 2 - Invocation/metadata | T201-T211 | #159 | complete |
+| 3 - Semantic gates | T301-T320 | #160 | complete |
+| 4 - Evaluations | T401-T413 | #161 | complete |
+| 5 - Persistent influence | T501-T508 | #162 | complete |
+| 6 - Rollout | T601-T612 | #163 | complete |
 
-Completion sequence: #157 and #158 are complete. #166 unlocks #159 and the
-project-next mapping integration now assigned to #160; #159 unlocks #160; #160
-unlocks #161; #160 and #161 jointly unlock #162; #158 through #162 plus #166
-must close before #163 can close the wave.
+Completion sequence: #157, #158, #166, and stages #159 through #162 completed
+in dependency order. Issue #163 then validated the immutable release and closes
+the wave.
 
 ---
 

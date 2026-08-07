@@ -41,10 +41,18 @@ retain their existing individual prompts.
    tag to its commit SHA, and reject floating refs. Before approval, show the
    selected profile and plugins, every resulting sparse path (`.agents` plus
    `plugins/<family>` in full-suite order), the previous ref, requested ref,
-   resolved SHA, and exact additive marketplace/plugin commands.
-4. After explicit approval, expand the sparse marketplace snapshot and install
-   only missing selected plugins. Preserve existing families and configuration.
-   Re-run `$cxpp-status` to verify the result.
+   resolved SHA, and exact marketplace/plugin commands. Codex 0.146.1 cannot
+   retarget an existing marketplace source with another `marketplace add`; if
+   the ref changes, preview the bounded `codex plugin marketplace remove
+   codex-power-pack --json` followed immediately by the pinned `marketplace
+   add` and plugin reinstalls. This replaces only the marketplace snapshot;
+   it does not remove installed plugins or authorize any other deletion.
+4. After explicit approval, expand an unchanged sparse marketplace snapshot,
+   or perform the previewed marketplace-source replacement when the ref
+   changes, then reinstall every preserved/selected family at the new snapshot.
+   If the new snapshot cannot be added, restore the recorded previous ref;
+   existing plugin installs remain in place during recovery. Preserve all
+   other configuration and re-run `$cxpp-status` to verify the result.
 5. Inspect optional target routing with the checkout
    `scripts/cxpp-influence.py` or installed
    `${PLUGIN_ROOT}/scripts/cxpp-influence.py`. For `absent` or `upgrade`,

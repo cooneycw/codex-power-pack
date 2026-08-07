@@ -71,3 +71,8 @@ precision.
   an owner, reason, affected cases, and an expiry date.
 - An unavailable live lane is “not checked,” not green. Releases need a recent
   successful live summary or a documented time-bounded exception.
+
+The v0.2.0 release lane selects 20 live cases with a 320,000-token ceiling.
+Release results and the implicit-entrypoint decision are recorded in
+`docs/wave-7-release-validation.md`; raw prompts and event streams remain
+ephemeral.

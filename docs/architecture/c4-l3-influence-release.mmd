@@ -1,0 +1,18 @@
+flowchart TB
+  subgraph release_acceptance["Release Acceptance"]
+    influence_routing_template["Bounded AGENTS.md Routing Template"]:::component
+    influence_manager["Routing Status and Merge Helper"]:::component
+    influence_reviewed_hooks["Secrets and Friction Hooks"]:::component
+    release_validator["Profile, Upgrade, and Rollback Validator"]:::component
+  end
+  influence_cxpp_skills["CxPP Init, Update, and Status Skills"]:::external
+  release_marketplace["Immutable Marketplace Snapshot"]:::external
+  release_isolated_home["Temporary CODEX_HOME"]:::external
+  influence_cxpp_skills -->|"previews separately approved routing changes through"| influence_manager
+  influence_routing_template -->|"supplies hashed managed content to"| influence_manager
+  influence_reviewed_hooks -->|"reports trust and enablement state through"| influence_cxpp_skills
+  release_validator -->|"resolves a signed tag or immutable SHA from"| release_marketplace
+  release_validator -->|"installs each release scenario in"| release_isolated_home
+  release_isolated_home -->|"exposes the installed payload for fresh-session status"| influence_cxpp_skills
+  classDef component fill:#7e22ce,color:#ffffff,stroke:#0f172a
+  classDef external fill:#334155,color:#ffffff,stroke:#0f172a

@@ -8,12 +8,14 @@ flowchart TB
   spec_kit["Official GitHub Spec Kit"]:::system
   github["GitHub Marketplace Source"]:::system
   host_mcp["Host-managed MCP Services"]:::system
+  target_repository["Target Repository"]:::system
   developer -->|"uses"| codex
   codex -->|"installs plugins"| cxpp
   cxpp -->|"pulls pinned generated skills from"| cpp
   cxpp -->|"pins adoption and provides an extension for"| spec_kit
   cxpp -->|"distributed from"| github
   cxpp -->|"configures pointers to"| host_mcp
+  cxpp -->|"optionally manages reviewed routing in"| target_repository
   classDef person fill:#08427b,color:#ffffff,stroke:#0f172a
   classDef system fill:#6b7280,color:#ffffff,stroke:#0f172a
   classDef system_focus fill:#1168bd,color:#ffffff,stroke:#0f172a

@@ -1,6 +1,6 @@
 {
   "project": "Codex Power Pack",
-  "generated_at": "2026-08-07T00:09:30Z",
+  "generated_at": "2026-08-07T11:21:04Z",
   "engine": "c4-mermaid",
   "diagrams": [
     {
@@ -8,8 +8,8 @@
       "level": "L1",
       "title": "L1 System Context",
       "file": "c4-l1-context.mmd",
-      "node_count": 7,
-      "edge_count": 6,
+      "node_count": 8,
+      "edge_count": 7,
       "parent": null
     },
     {
@@ -17,8 +17,8 @@
       "level": "L2",
       "title": "L2 Containers",
       "file": "c4-l2-container.mmd",
-      "node_count": 9,
-      "edge_count": 16,
+      "node_count": 11,
+      "edge_count": 22,
       "parent": null
     },
     {
@@ -28,6 +28,15 @@
       "file": "c4-l3-plugin-distribution.mmd",
       "node_count": 20,
       "edge_count": 29,
+      "parent": "c4-l2-container"
+    },
+    {
+      "id": "c4-l3-influence-release",
+      "level": "L3",
+      "title": "L3 Consent-first Influence and Release Validation",
+      "file": "c4-l3-influence-release.mmd",
+      "node_count": 7,
+      "edge_count": 6,
       "parent": "c4-l2-container"
     },
     {

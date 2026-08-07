@@ -25,6 +25,36 @@
 
 ---
 
+## [0.2.0] - 2026-08-07
+
+### Added
+
+- Added versioned skill contracts, semantic compatibility checks, deterministic
+  and bounded-live evaluation, and an aggregate Wave 7 release scorecard.
+- Added consent-first optional `AGENTS.md` routing plus separately reviewed
+  secrets and self-improvement hooks, with status and removal workflows.
+- Added isolated Minimal, Recommended, Full, upgrade, and rollback release
+  validation against immutable marketplace refs.
+- Added the official Spec Kit v0.16.0 extension boundary, stage/story issue
+  compilation, and clean-project composition evidence.
+
+### Changed
+
+- Limited implicit invocation to the measured `$flow-auto` and `$project-next`
+  entrypoints; all other skills remain available through `$skill-name` and
+  `/skills` discovery.
+- Versioned all plugin payloads as `0.2.0+codex.20260807012317` and documented
+  the required reinstall or upgrade plus fresh-session boundary.
+
+### Migration
+
+- See `docs/skill-invocation-migration.md` for explicit selection, hook trust,
+  persistent-guidance removal, and retirement of duplicate issue compilers.
+- See `docs/wave-7-release-validation.md` for aggregate install, rollback,
+  dogfood, Spec Kit, and clean-project evidence.
+
+---
+
 ## [5.2.0] - 2026-03-08
 
 ### Added - C4 Diagram QA Framework
