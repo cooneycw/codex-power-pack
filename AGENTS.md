@@ -55,6 +55,9 @@ tool integrations, with client-side pointers documented in `docs/HOST_MANAGED.md
 - Use `docs/release-process.md` for release PRs, signed tag or SHA installs,
   upgrade transcripts, rollback refs, and changelog discipline.
 - prefer `rg` for repo search
+- When credential-shaped repository fixtures must be inspected, use
+  `python -m lib.creds masked-read PATH [PATH...]`; never print the raw file as
+  an intermediate step.
 
 ## Notes
 
