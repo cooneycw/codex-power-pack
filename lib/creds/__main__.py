@@ -5,6 +5,7 @@ Usage:
     python -m lib.creds set KEY VALUE [--project PROJECT]
     python -m lib.creds list [--project PROJECT]
     python -m lib.creds run -- COMMAND [ARGS...]
+    python -m lib.creds masked-read PATH [PATH...]
     python -m lib.creds validate [OPTIONS]
     python -m lib.creds ui [--port PORT]
     python -m lib.creds rotate KEY [--project PROJECT]
@@ -14,6 +15,7 @@ Examples:
     python -m lib.creds set DB_PASSWORD my-secret
     python -m lib.creds list
     python -m lib.creds run -- make deploy
+    python -m lib.creds masked-read tests/fixtures/config.txt
     python -m lib.creds ui
     python -m lib.creds validate --dotenv
 """
