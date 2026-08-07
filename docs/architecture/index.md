@@ -247,4 +247,4 @@ classDiagram
   EvaluationResult --> Observation : classifies
 ```
 
-_Generated 2026-08-07T11:21:04Z_
+_Generated 2026-08-07T12:04:14Z_

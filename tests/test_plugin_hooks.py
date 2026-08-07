@@ -14,6 +14,11 @@ SECRETS = ROOT / "plugins/secrets"
 RETRO = ROOT / "plugins/self-improvement"
 
 
+def hook_commands(plugin: Path) -> list[str]:
+    hooks = json.loads((plugin / "hooks/hooks.json").read_text(encoding="utf-8"))["hooks"]
+    return [entries[0]["hooks"][0]["command"] for entries in hooks.values()]
+
+
 def invoke(
     script: Path,
     payload: str,
@@ -27,6 +32,19 @@ def invoke(
         text=True,
         check=False,
         env=env,
+    )
+
+
+def invoke_hook_command(command: str, plugin_root: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        command,
+        input="{}",
+        capture_output=True,
+        text=True,
+        shell=True,
+        executable="/bin/sh",
+        check=False,
+        env={**os.environ, "PLUGIN_ROOT": str(plugin_root)},
     )
 
 
@@ -77,6 +95,24 @@ def test_friction_capture_is_minimized_opt_in_and_fail_open(tmp_path: Path) -> N
     assert invoke(script, "bad", "--event", "UserPromptSubmit", env=env).returncode == 0
 
 
+def test_missing_hook_scripts_preserve_each_plugins_failure_policy(tmp_path: Path) -> None:
+    retro = tmp_path / "self-improvement"
+    secrets = tmp_path / "secrets"
+    shutil.copytree(RETRO, retro)
+    shutil.copytree(SECRETS, secrets)
+    (retro / "scripts/friction-hook.py").unlink()
+    (secrets / "scripts/hook-mask-output.py").unlink()
+
+    retro_results = [invoke_hook_command(command, retro) for command in hook_commands(retro)]
+    assert len(retro_results) == 3
+    assert all(result.returncode == 0 for result in retro_results)
+
+    blocked = invoke_hook_command(hook_commands(secrets)[0], secrets)
+    assert blocked.returncode != 0
+    assert "Secrets plugin" in blocked.stderr
+    assert "Restart Codex" in blocked.stderr
+
+
 def test_status_documents_changed_untrusted_disabled_and_removal_states() -> None:
     status = (ROOT / ".codex/skills/cxpp-status/SKILL.md").read_text(encoding="utf-8")
     init = (ROOT / ".codex/skills/cxpp-init/SKILL.md").read_text(encoding="utf-8")
@@ -86,6 +122,8 @@ def test_status_documents_changed_untrusted_disabled_and_removal_states() -> Non
     assert "preview-remove" in init and "HELPER remove" in init and "--approve" in init
     assert "preview-remove" in update and "HELPER remove" in update and "--approve" in update
     assert "does not authorize" in init and "does not authorize" in update
+    assert "warn before approval" in update
+    assert "must be restarted" in update
 
 
 def test_hooks_never_grant_permissions_or_invoke_shipping_actions() -> None:

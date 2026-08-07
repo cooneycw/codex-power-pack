@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${PLUGIN_ROOT}/scripts/friction-hook.py\" --event PermissionRequest"
+            "command": "python3 \"${PLUGIN_ROOT}/scripts/friction-hook.py\" --event PermissionRequest || true"
           }
         ]
       }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${PLUGIN_ROOT}/scripts/friction-hook.py\" --event PostToolUse"
+            "command": "python3 \"${PLUGIN_ROOT}/scripts/friction-hook.py\" --event PostToolUse || true"
           }
         ]
       }
@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${PLUGIN_ROOT}/scripts/friction-hook.py\" --event UserPromptSubmit"
+            "command": "python3 \"${PLUGIN_ROOT}/scripts/friction-hook.py\" --event UserPromptSubmit || true"
           }
         ]
       }
