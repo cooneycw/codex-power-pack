@@ -134,7 +134,7 @@ flowchart TB
 
 ## L3 Consent-first Influence and Release Validation
 
-_L3 - 7 nodes, 6 edges - [`c4-l3-influence-release.mmd`](c4-l3-influence-release.mmd)_
+_L3 - 8 nodes, 9 edges - [`c4-l3-influence-release.mmd`](c4-l3-influence-release.mmd)_
 
 ```mermaid
 flowchart TB
@@ -142,6 +142,7 @@ flowchart TB
     influence_routing_template["Bounded AGENTS.md Routing Template"]:::component
     influence_manager["Routing Status and Merge Helper"]:::component
     influence_reviewed_hooks["Secrets and Friction Hooks"]:::component
+    influence_hook_transition["Retained Hook Transition Helper"]:::component
     release_validator["Profile, Upgrade, and Rollback Validator"]:::component
   end
   influence_cxpp_skills["CxPP Init, Update, and Status Skills"]:::external
@@ -150,6 +151,9 @@ flowchart TB
   influence_cxpp_skills -->|"previews separately approved routing changes through"| influence_manager
   influence_routing_template -->|"supplies hashed managed content to"| influence_manager
   influence_reviewed_hooks -->|"reports trust and enablement state through"| influence_cxpp_skills
+  influence_cxpp_skills -->|"preflights and runs approved reinstalls through"| influence_hook_transition
+  influence_hook_transition -->|"restores byte-identical reviewed roots for"| influence_reviewed_hooks
+  influence_hook_transition -->|"protects versioned cache paths in"| release_isolated_home
   release_validator -->|"resolves a signed tag or immutable SHA from"| release_marketplace
   release_validator -->|"installs each release scenario in"| release_isolated_home
   release_isolated_home -->|"exposes the installed payload for fresh-session status"| influence_cxpp_skills
@@ -247,4 +251,4 @@ classDiagram
   EvaluationResult --> Observation : classifies
 ```
 
-_Generated 2026-08-07T12:04:14Z_
+_Generated 2026-08-07T15:18:30Z_

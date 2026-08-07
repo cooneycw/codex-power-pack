@@ -28,7 +28,7 @@
 - `templates/` - starter Makefiles and workflow templates
 - `templates/config.toml.example` - Codex MCP pointers for host-managed services
 - `docs/HOST_MANAGED.md` - host-owned MCP service inventory and health checks
-- `scripts/` - shell + Python helpers, incl. `codex_skills_sync.py` (pulls + drift-gates `.codex/skills/`), `skill_contract_baseline.py` (reconciles inventory), and `skill_contract_lint.py` (blocks semantic incompatibility)
+- `scripts/` - shell + Python helpers, incl. `codex_skills_sync.py` (pulls + drift-gates `.codex/skills/`), `skill_contract_baseline.py` (reconciles inventory), `skill_contract_lint.py` (blocks semantic incompatibility), and `cxpp-hook-transition.py` (retains reviewed hook roots across plugin upgrade and rollback)
 - `docs/skills/` - focused reference docs
 - `docs/skill-contract-baseline.md` - measured Wave 7 source, package, prompt, reference, and gap baseline
 - `docs/skill-evaluation.md` and `docs/skill-evaluation-scorecard.md` - evaluation safety, cadence, release policy, and aggregate results

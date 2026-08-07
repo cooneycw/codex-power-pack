@@ -143,6 +143,7 @@
         {"id": "influence-routing-template", "label": "Bounded AGENTS.md Routing Template", "type": "component"},
         {"id": "influence-manager", "label": "Routing Status and Merge Helper", "type": "component"},
         {"id": "influence-reviewed-hooks", "label": "Secrets and Friction Hooks", "type": "component"},
+        {"id": "influence-hook-transition", "label": "Retained Hook Transition Helper", "type": "component"},
         {"id": "release-validator", "label": "Profile, Upgrade, and Rollback Validator", "type": "component"},
         {"id": "release-marketplace", "label": "Immutable Marketplace Snapshot", "type": "external"},
         {"id": "release-isolated-home", "label": "Temporary CODEX_HOME", "type": "external"}
@@ -151,11 +152,14 @@
         {"source": "influence-cxpp-skills", "target": "influence-manager", "label": "previews separately approved routing changes through"},
         {"source": "influence-routing-template", "target": "influence-manager", "label": "supplies hashed managed content to"},
         {"source": "influence-reviewed-hooks", "target": "influence-cxpp-skills", "label": "reports trust and enablement state through"},
+        {"source": "influence-cxpp-skills", "target": "influence-hook-transition", "label": "preflights and runs approved reinstalls through"},
+        {"source": "influence-hook-transition", "target": "influence-reviewed-hooks", "label": "restores byte-identical reviewed roots for"},
+        {"source": "influence-hook-transition", "target": "release-isolated-home", "label": "protects versioned cache paths in"},
         {"source": "release-validator", "target": "release-marketplace", "label": "resolves a signed tag or immutable SHA from"},
         {"source": "release-validator", "target": "release-isolated-home", "label": "installs each release scenario in"},
         {"source": "release-isolated-home", "target": "influence-cxpp-skills", "label": "exposes the installed payload for fresh-session status"}
       ],
-      "boundaries": [{"id": "release-acceptance", "label": "Release Acceptance", "nodes": ["release-validator", "influence-routing-template", "influence-manager", "influence-reviewed-hooks"]}]
+      "boundaries": [{"id": "release-acceptance", "label": "Release Acceptance", "nodes": ["release-validator", "influence-routing-template", "influence-manager", "influence-reviewed-hooks", "influence-hook-transition"]}]
     },
     {
       "id": "c4-l3-skill-evaluation",

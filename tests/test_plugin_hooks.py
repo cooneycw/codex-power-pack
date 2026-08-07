@@ -9,9 +9,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 SECRETS = ROOT / "plugins/secrets"
 RETRO = ROOT / "plugins/self-improvement"
+TRANSITION = ROOT / "scripts/cxpp-hook-transition.py"
 
 
 def hook_commands(plugin: Path) -> list[str]:
@@ -46,6 +49,75 @@ def invoke_hook_command(command: str, plugin_root: Path) -> subprocess.Completed
         check=False,
         env={**os.environ, "PLUGIN_ROOT": str(plugin_root)},
     )
+
+
+def plugin_payload(root: Path) -> dict[str, bytes]:
+    return {
+        path.relative_to(root).as_posix(): path.read_bytes()
+        for path in root.rglob("*")
+        if path.is_file()
+    }
+
+
+def install_plugin_fixture(parent: Path, family: str, version: str, marker: str) -> Path:
+    source = SECRETS if family == "secrets" else RETRO
+    destination = parent / family / version
+    shutil.copytree(source, destination)
+    script = destination / "scripts" / (
+        "hook-mask-output.py" if family == "secrets" else "friction-hook.py"
+    )
+    script.write_text(script.read_text(encoding="utf-8") + f"\n# {marker}\n", encoding="utf-8")
+    return destination
+
+
+def fake_codex(tmp_path: Path) -> Path:
+    executable = tmp_path / "codex"
+    executable.write_text(
+        """#!/usr/bin/env python3
+import os
+import shutil
+import sys
+from pathlib import Path
+
+family = sys.argv[3].split("@", 1)[0]
+home = Path(os.environ["CODEX_HOME"])
+target = home / "plugins/cache/codex-power-pack" / family
+candidate = Path(os.environ["CXPP_TEST_CANDIDATES"]) / family
+shutil.rmtree(target, ignore_errors=True)
+if os.environ.get("CXPP_TEST_FAIL_FAMILY") == family:
+    raise SystemExit(9)
+shutil.copytree(candidate, target)
+print("{}")
+""",
+        encoding="utf-8",
+    )
+    executable.chmod(0o755)
+    return executable
+
+
+def run_transition(
+    home: Path,
+    executable: Path,
+    candidates: Path,
+    *families: str,
+    fail_family: str | None = None,
+) -> subprocess.CompletedProcess[str]:
+    command = [
+        sys.executable,
+        str(TRANSITION),
+        "reinstall",
+        "--codex-home",
+        str(home),
+        "--codex-bin",
+        str(executable),
+    ]
+    for family in families:
+        command.extend(("--family", family))
+    command.append("--approve")
+    env = {**os.environ, "CXPP_TEST_CANDIDATES": str(candidates)}
+    if fail_family is not None:
+        env["CXPP_TEST_FAIL_FAMILY"] = fail_family
+    return subprocess.run(command, capture_output=True, text=True, check=False, env=env)
 
 
 def test_manifests_use_plugin_relative_reviewed_hooks() -> None:
@@ -95,6 +167,126 @@ def test_friction_capture_is_minimized_opt_in_and_fail_open(tmp_path: Path) -> N
     assert invoke(script, "bad", "--event", "UserPromptSubmit", env=env).returncode == 0
 
 
+@pytest.mark.parametrize(
+    ("direction", "active_version", "candidate_version"),
+    (("upgrade", "1.0.0", "2.0.0"), ("rollback", "2.0.0", "1.0.0")),
+)
+def test_hook_roots_survive_upgrade_and_rollback_with_exact_reviewed_bytes(
+    tmp_path: Path,
+    direction: str,
+    active_version: str,
+    candidate_version: str,
+) -> None:
+    home = tmp_path / "home"
+    cache = home / "plugins/cache/codex-power-pack"
+    candidates = tmp_path / "candidates"
+    active_roots = {
+        family: install_plugin_fixture(cache, family, active_version, f"active-{direction}")
+        for family in ("secrets", "self-improvement")
+    }
+    candidate_roots = {
+        family: install_plugin_fixture(candidates, family, candidate_version, f"candidate-{direction}")
+        for family in ("secrets", "self-improvement")
+    }
+    reviewed_payloads = {family: plugin_payload(root) for family, root in active_roots.items()}
+    reviewed_commands = {family: hook_commands(root) for family, root in active_roots.items()}
+
+    preflight = subprocess.run(
+        [
+            sys.executable,
+            str(TRANSITION),
+            "preflight",
+            "--codex-home",
+            str(home),
+            "--family",
+            "secrets",
+            "--family",
+            "self-improvement",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert preflight.returncode == 0
+    assert "reviewed roots to retain: 2" in preflight.stdout
+
+    result = run_transition(
+        home,
+        fake_codex(tmp_path),
+        candidates,
+        "secrets",
+        "self-improvement",
+    )
+    assert result.returncode == 0, result.stderr
+    assert "retained 2 reviewed hook root(s)" in result.stdout
+
+    for family, root in active_roots.items():
+        assert root.is_dir() and not root.is_symlink()
+        assert plugin_payload(root) == reviewed_payloads[family]
+        assert candidate_roots[family].name != root.name
+        installed_candidate = cache / family / candidate_version
+        assert installed_candidate.is_dir() and not installed_candidate.is_symlink()
+        assert plugin_payload(installed_candidate) != reviewed_payloads[family]
+
+    retro_events = json.loads((active_roots["self-improvement"] / "hooks/hooks.json").read_text())["hooks"]
+    assert set(retro_events) == {"PermissionRequest", "PostToolUse", "UserPromptSubmit"}
+    for family, commands in reviewed_commands.items():
+        results = [invoke_hook_command(command, active_roots[family]) for command in commands]
+        assert all(result.returncode == 0 for result in results)
+
+
+def test_failed_reinstall_restores_old_hook_before_returning(tmp_path: Path) -> None:
+    home = tmp_path / "home"
+    cache = home / "plugins/cache/codex-power-pack"
+    candidates = tmp_path / "candidates"
+    active = install_plugin_fixture(cache, "secrets", "1.0.0", "reviewed")
+    install_plugin_fixture(candidates, "secrets", "2.0.0", "candidate")
+    reviewed = plugin_payload(active)
+    command = hook_commands(active)[0]
+
+    result = run_transition(
+        home,
+        fake_codex(tmp_path),
+        candidates,
+        "secrets",
+        fail_family="secrets",
+    )
+    assert result.returncode == 9
+    assert "retained hook roots were restored" in result.stderr
+    assert plugin_payload(active) == reviewed
+    assert invoke_hook_command(command, active).returncode == 0
+    assert not (home / "plugins/.cxpp-hook-retention/codex-power-pack/secrets/1.0.0").exists()
+
+
+def test_external_recovery_recreates_an_evicted_reviewed_root(tmp_path: Path) -> None:
+    home = tmp_path / "home"
+    cache = home / "plugins/cache/codex-power-pack"
+    active = install_plugin_fixture(cache, "secrets", "1.0.0", "reviewed")
+    reviewed = plugin_payload(active)
+    command = hook_commands(active)[0]
+    retained = home / "plugins/.cxpp-hook-retention/codex-power-pack/secrets/1.0.0"
+    shutil.copytree(active, retained)
+    shutil.rmtree(active)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(TRANSITION),
+            "recover",
+            "--codex-home",
+            str(home),
+            "--approve",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert plugin_payload(active) == reviewed
+    assert invoke_hook_command(command, active).returncode == 0
+    assert not retained.exists()
+
+
 def test_missing_hook_scripts_preserve_each_plugins_failure_policy(tmp_path: Path) -> None:
     retro = tmp_path / "self-improvement"
     secrets = tmp_path / "secrets"
@@ -122,8 +314,10 @@ def test_status_documents_changed_untrusted_disabled_and_removal_states() -> Non
     assert "preview-remove" in init and "HELPER remove" in init and "--approve" in init
     assert "preview-remove" in update and "HELPER remove" in update and "--approve" in update
     assert "does not authorize" in init and "does not authorize" in update
-    assert "warn before approval" in update
-    assert "must be restarted" in update
+    assert "preflight" in update
+    assert "byte-identical" in update
+    assert "exact-hash review" in update
+    assert "recover --marketplace codex-power-pack --approve" in update
 
 
 def test_hooks_never_grant_permissions_or_invoke_shipping_actions() -> None:

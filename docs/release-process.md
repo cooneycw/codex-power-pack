@@ -107,11 +107,54 @@ changes; those use separate consent prompts.
    same source with the new immutable `--ref` and complete sparse family union,
    then reinstall the preserved plugin set. This replaces the marketplace
    snapshot, not the already installed plugins.
-4. Reinstall only the selected family plugins with `codex plugin add`.
-5. Confirm the installed plugin versions and marketplace source with
+4. Before approval, run `python3 scripts/cxpp-hook-transition.py preflight`
+   with one `--family` argument per preserved plugin. When `secrets` or
+   `self-improvement` is selected, preview the helper's retained-cache envelope
+   and each `codex plugin add` it will execute. Stop if preflight reports an
+   unfinished recovery snapshot.
+5. When a hook-bearing family is selected, reinstall the complete family union
+   in one process:
+
+   ```bash
+   python3 scripts/cxpp-hook-transition.py reinstall \
+     --marketplace codex-power-pack \
+     --family <family> [--family <family> ...] \
+     --approve
+   ```
+
+   The helper snapshots every existing hook-bearing version, performs the
+   approved reinstalls, and restores each old absolute path with the same bytes
+   before it exits. This lets active sessions finish on their already reviewed
+   hooks while new sessions resolve the new version. Never substitute separate
+   hook-family install commands: eviction of the old Secrets path can block the
+   next in-session recovery command. When no hook-bearing family is selected,
+   use ordinary `codex plugin add` commands.
+6. Confirm the installed plugin versions and marketplace source with
    `codex plugin list --json`.
-6. Run a workflow smoke test for every upgraded family.
-7. Attach the upgrade transcript to the release PR or release notes.
+7. Run a workflow smoke test for every upgraded family. A new Codex session and
+   `/hooks` exact-hash review are required before claiming changed hook bytes are
+   active; sessions started before the transition continue on the retained old
+   bytes and may finish normally.
+8. Attach the upgrade transcript to the release PR or release notes, including
+   the retained/restored root count and whether recovery snapshots remain.
+
+### Hook-transition recovery
+
+Normal command failures, SIGINT, and SIGTERM restore retained roots before the
+helper returns. A hard process or host failure can leave a snapshot under the
+Codex plugin retention directory. From an external terminal, run the same
+`preflight` command and review its recovery count, then run:
+
+```bash
+python3 scripts/cxpp-hook-transition.py recover \
+  --marketplace codex-power-pack \
+  --approve
+```
+
+Recovery recreates only missing old roots and verifies their tree digests. Do
+not manually rebuild the cache or symlink an old reviewed path to a new version;
+that would execute different hook bytes without a new `/hooks` review. Use the
+external terminal when the active Secrets hook blocks commands in Codex.
 
 The transcript should be created from a fresh Codex config for release
 acceptance so cached state does not hide install defects.
@@ -148,5 +191,7 @@ Every release note must preserve:
 
 If adding the new marketplace snapshot fails after the previewed source
 replacement, re-add the previous immutable ref and reinstall the recorded
-family union. Starting a new Codex session remains required after either
-upgrade or rollback.
+family union through the same hook-transition helper. Upgrade and rollback have
+the same retention boundary: old sessions keep their exact prior hook bytes,
+and a new Codex session plus `/hooks` review is required to activate the target
+version's hook bytes.
