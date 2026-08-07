@@ -10,7 +10,7 @@ authoritative implementation. CPP adoption is tracked by
 
 ## Version and entry points
 
-Contract version `1.1` accepts a structured `RepositoryState` and emits a
+Contract version `1.2` accepts a structured `RepositoryState` and emits a
 structured `RecommendationResult`. Run it from a CxPP checkout with:
 
 ```bash
@@ -24,8 +24,8 @@ drift from the authoritative `lib/project_next/` package.
 ## Input contract
 
 Repository state includes open issues, open pull requests, local and remote
-branches, worktrees and dirtiness, review/check/merge state, stable Spec Kit
-ledger mappings, collection warnings, and whether the inventory is
+branches, worktrees, recent commits and dirtiness, review/check/merge state,
+Spec Kit file readiness and stable ledger mappings, collection warnings, and whether the inventory is
 complete. Fixture JSON can supply the same model without git, GitHub, or an LLM.
 
 The live collector performs batched GitHub queries. Authentication, rate-limit,
@@ -82,15 +82,26 @@ be the top action while a different issue is the safe next issue to start.
 
 - `--json` emits the complete versioned result and is authoritative.
 - `--brief` shows the top action, next safe issue, and inventory confidence.
-- compact mode adds state counts, alternatives, active, blocked, uncertain, and
-  warning sections.
-- `--full` adds exhaustive classifications, pull requests, worktrees, and
-  unsynchronized specification tasks.
+- compact mode shows at most three safe candidates. Each candidate carries its
+  priority, phase/wave, issue type, quick-win signal, stable rank tuple,
+  deterministic rationale, and `$flow-auto` command. Active, blocked,
+  uncertain, and critical non-startable work stays visibly separate.
+- `--full` adds mutually assigned operational tiers, categorized backlog counts,
+  pull requests, Spec Kit file and mapping readiness, worktrees with their
+  already-collected recent commits, and cleanup candidates for worktrees or
+  branches that do not map to an open issue.
+
+`RecommendationResult` owns all presentation decisions through structured
+`candidates`, `backlog_summary`, `backlog_tiers`, `spec_features`,
+`worktree_details`, and `cleanup_candidates` fields. Renderers format those
+fields and do not parse issue prose, classify work, or re-rank candidates.
+Incomplete inventory produces no candidates or startable tiers even when the
+partial inventory contains apparently available issues.
 
 Spec Kit work is represented only by the `spec-sync:v1` Issue Sync ledger.
 Task-ID searches in issue titles or bodies are not synchronization evidence.
 Missing mappings produce `sync_spec`; stale or ambiguous identities produce
 `resolve_spec_mapping`. Neither state is silently treated as completed work.
 
-All modes name the `1.1` contract. Missing prerequisites and incomplete state
+All modes name the `1.2` contract. Missing prerequisites and incomplete state
 are explicit failure states; they never become a confident recommendation.

@@ -5,11 +5,22 @@ from __future__ import annotations
 import re
 from datetime import datetime, timezone
 
-from .classify import classify_repository, pull_request_issue_numbers
+from .classify import classify_repository, issue_number_from_branch, pull_request_issue_numbers
 from .config import ProjectNextConfig
-from .models import Action, Classification, Issue, RecommendationResult, RepositoryState
+from .models import (
+    Action,
+    BacklogSummary,
+    BacklogTiers,
+    Candidate,
+    Classification,
+    CleanupCandidate,
+    Issue,
+    RecommendationResult,
+    RepositoryState,
+    WorktreeDetail,
+)
 
-CONTRACT_VERSION = "1.1"
+CONTRACT_VERSION = "1.2"
 PHASE = re.compile(r"\b(?:wave|phase)[-\s:]*(?P<number>\d+)\b", re.IGNORECASE)
 
 
@@ -73,6 +84,67 @@ def rank_key(issue: Issue, state: RepositoryState, config: ProjectNextConfig) ->
         quick_win,
         _staleness(issue, state, config),
         issue.number,
+    )
+
+
+def _is_critical(issue: Issue, config: ProjectNextConfig) -> bool:
+    labels = issue.normalized_labels
+    return bool(labels & set(config.critical_labels) or ("bug" in labels and _priority(issue, config) == 0))
+
+
+def _priority_evidence(issue: Issue, config: ProjectNextConfig) -> str:
+    labels = issue.normalized_labels
+    matched = sorted(labels & set(config.high_priority_labels))
+    if matched:
+        return f"high ({matched[0]})"
+    matched = sorted(labels & set(config.medium_priority_labels))
+    if matched:
+        return f"medium ({matched[0]})"
+    return "default"
+
+
+def _phase_evidence(issue: Issue) -> str:
+    phase = _phase(issue)
+    return f"wave/phase {phase}" if phase < 10_000 else "unspecified"
+
+
+def _type_evidence(issue: Issue, config: ProjectNextConfig) -> str:
+    labels = issue.normalized_labels
+    title = issue.title.casefold()
+    if labels & set(config.planning_labels) or re.search(r"\b(?:epic|tracking|planning)\b", title):
+        return "planning"
+    if "bug" in labels or re.search(r"\bfix\b", title):
+        return "bug"
+    if "task" in labels or re.search(r"\b(?:restore|implement)\b", title):
+        return "task"
+    if labels & set(config.quick_win_labels):
+        return "quick-win"
+    return "feature"
+
+
+def _candidate(issue: Issue, state: RepositoryState, config: ProjectNextConfig) -> Candidate:
+    critical = _is_critical(issue, config)
+    priority = _priority_evidence(issue, config)
+    phase = _phase_evidence(issue)
+    issue_type = _type_evidence(issue, config)
+    quick_win = bool(issue.normalized_labels & set(config.quick_win_labels))
+    stale = _staleness(issue, state, config) == 0
+    evidence = ["critical" if critical else priority, phase, issue_type]
+    if quick_win and issue_type != "quick-win":
+        evidence.append("quick win")
+    if stale:
+        evidence.append("stale")
+    return Candidate(
+        issue_number=issue.number,
+        rank_key=rank_key(issue, state, config),
+        priority=priority,
+        phase=phase,
+        issue_type=issue_type,
+        quick_win=quick_win,
+        critical=critical,
+        stale=stale,
+        rationale="; ".join(evidence) + "; ordered by the deterministic rank tuple",
+        command=f"$flow-auto {issue.number}",
     )
 
 
@@ -214,6 +286,154 @@ def _top_action(
     return None
 
 
+def _backlog_summary(issues: tuple[Issue, ...], config: ProjectNextConfig) -> BacklogSummary:
+    counts = {
+        "critical": 0,
+        "bugs": 0,
+        "features": 0,
+        "docs": 0,
+        "tech_debt": 0,
+        "planning": 0,
+        "other": 0,
+    }
+    for issue in issues:
+        labels = issue.normalized_labels
+        title = issue.title.casefold()
+        if _is_critical(issue, config):
+            category = "critical"
+        elif "bug" in labels or re.search(r"\bfix\b", title):
+            category = "bugs"
+        elif labels & {"documentation", "docs"}:
+            category = "docs"
+        elif labels & {"tech-debt", "technical-debt", "chore", "refactor"}:
+            category = "tech_debt"
+        elif labels & set(config.planning_labels) or re.search(r"\b(?:epic|tracking|planning)\b", title):
+            category = "planning"
+        elif labels & {"feature", "enhancement"} or re.search(r"\bfeat(?:ure)?\b", title):
+            category = "features"
+        else:
+            category = "other"
+        counts[category] += 1
+    return BacklogSummary(open=len(issues), **counts)
+
+
+def _backlog_tiers(
+    state: RepositoryState,
+    classification: Classification,
+    ranked: tuple[int, ...],
+    config: ProjectNextConfig,
+) -> BacklogTiers:
+    issues = {issue.number: issue for issue in state.issues}
+    critical = tuple(number for number in sorted(issues) if _is_critical(issues[number], config))
+    critical_set = set(critical)
+    active = tuple(number for number in classification.in_flight if number not in critical_set)
+    blocked = tuple(number for number in classification.blocked if number not in critical_set)
+    uncertain = tuple(number for number in classification.uncertain if number not in critical_set)
+    safe_inventory = state.inventory_complete and not state.collector_errors
+    available = [number for number in ranked if number not in critical_set] if safe_inventory else []
+    planning = tuple(number for number in available if _type_evidence(issues[number], config) == "planning")
+    planning_set = set(planning)
+    quick_wins = tuple(
+        number
+        for number in available
+        if number not in planning_set and bool(issues[number].normalized_labels & set(config.quick_win_labels))
+    )
+    quick_win_set = set(quick_wins)
+    ready = tuple(number for number in available if number not in (planning_set | quick_win_set))
+    pending_spec_sync = tuple(
+        feature.name for feature in state.spec_features if feature.recommended_action != "none"
+    )
+    return BacklogTiers(
+        critical=critical,
+        active=active,
+        blocked=blocked,
+        uncertain=uncertain,
+        ready=ready,
+        quick_wins=quick_wins,
+        planning=planning,
+        pending_spec_sync=pending_spec_sync,
+    )
+
+
+def _issue_state(number: int | None, state: RepositoryState, classification: Classification) -> str:
+    if number is None:
+        return "unmapped"
+    if number in classification.in_flight:
+        return "in-flight"
+    if number in classification.blocked:
+        return "blocked"
+    if number in classification.available:
+        return "available"
+    if number in classification.uncertain:
+        return "uncertain"
+    if number in {issue.number for issue in state.issues}:
+        return "unknown"
+    return "no-open-issue"
+
+
+def _worktree_report(
+    state: RepositoryState, classification: Classification
+) -> tuple[tuple[WorktreeDetail, ...], tuple[CleanupCandidate, ...]]:
+    details: list[WorktreeDetail] = []
+    cleanup: list[CleanupCandidate] = []
+    worktree_branches: set[str] = set()
+    for worktree in state.worktrees:
+        number = issue_number_from_branch(worktree.branch)
+        primary = worktree.branch == state.default_branch
+        issue_state = "default" if primary else _issue_state(number, state, classification)
+        cleanup_recommended = not primary and issue_state in {"unmapped", "no-open-issue"}
+        cleanup_reason = ""
+        if cleanup_recommended:
+            cleanup_reason = "branch does not map to an open issue; it may be merged, closed, or abandoned"
+            action = (
+                "Inspect uncommitted changes; do not remove automatically"
+                if worktree.dirty
+                else "Review with $flow-cleanup"
+            )
+            cleanup.append(
+                CleanupCandidate(
+                    target_type="worktree",
+                    target=worktree.path,
+                    branch=worktree.branch,
+                    issue_number=number,
+                    reason=cleanup_reason,
+                    action=action,
+                )
+            )
+        details.append(
+            WorktreeDetail(
+                path=worktree.path,
+                branch=worktree.branch,
+                issue_number=number,
+                issue_state=issue_state,
+                dirty=worktree.dirty,
+                recent_commits=worktree.recent_commits,
+                cleanup_recommended=cleanup_recommended,
+                cleanup_reason=cleanup_reason,
+            )
+        )
+        if worktree.branch:
+            worktree_branches.add(worktree.branch)
+
+    for branch in state.branches:
+        short_name = branch.name.removeprefix("remotes/").removeprefix("origin/")
+        if short_name == state.default_branch or short_name in worktree_branches:
+            continue
+        number = issue_number_from_branch(short_name)
+        if number is not None and _issue_state(number, state, classification) != "no-open-issue":
+            continue
+        cleanup.append(
+            CleanupCandidate(
+                target_type="remote branch" if branch.remote else "branch",
+                target=branch.name,
+                branch=short_name,
+                issue_number=number,
+                reason="branch does not map to an open issue; verify whether it is merged or abandoned",
+            )
+        )
+    return tuple(details), tuple(cleanup)
+
+
 def recommend(state: RepositoryState, config: ProjectNextConfig | None = None) -> RecommendationResult:
     config = config or ProjectNextConfig()
     classification = classify_repository(state)
@@ -230,6 +450,12 @@ def recommend(state: RepositoryState, config: ProjectNextConfig | None = None) -
     warnings = tuple(state.collector_warnings) + tuple(state.collector_errors)
     if classification.unmapped_worktrees:
         warnings += tuple(f"unmapped worktree: {item}" for item in classification.unmapped_worktrees)
+    candidates = (
+        tuple(_candidate(issues[number], state, config) for number in ranked)
+        if next_startable is not None
+        else ()
+    )
+    worktree_details, cleanup_candidates = _worktree_report(state, classification)
     return RecommendationResult(
         contract_version=CONTRACT_VERSION,
         repository=state.repository,
@@ -239,5 +465,11 @@ def recommend(state: RepositoryState, config: ProjectNextConfig | None = None) -
         top_action=_top_action(state, classification, ranked, config),
         next_startable_issue=next_startable,
         unsynchronized_spec_tasks=pending,
+        candidates=candidates,
+        backlog_summary=_backlog_summary(state.issues, config),
+        backlog_tiers=_backlog_tiers(state, classification, ranked, config),
+        spec_features=state.spec_features,
+        worktree_details=worktree_details,
+        cleanup_candidates=cleanup_candidates,
         warnings=warnings,
     )

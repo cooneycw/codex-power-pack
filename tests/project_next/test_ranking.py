@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from lib.project_next.models import Issue, RepositoryState, SpecTask
+from lib.project_next.models import Issue, RepositoryState, SpecTask, Worktree
 from lib.project_next.rank import recommend
 
 
@@ -83,3 +83,66 @@ def test_missing_mapping_recommends_spec_sync_group() -> None:
     assert result.top_action is not None
     assert result.top_action.kind == "sync_spec"
     assert "stage-1" in result.top_action.title
+
+
+def test_operational_report_keeps_critical_blocked_work_out_of_startable_tiers(
+    project_next_scenarios: dict[str, Any],
+) -> None:
+    state = RepositoryState.from_dict(project_next_scenarios["operational_report"]["state"])
+
+    result = recommend(state)
+
+    assert [candidate.issue_number for candidate in result.candidates] == [3, 4, 5]
+    assert result.candidates[0].priority == "high (p1)"
+    assert result.candidates[0].phase == "wave/phase 1"
+    assert result.candidates[0].command == "$flow-auto 3"
+    assert result.backlog_tiers.critical == (1,)
+    assert result.backlog_tiers.active == (2,)
+    assert result.backlog_tiers.ready == (3,)
+    assert result.backlog_tiers.quick_wins == (4,)
+    assert result.backlog_tiers.planning == (5,)
+    assert result.backlog_tiers.uncertain == (6,)
+    assert 1 not in {candidate.issue_number for candidate in result.candidates}
+
+
+def test_incomplete_inventory_exposes_no_startable_candidates_or_tiers(
+    project_next_scenarios: dict[str, Any],
+) -> None:
+    state = RepositoryState.from_dict(project_next_scenarios["incomplete_inventory"]["state"])
+
+    result = recommend(state)
+
+    assert result.candidates == ()
+    assert result.backlog_tiers.ready == ()
+    assert result.backlog_tiers.quick_wins == ()
+    assert result.backlog_tiers.planning == ()
+
+
+def test_worktree_report_maps_active_work_and_marks_only_unmapped_cleanup(
+    project_next_scenarios: dict[str, Any],
+) -> None:
+    state = RepositoryState.from_dict(project_next_scenarios["operational_report"]["state"])
+
+    result = recommend(state)
+
+    details = {worktree.branch: worktree for worktree in result.worktree_details}
+    assert details["issue-2-active-foundation"].issue_state == "in-flight"
+    assert details["issue-2-active-foundation"].recent_commits == ("bbb active work", "aaa main commit")
+    assert details["issue-99-old-work"].cleanup_recommended is True
+    assert {(item.target_type, item.target) for item in result.cleanup_candidates} == {
+        ("worktree", "/repo-issue-99"),
+        ("remote branch", "origin/issue-88-abandoned"),
+    }
+
+
+def test_dirty_unmapped_worktree_cleanup_requires_inspection() -> None:
+    state = RepositoryState(
+        repository="example/repo",
+        default_branch="main",
+        collected_at="2026-08-07T13:00:00Z",
+        worktrees=(Worktree("/repo-topic", "topic", dirty=True),),
+    )
+
+    candidate = recommend(state).cleanup_candidates[0]
+
+    assert candidate.action == "Inspect uncommitted changes; do not remove automatically"

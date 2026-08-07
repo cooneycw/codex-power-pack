@@ -169,5 +169,117 @@
       "available": [701],
       "uncertain": []
     }
+  },
+  "empty_repository": {
+    "state": {
+      "repository": "example/empty",
+      "default_branch": "main",
+      "collected_at": "2026-08-07T13:00:00Z"
+    },
+    "expected": {
+      "top_action": null,
+      "top_issue": null,
+      "next_startable": null,
+      "in_flight": [],
+      "blocked": [],
+      "available": [],
+      "uncertain": []
+    }
+  },
+  "operational_report": {
+    "state": {
+      "repository": "example/operations",
+      "default_branch": "main",
+      "collected_at": "2026-08-07T13:00:00Z",
+      "issues": [
+        {
+          "number": 1,
+          "title": "Critical security repair",
+          "body": "Blocked by #2",
+          "labels": ["security", "p0"]
+        },
+        {"number": 2, "title": "Active foundation", "labels": ["p1", "task"]},
+        {"number": 3, "title": "Wave 1 feature", "labels": ["p1", "feature"]},
+        {"number": 4, "title": "Document setup", "labels": ["documentation", "size-s"]},
+        {"number": 5, "title": "Planning epic", "labels": ["planning"]},
+        {"number": 6, "title": "Choose storage", "body": "Blocked by design review"}
+      ],
+      "pull_requests": [
+        {
+          "number": 20,
+          "title": "Build active foundation",
+          "head_ref": "issue-2-active-foundation",
+          "closing_issue_numbers": [2],
+          "checks_state": "pending",
+          "merge_state": "BLOCKED"
+        }
+      ],
+      "worktrees": [
+        {
+          "path": "/repo",
+          "branch": "main",
+          "dirty": false,
+          "recent_commits": ["aaa main commit"]
+        },
+        {
+          "path": "/repo-issue-2",
+          "branch": "issue-2-active-foundation",
+          "dirty": true,
+          "recent_commits": ["bbb active work", "aaa main commit"]
+        },
+        {
+          "path": "/repo-issue-99",
+          "branch": "issue-99-old-work",
+          "dirty": false,
+          "recent_commits": ["ccc old work"]
+        }
+      ],
+      "branches": [
+        {"name": "main", "upstream": "origin/main"},
+        {"name": "issue-2-active-foundation", "upstream": "origin/issue-2-active-foundation"},
+        {"name": "issue-99-old-work"},
+        {"name": "origin/issue-88-abandoned", "remote": true}
+      ],
+      "spec_tasks": [
+        {
+          "task_id": "T001",
+          "title": "Mapped task",
+          "feature": "checkout",
+          "source": ".specify/specs/checkout/tasks.md",
+          "issue_numbers": [3],
+          "synchronized": true,
+          "mapping_status": "mapped"
+        },
+        {
+          "task_id": "T002",
+          "title": "Pending task",
+          "feature": "checkout",
+          "source": ".specify/specs/checkout/tasks.md",
+          "mapping_status": "missing"
+        }
+      ],
+      "spec_features": [
+        {
+          "name": "checkout",
+          "path": ".specify/specs/checkout",
+          "has_spec": true,
+          "has_plan": true,
+          "has_tasks": true,
+          "total_tasks": 2,
+          "mapped_tasks": 1,
+          "mapping_status": "partial",
+          "recommended_action": "sync remaining tasks to issues"
+        }
+      ]
+    },
+    "expected": {
+      "top_action": "continue_pr",
+      "top_issue": 2,
+      "next_startable": 3,
+      "in_flight": [2],
+      "blocked": [1],
+      "available": [3, 4, 5],
+      "uncertain": [6]
+    }
   }
 }

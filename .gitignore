@@ -56,6 +56,7 @@ desktop.ini
 !.agents/skill-contracts.schema.json
 !.agents/skill-evaluation-cases.json
 !.agents/skill-evaluation-cases.schema.json
+!tests/project_next/fixtures/golden/result.json
 !.agents/skill-evaluation-output.schema.json
 !.agents/skill-invocation-policy.json
 !.agents/skill-invocation-policy.schema.json

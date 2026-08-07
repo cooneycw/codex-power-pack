@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from lib.project_next.collect import CollectionError, _spec_tasks, collect_repository
+from lib.project_next.collect import CollectionError, _spec_inventory, _spec_tasks, collect_repository
 from lib.project_next.config import ProjectNextConfig
 
 
@@ -156,3 +156,33 @@ def test_missing_stale_and_ambiguous_spec_mappings_are_uncertain(tmp_path: Path)
     assert tasks["T002"].mapping_status == "ambiguous"
     assert tasks["T003"].mapping_status == "missing"
     assert len(warnings) == 3
+
+
+def test_spec_inventory_reports_file_readiness_and_partial_sync(tmp_path: Path) -> None:
+    feature = tmp_path / ".specify" / "specs" / "checkout"
+    feature.mkdir(parents=True)
+    (feature / "spec.md").write_text("# Checkout\n")
+    (feature / "plan.md").write_text("# Plan\n")
+    source = ".specify/specs/checkout/tasks.md"
+    identity = f"spec-sync:v1:example/repo:{source}:stage-1"
+    (feature / "tasks.md").write_text(
+        f"""- [ ] **T001** Implement checkout.
+- [ ] **T002** Test checkout.
+
+| Stable identity | Granularity | Group | Tasks | Issue | URL | State |
+|---|---|---|---|---:|---|---|
+| `{identity}` | stage | `stage-1` | T001 | #42 | https://github.com/example/repo/issues/42 | OPEN |
+"""
+    )
+    warnings: list[str] = []
+
+    tasks, features = _spec_inventory(tmp_path, "example/repo", warnings)
+
+    assert [task.mapping_status for task in tasks] == ["mapped", "missing"]
+    assert len(warnings) == 1
+    assert len(features) == 1
+    readiness = features[0]
+    assert (readiness.has_spec, readiness.has_plan, readiness.has_tasks) == (True, True, True)
+    assert (readiness.mapped_tasks, readiness.total_tasks) == (1, 2)
+    assert readiness.mapping_status == "partial"
+    assert readiness.recommended_action == "sync remaining tasks to issues"
