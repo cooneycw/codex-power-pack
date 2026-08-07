@@ -6002,7 +6002,7 @@
     {
       "source_skill": "cxpp-update",
       "path": "plugins/cxpp/skills/cxpp-update/SKILL.md",
-      "line": 55,
+      "line": 60,
       "token": "$cxpp-status",
       "kind": "skill",
       "target": "cxpp-status",

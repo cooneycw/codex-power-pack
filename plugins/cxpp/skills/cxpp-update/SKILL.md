@@ -46,7 +46,12 @@ retain their existing individual prompts.
    the ref changes, preview the bounded `codex plugin marketplace remove
    codex-power-pack --json` followed immediately by the pinned `marketplace
    add` and plugin reinstalls. This replaces only the marketplace snapshot;
-   it does not remove installed plugins or authorize any other deletion.
+   it does not remove installed plugins or authorize any other deletion. When
+   the ref changes and the update includes either hook-bearing family,
+   `secrets` or `self-improvement`, warn before approval that replacing its
+   versioned plugin directory can disrupt every running Codex session that
+   loaded those hooks. Tell the operator to finish or restart affected sessions
+   before applying the update.
 4. After explicit approval, expand an unchanged sparse marketplace snapshot,
    or perform the previewed marketplace-source replacement when the ref
    changes, then reinstall every preserved/selected family at the new snapshot.
@@ -70,8 +75,11 @@ retain their existing individual prompts.
 8. Re-run `codex execpolicy check` before adding or changing any rule. Plugin
    installation does not authorize hook trust or enablement; use `/hooks` for
    exact-hash review, and require a new review whenever a hook changes.
-9. Re-run the non-secret MCP checks and report whether a fresh Codex session is
-   needed. Do not manage the lifecycle of an external host service.
+9. Re-run the non-secret MCP checks. If `secrets` or `self-improvement` changed,
+   report that every Codex session started before the update must be restarted
+   to load the new hook paths; do not describe that restart as optional. Report
+   whether a fresh session is needed for other changes. Do not manage the
+   lifecycle of an external host service.
 
 ## Report
 
