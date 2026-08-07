@@ -142,6 +142,33 @@ class SpecTask:
 
 
 @dataclass(frozen=True)
+class SpecFeature:
+    name: str
+    path: str
+    has_spec: bool = False
+    has_plan: bool = False
+    has_tasks: bool = False
+    total_tasks: int = 0
+    mapped_tasks: int = 0
+    mapping_status: str = "not-applicable"
+    recommended_action: str = "none"
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> SpecFeature:
+        return cls(
+            name=str(data["name"]),
+            path=str(data.get("path") or ""),
+            has_spec=bool(data.get("has_spec", False)),
+            has_plan=bool(data.get("has_plan", False)),
+            has_tasks=bool(data.get("has_tasks", False)),
+            total_tasks=int(data.get("total_tasks", 0)),
+            mapped_tasks=int(data.get("mapped_tasks", 0)),
+            mapping_status=str(data.get("mapping_status") or "not-applicable"),
+            recommended_action=str(data.get("recommended_action") or "none"),
+        )
+
+
+@dataclass(frozen=True)
 class RepositoryState:
     repository: str
     default_branch: str
@@ -151,6 +178,7 @@ class RepositoryState:
     worktrees: tuple[Worktree, ...] = ()
     branches: tuple[Branch, ...] = ()
     spec_tasks: tuple[SpecTask, ...] = ()
+    spec_features: tuple[SpecFeature, ...] = ()
     gate_status: str = "unknown"
     inventory_complete: bool = True
     collector_warnings: tuple[str, ...] = ()
@@ -167,6 +195,7 @@ class RepositoryState:
             worktrees=tuple(Worktree.from_dict(item) for item in data.get("worktrees", ())),
             branches=tuple(Branch.from_dict(item) for item in data.get("branches", ())),
             spec_tasks=tuple(SpecTask.from_dict(item) for item in data.get("spec_tasks", ())),
+            spec_features=tuple(SpecFeature.from_dict(item) for item in data.get("spec_features", ())),
             gate_status=str(data.get("gate_status") or "unknown"),
             inventory_complete=bool(data.get("inventory_complete", True)),
             collector_warnings=_tuple_of_strings(data.get("collector_warnings")),
@@ -207,6 +236,66 @@ class Action:
 
 
 @dataclass(frozen=True)
+class Candidate:
+    issue_number: int
+    rank_key: tuple[int, ...]
+    priority: str
+    phase: str
+    issue_type: str
+    quick_win: bool
+    critical: bool
+    stale: bool
+    rationale: str
+    command: str
+
+
+@dataclass(frozen=True)
+class BacklogSummary:
+    open: int = 0
+    critical: int = 0
+    bugs: int = 0
+    features: int = 0
+    docs: int = 0
+    tech_debt: int = 0
+    planning: int = 0
+    other: int = 0
+
+
+@dataclass(frozen=True)
+class BacklogTiers:
+    critical: tuple[int, ...] = ()
+    active: tuple[int, ...] = ()
+    blocked: tuple[int, ...] = ()
+    uncertain: tuple[int, ...] = ()
+    ready: tuple[int, ...] = ()
+    quick_wins: tuple[int, ...] = ()
+    planning: tuple[int, ...] = ()
+    pending_spec_sync: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class WorktreeDetail:
+    path: str
+    branch: str
+    issue_number: int | None
+    issue_state: str
+    dirty: bool
+    recent_commits: tuple[str, ...] = ()
+    cleanup_recommended: bool = False
+    cleanup_reason: str = ""
+
+
+@dataclass(frozen=True)
+class CleanupCandidate:
+    target_type: str
+    target: str
+    branch: str
+    issue_number: int | None
+    reason: str
+    action: str = "Review with $flow-cleanup"
+
+
+@dataclass(frozen=True)
 class RecommendationResult:
     contract_version: str
     repository: str
@@ -216,6 +305,12 @@ class RecommendationResult:
     top_action: Action | None
     next_startable_issue: int | None
     unsynchronized_spec_tasks: tuple[SpecTask, ...] = ()
+    candidates: tuple[Candidate, ...] = ()
+    backlog_summary: BacklogSummary = field(default_factory=BacklogSummary)
+    backlog_tiers: BacklogTiers = field(default_factory=BacklogTiers)
+    spec_features: tuple[SpecFeature, ...] = ()
+    worktree_details: tuple[WorktreeDetail, ...] = ()
+    cleanup_candidates: tuple[CleanupCandidate, ...] = ()
     warnings: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:

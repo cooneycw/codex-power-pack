@@ -175,7 +175,9 @@ CxPP-owned native adapter backed by the deterministic, harness-neutral
 `lib/project_next/` engine and [versioned behavioral contract](docs/project-next-contract.md).
 It returns both the top action now and the next new issue that is safe to start;
 brief, compact, full, and structured JSON modes share the same classification
-and ranking result. Refreshes preserve this adapter when CPP generates a skill
+and ranking result. Compact output explains up to three safe candidates; full
+output adds tiered backlog, Spec Kit readiness, detailed worktrees, and cleanup
+guidance from the same structured result. Refreshes preserve this adapter when CPP generates a skill
 with the same name, without preserving a competing prompt-only decision policy.
 
 **Do not hand-edit generated skill dirs.** The drift gate (`make codex-skills-check`)

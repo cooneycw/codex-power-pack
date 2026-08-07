@@ -49,7 +49,12 @@ or repository/authentication suggestion.
 - Failing checks or requested review changes on active work outrank broad new
   work.
 - Unsynchronized spec tasks are surfaced but are not treated as GitHub issues.
-- Structured JSON and brief/compact/full renderers use contract version `1.1`.
+- Structured JSON and brief/compact/full renderers use contract version `1.2`.
+- Compact output shows at most three safe candidates with structured rank evidence,
+  a deterministic rationale, and a copyable `$flow-auto <issue>` command.
+- Full output adds categorized and tiered backlog state, Spec Kit readiness,
+  recent worktree commits, and evidence-based cleanup candidates. Renderers only
+  format engine-owned fields; they never reclassify or re-rank issues.
 - Spec Kit synchronization is trusted only through `spec-sync:v1` Issue Sync
   ledger mappings. Missing, stale, or ambiguous mappings remain explicit
   uncertainty and never make represented work appear safely startable.

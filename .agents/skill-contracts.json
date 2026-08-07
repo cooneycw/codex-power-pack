@@ -13,7 +13,7 @@
     "unpackaged_skills": 10,
     "marketplace_plugins": 16,
     "implicit_skills": 2,
-    "references": 654,
+    "references": 655,
     "unexplained_references": 0
   },
   "marketplace": {
@@ -2904,7 +2904,9 @@
           "state": "display_only"
         }
       ],
-      "dependencies": [],
+      "dependencies": [
+        "flow-auto"
+      ],
       "exclusion": {
         "state": "not_excluded",
         "owner": null,
@@ -10010,19 +10012,19 @@
       "id": "REF-0552"
     },
     {
-      "source_skill": "qa-help",
-      "path": "plugins/qa/skills/qa-help/SKILL.md",
-      "line": 8,
-      "token": "$qa-test",
+      "source_skill": "project-next",
+      "path": "plugins/project/skills/project-next/SKILL.md",
+      "line": 54,
+      "token": "$flow-auto",
       "kind": "skill",
-      "target": "qa-test",
+      "target": "flow-auto",
       "classification": "resolvable",
       "id": "REF-0553"
     },
     {
       "source_skill": "qa-help",
       "path": "plugins/qa/skills/qa-help/SKILL.md",
-      "line": 14,
+      "line": 8,
       "token": "$qa-test",
       "kind": "skill",
       "target": "qa-test",
@@ -10032,12 +10034,22 @@
     {
       "source_skill": "qa-help",
       "path": "plugins/qa/skills/qa-help/SKILL.md",
+      "line": 14,
+      "token": "$qa-test",
+      "kind": "skill",
+      "target": "qa-test",
+      "classification": "resolvable",
+      "id": "REF-0555"
+    },
+    {
+      "source_skill": "qa-help",
+      "path": "plugins/qa/skills/qa-help/SKILL.md",
       "line": 15,
       "token": "$github-issue-create",
       "kind": "skill",
       "target": "github-issue-create",
       "classification": "resolvable",
-      "id": "REF-0555"
+      "id": "REF-0556"
     },
     {
       "source_skill": "qa-help",
@@ -10047,7 +10059,7 @@
       "kind": "skill",
       "target": "cxpp-init",
       "classification": "resolvable",
-      "id": "REF-0556"
+      "id": "REF-0557"
     },
     {
       "source_skill": "qa-test",
@@ -10057,7 +10069,7 @@
       "kind": "skill",
       "target": "github-issue-create",
       "classification": "resolvable",
-      "id": "REF-0557"
+      "id": "REF-0558"
     },
     {
       "source_skill": "second-opinion-help",
@@ -10067,7 +10079,7 @@
       "kind": "skill",
       "target": "second-opinion-start",
       "classification": "resolvable",
-      "id": "REF-0558"
+      "id": "REF-0559"
     },
     {
       "source_skill": "second-opinion-help",
@@ -10077,7 +10089,7 @@
       "kind": "skill",
       "target": "second-opinion-models",
       "classification": "resolvable",
-      "id": "REF-0559"
+      "id": "REF-0560"
     },
     {
       "source_skill": "second-opinion-help",
@@ -10087,7 +10099,7 @@
       "kind": "skill",
       "target": "evaluate-issue",
       "classification": "resolvable",
-      "id": "REF-0560"
+      "id": "REF-0561"
     },
     {
       "source_skill": "second-opinion-help",
@@ -10097,7 +10109,7 @@
       "kind": "skill",
       "target": "cxpp-init",
       "classification": "resolvable",
-      "id": "REF-0561"
+      "id": "REF-0562"
     },
     {
       "source_skill": "second-opinion-models",
@@ -10107,7 +10119,7 @@
       "kind": "skill",
       "target": "second-opinion-start",
       "classification": "resolvable",
-      "id": "REF-0562"
+      "id": "REF-0563"
     },
     {
       "source_skill": "second-opinion-models",
@@ -10117,7 +10129,7 @@
       "kind": "skill",
       "target": "evaluate-issue",
       "classification": "resolvable",
-      "id": "REF-0563"
+      "id": "REF-0564"
     },
     {
       "source_skill": "second-opinion-start",
@@ -10127,7 +10139,7 @@
       "kind": "skill",
       "target": "second-opinion-help",
       "classification": "resolvable",
-      "id": "REF-0564"
+      "id": "REF-0565"
     },
     {
       "source_skill": "secrets-delete",
@@ -10137,7 +10149,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0565"
+      "id": "REF-0566"
     },
     {
       "source_skill": "secrets-delete",
@@ -10147,7 +10159,7 @@
       "kind": "skill",
       "target": "secrets-delete",
       "classification": "resolvable",
-      "id": "REF-0566"
+      "id": "REF-0567"
     },
     {
       "source_skill": "secrets-get",
@@ -10157,7 +10169,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0567"
+      "id": "REF-0568"
     },
     {
       "source_skill": "secrets-get",
@@ -10167,7 +10179,7 @@
       "kind": "skill",
       "target": "secrets-get",
       "classification": "resolvable",
-      "id": "REF-0568"
+      "id": "REF-0569"
     },
     {
       "source_skill": "secrets-help",
@@ -10177,7 +10189,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0569"
+      "id": "REF-0570"
     },
     {
       "source_skill": "secrets-help",
@@ -10187,7 +10199,7 @@
       "kind": "skill",
       "target": "secrets-get",
       "classification": "resolvable",
-      "id": "REF-0570"
+      "id": "REF-0571"
     },
     {
       "source_skill": "secrets-help",
@@ -10197,7 +10209,7 @@
       "kind": "skill",
       "target": "secrets-set",
       "classification": "resolvable",
-      "id": "REF-0571"
+      "id": "REF-0572"
     },
     {
       "source_skill": "secrets-help",
@@ -10207,7 +10219,7 @@
       "kind": "skill",
       "target": "secrets-delete",
       "classification": "resolvable",
-      "id": "REF-0572"
+      "id": "REF-0573"
     },
     {
       "source_skill": "secrets-help",
@@ -10217,7 +10229,7 @@
       "kind": "skill",
       "target": "secrets-list",
       "classification": "resolvable",
-      "id": "REF-0573"
+      "id": "REF-0574"
     },
     {
       "source_skill": "secrets-help",
@@ -10227,7 +10239,7 @@
       "kind": "skill",
       "target": "secrets-run",
       "classification": "resolvable",
-      "id": "REF-0574"
+      "id": "REF-0575"
     },
     {
       "source_skill": "secrets-help",
@@ -10237,7 +10249,7 @@
       "kind": "skill",
       "target": "secrets-validate",
       "classification": "resolvable",
-      "id": "REF-0575"
+      "id": "REF-0576"
     },
     {
       "source_skill": "secrets-help",
@@ -10247,7 +10259,7 @@
       "kind": "skill",
       "target": "secrets-ui",
       "classification": "resolvable",
-      "id": "REF-0576"
+      "id": "REF-0577"
     },
     {
       "source_skill": "secrets-help",
@@ -10257,7 +10269,7 @@
       "kind": "skill",
       "target": "secrets-rotate",
       "classification": "resolvable",
-      "id": "REF-0577"
+      "id": "REF-0578"
     },
     {
       "source_skill": "secrets-help",
@@ -10267,7 +10279,7 @@
       "kind": "skill",
       "target": "secrets-help",
       "classification": "resolvable",
-      "id": "REF-0578"
+      "id": "REF-0579"
     },
     {
       "source_skill": "secrets-list",
@@ -10277,7 +10289,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0579"
+      "id": "REF-0580"
     },
     {
       "source_skill": "secrets-list",
@@ -10287,7 +10299,7 @@
       "kind": "skill",
       "target": "secrets-list",
       "classification": "resolvable",
-      "id": "REF-0580"
+      "id": "REF-0581"
     },
     {
       "source_skill": "secrets-rotate",
@@ -10297,7 +10309,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0581"
+      "id": "REF-0582"
     },
     {
       "source_skill": "secrets-rotate",
@@ -10307,7 +10319,7 @@
       "kind": "skill",
       "target": "secrets-rotate",
       "classification": "resolvable",
-      "id": "REF-0582"
+      "id": "REF-0583"
     },
     {
       "source_skill": "secrets-run",
@@ -10317,7 +10329,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0583"
+      "id": "REF-0584"
     },
     {
       "source_skill": "secrets-run",
@@ -10327,7 +10339,7 @@
       "kind": "skill",
       "target": "secrets-run",
       "classification": "resolvable",
-      "id": "REF-0584"
+      "id": "REF-0585"
     },
     {
       "source_skill": "secrets-set",
@@ -10337,7 +10349,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0585"
+      "id": "REF-0586"
     },
     {
       "source_skill": "secrets-set",
@@ -10347,7 +10359,7 @@
       "kind": "skill",
       "target": "secrets-set",
       "classification": "resolvable",
-      "id": "REF-0586"
+      "id": "REF-0587"
     },
     {
       "source_skill": "secrets-ui",
@@ -10357,7 +10369,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0587"
+      "id": "REF-0588"
     },
     {
       "source_skill": "secrets-ui",
@@ -10367,7 +10379,7 @@
       "kind": "skill",
       "target": "secrets-ui",
       "classification": "resolvable",
-      "id": "REF-0588"
+      "id": "REF-0589"
     },
     {
       "source_skill": "secrets-validate",
@@ -10377,7 +10389,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0589"
+      "id": "REF-0590"
     },
     {
       "source_skill": "secrets-validate",
@@ -10387,7 +10399,7 @@
       "kind": "skill",
       "target": "secrets-validate",
       "classification": "resolvable",
-      "id": "REF-0590"
+      "id": "REF-0591"
     },
     {
       "source_skill": "security-explain",
@@ -10397,7 +10409,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0591"
+      "id": "REF-0592"
     },
     {
       "source_skill": "security-explain",
@@ -10407,7 +10419,7 @@
       "kind": "skill",
       "target": "security-explain",
       "classification": "resolvable",
-      "id": "REF-0592"
+      "id": "REF-0593"
     },
     {
       "source_skill": "security-help",
@@ -10417,7 +10429,7 @@
       "kind": "skill",
       "target": "security-quick",
       "classification": "resolvable",
-      "id": "REF-0593"
+      "id": "REF-0594"
     },
     {
       "source_skill": "security-help",
@@ -10427,7 +10439,7 @@
       "kind": "skill",
       "target": "security-scan",
       "classification": "resolvable",
-      "id": "REF-0594"
+      "id": "REF-0595"
     },
     {
       "source_skill": "security-help",
@@ -10437,7 +10449,7 @@
       "kind": "skill",
       "target": "security-deep",
       "classification": "resolvable",
-      "id": "REF-0595"
+      "id": "REF-0596"
     },
     {
       "source_skill": "security-permissions",
@@ -10447,7 +10459,7 @@
       "kind": "native_command",
       "target": "/fewer-permission-prompts",
       "classification": "native",
-      "id": "REF-0596"
+      "id": "REF-0597"
     },
     {
       "source_skill": "security-permissions",
@@ -10457,7 +10469,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0597"
+      "id": "REF-0598"
     },
     {
       "source_skill": "security-permissions",
@@ -10467,22 +10479,12 @@
       "kind": "native_command",
       "target": "/permissions",
       "classification": "native",
-      "id": "REF-0598"
-    },
-    {
-      "source_skill": "security-permissions",
-      "path": "plugins/security/skills/security-permissions/SKILL.md",
-      "line": 16,
-      "token": "/fewer-permission-prompts",
-      "kind": "native_command",
-      "target": "/fewer-permission-prompts",
-      "classification": "native",
       "id": "REF-0599"
     },
     {
       "source_skill": "security-permissions",
       "path": "plugins/security/skills/security-permissions/SKILL.md",
-      "line": 21,
+      "line": 16,
       "token": "/fewer-permission-prompts",
       "kind": "native_command",
       "target": "/fewer-permission-prompts",
@@ -10492,17 +10494,17 @@
     {
       "source_skill": "security-permissions",
       "path": "plugins/security/skills/security-permissions/SKILL.md",
-      "line": 42,
-      "token": ".claude/",
-      "kind": "host_path",
-      "target": ".claude/",
-      "classification": "adapted",
+      "line": 21,
+      "token": "/fewer-permission-prompts",
+      "kind": "native_command",
+      "target": "/fewer-permission-prompts",
+      "classification": "native",
       "id": "REF-0601"
     },
     {
       "source_skill": "security-permissions",
       "path": "plugins/security/skills/security-permissions/SKILL.md",
-      "line": 59,
+      "line": 42,
       "token": ".claude/",
       "kind": "host_path",
       "target": ".claude/",
@@ -10512,7 +10514,7 @@
     {
       "source_skill": "security-permissions",
       "path": "plugins/security/skills/security-permissions/SKILL.md",
-      "line": 60,
+      "line": 59,
       "token": ".claude/",
       "kind": "host_path",
       "target": ".claude/",
@@ -10522,12 +10524,22 @@
     {
       "source_skill": "security-permissions",
       "path": "plugins/security/skills/security-permissions/SKILL.md",
+      "line": 60,
+      "token": ".claude/",
+      "kind": "host_path",
+      "target": ".claude/",
+      "classification": "adapted",
+      "id": "REF-0604"
+    },
+    {
+      "source_skill": "security-permissions",
+      "path": "plugins/security/skills/security-permissions/SKILL.md",
       "line": 83,
       "token": "/fewer-permission-prompts",
       "kind": "native_command",
       "target": "/fewer-permission-prompts",
       "classification": "native",
-      "id": "REF-0604"
+      "id": "REF-0605"
     },
     {
       "source_skill": "security-permissions",
@@ -10537,7 +10549,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "adapted",
-      "id": "REF-0605"
+      "id": "REF-0606"
     },
     {
       "source_skill": "security-scan",
@@ -10547,7 +10559,7 @@
       "kind": "skill",
       "target": "security-quick",
       "classification": "resolvable",
-      "id": "REF-0606"
+      "id": "REF-0607"
     },
     {
       "source_skill": "self-improvement-deployment",
@@ -10557,7 +10569,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0607"
+      "id": "REF-0608"
     },
     {
       "source_skill": "self-improvement-deployment",
@@ -10567,7 +10579,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0608"
+      "id": "REF-0609"
     },
     {
       "source_skill": "self-improvement-deployment",
@@ -10577,7 +10589,7 @@
       "kind": "skill",
       "target": "self-improvement-deployment",
       "classification": "resolvable",
-      "id": "REF-0609"
+      "id": "REF-0610"
     },
     {
       "source_skill": "self-improvement-deployment",
@@ -10587,7 +10599,7 @@
       "kind": "native_command",
       "target": "/skills",
       "classification": "native",
-      "id": "REF-0610"
+      "id": "REF-0611"
     },
     {
       "source_skill": "self-improvement-deployment",
@@ -10597,7 +10609,7 @@
       "kind": "skill",
       "target": "flow-finish",
       "classification": "resolvable",
-      "id": "REF-0611"
+      "id": "REF-0612"
     },
     {
       "source_skill": "self-improvement-deployment",
@@ -10607,7 +10619,7 @@
       "kind": "skill",
       "target": "flow-finish",
       "classification": "resolvable",
-      "id": "REF-0612"
+      "id": "REF-0613"
     },
     {
       "source_skill": "self-improvement-deployment",
@@ -10617,7 +10629,7 @@
       "kind": "skill",
       "target": "flow-finish",
       "classification": "resolvable",
-      "id": "REF-0613"
+      "id": "REF-0614"
     },
     {
       "source_skill": "self-improvement-deployment",
@@ -10627,7 +10639,7 @@
       "kind": "skill",
       "target": "flow-deploy",
       "classification": "resolvable",
-      "id": "REF-0614"
+      "id": "REF-0615"
     },
     {
       "source_skill": "self-improvement-deployment",
@@ -10637,7 +10649,7 @@
       "kind": "skill",
       "target": "flow-deploy",
       "classification": "resolvable",
-      "id": "REF-0615"
+      "id": "REF-0616"
     },
     {
       "source_skill": "self-improvement-deployment",
@@ -10647,7 +10659,7 @@
       "kind": "skill",
       "target": "flow-doctor",
       "classification": "resolvable",
-      "id": "REF-0616"
+      "id": "REF-0617"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10657,7 +10669,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0617"
+      "id": "REF-0618"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10667,7 +10679,7 @@
       "kind": "skill",
       "target": "self-improvement-retro",
       "classification": "resolvable",
-      "id": "REF-0618"
+      "id": "REF-0619"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10677,7 +10689,7 @@
       "kind": "skill",
       "target": "self-improvement-deployment",
       "classification": "resolvable",
-      "id": "REF-0619"
+      "id": "REF-0620"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10687,7 +10699,7 @@
       "kind": "skill",
       "target": "self-improvement-help",
       "classification": "resolvable",
-      "id": "REF-0620"
+      "id": "REF-0621"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10697,7 +10709,7 @@
       "kind": "skill",
       "target": "self-improvement-retro",
       "classification": "resolvable",
-      "id": "REF-0621"
+      "id": "REF-0622"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10707,7 +10719,7 @@
       "kind": "skill",
       "target": "flow-auto",
       "classification": "resolvable",
-      "id": "REF-0622"
+      "id": "REF-0623"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10717,7 +10729,7 @@
       "kind": "skill",
       "target": "flow-merge",
       "classification": "resolvable",
-      "id": "REF-0623"
+      "id": "REF-0624"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10727,7 +10739,7 @@
       "kind": "skill",
       "target": "self-improvement-retro",
       "classification": "resolvable",
-      "id": "REF-0624"
+      "id": "REF-0625"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10737,7 +10749,7 @@
       "kind": "skill",
       "target": "self-improvement-deployment",
       "classification": "resolvable",
-      "id": "REF-0625"
+      "id": "REF-0626"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10747,7 +10759,7 @@
       "kind": "skill",
       "target": "flow-auto",
       "classification": "resolvable",
-      "id": "REF-0626"
+      "id": "REF-0627"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10757,7 +10769,7 @@
       "kind": "skill",
       "target": "self-improvement-retro",
       "classification": "resolvable",
-      "id": "REF-0627"
+      "id": "REF-0628"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10767,7 +10779,7 @@
       "kind": "skill",
       "target": "flow-deploy",
       "classification": "resolvable",
-      "id": "REF-0628"
+      "id": "REF-0629"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10777,7 +10789,7 @@
       "kind": "skill",
       "target": "self-improvement-deployment",
       "classification": "resolvable",
-      "id": "REF-0629"
+      "id": "REF-0630"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10787,7 +10799,7 @@
       "kind": "skill",
       "target": "self-improvement-retro",
       "classification": "resolvable",
-      "id": "REF-0630"
+      "id": "REF-0631"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10797,7 +10809,7 @@
       "kind": "skill",
       "target": "cicd-check",
       "classification": "resolvable",
-      "id": "REF-0631"
+      "id": "REF-0632"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10807,7 +10819,7 @@
       "kind": "skill",
       "target": "cicd-init",
       "classification": "resolvable",
-      "id": "REF-0632"
+      "id": "REF-0633"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10817,7 +10829,7 @@
       "kind": "skill",
       "target": "flow-doctor",
       "classification": "resolvable",
-      "id": "REF-0633"
+      "id": "REF-0634"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10827,7 +10839,7 @@
       "kind": "skill",
       "target": "flow-deploy",
       "classification": "resolvable",
-      "id": "REF-0634"
+      "id": "REF-0635"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10837,7 +10849,7 @@
       "kind": "skill",
       "target": "flow-finish",
       "classification": "resolvable",
-      "id": "REF-0635"
+      "id": "REF-0636"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10847,7 +10859,7 @@
       "kind": "skill",
       "target": "security-scan",
       "classification": "resolvable",
-      "id": "REF-0636"
+      "id": "REF-0637"
     },
     {
       "source_skill": "self-improvement-retro",
@@ -10857,7 +10869,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0637"
+      "id": "REF-0638"
     },
     {
       "source_skill": "spec-adopt",
@@ -10867,7 +10879,7 @@
       "kind": "skill",
       "target": "spec-sync",
       "classification": "resolvable",
-      "id": "REF-0638"
+      "id": "REF-0639"
     },
     {
       "source_skill": "spec-adopt",
@@ -10877,7 +10889,7 @@
       "kind": "skill",
       "target": "spec-sync",
       "classification": "resolvable",
-      "id": "REF-0639"
+      "id": "REF-0640"
     },
     {
       "source_skill": "spec-adopt",
@@ -10887,7 +10899,7 @@
       "kind": "skill",
       "target": "flow-auto",
       "classification": "resolvable",
-      "id": "REF-0640"
+      "id": "REF-0641"
     },
     {
       "source_skill": "spec-sync",
@@ -10897,7 +10909,7 @@
       "kind": "skill",
       "target": "flow-auto",
       "classification": "resolvable",
-      "id": "REF-0641"
+      "id": "REF-0642"
     },
     {
       "source_skill": "woodpecker-help",
@@ -10907,7 +10919,7 @@
       "kind": "skill",
       "target": "woodpecker-status",
       "classification": "resolvable",
-      "id": "REF-0642"
+      "id": "REF-0643"
     },
     {
       "source_skill": "woodpecker-help",
@@ -10917,7 +10929,7 @@
       "kind": "skill",
       "target": "woodpecker-logs",
       "classification": "resolvable",
-      "id": "REF-0643"
+      "id": "REF-0644"
     },
     {
       "source_skill": "woodpecker-help",
@@ -10927,7 +10939,7 @@
       "kind": "skill",
       "target": "woodpecker-restart",
       "classification": "resolvable",
-      "id": "REF-0644"
+      "id": "REF-0645"
     },
     {
       "source_skill": "woodpecker-help",
@@ -10937,7 +10949,7 @@
       "kind": "skill",
       "target": "secrets-run",
       "classification": "resolvable",
-      "id": "REF-0645"
+      "id": "REF-0646"
     },
     {
       "source_skill": "woodpecker-logs",
@@ -10947,7 +10959,7 @@
       "kind": "skill",
       "target": "woodpecker-status",
       "classification": "resolvable",
-      "id": "REF-0646"
+      "id": "REF-0647"
     },
     {
       "source_skill": "woodpecker-logs",
@@ -10957,7 +10969,7 @@
       "kind": "skill",
       "target": "secrets-run",
       "classification": "resolvable",
-      "id": "REF-0647"
+      "id": "REF-0648"
     },
     {
       "source_skill": "woodpecker-logs",
@@ -10967,7 +10979,7 @@
       "kind": "skill",
       "target": "secrets-run",
       "classification": "resolvable",
-      "id": "REF-0648"
+      "id": "REF-0649"
     },
     {
       "source_skill": "woodpecker-restart",
@@ -10977,7 +10989,7 @@
       "kind": "skill",
       "target": "woodpecker-logs",
       "classification": "resolvable",
-      "id": "REF-0649"
+      "id": "REF-0650"
     },
     {
       "source_skill": "woodpecker-restart",
@@ -10987,7 +10999,7 @@
       "kind": "skill",
       "target": "woodpecker-status",
       "classification": "resolvable",
-      "id": "REF-0650"
+      "id": "REF-0651"
     },
     {
       "source_skill": "woodpecker-restart",
@@ -10997,7 +11009,7 @@
       "kind": "skill",
       "target": "secrets-run",
       "classification": "resolvable",
-      "id": "REF-0651"
+      "id": "REF-0652"
     },
     {
       "source_skill": "woodpecker-restart",
@@ -11007,7 +11019,7 @@
       "kind": "skill",
       "target": "secrets-run",
       "classification": "resolvable",
-      "id": "REF-0652"
+      "id": "REF-0653"
     },
     {
       "source_skill": "woodpecker-status",
@@ -11017,7 +11029,7 @@
       "kind": "skill",
       "target": "secrets-run",
       "classification": "resolvable",
-      "id": "REF-0653"
+      "id": "REF-0654"
     },
     {
       "source_skill": "woodpecker-status",
@@ -11027,7 +11039,7 @@
       "kind": "skill",
       "target": "secrets-run",
       "classification": "resolvable",
-      "id": "REF-0654"
+      "id": "REF-0655"
     }
   ],
   "gaps": [

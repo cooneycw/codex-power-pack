@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from .config import ProjectNextConfig
-from .models import Branch, Issue, PullRequest, RepositoryState, SpecTask, Worktree
+from .models import Branch, Issue, PullRequest, RepositoryState, SpecFeature, SpecTask, Worktree
 
 CommandRunner = Callable[[list[str], Path], str]
 TASK = re.compile(r"^-\s*\[\s\]\s+(?:\*\*)?(?P<id>[A-Za-z]+\d+)(?:\*\*)?\s+(?P<title>.+)$")
@@ -108,12 +108,36 @@ def _parse_branches(output: str) -> tuple[Branch, ...]:
     return tuple(branches)
 
 
-def _spec_tasks(repository: Path, repository_name: str, warnings: list[str]) -> tuple[SpecTask, ...]:
+def _spec_inventory(
+    repository: Path, repository_name: str, warnings: list[str]
+) -> tuple[tuple[SpecTask, ...], tuple[SpecFeature, ...]]:
     specs = repository / ".specify" / "specs"
     if not specs.is_dir():
-        return ()
+        return (), ()
     tasks: list[SpecTask] = []
-    for path in sorted(specs.glob("*/tasks.md")):
+    features: list[SpecFeature] = []
+    for feature_path in sorted(path for path in specs.iterdir() if path.is_dir()):
+        path = feature_path / "tasks.md"
+        feature_tasks: list[SpecTask] = []
+        if not path.is_file():
+            has_spec = (feature_path / "spec.md").is_file()
+            has_plan = (feature_path / "plan.md").is_file()
+            if not has_spec:
+                action = "create spec.md"
+            elif not has_plan:
+                action = "create plan.md"
+            else:
+                action = "create tasks.md"
+            features.append(
+                SpecFeature(
+                    name=feature_path.name,
+                    path=feature_path.relative_to(repository).as_posix(),
+                    has_spec=has_spec,
+                    has_plan=has_plan,
+                    recommended_action=action,
+                )
+            )
+            continue
         try:
             lines = path.read_text(encoding="utf-8").splitlines()
         except OSError as exc:
@@ -174,7 +198,7 @@ def _spec_tasks(repository: Path, repository_name: str, warnings: list[str]) -> 
                 status = "mapped" if expected else "stale"
             if status != "mapped":
                 warnings.append(f"{relative}:{task_id}: spec-sync mapping is {status}")
-            tasks.append(
+            feature_tasks.append(
                 SpecTask(
                     task_id=task_id,
                     title=match.group("title").strip(),
@@ -188,7 +212,50 @@ def _spec_tasks(repository: Path, repository_name: str, warnings: list[str]) -> 
                     mapping_state=mapping_state,
                 )
             )
-    return tuple(tasks)
+        tasks.extend(feature_tasks)
+        statuses = {task.mapping_status for task in feature_tasks}
+        mapped = sum(task.synchronized for task in feature_tasks)
+        if not feature_tasks:
+            mapping_status = "not-applicable"
+            action = "add actionable tasks"
+        elif "ambiguous" in statuses:
+            mapping_status = "ambiguous"
+            action = "repair ambiguous issue mappings"
+        elif "stale" in statuses:
+            mapping_status = "stale"
+            action = "repair stale issue mappings"
+        elif mapped == len(feature_tasks):
+            mapping_status = "complete"
+            action = "none"
+        elif mapped:
+            mapping_status = "partial"
+            action = "sync remaining tasks to issues"
+        else:
+            mapping_status = "missing"
+            action = "sync tasks to issues"
+        if not (feature_path / "spec.md").is_file():
+            action = "create spec.md"
+        elif not (feature_path / "plan.md").is_file():
+            action = "create plan.md"
+        features.append(
+            SpecFeature(
+                name=feature_path.name,
+                path=feature_path.relative_to(repository).as_posix(),
+                has_spec=(feature_path / "spec.md").is_file(),
+                has_plan=(feature_path / "plan.md").is_file(),
+                has_tasks=True,
+                total_tasks=len(feature_tasks),
+                mapped_tasks=mapped,
+                mapping_status=mapping_status,
+                recommended_action=action,
+            )
+        )
+    return tuple(tasks), tuple(features)
+
+
+def _spec_tasks(repository: Path, repository_name: str, warnings: list[str]) -> tuple[SpecTask, ...]:
+    """Compatibility wrapper for callers that only need task mappings."""
+    return _spec_inventory(repository, repository_name, warnings)[0]
 
 
 def collect_repository(
@@ -312,7 +379,7 @@ def collect_repository(
         complete = False
         branches = ()
 
-    spec_tasks = _spec_tasks(repository, repo_name, warnings)
+    spec_tasks, spec_features = _spec_inventory(repository, repo_name, warnings)
     return RepositoryState(
         repository=repo_name,
         default_branch=default_branch,
@@ -322,6 +389,7 @@ def collect_repository(
         worktrees=worktrees,
         branches=branches,
         spec_tasks=spec_tasks,
+        spec_features=spec_features,
         inventory_complete=complete,
         collector_warnings=tuple(warnings),
         collector_errors=tuple(errors),

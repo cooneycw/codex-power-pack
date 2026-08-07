@@ -183,10 +183,11 @@ After a successful create or repair, `spec-sync` updates the selected
 and state. A partial write reports exactly which mappings remain unresolved and
 does not claim the ledger is synchronized.
 
-`project-next` contract version `1.1` consumes only these ledger identities.
-Task IDs found incidentally in issue prose are no longer synchronization
-evidence. Missing mappings recommend synchronization; stale or ambiguous
-mappings recommend repair and remain explicit uncertainty.
+`project-next` contract version `1.2` consumes only these ledger identities and
+reports each feature's `spec.md`, `plan.md`, `tasks.md`, aggregate mapping state,
+and next synchronization action. Task IDs found incidentally in issue prose are
+no longer synchronization evidence. Missing mappings recommend synchronization;
+stale or ambiguous mappings recommend repair and remain explicit uncertainty.
 
 ## Ownership and Rollout
 

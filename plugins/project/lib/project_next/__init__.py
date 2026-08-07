@@ -6,7 +6,7 @@ from .models import RepositoryState
 from .rank import recommend
 from .render import render_result
 
-CONTRACT_VERSION = "1.1"
+CONTRACT_VERSION = "1.2"
 
 __all__ = [
     "CONTRACT_VERSION",
