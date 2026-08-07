@@ -45,14 +45,24 @@ retain their existing individual prompts.
 4. After explicit approval, expand the sparse marketplace snapshot and install
    only missing selected plugins. Preserve existing families and configuration.
    Re-run `$cxpp-status` to verify the result.
-5. Compare requested MCP pointers with `templates/config.toml.example` using
+5. Inspect optional target routing with the checkout
+   `scripts/cxpp-influence.py` or installed
+   `${PLUGIN_ROOT}/scripts/cxpp-influence.py`. For `absent` or `upgrade`,
+   run `python3 HELPER preview TARGET` and require separate explicit approval
+   before `python3 HELPER apply TARGET --approve`. Report `current` without
+   writing. Stop on `conflict` rather than overwriting user edits. Require
+   `python3 HELPER preview-remove TARGET` before `python3 HELPER remove TARGET
+   --approve`; a decline runs `python3 HELPER decline TARGET` and writes
+   nothing.
+6. Compare requested MCP pointers with `templates/config.toml.example` using
    `codex mcp get`; do not print or parse the full global configuration file.
-6. For each host change, show the precise additive action and ask for separate
+7. For each host change, show the precise additive action and ask for separate
    approval. Never delete a pointer, plugin, hook, rule, or user configuration
    entry.
-7. Re-run `codex execpolicy check` before adding or changing any rule, and let
-   Codex perform its normal hook-review flow for changed hook files.
-8. Re-run the non-secret MCP checks and report whether a fresh Codex session is
+8. Re-run `codex execpolicy check` before adding or changing any rule. Plugin
+   installation does not authorize hook trust or enablement; use `/hooks` for
+   exact-hash review, and require a new review whenever a hook changes.
+9. Re-run the non-secret MCP checks and report whether a fresh Codex session is
    needed. Do not manage the lifecycle of an external host service.
 
 ## Report
@@ -61,4 +71,5 @@ Separate `updated`, `already current`, `skipped by user`, and
 `needs host prerequisite`. Include the previous ref, requested signed tag or
 immutable SHA, and resolved SHA whenever a marketplace or plugin changes so
 rollback remains possible. Re-running an unchanged selection at the same
-resolved SHA must be idempotent and report `already current`.
+resolved SHA must be idempotent and report `already current`. Include target
+routing state and hook trust/enabled state without printing file contents.

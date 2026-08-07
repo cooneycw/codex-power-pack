@@ -34,10 +34,10 @@ project-next-sync:
 	@python3 scripts/project_next_sync.py --write
 
 skill-eval-check:
-	@python3 scripts/skill-eval.py deterministic
+	@uv run --extra dev python scripts/skill-eval.py deterministic
 
 skill-eval-live:
-	@python3 scripts/skill-eval.py live --allow-live
+	@uv run --extra dev python scripts/skill-eval.py live --allow-live
 
 build:
 	uv build

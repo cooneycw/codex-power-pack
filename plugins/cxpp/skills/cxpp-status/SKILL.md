@@ -32,15 +32,24 @@ this order: `project`, `spec`, `flow`, `github`, `cicd`, `secrets`,
 4. When `second-opinion` is configured for localhost, run
    `curl -sf http://127.0.0.1:8080/readyz`; otherwise label its health as not
    checked. Run no process-management command.
-5. Check whether optional spec-kit and reviewed hooks/rules are present using
-   their documented status commands or file existence only. Never print rule,
-   hook, or configuration contents that might contain secrets.
+5. Run `python3 scripts/cxpp-influence.py status TARGET --json` or the
+   installed `${PLUGIN_ROOT}/scripts/cxpp-influence.py` equivalent. Report
+   only `absent`, `current`, `upgrade`, or `conflict`; never print
+   `AGENTS.md`.
+6. Check whether optional spec-kit and reviewed hooks/rules are present using
+   documented status commands or file existence only. Report each packaged
+   hook as present or missing and each plugin as enabled or disabled from
+   `codex plugin list --available --json`. Use `/hooks` for exact-hash trust
+   state when available; otherwise say `unknown—inspect /hooks`. A changed or
+   untrusted hook is a warning, never permission to trust or enable it. Never
+   print rule, hook, or configuration contents that might contain secrets.
 
 ## Report
 
 Start with one row per published plugin family so installed and missing families
 are explicit. Then use one row per host component: `second-opinion`,
-`playwright`, `spec-kit`, `secrets guidance`, and `hooks/rules`. Give host
+`playwright`, `spec-kit`, `secrets guidance`, `target routing`, and
+`hooks/rules`. Give host
 components a status of `healthy`, `configured`, `missing`, `unhealthy`,
 `not checked`, or `warning`, followed by the smallest safe follow-up. Keep this
 inventory read-only and do not turn a missing row into an implicit install.

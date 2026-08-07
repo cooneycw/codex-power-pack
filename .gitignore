@@ -46,6 +46,8 @@ desktop.ini
 
 # Project specific
 *.json
+!plugins/secrets/hooks/hooks.json
+!plugins/self-improvement/hooks/hooks.json
 !package.json
 !tsconfig.json
 !.codex/hooks.json

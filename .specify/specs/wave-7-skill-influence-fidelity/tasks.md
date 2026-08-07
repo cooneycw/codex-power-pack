@@ -236,23 +236,23 @@ failures identify the failing contract layer.
 
 ## Stage 5: Consent-First Persistent Influence
 
-- [ ] **T501** [US5] Author a concise outcome-based CxPP routing block for target
+- [x] **T501** [US5] Author a concise outcome-based CxPP routing block for target
       repository `AGENTS.md`, with a documented byte budget.
-- [ ] **T502** [US5] Add idempotent preview, approve, unchanged, skip, conflict,
+- [x] **T502** [US5] Add idempotent preview, approve, unchanged, skip, conflict,
       and removal behavior to `cxpp-init` and `cxpp-update`.
-- [ ] **T503** [US5] Package the reviewed PostToolUse masking hook with the
+- [x] **T503** [US5] Package the reviewed PostToolUse masking hook with the
       secrets plugin and use `${PLUGIN_ROOT}`-relative commands.
-- [ ] **T504** [US5] Package only the reviewed friction-capture lifecycle hooks
+- [x] **T504** [US5] Package only the reviewed friction-capture lifecycle hooks
       with the self-improvement plugin; keep codification and external writes
       explicit.
-- [ ] **T505** [US5] Extend `cxpp-status` to report routing-block state, hook
+- [x] **T505** [US5] Extend `cxpp-status` to report routing-block state, hook
       presence, trust/review state when exposed, enabled state, and drift without
       printing configuration contents.
-- [ ] **T506** [P] [US5] Add clean install, decline, already-current, changed-hook,
+- [x] **T506** [P] [US5] Add clean install, decline, already-current, changed-hook,
       untrusted, disabled, removal, and plugin-uninstall tests.
-- [ ] **T507** [P] [US5] Add security tests proving hooks fail open, mask output,
+- [x] **T507** [P] [US5] Add security tests proving hooks fail open, mask output,
       avoid secrets, and never grant permissions or invoke shipping actions.
-- [ ] **T508** [US5,US7] Prove project-init never installs persistent influence
+- [x] **T508** [US5,US7] Prove project-init never installs persistent influence
       and that declining its `cxpp-init` handoff leaves only the local scaffold.
 
 **Checkpoint:** Persistent influence is transparent, consent-first, trust-

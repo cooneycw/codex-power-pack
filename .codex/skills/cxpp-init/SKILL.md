@@ -45,8 +45,8 @@ published family plugins are missing:
 
 1. Confirm Codex is available with `codex --version`, then ask which components
    to configure: CxPP marketplace/plugins, host-managed MCP pointers, spec-kit,
-   secrets-provider guidance, and reviewed hooks/rules. Do not assume all are
-   wanted.
+   secrets-provider guidance, target `AGENTS.md` routing, and reviewed
+   hooks/rules. Do not assume all are wanted.
 2. For marketplace/plugins, run the read-only `$cxpp-status` checks first. If
    the marketplace is missing or family plugins are absent, offer Minimal,
    Recommended, Full suite, and Custom; otherwise report the suite as
@@ -78,10 +78,21 @@ published family plugins are missing:
 7. For secrets, install or enable the requested `secrets` family plugin and
    point to its provider setup. Do not ask for credentials or echo environment
    values.
-8. For hooks/rules, show every proposed file and destination. Run
-   `codex execpolicy check` against a proposed rule before writing it. Install
-   only reviewed, additive entries and wait for Codex's normal hook-trust review.
-9. Run only non-secret checks: `codex mcp get second-opinion`,
+8. For optional target routing, locate `scripts/cxpp-influence.py` in the
+   checkout or `${PLUGIN_ROOT}/scripts/cxpp-influence.py` in the installed
+   `cxpp` plugin. Run `python3 HELPER status TARGET` and then `python3
+   HELPER preview TARGET`; show the exact diff and ask for separate explicit
+   approval before `python3 HELPER apply TARGET --approve`. A decline must run
+   `python3 HELPER decline TARGET` and leave the target
+   unchanged. Stop on `conflict` rather than overwriting user edits. Require
+   `python3 HELPER preview-remove TARGET` before `python3 HELPER remove
+   TARGET --approve`.
+9. For hooks/rules, show every proposed file and destination. The `secrets`
+   and `self-improvement` plugins package reviewed hooks, but installation
+   does not authorize trusting or enabling them. Run `codex execpolicy check`
+   before writing a rule, then use `/hooks` for Codex's exact-hash trust
+   review. Changed hooks require review again.
+10. Run only non-secret checks: `codex mcp get second-opinion`,
    `codex mcp get playwright`, and, when the service is expected locally,
    `curl -sf http://127.0.0.1:8080/readyz`. A failed health check is a report,
    not a reason to start the service.
@@ -94,4 +105,6 @@ resolved SHA in the plugin report so rollback is possible. Include the exact
 non-secret follow-up needed and state that a new Codex session is required after
 plugin or MCP configuration changes. Re-running the same approved profile at
 the same ref must produce `already current`, not another marketplace or plugin
-write.
+write. Report target routing as `absent`, `current`, `upgrade`, or
+`conflict`, and hook trust/enabled state without printing file contents. A
+new Codex session is required after persistent routing or hook changes.
