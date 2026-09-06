@@ -4,6 +4,10 @@
 
 ### Added
 
+- Added the explicit-only `$codex-wayfinder` project skill, adapted from Matt
+  Pocock's MIT-licensed Wayfinder, with local Markdown tracking, session-safe
+  same-host claims, deterministic behavior cases, and a starter decision map for
+  native Codex wave orchestration (#185).
 - Added minimal, recommended, full, and custom plugin-suite choices to the
   consent-first CxPP init/update workflows, with complete family status,
   immutable-ref previews, rollback refs, and strict host-configuration
@@ -12,6 +16,11 @@
   Codex plugin releases (#79).
 - Cut newcomer documentation over to native Codex marketplace installation and
   the consent-first `cxpp:init` host bootstrap (#81).
+
+### Changed
+
+- Versioned all plugin payloads as `0.3.0+codex.20260906121706` for the new
+  project skill package (#185).
 
 ### Removed
 

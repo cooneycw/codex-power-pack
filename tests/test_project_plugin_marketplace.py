@@ -30,7 +30,7 @@ PINNING_POLICY = {
 }
 
 FAMILY_SKILLS = {
-    "project": ["project-help", "project-init", "project-lite", "project-next"],
+    "project": ["codex-wayfinder", "project-help", "project-init", "project-lite", "project-next"],
     "spec": ["spec-adopt", "spec-sync"],
     "flow": [
         "flow-auto",
@@ -273,7 +273,13 @@ def test_fresh_flow_plugin_install_advertises_flow_auto(tmp_path: Path) -> None:
     prompt_text = json.dumps(json.loads(prompt.stdout))
 
     assert "- flow:flow-auto:" in prompt_text
-    assert str(installed_path / "skills" / "flow-auto" / "SKILL.md") in prompt_text
+    # Newer Codex versions compact the cache root to a versioned `rN` alias in
+    # prompt input, so verify the locator below that root rather than requiring
+    # an absolute path.
+    locator = (installed_path / "skills" / "flow-auto" / "SKILL.md").relative_to(
+        codex_home / "plugins" / "cache" / "codex-power-pack"
+    )
+    assert locator.as_posix() in prompt_text
 
 
 def test_github_issue_skills_resolve_the_target_repository() -> None:

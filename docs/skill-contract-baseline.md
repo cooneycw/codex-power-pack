@@ -7,19 +7,19 @@
 
 | Surface | Count |
 |---|---:|
-| Source skills | 83 |
-| Packaged skills | 73 |
+| Source skills | 84 |
+| Packaged skills | 74 |
 | Unpackaged source skills | 10 |
 | Marketplace plugins | 16 |
 | Implicitly eligible packaged skills | 2 |
-| Extracted packaged-Markdown references | 655 |
+| Extracted packaged-Markdown references | 656 |
 | Unexplained reference occurrences | 0 |
 
 The machine-readable source of truth is [`.agents/skill-contracts.json`](../.agents/skill-contracts.json).
 
 ## Current Invocation Policy
 
-Payload `0.2.0+codex.20260807012317` keeps `$flow-auto`, `$project-next` implicitly eligible. Every other packaged skill remains available through explicit `$skill-name` selection or `/skills` discovery. Plugin metadata changes require an upgrade or reinstall followed by a new Codex session.
+Payload `0.3.0+codex.20260906121706` keeps `$flow-auto`, `$project-next` implicitly eligible. Every other packaged skill remains available through explicit `$skill-name` selection or `/skills` discovery. Plugin metadata changes require an upgrade or reinstall followed by a new Codex session.
 
 The versioned source of truth is [`.agents/skill-invocation-policy.json`](../.agents/skill-invocation-policy.json).
 
@@ -52,7 +52,7 @@ Prompt presence passed. Direct recall, indirect recall, and negative precision r
 
 | Classification | Occurrences | Meaning |
 |---|---:|---|
-| Resolvable | 412 | Explicit `$skill-name` resolves to a packaged skill. |
+| Resolvable | 413 | Explicit `$skill-name` resolves to a packaged skill. |
 | Native | 17 | Supported Codex host command. |
 | Adapted | 135 | The packaged skill carries an explicit Codex harness adaptation. |
 | Excluded | 24 | Target has a reviewed, owned, time-bound exclusion. |

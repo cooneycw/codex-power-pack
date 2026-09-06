@@ -1,7 +1,7 @@
 {
   "$schema": "./skill-invocation-policy.schema.json",
   "schema_version": "1.0",
-  "payload_version": "0.2.0+codex.20260807012317",
+  "payload_version": "0.3.0+codex.20260906121706",
   "tracking_issue": 159,
   "invocation": {
     "explicit": "$skill-name",
