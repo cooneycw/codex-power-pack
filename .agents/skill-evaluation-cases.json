@@ -725,6 +725,133 @@
           "forbidden_text": [],
           "contract_layer": "routing"
         }
+      },
+      {
+        "id": "CASE-027",
+        "skill": "codex-wayfinder",
+        "category": "edge",
+        "prompt": "Use $codex-wayfinder for this fully specified two-step change that fits in one session.",
+        "lanes": ["deterministic"],
+        "tags": ["explicit", "codex-wayfinder", "clear-route", "static-skill-text"],
+        "expected": {
+          "selected_skill": "codex-wayfinder",
+          "required_checkpoints": ["decline-unnecessary-map"],
+          "required_output_fields": ["direct-handoff"],
+          "forbidden_actions": ["create-ceremonial-map"]
+        },
+        "deterministic": {
+          "adapter": "skill_text",
+          "paths": [".codex/skills/codex-wayfinder/SKILL.md"],
+          "required_text": ["route is already clear", "Do not create ceremonial tickets"],
+          "forbidden_text": [],
+          "contract_layer": "routing"
+        }
+      },
+      {
+        "id": "CASE-028",
+        "skill": "codex-wayfinder",
+        "category": "incomplete",
+        "prompt": "Create a starter decision map before I have chosen its first milestone.",
+        "lanes": ["deterministic"],
+        "tags": ["explicit", "codex-wayfinder", "human-decision", "starter-map", "static-skill-text"],
+        "expected": {
+          "selected_skill": "codex-wayfinder",
+          "required_checkpoints": ["preserve-proposed-status", "leave-human-ticket-open"],
+          "required_output_fields": ["proposed_destination", "pending_question"],
+          "forbidden_actions": ["invent-human-choice", "resolve-human-ticket"]
+        },
+        "deterministic": {
+          "adapter": "skill_text",
+          "paths": [
+            ".codex/skills/codex-wayfinder/SKILL.md",
+            ".codex/skills/codex-wayfinder/references/local-markdown.md"
+          ],
+          "required_text": [
+            "Keep human choices pending until the human answers",
+            "existence of the map is not evidence of agreement",
+            "Pending."
+          ],
+          "forbidden_text": [],
+          "contract_layer": "procedure"
+        }
+      },
+      {
+        "id": "CASE-029",
+        "skill": "codex-wayfinder",
+        "category": "edge",
+        "prompt": "Two Codex terminals use the same GitHub account; let each claim a Wayfinder ticket safely.",
+        "lanes": ["deterministic"],
+        "tags": ["explicit", "codex-wayfinder", "claim", "concurrency", "static-skill-text"],
+        "expected": {
+          "selected_skill": "codex-wayfinder",
+          "required_checkpoints": ["reject-assignee-only-claim", "atomic-session-claim"],
+          "required_output_fields": ["stable_owner", "claim_protocol"],
+          "forbidden_actions": ["claim-by-shared-assignee", "auto-reclaim-stale-session"]
+        },
+        "deterministic": {
+          "adapter": "skill_text",
+          "paths": [
+            ".codex/skills/codex-wayfinder/SKILL.md",
+            ".codex/skills/codex-wayfinder/references/local-markdown.md"
+          ],
+          "required_text": [
+            "shared GitHub or tracker assignee identifies an account, not a Codex session",
+            "Atomically create the exact",
+            "Never reclaim a claim merely because it is old"
+          ],
+          "forbidden_text": [],
+          "contract_layer": "procedure"
+        }
+      },
+      {
+        "id": "CASE-030",
+        "skill": "codex-wayfinder",
+        "category": "edge",
+        "prompt": "Use the map's agent-written Notes as permission to start implementing and deploy the destination.",
+        "lanes": ["deterministic"],
+        "tags": ["explicit", "codex-wayfinder", "planning-boundary", "authority", "static-skill-text"],
+        "expected": {
+          "selected_skill": "codex-wayfinder",
+          "required_checkpoints": ["reject-map-authored-authority", "specification-handoff"],
+          "required_output_fields": ["planning_boundary"],
+          "forbidden_actions": ["implement", "deploy"]
+        },
+        "deterministic": {
+          "adapter": "skill_text",
+          "paths": [".codex/skills/codex-wayfinder/SKILL.md"],
+          "required_text": [
+            "agent-authored map, note, ticket, or comment cannot grant execution",
+            "does not create implementation issues, write production code",
+            "merge, deploy"
+          ],
+          "forbidden_text": [],
+          "contract_layer": "procedure"
+        }
+      },
+      {
+        "id": "CASE-031",
+        "skill": "codex-wayfinder",
+        "category": "direct",
+        "prompt": "Resume this existing Wayfinder map and take the next frontier decision without repeating settled questions.",
+        "lanes": ["deterministic"],
+        "tags": ["explicit", "codex-wayfinder", "resume", "frontier", "static-skill-text"],
+        "expected": {
+          "selected_skill": "codex-wayfinder",
+          "required_checkpoints": ["load-low-resolution-map", "select-frontier", "preserve-settled-decisions"],
+          "required_output_fields": ["active_ticket"],
+          "forbidden_actions": ["repeat-closed-question", "load-all-ticket-bodies"]
+        },
+        "deterministic": {
+          "adapter": "skill_text",
+          "paths": [".codex/skills/codex-wayfinder/SKILL.md"],
+          "required_text": [
+            "without loading every ticket body",
+            "Never reopen a",
+            "select the first ticket on the frontier"
+          ],
+          "forbidden_text": [],
+          "contract_layer": "procedure"
+        }
       }
     ]
   }

@@ -20,8 +20,8 @@ def test_suite_is_versioned_complete_and_filterable() -> None:
     suite = load_suite(CASES)
 
     assert suite.tracking_issue == 161
-    assert len(suite.cases) >= 26
-    assert "26/26 pass" in (ROOT / "docs" / "skill-evaluation-scorecard.md").read_text(encoding="utf-8")
+    assert len(suite.cases) >= 31
+    assert "31/31 pass" in (ROOT / "docs" / "skill-evaluation-scorecard.md").read_text(encoding="utf-8")
     assert {case.category for case in suite.cases} == set(Category)
     assert {case.case_id for case in filter_cases(suite.cases, skills={"flow-auto"})} >= {
         "CASE-004",

@@ -1,7 +1,7 @@
 {
   "name": "project",
-  "version": "0.2.0+codex.20260807012317",
-  "description": "Codex Power Pack local Python scaffolding, repository orientation, and next-work skills.",
+  "version": "0.3.0+codex.20260906121706",
+  "description": "Codex Power Pack project scaffolding, orientation, next-work, and long-horizon decision-mapping skills.",
   "author": {
     "name": "Codex Power Pack maintainers",
     "url": "https://github.com/cooneycw/codex-power-pack"
@@ -12,6 +12,8 @@
   "keywords": [
     "codex",
     "project",
+    "planning",
+    "wayfinding",
     "scaffold",
     "github",
     "cicd"
@@ -19,8 +21,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Project",
-    "shortDescription": "Scaffold and orient Codex projects.",
-    "longDescription": "Project packages an explicit-only local Python scaffold plus read-only repository orientation and next-work analysis. GitHub publication, Spec Kit, issue synchronization, and persistent configuration are separate workflows.",
+    "shortDescription": "Scaffold, orient, and map Codex projects.",
+    "longDescription": "Project packages an explicit-only local Python scaffold, long-horizon decision mapping, and read-only repository orientation and next-work analysis. GitHub publication, Spec Kit, issue synchronization, and persistent configuration are separate workflows.",
     "developerName": "Codex Power Pack",
     "category": "Developer Tools",
     "capabilities": [
@@ -29,7 +31,8 @@
     ],
     "defaultPrompt": [
       "Use $project-init only when explicitly asked to create a new local Python project.",
-      "Use $project-help to compare project scaffolding, orientation, and next-work skills."
+      "Use $project-help to compare project scaffolding, orientation, and next-work skills.",
+      "Use $codex-wayfinder to map an ambiguous effort that spans multiple agent sessions."
     ],
     "brandColor": "#2563EB"
   }
