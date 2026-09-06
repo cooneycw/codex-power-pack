@@ -8,7 +8,7 @@
 | Direct activation recall | Not measured | Not checked | 100% | 100% |
 | Indirect activation recall | Not measured | Not checked | 100% | 90% |
 | Negative precision | Not measured | Not checked | 100% | 95% |
-| Procedure/output cases | Not available | 26/26 pass | 18 pass, 2 unavailable | 100% checked cases |
+| Procedure/output cases | Not available | 31/31 pass | 18 pass, 2 unavailable | 100% checked cases |
 
 Deterministic activation is intentionally reported as **not checked** because a
 fixture or static contract cannot measure model selection.

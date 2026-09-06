@@ -17,6 +17,7 @@ Surfaces:
     .codex/skills/project-next/       CxPP-authored deterministic project triage
                                       adapter; lib/project_next owns decisions
     .codex/skills/project-lite/       CxPP-authored native project orientation skill
+    .codex/skills/codex-wayfinder/    CxPP-authored multi-session decision mapping
     .codex/skills/cxpp-*/             CxPP-authored host bootstrap/status skills
     .codex/skills/spec-*/             CxPP-authored spec-kit workflow skills
     .codex/skills/woodpecker-*/       CxPP-authored Woodpecker API client skills
@@ -89,6 +90,7 @@ LOCAL_SKILL_DIRS = {
     "agents-md-help",
     "agents-md-lint",
     "claude-code-review",
+    "codex-wayfinder",
     "cxpp-init",
     "cxpp-status",
     "cxpp-update",

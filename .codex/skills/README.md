@@ -18,7 +18,7 @@ marker. `claude-md` is **not** pulled (Out-of-Scope for CxPP; the Codex-native
 ## CxPP-owned native skills
 
 The `agents-md-*` skill dirs are authored in this repo because they govern
-Codex's `AGENTS.md` instruction surface. `project-lite`, `spec-adopt` /
+Codex's `AGENTS.md` instruction surface. `codex-wayfinder`, `project-lite`, `spec-adopt` /
 `spec-sync`, and `cxpp-init` / `cxpp-update` / `cxpp-status` are also native
 workflow surfaces. `project-next` is a native adapter, but its classification
 and recommendation policy lives in `lib/project_next/` and the versioned

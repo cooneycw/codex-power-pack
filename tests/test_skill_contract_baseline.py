@@ -54,8 +54,8 @@ def test_inventory_reconciles_the_stage_zero_baseline() -> None:
     contract = load_json(CONTRACT_PATH)
     summary = contract["summary"]
 
-    assert summary["source_skills"] == 83
-    assert summary["packaged_skills"] == 73
+    assert summary["source_skills"] == 84
+    assert summary["packaged_skills"] == 74
     assert summary["unpackaged_skills"] == 10
     assert summary["marketplace_plugins"] == 16
     assert summary["implicit_skills"] == 2
