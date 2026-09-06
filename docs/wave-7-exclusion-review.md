@@ -51,7 +51,7 @@ decision without new evidence.
 | `cpp-help` | Replace | A global catch-all would duplicate the bounded packaged family help skills. | The packaged family help skills. |
 | `cpp-load-best-practices` | Replace | Codex uses focused instructions and documentation instead of a Claude context loader. | `AGENTS.md` and focused Codex documentation. |
 | `cpp-load-mcp-docs` | Replace | MCP discovery is host-managed and does not need a Claude context loader. | [`HOST_MANAGED.md`](HOST_MANAGED.md) and `$second-opinion-help`. |
-| `flow-auto_codex` | Replace | A second full-lifecycle entrypoint would duplicate the supported `$flow-auto` workflow. | `$flow-auto` plus explicit `$claude-code-review` escalation. |
+| `flow-auto_codex` | Replace | A second full-lifecycle entrypoint would duplicate `$flow-auto`; `$claude-code-review` is not an automatic Codex pre-PR stage. | `$flow-auto` plus separately and explicitly selected `$claude-code-review`. |
 | `flow-repair` | Replace | Codex flow packages bundle helpers and do not install Claude stable-path scripts. | Bundled flow helpers, `$flow-doctor`, and reinstall or `$cxpp-update`. |
 
 ## Resulting boundary
@@ -60,6 +60,10 @@ No reviewed skill is packaged. `$flow-auto` and `$project-next` remain the only
 implicit entrypoints; all replacements remain explicitly selected. The review
 does not restore Docker runtime ownership, Claude-only context loaders, a
 duplicate flow lifecycle, or Woodpecker server and agent lifecycle.
+
+`Retire` is an inventory disposition, not a file deletion: `cpp-dockers` and
+`cpp-happy-check` remain present in the source inventory while staying
+unpackaged and excluded from the supported plugin surface.
 
 The machine-readable exclusions remain generated from
 [`skill_contract_baseline.py`](../scripts/skill_contract_baseline.py). This

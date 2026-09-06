@@ -107,8 +107,11 @@ EXCLUSION_DECISIONS = {
         "replacement": "docs/HOST_MANAGED.md and second-opinion-help",
     },
     "flow-auto_codex": {
-        "rationale": "Replace: a second full-lifecycle entrypoint would duplicate the supported flow-auto workflow.",
-        "replacement": "flow-auto plus claude-code-review escalation",
+        "rationale": (
+            "Replace: a second full-lifecycle entrypoint would duplicate flow-auto; claude-code-review is not an "
+            "automatic Codex pre-PR stage."
+        ),
+        "replacement": "flow-auto plus separately and explicitly selected claude-code-review",
     },
     "flow-repair": {
         "rationale": "Replace: Codex flow packages bundle helpers and do not install Claude stable-path scripts.",

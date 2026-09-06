@@ -1745,8 +1745,8 @@
       "exclusion": {
         "state": "excluded",
         "owner": "Codex Power Pack maintainers",
-        "rationale": "Replace: a second full-lifecycle entrypoint would duplicate the supported flow-auto workflow.",
-        "replacement": "flow-auto plus claude-code-review escalation",
+        "rationale": "Replace: a second full-lifecycle entrypoint would duplicate flow-auto; claude-code-review is not an automatic Codex pre-PR stage.",
+        "replacement": "flow-auto plus separately and explicitly selected claude-code-review",
         "review_by": "2027-03-31",
         "tracking_issue": 173
       }
@@ -11215,7 +11215,7 @@
       "type": "unpackaged_skill",
       "subject": "flow-auto_codex",
       "owner": "Codex Power Pack maintainers",
-      "disposition": "Replace: a second full-lifecycle entrypoint would duplicate the supported flow-auto workflow. Replacement: flow-auto plus claude-code-review escalation.",
+      "disposition": "Replace: a second full-lifecycle entrypoint would duplicate flow-auto; claude-code-review is not an automatic Codex pre-PR stage. Replacement: flow-auto plus separately and explicitly selected claude-code-review.",
       "tracking_issue": 173,
       "review_by": "2027-03-31",
       "status": "reviewed_exclusion",

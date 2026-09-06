@@ -103,6 +103,32 @@ def test_every_unpublished_source_skill_has_a_reviewed_time_bounded_exclusion() 
         assert gap["status"] == "reviewed_exclusion"
         assert gap["evidence"]
 
+    decisions = {
+        skill["name"]: skill["exclusion"]["rationale"].partition(":")[0]
+        for skill in unpackaged
+    }
+    assert decisions == {
+        "browser-help": "Replace",
+        "browser-session": "Keep source-only",
+        "cicd-woodpecker": "Replace",
+        "cpp-dockers": "Retire",
+        "cpp-happy-check": "Retire",
+        "cpp-help": "Replace",
+        "cpp-load-best-practices": "Replace",
+        "cpp-load-mcp-docs": "Replace",
+        "flow-auto_codex": "Replace",
+        "flow-repair": "Replace",
+    }
+
+    by_name = {skill["name"]: skill for skill in unpackaged}
+    for retired in ("cpp-dockers", "cpp-happy-check"):
+        assert by_name[retired]["installed"]["state"] == "present"
+        assert by_name[retired]["package"]["state"] == "unpackaged"
+
+    flow_auto_codex = by_name["flow-auto_codex"]["exclusion"]
+    assert "not an automatic Codex pre-PR stage" in flow_auto_codex["rationale"]
+    assert "explicitly selected claude-code-review" in flow_auto_codex["replacement"]
+
 
 def test_cross_skill_and_host_references_are_classified_and_owned() -> None:
     contract = load_json(CONTRACT_PATH)

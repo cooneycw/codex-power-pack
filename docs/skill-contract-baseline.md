@@ -45,7 +45,7 @@ Prompt presence passed. Direct recall, indirect recall, and negative precision r
 | `cpp-help` | Codex Power Pack maintainers (#173) | Replace: a global catch-all would duplicate the bounded packaged family help skills. Replacement: the packaged family help skills. | 2027-03-31 |
 | `cpp-load-best-practices` | Codex Power Pack maintainers (#173) | Replace: Codex uses focused instructions and documentation instead of a Claude context loader. Replacement: AGENTS.md and focused Codex documentation. | 2027-03-31 |
 | `cpp-load-mcp-docs` | Codex Power Pack maintainers (#173) | Replace: MCP discovery is host-managed and does not need a Claude context loader. Replacement: docs/HOST_MANAGED.md and second-opinion-help. | 2027-03-31 |
-| `flow-auto_codex` | Codex Power Pack maintainers (#173) | Replace: a second full-lifecycle entrypoint would duplicate the supported flow-auto workflow. Replacement: flow-auto plus claude-code-review escalation. | 2027-03-31 |
+| `flow-auto_codex` | Codex Power Pack maintainers (#173) | Replace: a second full-lifecycle entrypoint would duplicate flow-auto; claude-code-review is not an automatic Codex pre-PR stage. Replacement: flow-auto plus separately and explicitly selected claude-code-review. | 2027-03-31 |
 | `flow-repair` | Codex Power Pack maintainers (#173) | Replace: Codex flow packages bundle helpers and do not install Claude stable-path scripts. Replacement: bundled flow helpers, flow-doctor, and reinstall or cxpp-update. | 2027-03-31 |
 
 The post-release evidence and decision record is [`wave-7-exclusion-review.md`](wave-7-exclusion-review.md).
