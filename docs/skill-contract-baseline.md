@@ -37,16 +37,18 @@ Prompt presence passed. Direct recall, indirect recall, and negative precision r
 
 | Skill | Owner | Disposition | Review by |
 |---|---|---|---|
-| `browser-help` | Codex Power Pack maintainers (#160) | Excluded: Codex uses the native Playwright MCP workflow instead of the retired browser family. Replacement: qa-help and upstream Playwright MCP guidance. | 2026-09-30 |
-| `browser-session` | Codex Power Pack maintainers (#160) | Excluded: Session management is provided by the packaged qa-test workflow and Playwright MCP. Replacement: qa-test and upstream Playwright MCP sessions. | 2026-09-30 |
-| `cicd-woodpecker` | Codex Power Pack maintainers (#160) | Excluded: The legacy combined command is split between pipeline generation and Woodpecker operations. Replacement: the packaged cicd-pipeline and woodpecker skills. | 2026-09-30 |
-| `cpp-dockers` | Codex Power Pack maintainers (#160) | Excluded: CxPP does not manage the retired Claude Power Pack Docker runtime. Replacement: cxpp-status host-service guidance. | 2026-09-30 |
-| `cpp-happy-check` | Codex Power Pack maintainers (#160) | Excluded: Host readiness is reported by the narrower packaged status and health skills. Replacement: cxpp-status and cicd-health. | 2026-09-30 |
-| `cpp-help` | Codex Power Pack maintainers (#160) | Excluded: A global catch-all help command would duplicate the packaged family help skills. Replacement: the packaged family help skills. | 2026-09-30 |
-| `cpp-load-best-practices` | Codex Power Pack maintainers (#160) | Excluded: Codex discovers focused instructions and documentation without a context-loader command. Replacement: AGENTS.md and focused Codex documentation. | 2026-09-30 |
-| `cpp-load-mcp-docs` | Codex Power Pack maintainers (#160) | Excluded: MCP discovery is host-managed and documented without a Claude context-loader command. Replacement: docs/HOST_MANAGED.md and second-opinion-help. | 2026-09-30 |
-| `flow-auto_codex` | Codex Power Pack maintainers (#160) | Excluded: Its supported behavior was folded into flow-auto with bounded claude-code-review escalation. Replacement: flow-auto plus claude-code-review escalation. | 2026-09-30 |
-| `flow-repair` | Codex Power Pack maintainers (#160) | Excluded: Installed flow packages bundle their helpers; flow-doctor owns diagnosis and repair guidance. Replacement: plugin-bundled flow helpers and flow-doctor. | 2026-09-30 |
+| `browser-help` | Codex Power Pack maintainers (#173) | Replace: Codex browser orientation is covered by the native Playwright MCP workflow. Replacement: qa-help and upstream Playwright MCP guidance. | 2027-03-31 |
+| `browser-session` | Codex Power Pack maintainers (#173) | Keep source-only: named concurrent authenticated sessions remain distinct, but no measured demand or activation evidence justifies packaging. Replacement: qa-test for single-session QA; no packaged replacement for named concurrent sessions. | 2027-03-31 |
+| `cicd-woodpecker` | Codex Power Pack maintainers (#173) | Replace: supported Woodpecker pipeline generation and client operations are split across narrower skills; CxPP does not own server or agent lifecycle. Replacement: cicd-pipeline and the explicit woodpecker client skills. | 2027-03-31 |
+| `cpp-dockers` | Codex Power Pack maintainers (#173) | Retire: whole-daemon inspection and the retired CPP Docker runtime are outside CxPP's host-runtime boundary. Replacement: no CxPP replacement; use host Docker tooling and cxpp-status for CxPP services. | 2027-03-31 |
+| `cpp-happy-check` | Codex Power Pack maintainers (#173) | Retire: third-party Happy CLI currency is outside CxPP ownership and has no measured CxPP demand. Replacement: no CxPP replacement; use the Happy CLI update workflow outside CxPP. | 2027-03-31 |
+| `cpp-help` | Codex Power Pack maintainers (#173) | Replace: a global catch-all would duplicate the bounded packaged family help skills. Replacement: the packaged family help skills. | 2027-03-31 |
+| `cpp-load-best-practices` | Codex Power Pack maintainers (#173) | Replace: Codex uses focused instructions and documentation instead of a Claude context loader. Replacement: AGENTS.md and focused Codex documentation. | 2027-03-31 |
+| `cpp-load-mcp-docs` | Codex Power Pack maintainers (#173) | Replace: MCP discovery is host-managed and does not need a Claude context loader. Replacement: docs/HOST_MANAGED.md and second-opinion-help. | 2027-03-31 |
+| `flow-auto_codex` | Codex Power Pack maintainers (#173) | Replace: a second full-lifecycle entrypoint would duplicate the supported flow-auto workflow. Replacement: flow-auto plus claude-code-review escalation. | 2027-03-31 |
+| `flow-repair` | Codex Power Pack maintainers (#173) | Replace: Codex flow packages bundle helpers and do not install Claude stable-path scripts. Replacement: bundled flow helpers, flow-doctor, and reinstall or cxpp-update. | 2027-03-31 |
+
+The post-release evidence and decision record is [`wave-7-exclusion-review.md`](wave-7-exclusion-review.md).
 
 ## Reference Classification
 

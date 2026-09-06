@@ -238,10 +238,10 @@
       "exclusion": {
         "state": "excluded",
         "owner": "Codex Power Pack maintainers",
-        "rationale": "Codex uses the native Playwright MCP workflow instead of the retired browser family.",
+        "rationale": "Replace: Codex browser orientation is covered by the native Playwright MCP workflow.",
         "replacement": "qa-help and upstream Playwright MCP guidance",
-        "review_by": "2026-09-30",
-        "tracking_issue": 160
+        "review_by": "2027-03-31",
+        "tracking_issue": 173
       }
     },
     {
@@ -273,10 +273,10 @@
       "exclusion": {
         "state": "excluded",
         "owner": "Codex Power Pack maintainers",
-        "rationale": "Session management is provided by the packaged qa-test workflow and Playwright MCP.",
-        "replacement": "qa-test and upstream Playwright MCP sessions",
-        "review_by": "2026-09-30",
-        "tracking_issue": 160
+        "rationale": "Keep source-only: named concurrent authenticated sessions remain distinct, but no measured demand or activation evidence justifies packaging.",
+        "replacement": "qa-test for single-session QA; no packaged replacement for named concurrent sessions",
+        "review_by": "2027-03-31",
+        "tracking_issue": 173
       }
     },
     {
@@ -929,10 +929,10 @@
       "exclusion": {
         "state": "excluded",
         "owner": "Codex Power Pack maintainers",
-        "rationale": "The legacy combined command is split between pipeline generation and Woodpecker operations.",
-        "replacement": "the packaged cicd-pipeline and woodpecker skills",
-        "review_by": "2026-09-30",
-        "tracking_issue": 160
+        "rationale": "Replace: supported Woodpecker pipeline generation and client operations are split across narrower skills; CxPP does not own server or agent lifecycle.",
+        "replacement": "cicd-pipeline and the explicit woodpecker client skills",
+        "review_by": "2027-03-31",
+        "tracking_issue": 173
       }
     },
     {
@@ -1070,10 +1070,10 @@
       "exclusion": {
         "state": "excluded",
         "owner": "Codex Power Pack maintainers",
-        "rationale": "CxPP does not manage the retired Claude Power Pack Docker runtime.",
-        "replacement": "cxpp-status host-service guidance",
-        "review_by": "2026-09-30",
-        "tracking_issue": 160
+        "rationale": "Retire: whole-daemon inspection and the retired CPP Docker runtime are outside CxPP's host-runtime boundary.",
+        "replacement": "no CxPP replacement; use host Docker tooling and cxpp-status for CxPP services",
+        "review_by": "2027-03-31",
+        "tracking_issue": 173
       }
     },
     {
@@ -1105,10 +1105,10 @@
       "exclusion": {
         "state": "excluded",
         "owner": "Codex Power Pack maintainers",
-        "rationale": "Host readiness is reported by the narrower packaged status and health skills.",
-        "replacement": "cxpp-status and cicd-health",
-        "review_by": "2026-09-30",
-        "tracking_issue": 160
+        "rationale": "Retire: third-party Happy CLI currency is outside CxPP ownership and has no measured CxPP demand.",
+        "replacement": "no CxPP replacement; use the Happy CLI update workflow outside CxPP",
+        "review_by": "2027-03-31",
+        "tracking_issue": 173
       }
     },
     {
@@ -1140,10 +1140,10 @@
       "exclusion": {
         "state": "excluded",
         "owner": "Codex Power Pack maintainers",
-        "rationale": "A global catch-all help command would duplicate the packaged family help skills.",
+        "rationale": "Replace: a global catch-all would duplicate the bounded packaged family help skills.",
         "replacement": "the packaged family help skills",
-        "review_by": "2026-09-30",
-        "tracking_issue": 160
+        "review_by": "2027-03-31",
+        "tracking_issue": 173
       }
     },
     {
@@ -1175,10 +1175,10 @@
       "exclusion": {
         "state": "excluded",
         "owner": "Codex Power Pack maintainers",
-        "rationale": "Codex discovers focused instructions and documentation without a context-loader command.",
+        "rationale": "Replace: Codex uses focused instructions and documentation instead of a Claude context loader.",
         "replacement": "AGENTS.md and focused Codex documentation",
-        "review_by": "2026-09-30",
-        "tracking_issue": 160
+        "review_by": "2027-03-31",
+        "tracking_issue": 173
       }
     },
     {
@@ -1210,10 +1210,10 @@
       "exclusion": {
         "state": "excluded",
         "owner": "Codex Power Pack maintainers",
-        "rationale": "MCP discovery is host-managed and documented without a Claude context-loader command.",
+        "rationale": "Replace: MCP discovery is host-managed and does not need a Claude context loader.",
         "replacement": "docs/HOST_MANAGED.md and second-opinion-help",
-        "review_by": "2026-09-30",
-        "tracking_issue": 160
+        "review_by": "2027-03-31",
+        "tracking_issue": 173
       }
     },
     {
@@ -1745,10 +1745,10 @@
       "exclusion": {
         "state": "excluded",
         "owner": "Codex Power Pack maintainers",
-        "rationale": "Its supported behavior was folded into flow-auto with bounded claude-code-review escalation.",
+        "rationale": "Replace: a second full-lifecycle entrypoint would duplicate the supported flow-auto workflow.",
         "replacement": "flow-auto plus claude-code-review escalation",
-        "review_by": "2026-09-30",
-        "tracking_issue": 160
+        "review_by": "2027-03-31",
+        "tracking_issue": 173
       }
     },
     {
@@ -2248,10 +2248,10 @@
       "exclusion": {
         "state": "excluded",
         "owner": "Codex Power Pack maintainers",
-        "rationale": "Installed flow packages bundle their helpers; flow-doctor owns diagnosis and repair guidance.",
-        "replacement": "plugin-bundled flow helpers and flow-doctor",
-        "review_by": "2026-09-30",
-        "tracking_issue": 160
+        "rationale": "Replace: Codex flow packages bundle helpers and do not install Claude stable-path scripts.",
+        "replacement": "bundled flow helpers, flow-doctor, and reinstall or cxpp-update",
+        "review_by": "2027-03-31",
+        "tracking_issue": 173
       }
     },
     {
@@ -11111,9 +11111,9 @@
       "type": "unpackaged_skill",
       "subject": "browser-help",
       "owner": "Codex Power Pack maintainers",
-      "disposition": "Excluded: Codex uses the native Playwright MCP workflow instead of the retired browser family. Replacement: qa-help and upstream Playwright MCP guidance.",
-      "tracking_issue": 160,
-      "review_by": "2026-09-30",
+      "disposition": "Replace: Codex browser orientation is covered by the native Playwright MCP workflow. Replacement: qa-help and upstream Playwright MCP guidance.",
+      "tracking_issue": 173,
+      "review_by": "2027-03-31",
       "status": "reviewed_exclusion",
       "evidence": [
         ".codex/skills/browser-help/SKILL.md"
@@ -11124,9 +11124,9 @@
       "type": "unpackaged_skill",
       "subject": "browser-session",
       "owner": "Codex Power Pack maintainers",
-      "disposition": "Excluded: Session management is provided by the packaged qa-test workflow and Playwright MCP. Replacement: qa-test and upstream Playwright MCP sessions.",
-      "tracking_issue": 160,
-      "review_by": "2026-09-30",
+      "disposition": "Keep source-only: named concurrent authenticated sessions remain distinct, but no measured demand or activation evidence justifies packaging. Replacement: qa-test for single-session QA; no packaged replacement for named concurrent sessions.",
+      "tracking_issue": 173,
+      "review_by": "2027-03-31",
       "status": "reviewed_exclusion",
       "evidence": [
         ".codex/skills/browser-session/SKILL.md"
@@ -11137,9 +11137,9 @@
       "type": "unpackaged_skill",
       "subject": "cicd-woodpecker",
       "owner": "Codex Power Pack maintainers",
-      "disposition": "Excluded: The legacy combined command is split between pipeline generation and Woodpecker operations. Replacement: the packaged cicd-pipeline and woodpecker skills.",
-      "tracking_issue": 160,
-      "review_by": "2026-09-30",
+      "disposition": "Replace: supported Woodpecker pipeline generation and client operations are split across narrower skills; CxPP does not own server or agent lifecycle. Replacement: cicd-pipeline and the explicit woodpecker client skills.",
+      "tracking_issue": 173,
+      "review_by": "2027-03-31",
       "status": "reviewed_exclusion",
       "evidence": [
         ".codex/skills/cicd-woodpecker/SKILL.md"
@@ -11150,9 +11150,9 @@
       "type": "unpackaged_skill",
       "subject": "cpp-dockers",
       "owner": "Codex Power Pack maintainers",
-      "disposition": "Excluded: CxPP does not manage the retired Claude Power Pack Docker runtime. Replacement: cxpp-status host-service guidance.",
-      "tracking_issue": 160,
-      "review_by": "2026-09-30",
+      "disposition": "Retire: whole-daemon inspection and the retired CPP Docker runtime are outside CxPP's host-runtime boundary. Replacement: no CxPP replacement; use host Docker tooling and cxpp-status for CxPP services.",
+      "tracking_issue": 173,
+      "review_by": "2027-03-31",
       "status": "reviewed_exclusion",
       "evidence": [
         ".codex/skills/cpp-dockers/SKILL.md"
@@ -11163,9 +11163,9 @@
       "type": "unpackaged_skill",
       "subject": "cpp-happy-check",
       "owner": "Codex Power Pack maintainers",
-      "disposition": "Excluded: Host readiness is reported by the narrower packaged status and health skills. Replacement: cxpp-status and cicd-health.",
-      "tracking_issue": 160,
-      "review_by": "2026-09-30",
+      "disposition": "Retire: third-party Happy CLI currency is outside CxPP ownership and has no measured CxPP demand. Replacement: no CxPP replacement; use the Happy CLI update workflow outside CxPP.",
+      "tracking_issue": 173,
+      "review_by": "2027-03-31",
       "status": "reviewed_exclusion",
       "evidence": [
         ".codex/skills/cpp-happy-check/SKILL.md"
@@ -11176,9 +11176,9 @@
       "type": "unpackaged_skill",
       "subject": "cpp-help",
       "owner": "Codex Power Pack maintainers",
-      "disposition": "Excluded: A global catch-all help command would duplicate the packaged family help skills. Replacement: the packaged family help skills.",
-      "tracking_issue": 160,
-      "review_by": "2026-09-30",
+      "disposition": "Replace: a global catch-all would duplicate the bounded packaged family help skills. Replacement: the packaged family help skills.",
+      "tracking_issue": 173,
+      "review_by": "2027-03-31",
       "status": "reviewed_exclusion",
       "evidence": [
         ".codex/skills/cpp-help/SKILL.md"
@@ -11189,9 +11189,9 @@
       "type": "unpackaged_skill",
       "subject": "cpp-load-best-practices",
       "owner": "Codex Power Pack maintainers",
-      "disposition": "Excluded: Codex discovers focused instructions and documentation without a context-loader command. Replacement: AGENTS.md and focused Codex documentation.",
-      "tracking_issue": 160,
-      "review_by": "2026-09-30",
+      "disposition": "Replace: Codex uses focused instructions and documentation instead of a Claude context loader. Replacement: AGENTS.md and focused Codex documentation.",
+      "tracking_issue": 173,
+      "review_by": "2027-03-31",
       "status": "reviewed_exclusion",
       "evidence": [
         ".codex/skills/cpp-load-best-practices/SKILL.md"
@@ -11202,9 +11202,9 @@
       "type": "unpackaged_skill",
       "subject": "cpp-load-mcp-docs",
       "owner": "Codex Power Pack maintainers",
-      "disposition": "Excluded: MCP discovery is host-managed and documented without a Claude context-loader command. Replacement: docs/HOST_MANAGED.md and second-opinion-help.",
-      "tracking_issue": 160,
-      "review_by": "2026-09-30",
+      "disposition": "Replace: MCP discovery is host-managed and does not need a Claude context loader. Replacement: docs/HOST_MANAGED.md and second-opinion-help.",
+      "tracking_issue": 173,
+      "review_by": "2027-03-31",
       "status": "reviewed_exclusion",
       "evidence": [
         ".codex/skills/cpp-load-mcp-docs/SKILL.md"
@@ -11215,9 +11215,9 @@
       "type": "unpackaged_skill",
       "subject": "flow-auto_codex",
       "owner": "Codex Power Pack maintainers",
-      "disposition": "Excluded: Its supported behavior was folded into flow-auto with bounded claude-code-review escalation. Replacement: flow-auto plus claude-code-review escalation.",
-      "tracking_issue": 160,
-      "review_by": "2026-09-30",
+      "disposition": "Replace: a second full-lifecycle entrypoint would duplicate the supported flow-auto workflow. Replacement: flow-auto plus claude-code-review escalation.",
+      "tracking_issue": 173,
+      "review_by": "2027-03-31",
       "status": "reviewed_exclusion",
       "evidence": [
         ".codex/skills/flow-auto_codex/SKILL.md"
@@ -11228,9 +11228,9 @@
       "type": "unpackaged_skill",
       "subject": "flow-repair",
       "owner": "Codex Power Pack maintainers",
-      "disposition": "Excluded: Installed flow packages bundle their helpers; flow-doctor owns diagnosis and repair guidance. Replacement: plugin-bundled flow helpers and flow-doctor.",
-      "tracking_issue": 160,
-      "review_by": "2026-09-30",
+      "disposition": "Replace: Codex flow packages bundle helpers and do not install Claude stable-path scripts. Replacement: bundled flow helpers, flow-doctor, and reinstall or cxpp-update.",
+      "tracking_issue": 173,
+      "review_by": "2027-03-31",
       "status": "reviewed_exclusion",
       "evidence": [
         ".codex/skills/flow-repair/SKILL.md"

@@ -64,6 +64,7 @@ def test_inventory_reconciles_the_stage_zero_baseline() -> None:
     names = [skill["name"] for skill in skills]
     assert names == sorted(names)
     assert len(names) == len(set(names)) == summary["source_skills"]
+    assert "codex-wayfinder" in names
 
     packaged = [skill for skill in skills if skill["package"]["state"] == "packaged"]
     unpackaged = [skill for skill in skills if skill["package"]["state"] == "unpackaged"]
@@ -93,11 +94,12 @@ def test_every_unpublished_source_skill_has_a_reviewed_time_bounded_exclusion() 
         assert exclusion["owner"]
         assert exclusion["rationale"]
         assert exclusion["replacement"]
-        assert exclusion["review_by"] == "2026-09-30"
-        assert exclusion["tracking_issue"] == 160
+        assert exclusion["review_by"] == "2027-03-31"
+        assert exclusion["tracking_issue"] == 173
         assert gap["owner"]
         assert gap["disposition"]
-        assert gap["review_by"] == "2026-09-30"
+        assert gap["tracking_issue"] == 173
+        assert gap["review_by"] == "2027-03-31"
         assert gap["status"] == "reviewed_exclusion"
         assert gap["evidence"]
 
