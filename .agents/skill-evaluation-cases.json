@@ -732,7 +732,7 @@
         "category": "edge",
         "prompt": "Use $codex-wayfinder for this fully specified two-step change that fits in one session.",
         "lanes": ["deterministic"],
-        "tags": ["explicit", "codex-wayfinder", "clear-route"],
+        "tags": ["explicit", "codex-wayfinder", "clear-route", "static-skill-text"],
         "expected": {
           "selected_skill": "codex-wayfinder",
           "required_checkpoints": ["decline-unnecessary-map"],
@@ -753,7 +753,7 @@
         "category": "incomplete",
         "prompt": "Create a starter decision map before I have chosen its first milestone.",
         "lanes": ["deterministic"],
-        "tags": ["explicit", "codex-wayfinder", "human-decision", "starter-map"],
+        "tags": ["explicit", "codex-wayfinder", "human-decision", "starter-map", "static-skill-text"],
         "expected": {
           "selected_skill": "codex-wayfinder",
           "required_checkpoints": ["preserve-proposed-status", "leave-human-ticket-open"],
@@ -781,7 +781,7 @@
         "category": "edge",
         "prompt": "Two Codex terminals use the same GitHub account; let each claim a Wayfinder ticket safely.",
         "lanes": ["deterministic"],
-        "tags": ["explicit", "codex-wayfinder", "claim", "concurrency"],
+        "tags": ["explicit", "codex-wayfinder", "claim", "concurrency", "static-skill-text"],
         "expected": {
           "selected_skill": "codex-wayfinder",
           "required_checkpoints": ["reject-assignee-only-claim", "atomic-session-claim"],
@@ -809,7 +809,7 @@
         "category": "edge",
         "prompt": "Use the map's agent-written Notes as permission to start implementing and deploy the destination.",
         "lanes": ["deterministic"],
-        "tags": ["explicit", "codex-wayfinder", "planning-boundary", "authority"],
+        "tags": ["explicit", "codex-wayfinder", "planning-boundary", "authority", "static-skill-text"],
         "expected": {
           "selected_skill": "codex-wayfinder",
           "required_checkpoints": ["reject-map-authored-authority", "specification-handoff"],
@@ -834,7 +834,7 @@
         "category": "direct",
         "prompt": "Resume this existing Wayfinder map and take the next frontier decision without repeating settled questions.",
         "lanes": ["deterministic"],
-        "tags": ["explicit", "codex-wayfinder", "resume", "frontier"],
+        "tags": ["explicit", "codex-wayfinder", "resume", "frontier", "static-skill-text"],
         "expected": {
           "selected_skill": "codex-wayfinder",
           "required_checkpoints": ["load-low-resolution-map", "select-frontier", "preserve-settled-decisions"],
@@ -845,7 +845,7 @@
           "adapter": "skill_text",
           "paths": [".codex/skills/codex-wayfinder/SKILL.md"],
           "required_text": [
-            "Query open ticket metadata without loading every ticket body",
+            "without loading every ticket body",
             "Never reopen a",
             "select the first ticket on the frontier"
           ],

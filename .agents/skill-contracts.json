@@ -5998,7 +5998,7 @@
     {
       "source_skill": "codex-wayfinder",
       "path": "plugins/project/skills/codex-wayfinder/SKILL.md",
-      "line": 149,
+      "line": 158,
       "token": "$spec-sync",
       "kind": "skill",
       "target": "spec-sync",

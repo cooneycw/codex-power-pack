@@ -58,6 +58,11 @@ tracker with the atomic claim protocol in the local-Markdown reference. If no
 stable session identity or atomic claim mechanism is available, serialize work
 through the human or coordinator.
 
+For local Markdown, every participant must resolve the shared metadata for the
+map's one authoritative checkout before reading or claiming a ticket. Copies in
+other worktrees are snapshots, not synchronized state. A reservation coordinates
+edits only when every participant reads and writes the same canonical files.
+
 ## Map model
 
 The map is a compact index, not the store for every answer. It contains:
@@ -118,8 +123,9 @@ status; the existence of the map is not evidence of agreement.
 
 ## Work through an existing map
 
-1. Load the map's destination, notes, decisions so far, fog, and out-of-scope
-   list. Query open ticket metadata without loading every ticket body.
+1. Resolve the map's canonical state location, then load its destination, notes,
+   decisions so far, fog, and out-of-scope list there. Query open ticket metadata
+   without loading every ticket body.
 2. If the user named a ticket, verify that it is open and unblocked. Otherwise
    select the first ticket on the frontier in recorded order. Never reopen a
    closed decision merely to repeat its questions; read its linked answer only
@@ -129,9 +135,12 @@ status; the existence of the map is not evidence of agreement.
 4. Resolve according to its type. For a human ticket, ask focused questions,
    explain why the choice matters, and let the human speak for themselves. For
    research, cite the evidence and separate observed facts from inference.
-5. Record the answer in exactly one canonical ticket, close it, and append a
-   linked one-line gist under **Decisions so far**. Release the claim only after
-   the tracker update is durable.
+5. Record the answer in exactly one canonical ticket and close it. For local
+   Markdown, acquire the short map-update reservation only after the answer is
+   ready, reread the canonical map, append the linked gist while preserving
+   other sessions' updates, make any related fog or scope change, then release
+   the reservation. Never hold it while waiting for the human. Release the
+   ticket claim only after the tracker update is durable.
 6. Recompute the frontier. Create only newly precise tickets, remove graduated
    fog, and close tickets found to be beyond the destination with a linked note
    under **Out of scope**.
