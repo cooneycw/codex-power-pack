@@ -51,7 +51,7 @@ def test_required_ci_uses_complete_local_contract_and_exact_pin() -> None:
     assert "git make" in commands
 
 
-def test_dependency_audit_is_required_and_precedes_advisory_currency() -> None:
+def test_dependency_audit_is_required_and_precedes_advisory_report() -> None:
     steps = _pipeline()["steps"]
     names = list(steps)
 
@@ -60,16 +60,28 @@ def test_dependency_audit_is_required_and_precedes_advisory_currency() -> None:
     tools = "\n".join(steps["dependency-audit"]["commands"])
     assert "make" in tools
     assert "uv pip-audit bandit" in tools
-    assert names.index("dependency-audit") < names.index("codex-skills-currency")
+    assert names.index("dependency-audit") < names.index("codex-skills-upstream-report")
 
 
-def test_latest_upstream_currency_is_manual_or_cron_only() -> None:
-    step = _pipeline()["steps"]["codex-skills-currency"]
+def test_latest_upstream_report_is_manual_or_named_cron_only() -> None:
+    step = _pipeline()["steps"]["codex-skills-upstream-report"]
     commands = "\n".join(step["commands"])
 
     assert _events(step) == {"manual", "cron"}
-    assert "--depth=1 https://github.com/cooneycw/claude-power-pack.git" in commands
-    assert "make codex-skills-currency-check" in commands
+    assert step["when"] == [
+        {"event": "manual"},
+        {"event": "cron", "cron": "codex-skills-upstream-report"},
+    ]
+    assert "--latest-ref" in commands
+    assert commands.index("--latest-ref") < commands.index("git init")
+    assert "remote add origin https://github.com/cooneycw/claude-power-pack.git" in commands
+    assert 'fetch --depth=1 origin "$CPP_REF"' in commands
+    assert 'checkout --detach "$CPP_REF"' in commands
+    assert (
+        'make codex-skills-upstream-report CPP_ROOT=/tmp/claude-power-pack-current CPP_REF="$CPP_REF"'
+        in commands
+    )
+    assert "make codex-skills-currency-check" not in commands
 
 
 def test_single_workflow_preserves_aggregate_pr_and_push_context_shape() -> None:
