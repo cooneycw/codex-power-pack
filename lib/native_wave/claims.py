@@ -293,8 +293,8 @@ def prepare_claim_reconciliation(
         return _refuse(RefusalCode.STALE_CLAIM, "claim version changed")
     if claim.state is not intent.expected_state or claim.owner_generation_id != intent.expected_old_generation:
         return _refuse(RefusalCode.CLAIM_STATE_MISMATCH, "claim reconciliation compare values changed")
-    if claim.state is not ClaimState.RECONCILE_REQUIRED:
-        return _refuse(RefusalCode.CLAIM_STATE_MISMATCH, "only reconcile-required claims can be rebound")
+    if claim.state is ClaimState.RELEASED:
+        return _refuse(RefusalCode.CLAIM_STATE_MISMATCH, "released claims cannot be rebound")
 
     coordinator = tx.read_owner(claim.wave_id, RoleId("coordinator"))
     if coordinator is None:

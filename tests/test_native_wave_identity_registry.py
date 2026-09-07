@@ -87,6 +87,8 @@ COORDINATOR_GENERATION = CoordinatorGenerationId(UUID(int=4))
 BOOT = UUID(int=5)
 PROCESS = ProcessCoordinates("0123456789abcdef", BOOT, 4200, 900)
 OTHER_PROCESS = ProcessCoordinates("0123456789abcdef", BOOT, 4201, 901)
+COORDINATOR_THREAD = ThreadId(UUID(int=8))
+COORDINATOR_PROCESS = ProcessCoordinates("0123456789abcdef", BOOT, 4300, 950)
 ASSIGNMENT_REF = AssignmentRef(UUID(int=6), 2, "sha256:" + "a" * 64)
 RECORD_REF = DurableRecordRef(UUID(int=7), "sha256:" + "b" * 64)
 TARGET = PhysicalTargetKey("0123456789abcdef", "/worktrees/issue-200")
@@ -277,6 +279,14 @@ class FakeTransaction:
                 current_grant = self.grants.get(change.consumed_grant_id)
                 if current_grant is None or current_grant.consumed:
                     raise SerializationConflict("grant CAS lost before commit")
+        for change in self.staged_claims:
+            current = self.claims.get(change.replacement.claim_id)
+            if change.expected_claim_version is None:
+                conflict = self.read_active_claim_for_target(change.replacement.target)
+                if current is not None or conflict is not None:
+                    raise SerializationConflict("claim appeared before commit")
+            elif current is None or current.record_version != change.expected_claim_version:
+                raise SerializationConflict("claim CAS lost before commit")
         for change in self.staged_owners:
             key = (change.replacement.wave_id, change.replacement.role_id)
             self.owners[key] = change.replacement
@@ -284,6 +294,8 @@ class FakeTransaction:
                 self.grants[change.consumed_grant_id] = dataclasses.replace(
                     self.grants[change.consumed_grant_id], consumed=True
                 )
+        for change in self.staged_claims:
+            self.claims[change.replacement.claim_id] = change.replacement
         self.is_active = False
 
 
@@ -1379,6 +1391,123 @@ def test_reconciliation_requires_current_coordinator_record_and_successor_assign
         worktree(exists=True, branch="issue-200"),
     )
     assert_refusal(stale_policy, RefusalCode.STALE_POLICY)
+
+
+@pytest.mark.parametrize("materialized", [False, True])
+def test_crash_preserved_claim_rebinds_directly_after_dead_owner_replacement(materialized: bool) -> None:
+    shared, cap, old_owner = prepared_owner_tx()
+    shared.assignments[ASSIGNMENT_REF] = assignment(capability=cap.snapshot_id)
+    shared.owners[(WAVE, COORDINATOR)] = owner(
+        role=COORDINATOR,
+        thread=COORDINATOR_THREAD,
+        process=COORDINATOR_PROCESS,
+        generation=OwnerGenerationId(COORDINATOR_GENERATION.value),
+        capability=cap.snapshot_id,
+    )
+
+    reserve_tx = shared.fork(UUID(int=860))
+    reserve = prepare_claim_change(
+        reserve_tx,
+        evidence(reserve_tx.transaction_id),
+        ReserveClaim(
+            expected(old_owner, assignment_ref=ASSIGNMENT_REF),
+            TARGET,
+            REPOSITORY,
+            200,
+            "issue-200",
+            ASSIGNMENT_REF,
+            "sha256:" + "7" * 64,
+        ),
+        worktree(),
+        FakeIds(),
+        FakeClock(),
+    )
+    assert not isinstance(reserve, OwnershipRefusal)
+    reserve_tx.stage_claim_change(reserve)
+    reserve_tx.commit()
+    current_claim = reserve.replacement
+
+    if materialized:
+        finalize_tx = shared.fork(UUID(int=861))
+        finalize = prepare_claim_change(
+            finalize_tx,
+            evidence(finalize_tx.transaction_id),
+            FinalizeClaim(
+                expected(old_owner, assignment_ref=ASSIGNMENT_REF, claim_id=current_claim.claim_id),
+                current_claim.claim_id,
+                current_claim.record_version,
+            ),
+            worktree(exists=True, branch="issue-200"),
+            FakeIds(),
+            FakeClock(),
+        )
+        assert not isinstance(finalize, OwnershipRefusal)
+        finalize_tx.stage_claim_change(finalize)
+        finalize_tx.commit()
+        current_claim = finalize.replacement
+
+    replace_tx = shared.fork(UUID(int=862))
+    dead_probe = FakeProbe()
+    dead_probe.recorded = ProcessObservationUnavailable(ObservationFailure.PROCESS_MISSING, "crashed")
+    replacement = prepare_owner_change(
+        replace_tx,
+        evidence(replace_tx.transaction_id, OTHER_THREAD, OTHER_PROCESS),
+        ReplaceDeadOwner(
+            WAVE,
+            WORKER,
+            old_owner.record_version,
+            old_owner.generation_id,
+            cap.snapshot_id,
+            2,
+        ),
+        dead_probe,
+        FakeIds(),
+        FakeClock(),
+    )
+    assert not isinstance(replacement, OwnershipRefusal)
+    replace_tx.stage_owner_change(replacement)
+    replace_tx.commit()
+    successor = replacement.replacement
+
+    rebound_ref = AssignmentRef(UUID(int=863), 3, "sha256:" + "8" * 64)
+    shared.assignments[rebound_ref] = dataclasses.replace(
+        assignment(capability=cap.snapshot_id, generation=successor.generation_id),
+        assignment=rebound_ref,
+    )
+    reconciliation_ref = DurableRecordRef(UUID(int=864), "sha256:" + "9" * 64)
+    shared.reconciliations[reconciliation_ref] = StoredReconciliation(
+        reconciliation_ref,
+        WAVE,
+        current_claim.claim_id,
+        old_owner.generation_id,
+        successor.generation_id,
+        COORDINATOR_GENERATION,
+        rebound_ref,
+        materialized,
+        "issue-200" if materialized else None,
+    )
+    intent = RebindClaimIntent(
+        current_claim.claim_id,
+        current_claim.record_version,
+        current_claim.state,
+        old_owner.generation_id,
+        successor.generation_id,
+        COORDINATOR_GENERATION,
+        reconciliation_ref,
+        rebound_ref,
+    )
+    reconcile_tx = shared.fork(UUID(int=865))
+    reconciled = prepare_claim_reconciliation(
+        reconcile_tx,
+        evidence(reconcile_tx.transaction_id, COORDINATOR_THREAD, COORDINATOR_PROCESS),
+        intent,
+        worktree(exists=materialized, branch="issue-200" if materialized else None),
+    )
+    assert not isinstance(reconciled, OwnershipRefusal)
+    assert reconciled.replacement.owner_generation_id == successor.generation_id
+    assert reconciled.replacement.state is (
+        ClaimState.MATERIALIZED if materialized else ClaimState.RESERVED
+    )
 
 
 def test_stale_coordinator_generation_cannot_rebind_crash_claim() -> None:
