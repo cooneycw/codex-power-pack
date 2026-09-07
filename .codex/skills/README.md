@@ -71,6 +71,50 @@ copy here:
 
 The pinned upstream commit lives in `vendor/claude-power-pack/PIN`.
 
+## Immutable source provenance
+
+The offline drift check proves that the generated tree matches the recorded
+manifest. It does not prove that the PIN names a real source object. Use a clean
+CPP checkout at the exact pinned commit for the stronger provenance gate:
+
+```bash
+PIN_REF="$(python3 scripts/codex_skills_sync.py --pin-ref)"
+git clone --filter=blob:none --no-checkout \
+  https://github.com/cooneycw/claude-power-pack.git /tmp/claude-power-pack-pinned
+git -C /tmp/claude-power-pack-pinned checkout --detach "$PIN_REF"
+make codex-skills-pin-check CPP_ROOT=/tmp/claude-power-pack-pinned
+```
+
+`--pin-ref` first parses the complete PIN and emits only a validated 40-character
+commit, so CI never interpolates unchecked repository provenance into a fetch.
+The clone URL is the fixed credential-free upstream rather than PIN-controlled
+shell input. `codex-skills-pin-check` then verifies that the source is a clean Git
+worktree at that object with a documented HTTPS or SSH GitHub origin, applies the
+CxPP overlay, and compares complete path coverage and bytes across source,
+`.codex/skills/`, `vendor/claude-power-pack/codex-skills.sha256`, and existing
+plugin payloads. The source inventory and bytes come from the pinned Git tree;
+every consumed checkout file and executable bit must match its immutable Git
+blob even when an index flag or ignore rule would hide it from `git status`.
+Expected plugin destinations come from `.agents/skill-contracts.json`, so a
+missing declared package is drift. Only package-local `agents/openai.yaml` UI
+metadata remains outside byte parity, as do explicit versioned unpackaged and
+CxPP-native skill exclusions; any other file under `agents/` is payload drift.
+
+PIN and manifest parsing rejects unknown or duplicate fields, malformed hashes,
+non-normalized or escaping paths, and unsafe source or destination symlinks.
+Refresh validates its exact ref, source HEAD, cleanliness, safe paths, and the
+complete prepared overlay before the first destination write. This prevents a
+validation failure from replacing the previous PIN, manifest, generated tree, or
+plugin payloads. Publication spans multiple directories and is not claimed to be
+crash-atomic.
+
+The repaired baseline is CPP commit
+`4726ccf43899ac20ec886e588f1b9faf3da51065` (source tree
+`e097372d00a31e074f91b89b2e6c25dc859f5c6f`). A clean detached checkout
+reproduces 123 adopted files across 55 generated skills. The command prints the
+source, tree, overlay SHA-256, manifest SHA-256, file count, and packaged-skill
+count so review evidence identifies the exact transformation it checked.
+
 To change a CxPP-owned runtime adaptation, patch the generated skill copy in
 this repo, mirror it into the matching plugin payload, and run
 `scripts/codex_skills_sync.py --write` plus the local verification gates.
