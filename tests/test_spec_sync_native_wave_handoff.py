@@ -7,6 +7,7 @@ import importlib.util
 import json
 import re
 import sys
+from graphlib import CycleError, TopologicalSorter
 from pathlib import Path
 from typing import Any
 
@@ -60,6 +61,15 @@ def string_values(payload: Any) -> list[str]:
     if isinstance(payload, list):
         return [value for item in payload for value in string_values(item)]
     return [payload] if isinstance(payload, str) else []
+
+
+def graph_from_witness(witness: dict[str, Any]) -> dict[str, set[str]]:
+    nodes = set(witness["nodes"])
+    graph = {node: set() for node in nodes}
+    for source, target in witness["directed_edges"]:
+        assert source in nodes and target in nodes, "every fixture edge endpoint must be declared"
+        graph[source].add(target)
+    return graph
 
 
 def write_tasks(path: Path, body: str) -> Path:
@@ -307,18 +317,21 @@ def test_rejection_cases_contain_structural_witnesses_not_only_expected_labels()
     assert duplicate_issue["issue_key"] == "cooneycw/codex-power-pack#310"
 
     cycle = scenarios["H-010"]["witness"]
-    edges = {tuple(edge) for edge in cycle["directed_edges"]}
-    assert any((target, source) in edges for source, target in edges)
+    with pytest.raises(CycleError):
+        tuple(TopologicalSorter(graph_from_witness(cycle)).static_order())
     assert len(set(cycle["group_membership"].values())) == 1
+    assert set(cycle["group_membership"]) == set(cycle["nodes"])
     assert cycle["projected_group_edges_if_validation_were_skipped"] == []
 
     valid_dag = scenarios["H-021"]
-    valid_edges = {tuple(edge) for edge in valid_dag["witness"]["directed_edges"]}
-    assert valid_edges
-    assert not any((target, source) in valid_edges for source, target in valid_edges if source != target)
-    assert len(set(valid_dag["witness"]["group_membership"].values())) == 1
-    assert valid_dag["witness"]["task_graph_acyclic"] is True
-    assert valid_dag["witness"]["projected_group_edges"] == []
+    valid_witness = valid_dag["witness"]
+    valid_order = tuple(TopologicalSorter(graph_from_witness(valid_witness)).static_order())
+    assert set(valid_order) == set(valid_witness["nodes"])
+    assert valid_order.index("T001") < valid_order.index("T002")
+    assert set(valid_witness["group_membership"]) == set(valid_witness["nodes"])
+    assert len(set(valid_witness["group_membership"].values())) == 1
+    assert valid_witness["task_graph_acyclic"] is True
+    assert valid_witness["projected_group_edges"] == []
     assert valid_dag["expected"]["assignment_input"] is not None
 
 
