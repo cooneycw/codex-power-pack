@@ -1381,11 +1381,12 @@ def _adapt_deferred_native_boundaries(
             "<SKILL_DIR>/scripts/flow-ci-status.sh <merge-sha> --path /path/to/main/repo --wait",
             "<SKILL_DIR>/scripts/flow-ci-status.sh <merge-sha> --path /path/to/main/repo --repo owner/name --wait",
         )
-        ci_transition = re.compile(
-            r"Act on `FLOW_CI_STATUS`:\n.*?(?=\n### Step 9: Deploy \(optional\))",
-            re.DOTALL,
-        )
-        ci_transition_replacement = '''Act on `FLOW_CI_STATUS`:
+        if "### Step 8: Verify CI (after merge)" in text:
+            ci_transition = re.compile(
+                r"Act on `FLOW_CI_STATUS`:\n.*?(?=\n### Step 9: Deploy \(optional\))",
+                re.DOTALL,
+            )
+            ci_transition_replacement = '''Act on `FLOW_CI_STATUS`:
 
 - `success` with `FLOW_CI_REF` equal to the supplied merge SHA -> proceed to
   Step 9.
@@ -1407,15 +1408,20 @@ or treat a Claude plugin/CPP checkout as native helper authority.
 Report: `Step 8/9: Verify CI complete - exact-SHA pipeline #{N} passed` or
 `Step 8/9: Verify CI stopped ({running|pending|not-found|unknown|missing-helper})`
 '''
-        text, count = ci_transition.subn(ci_transition_replacement, text, count=1)
-        if count != 1:
-            raise IntegrityError("flow-auto source no longer has the reviewed CI transition")
-        text = text.replace(
-            "Only if a Makefile with a `deploy` target exists in the main repo.",
-            "Only after Step 8 exact-SHA CI success, and only if a Makefile with a "
-            "`deploy` target exists in the main repo.",
-            1,
-        )
+            text, count = ci_transition.subn(ci_transition_replacement, text, count=1)
+            if count != 1:
+                raise IntegrityError("flow-auto source no longer has the reviewed CI transition")
+            deploy_boundary = (
+                "Only if a Makefile with a `deploy` target exists in the main repo."
+            )
+            if text.count(deploy_boundary) != 1:
+                raise IntegrityError("flow-auto source no longer has the reviewed deploy boundary")
+            text = text.replace(
+                deploy_boundary,
+                "Only after Step 8 exact-SHA CI success, and only if a Makefile with a "
+                "`deploy` target exists in the main repo.",
+                1,
+            )
 
     if skill_dir.name == "flow-help" and source_file.name == "reference.md":
         plugin_cache = re.compile(
