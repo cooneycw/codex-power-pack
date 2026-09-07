@@ -1196,73 +1196,76 @@ def _adapt_flow_merge_helper(skill_dir: Path, source_file: Path, text: str) -> s
     if count != 1:
         raise IntegrityError("gh-pr-merge source no longer has the reviewed base-retry header")
 
+    required_contexts = re.compile(
+        r"# The status-check contexts the BASE branch requires, read from BOTH mechanisms\n"
+        r".*?^resolve_required_contexts\(\) \{\n.*?^\}\n",
+        re.MULTILINE | re.DOTALL,
+    )
+    required_contexts_replacement = r'''# Read required contexts from BOTH GitHub mechanisms (issues #577/#610):
+# classic branch protection and repository rulesets. Native CxPP can establish a
+# complete posture only when both reads succeed. Two readable empty results prove
+# no required contexts; any unreadable mechanism leaves the posture unresolved.
+resolve_required_contexts() {
+    REQUIRED_CONTEXTS=()
+    RESOLVE_STATUS="unresolved"
+
+    local out line
+    [[ -z "$PR_BASE_BRANCH" ]] && return 0
+
+    local -a found=()
+    local classic_answered=0
+    local rules_answered=0
+
+    if out=$(_gh_api_jq "repos/{owner}/{repo}/branches/${PR_BASE_BRANCH}/protection/required_status_checks" \
+                        '((.contexts // []) + ((.checks // []) | map(.context))) | unique | .[]'); then
+        classic_answered=1
+        while IFS= read -r line; do
+            [[ -n "$line" ]] && found+=("$line")
+        done <<<"$out"
+    fi
+
+    if out=$(_gh_api_jq "repos/{owner}/{repo}/rules/branches/${PR_BASE_BRANCH}" \
+                        '[.[] | select(.type == "required_status_checks")
+                              | .parameters.required_status_checks[]?.context] | unique | .[]'); then
+        rules_answered=1
+        while IFS= read -r line; do
+            [[ -n "$line" ]] && found+=("$line")
+        done <<<"$out"
+    fi
+
+    local -A seen=()
+    local ctx
+    for ctx in ${found+"${found[@]}"}; do
+        [[ -n "${seen[$ctx]:-}" ]] && continue
+        seen["$ctx"]=1
+        REQUIRED_CONTEXTS+=("$ctx")
+    done
+
+    if (( classic_answered == 0 || rules_answered == 0 )); then
+        RESOLVE_STATUS="unresolved"
+    elif (( ${#REQUIRED_CONTEXTS[@]} > 0 )); then
+        RESOLVE_STATUS="declared"
+    else
+        RESOLVE_STATUS="none"
+    fi
+}
+'''
+    text, count = required_contexts.subn(required_contexts_replacement, text, count=1)
+    if count != 1:
+        raise IntegrityError("gh-pr-merge source no longer has the reviewed context resolver")
+
     observed_checks = re.compile(
         r"# Neither mechanism could be read \(issue #610\), so nothing is KNOWN to be\n"
         r".*?^wait_for_observed_checks\(\) \{\n.*?^\}\n",
         re.MULTILINE | re.DOTALL,
     )
-    observed_replacement = r'''# Neither required-context mechanism could be read (issue #610). Native CxPP
-# may use the PR rollup as evidence, but unreadable or empty evidence is UNKNOWN
-# and therefore a clean stop. A red state or a state that remains pending is also
-# a hard stop; the merge request is never used as a substitute status-check gate.
+    observed_replacement = r'''# An incomplete required-context posture is UNKNOWN (issue #610). An arbitrary
+# observed green check cannot prove that every required context was discovered,
+# so native CxPP stops without polling or attempting the merge.
 wait_for_observed_checks() {
-    local attempts="${GH_PR_MERGE_CHECK_ATTEMPTS:-60}"
-    local delay="${GH_PR_MERGE_CHECK_DELAY:-10}"
-    local i line name state pending failed observed announced=0
-
-    for ((i = 1; i <= attempts; i++)); do
-        pending=""
-        failed=""
-        if ! observed=$(check_states); then
-            echo "error: required contexts and the PR status rollup are unreadable for" \
-                 "PR #$PR_NUMBER; refusing to merge with unknown CI state." >&2
-            return 1
-        fi
-        if [[ -z "$observed" ]]; then
-            echo "error: required contexts are unreadable and PR #$PR_NUMBER reports no" \
-                 "status checks; refusing to treat missing CI evidence as green." >&2
-            return 1
-        fi
-        while IFS= read -r line; do
-            [[ -z "$line" ]] && continue
-            name="${line%%|*}"
-            state="${line##*|}"
-            case "${state^^}" in
-                SUCCESS|NEUTRAL|SKIPPED)
-                    ;;
-                FAILURE|ERROR|CANCELLED|TIMED_OUT|ACTION_REQUIRED|STARTUP_FAILURE)
-                    failed+="${name} (${state}) "
-                    ;;
-                *)
-                    pending+="${name} (${state}) "
-                    ;;
-            esac
-        done <<<"$observed"
-
-        if [[ -n "$failed" ]]; then
-            echo "error: status check(s) are RED on PR #$PR_NUMBER: ${failed}" >&2
-            echo "       Required contexts could not be enumerated (issue #610), but a red" \
-                 "check is authoritative on its own - fix CI and push again." >&2
-            return 1
-        fi
-        if [[ -z "$pending" ]]; then
-            (( announced )) && echo "note: reported check(s) are green; merging." >&2
-            return 0
-        fi
-        if (( i < attempts )); then
-            if (( announced == 0 )); then
-                echo "note: required status-check contexts are not enumerable for PR" \
-                     "#$PR_NUMBER - waiting on the check(s) the PR itself reports:" \
-                     "${pending}" >&2
-                announced=1
-            fi
-            sleep "$delay"
-        fi
-    done
-
-    echo "error: status check(s) are still pending or unknown on PR #$PR_NUMBER" \
-         "after $attempts check(s): ${pending}" >&2
-    echo "       Not merging without terminal green CI evidence." >&2
+    echo "error: required status-check posture is incomplete for PR #$PR_NUMBER;" \
+         "both branch-protection and ruleset declarations must be readable." >&2
+    echo "       Observed PR checks cannot establish the missing required-context set." >&2
     return 1
 }
 '''
@@ -1377,6 +1380,41 @@ def _adapt_deferred_native_boundaries(
         text = text.replace(
             "<SKILL_DIR>/scripts/flow-ci-status.sh <merge-sha> --path /path/to/main/repo --wait",
             "<SKILL_DIR>/scripts/flow-ci-status.sh <merge-sha> --path /path/to/main/repo --repo owner/name --wait",
+        )
+        ci_transition = re.compile(
+            r"Act on `FLOW_CI_STATUS`:\n.*?(?=\n### Step 9: Deploy \(optional\))",
+            re.DOTALL,
+        )
+        ci_transition_replacement = '''Act on `FLOW_CI_STATUS`:
+
+- `success` with `FLOW_CI_REF` equal to the supplied merge SHA -> proceed to
+  Step 9.
+- `failure` -> **STOP**. Do not deploy. Report `FLOW_CI_URL` and every
+  `FLOW_CI_FAILED_STEP` line so the failed step remains explicit.
+- `running` / `pending` / `not-found` / `unknown` -> **STOP**. CI for the exact
+  merge SHA is unverified; report the provider/ref/pipeline/URL fields and do
+  not deploy or mark the flow complete.
+
+`--wait` defaults to 600s and polls every 15s; pass `--wait <seconds>` to change
+it, or omit `--wait` for a single-shot read. Add `--event pull_request` only
+when deliberately resolving a PR pipeline, and retain the exact SHA/path/repo
+arguments.
+
+On exit 127, the installed native flow skill is incomplete. **STOP** and ask the
+owner to reinstall or upgrade `flow@codex-power-pack`; do not improvise a lookup
+or treat a Claude plugin/CPP checkout as native helper authority.
+
+Report: `Step 8/9: Verify CI complete - exact-SHA pipeline #{N} passed` or
+`Step 8/9: Verify CI stopped ({running|pending|not-found|unknown|missing-helper})`
+'''
+        text, count = ci_transition.subn(ci_transition_replacement, text, count=1)
+        if count != 1:
+            raise IntegrityError("flow-auto source no longer has the reviewed CI transition")
+        text = text.replace(
+            "Only if a Makefile with a `deploy` target exists in the main repo.",
+            "Only after Step 8 exact-SHA CI success, and only if a Makefile with a "
+            "`deploy` target exists in the main repo.",
+            1,
         )
 
     if skill_dir.name == "flow-help" and source_file.name == "reference.md":

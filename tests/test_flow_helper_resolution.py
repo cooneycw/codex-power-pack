@@ -133,7 +133,8 @@ def _merge_stubs(
     check_state: str | None,
     required: bool,
     protection_failure: bool = False,
-    protection_readable: bool = True,
+    classic_protection_readable: bool = True,
+    rules_protection_readable: bool = True,
     status_readable: bool = True,
     head_readable: bool = True,
     remote_head_digit: int = 3,
@@ -143,7 +144,8 @@ def _merge_stubs(
     calls = tmp_path / "merge-calls.log"
     gh = tmp_path / "gh"
     required_line = "echo required-context" if required else ":"
-    api_result = "exit 0" if protection_readable else "exit 1"
+    classic_api_result = "exit 0" if classic_protection_readable else "exit 1"
+    rules_api_result = "exit 0" if rules_protection_readable else "exit 1"
     status_result = (
         "exit 1"
         if not status_readable
@@ -179,8 +181,8 @@ def _merge_stubs(
         'if [[ "$1 $2" == "pr list" ]]; then exit 0; fi\n'
         'if [[ "$1" == "api" ]]; then\n'
         '  if [[ "$2" == *"/protection/required_status_checks"* ]]; then '
-        f'{required_line}; fi\n'
-        f'  {api_result}\n'
+        f'{required_line}; {classic_api_result}; fi\n'
+        f'  {rules_api_result}\n'
         'fi\n'
         'if [[ "$1 $2" == "repo view" ]]; then\n'
         '  if [[ "$*" == *defaultBranchRef* ]]; then echo main; '
@@ -278,8 +280,8 @@ def test_merge_helper_never_automatically_retries_with_admin(tmp_path: Path) -> 
 
 @pytest.mark.parametrize(
     ("check_state", "status_readable"),
-    [(None, True), ("SUCCESS", False), ("PENDING", True)],
-    ids=["empty-rollup", "unreadable-rollup", "pending-expiry"],
+    [(None, True), ("SUCCESS", False), ("PENDING", True), ("SUCCESS", True)],
+    ids=["empty-rollup", "unreadable-rollup", "pending", "observed-green"],
 )
 def test_merge_helper_fails_closed_when_protection_and_status_are_unknown(
     tmp_path: Path, check_state: str | None, status_readable: bool
@@ -289,7 +291,8 @@ def test_merge_helper_fails_closed_when_protection_and_status_are_unknown(
         tmp_path,
         check_state=check_state,
         required=False,
-        protection_readable=False,
+        classic_protection_readable=False,
+        rules_protection_readable=False,
         status_readable=status_readable,
     )
     result = subprocess.run(
@@ -303,6 +306,34 @@ def test_merge_helper_fails_closed_when_protection_and_status_are_unknown(
     )
 
     assert result.returncode == 1
+    assert not any(
+        line.startswith("gh pr merge") for line in calls.read_text().splitlines()
+    )
+
+
+def test_merge_helper_fails_closed_when_only_one_protection_source_is_readable(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / ".git").write_text("gitdir: /fixture/worktree\n", encoding="utf-8")
+    env, calls = _merge_stubs(
+        tmp_path,
+        check_state="SUCCESS",
+        required=False,
+        classic_protection_readable=True,
+        rules_protection_readable=False,
+    )
+    result = subprocess.run(
+        [str(MERGE_HELPER), "196", "issue-196-fixture"],
+        cwd=tmp_path,
+        env=env,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert result.returncode == 1
+    assert "required status-check posture is incomplete" in result.stderr
     assert not any(
         line.startswith("gh pr merge") for line in calls.read_text().splitlines()
     )

@@ -39,6 +39,28 @@ def test_codex_flow_references_delegate_to_bundled_finish_gate() -> None:
         assert "<SKILL_DIR>/scripts/flow-finish-gate.sh" in source
 
 
+def test_flow_auto_requires_exact_sha_ci_success_before_deploy() -> None:
+    source = (
+        REPO_ROOT / ".codex/skills/flow-auto/reference.md"
+    ).read_text(encoding="utf-8")
+    packaged = (
+        REPO_ROOT / "plugins/flow/skills/flow-auto/reference.md"
+    ).read_text(encoding="utf-8")
+    step_eight = source.split("### Step 8: Verify CI (after merge)", 1)[1].split(
+        "### Step 9: Deploy (optional)", 1
+    )[0]
+
+    assert source == packaged
+    assert "`success` with `FLOW_CI_REF` equal to the supplied merge SHA" in step_eight
+    assert "merge SHA is unverified" in step_eight
+    assert "reinstall or upgrade `flow@codex-power-pack`" in step_eight
+    assert "Warn and proceed" not in step_eight
+    assert "fail-open by design" not in step_eight
+    assert "${CLAUDE_PLUGIN_ROOT}" not in step_eight
+    assert "$flow-repair" not in step_eight
+    assert "Only after Step 8 exact-SHA CI success" in source
+
+
 def test_marketplace_and_checkout_runtime_layouts_are_adapted() -> None:
     for indent in ("", "   ", "    "):
         upstream = (
