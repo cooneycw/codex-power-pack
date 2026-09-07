@@ -4,7 +4,7 @@
 # - scan dependencies and local Python helper libraries
 
 when:
-  - event: [push, pull_request]
+  - event: [push, pull_request, manual, cron]
 
 steps:
   # Keep secret detection first and blocking: no later CI task should run when a
@@ -13,38 +13,55 @@ steps:
     image: zricethezav/gitleaks:v8.18.4
     commands:
       - gitleaks detect --source . --config .gitleaks.toml --verbose
+    when:
+      - event: [push, pull_request]
 
   validate:
     image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
     commands:
+      - apt-get update
+      - apt-get install --yes --no-install-recommends git make
+      - rm -rf /var/lib/apt/lists/*
       - uv sync --extra dev --frozen
-      - uv run --extra dev ruff check .
-      - uv run --extra dev pytest
-      - uv run --extra dev mypy .
-      # Drift gate: .codex/skills/ must match the pinned claude-power-pack copy
-      # (codex-power-pack#75). Git-free, so it runs in this container.
-      - uv run python scripts/codex_skills_sync.py --check
-      # Harness gate: generated/authored skills must not carry unadapted
-      # Claude-only constructs into Codex.
-      - uv run python scripts/harness_lint.py --check
-      # Deterministic activation/procedure/output contracts run on every PR;
-      # model-backed evaluation remains an explicit manual/scheduled lane.
-      - uv run python scripts/skill-eval.py deterministic
+      # Canonical local contract: includes lint, tests, typing, generated-byte
+      # drift, harness semantics, skill contracts, project-next, and eval checks.
+      - make verify
+    when:
+      - event: [push, pull_request]
 
-  # Live currency gate (#139): the local manifest detects hand edits, while
-  # this compares the adopted payload with current CPP main. Unrelated CPP
-  # changes do not fail the gate because comparison is file-content based.
-  codex-skills-currency:
+  # Required source proof (#204): parse the PIN before using its ref, fetch the
+  # fixed credential-free upstream, and reproduce every adopted byte through
+  # the deterministic CxPP overlay. This is distinct from moving-upstream drift.
+  codex-skills-pin-integrity:
     image: python:3.11-alpine
     commands:
-      - apk add --no-cache git
-      - git clone --depth=1 https://github.com/cooneycw/claude-power-pack.git /tmp/claude-power-pack-current
-      - python3 scripts/codex_skills_sync.py --source-check --cpp-root /tmp/claude-power-pack-current
+      - apk add --no-cache git make
+      - PIN_REF="$(python3 scripts/codex_skills_sync.py --pin-ref)"
+      - git clone --filter=blob:none --no-checkout https://github.com/cooneycw/claude-power-pack.git /tmp/claude-power-pack-pinned
+      - git -C /tmp/claude-power-pack-pinned checkout --detach "$PIN_REF"
+      - make codex-skills-pin-check CPP_ROOT=/tmp/claude-power-pack-pinned
+    when:
+      - event: [push, pull_request]
 
   dependency-audit:
     image: python:3.11-slim-bookworm
     commands:
+      - apt-get update
+      - apt-get install --yes --no-install-recommends make
+      - rm -rf /var/lib/apt/lists/*
       - pip install --quiet uv pip-audit bandit
-      - uv export --format requirements-txt --no-hashes > /tmp/requirements.txt
-      - pip-audit -r /tmp/requirements.txt
-      - bandit -r lib scripts -ll --quiet --skip B104,B108,B310,B602
+      - make dep-audit
+    when:
+      - event: [push, pull_request]
+
+  # Temporary latest-upstream visibility (#195). Manual/cron triggering stays
+  # separate from required PR/push integrity; #207 owns the structured report
+  # and actual schedule rollout.
+  codex-skills-currency:
+    image: python:3.11-alpine
+    commands:
+      - apk add --no-cache git make
+      - git clone --depth=1 https://github.com/cooneycw/claude-power-pack.git /tmp/claude-power-pack-current
+      - make codex-skills-currency-check CPP_ROOT=/tmp/claude-power-pack-current
+    when:
+      - event: [manual, cron]

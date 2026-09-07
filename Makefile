@@ -1,6 +1,6 @@
 .PHONY: test lint format typecheck verify build update_docs clean help secret-scan dep-audit \
 	codex-skills codex-skills-check codex-skills-refresh codex-skills-currency-check harness-lint \
-	project-next-check project-next-sync skill-contract-lint skill-eval-check skill-eval-live \
+	codex-skills-pin-check project-next-check project-next-sync skill-contract-lint skill-eval-check skill-eval-live \
 	release-validate
 
 # claude-power-pack checkout the generated Codex skills are pulled from (codex-power-pack#75).
@@ -25,14 +25,14 @@ harness-lint:
 	@python3 scripts/harness_lint.py --check
 
 skill-contract-lint:
-	@python3 scripts/skill_contract_baseline.py --check
-	@python3 scripts/skill_contract_lint.py --check
+	@uv run --extra dev python scripts/skill_contract_baseline.py --check
+	@uv run --extra dev python scripts/skill_contract_lint.py --check
 
 project-next-check:
-	@python3 scripts/project_next_sync.py --check
+	@uv run --extra dev python scripts/project_next_sync.py --check
 
 project-next-sync:
-	@python3 scripts/project_next_sync.py --write
+	@uv run --extra dev python scripts/project_next_sync.py --write
 
 skill-eval-check:
 	@uv run --extra dev python scripts/skill-eval.py deterministic
@@ -69,6 +69,10 @@ codex-skills-refresh:
 # deterministic Codex runtime overlay. CI clones CPP main before running this.
 codex-skills-currency-check:
 	@python3 scripts/codex_skills_sync.py --source-check --cpp-root "$(CPP_ROOT)"
+
+# Reproduce the adopted payload from the exact clean immutable source recorded in PIN.
+codex-skills-pin-check:
+	@python3 scripts/codex_skills_sync.py --pin-check --cpp-root "$(CPP_ROOT)"
 
 ## Verification gate (runs all quality checks)
 
@@ -117,6 +121,7 @@ help:
 	@echo "  make codex-skills-check   - Drift gate for .codex/skills/"
 	@echo "  make codex-skills         - Re-snapshot the drift manifest"
 	@echo "  make codex-skills-refresh - Re-pull skills from a CPP checkout (CPP_ROOT=, CPP_REF=)"
+	@echo "  make codex-skills-pin-check - Verify exact pinned CPP source reproduction (CPP_ROOT=)"
 	@echo "  make codex-skills-currency-check - Compare the vendor snapshot with CPP_ROOT"
 	@echo ""
 	@echo "  make clean       - Remove build artifacts"
