@@ -64,6 +64,7 @@ desktop.ini
 !tests/project_next/fixtures/scenarios.json
 !tests/skill_evals/fixtures/*.json
 !tests/fixtures/native-codex-wave-contract-scenarios.json
+!tests/fixtures/native_wave_transport/cases.json
 !.agents/project-init-spec-kit-contract.json
 !.agents/project-init-spec-kit-contract.schema.json
 !plugins/**/.codex-plugin/plugin.json
