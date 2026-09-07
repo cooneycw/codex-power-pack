@@ -1175,6 +1175,21 @@ def _adapt_flow_merge_helper(skill_dir: Path, source_file: Path, text: str) -> s
     if count != 1:
         raise IntegrityError("gh-pr-merge source no longer has the reviewed admin-retry block")
 
+    base_retry_header = re.compile(
+        r"# Base moved at squash time \(issue #502\):\n.*?(?=# Branch protection)",
+        re.DOTALL,
+    )
+    base_retry_header_replacement = """# Base moved at squash time (issue #502):
+#   A sibling merge can advance the base in the poll-to-merge race window. Native
+#   CxPP treats that rejection as a clean stop instead of retrying after only a
+#   refetch and mergeability poll. Re-run the helper to repeat the complete
+#   head/base/status/review clearance before another exact-head attempt.
+#
+"""
+    text, count = base_retry_header.subn(base_retry_header_replacement, text, count=1)
+    if count != 1:
+        raise IntegrityError("gh-pr-merge source no longer has the reviewed base-retry header")
+
     observed_checks = re.compile(
         r"# Neither mechanism could be read \(issue #610\), so nothing is KNOWN to be\n"
         r".*?^wait_for_observed_checks\(\) \{\n.*?^\}\n",
@@ -1315,10 +1330,16 @@ run_squash() {
     if count != 1:
         raise IntegrityError("gh-pr-merge source no longer has the reviewed squash retry")
 
-    text = text.replace(
+    old_retry_hooks = (
         "#   GH_PR_MERGE_BASE_RETRY_ATTEMPTS  squash retries on \"Base branch was modified\" (default: 2)\n"
-        "#   GH_PR_MERGE_BASE_RETRY_DELAY     seconds before each such retry (default: 2)\n",
+        "#   GH_PR_MERGE_BASE_RETRY_DELAY     seconds before each such retry (default: 2)\n"
+    )
+    if text.count(old_retry_hooks) != 1:
+        raise IntegrityError("gh-pr-merge source no longer has the reviewed retry hooks")
+    text = text.replace(
+        old_retry_hooks,
         "#   A base-move rejection is not retried automatically; re-run after regating.\n",
+        1,
     )
     text = text.replace(
         "an admin override is applied automatically\n"

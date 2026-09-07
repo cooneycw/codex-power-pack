@@ -137,6 +137,7 @@ def _merge_stubs(
     status_readable: bool = True,
     head_readable: bool = True,
     remote_head_digit: int = 3,
+    head_changes: bool = False,
     base_failure: bool = False,
 ) -> tuple[dict[str, str], Path]:
     calls = tmp_path / "merge-calls.log"
@@ -150,9 +151,16 @@ def _merge_stubs(
         if check_state is None
         else f'echo "required-context|{check_state}"'
     )
-    head_result = (
-        f'printf "%040d\\n" {remote_head_digit}' if head_readable else "exit 1"
-    )
+    head_reads = tmp_path / "head-reads"
+    if head_changes:
+        head_result = (
+            f'if [[ -e "{head_reads}" ]]; then printf "%040d\\n" 4; '
+            f'else : > "{head_reads}"; printf "%040d\\n" 3; fi'
+        )
+    else:
+        head_result = (
+            f'printf "%040d\\n" {remote_head_digit}' if head_readable else "exit 1"
+        )
     if protection_failure:
         merge_result = (
             "echo \"failed to merge pull request: GraphQL: You're not authorized to "
@@ -328,6 +336,31 @@ def test_merge_helper_refuses_unbound_pr_head(
 
     assert result.returncode == 1
     assert "cannot bind PR #196 to the checked-out head" in result.stderr
+    assert not any(
+        line.startswith("gh pr merge") for line in calls.read_text().splitlines()
+    )
+
+
+def test_merge_helper_refuses_head_change_before_merge(tmp_path: Path) -> None:
+    (tmp_path / ".git").write_text("gitdir: /fixture/worktree\n", encoding="utf-8")
+    env, calls = _merge_stubs(
+        tmp_path,
+        check_state="SUCCESS",
+        required=False,
+        head_changes=True,
+    )
+    result = subprocess.run(
+        [str(MERGE_HELPER), "196", "issue-196-fixture"],
+        cwd=tmp_path,
+        env=env,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert result.returncode == 1
+    assert "changed after pre-merge validation" in result.stderr
     assert not any(
         line.startswith("gh pr merge") for line in calls.read_text().splitlines()
     )
