@@ -482,19 +482,10 @@ _gh_api_jq() {
 REQUIRED_CONTEXTS=()
 RESOLVE_STATUS="unresolved"
 
-# The status-check contexts the BASE branch requires, read from BOTH mechanisms
-# GitHub offers (issues #577, #610):
-#   * classic branch protection - /branches/{base}/protection/required_status_checks,
-#     in both its API shapes (the legacy `contexts` list and the newer
-#     `checks[].context` form)
-#   * repository rulesets - /repos/{o}/{r}/rules/branches/{base}, the modern
-#     mechanism, entirely invisible to the endpoint above
-# A source that 404s (or is not permitted) contributes NOTHING and does not mark
-# the lookup as answered; only a 2xx does. That distinction is the whole fix: a
-# branch with no protection of either kind gets a 200 + empty array from the
-# rulesets endpoint, so it resolves as `none` and skips the wait, while a branch
-# whose posture is simply unreadable resolves as `unresolved` and falls back to
-# the PR's own checks rather than to a 10-minute stall.
+# Read required contexts from BOTH GitHub mechanisms (issues #577/#610):
+# classic branch protection and repository rulesets. Native CxPP can establish a
+# complete posture only when both reads succeed. Two readable empty results prove
+# no required contexts; any unreadable mechanism leaves the posture unresolved.
 resolve_required_contexts() {
     REQUIRED_CONTEXTS=()
     RESOLVE_STATUS="unresolved"
@@ -503,11 +494,12 @@ resolve_required_contexts() {
     [[ -z "$PR_BASE_BRANCH" ]] && return 0
 
     local -a found=()
-    local answered=0
+    local classic_answered=0
+    local rules_answered=0
 
     if out=$(_gh_api_jq "repos/{owner}/{repo}/branches/${PR_BASE_BRANCH}/protection/required_status_checks" \
                         '((.contexts // []) + ((.checks // []) | map(.context))) | unique | .[]'); then
-        answered=1
+        classic_answered=1
         while IFS= read -r line; do
             [[ -n "$line" ]] && found+=("$line")
         done <<<"$out"
@@ -516,13 +508,12 @@ resolve_required_contexts() {
     if out=$(_gh_api_jq "repos/{owner}/{repo}/rules/branches/${PR_BASE_BRANCH}" \
                         '[.[] | select(.type == "required_status_checks")
                               | .parameters.required_status_checks[]?.context] | unique | .[]'); then
-        answered=1
+        rules_answered=1
         while IFS= read -r line; do
             [[ -n "$line" ]] && found+=("$line")
         done <<<"$out"
     fi
 
-    # Union the two sources - a context declared by both must be waited on once.
     local -A seen=()
     local ctx
     for ctx in ${found+"${found[@]}"}; do
@@ -531,12 +522,12 @@ resolve_required_contexts() {
         REQUIRED_CONTEXTS+=("$ctx")
     done
 
-    if (( ${#REQUIRED_CONTEXTS[@]} > 0 )); then
-        RESOLVE_STATUS="declared"
-    elif (( answered )); then
-        RESOLVE_STATUS="none"
-    else
+    if (( classic_answered == 0 || rules_answered == 0 )); then
         RESOLVE_STATUS="unresolved"
+    elif (( ${#REQUIRED_CONTEXTS[@]} > 0 )); then
+        RESOLVE_STATUS="declared"
+    else
+        RESOLVE_STATUS="none"
     fi
 }
 
@@ -622,68 +613,13 @@ wait_for_required_checks() {
     return 1
 }
 
-# Neither required-context mechanism could be read (issue #610). Native CxPP
-# may use the PR rollup as evidence, but unreadable or empty evidence is UNKNOWN
-# and therefore a clean stop. A red state or a state that remains pending is also
-# a hard stop; the merge request is never used as a substitute status-check gate.
+# An incomplete required-context posture is UNKNOWN (issue #610). An arbitrary
+# observed green check cannot prove that every required context was discovered,
+# so native CxPP stops without polling or attempting the merge.
 wait_for_observed_checks() {
-    local attempts="${GH_PR_MERGE_CHECK_ATTEMPTS:-60}"
-    local delay="${GH_PR_MERGE_CHECK_DELAY:-10}"
-    local i line name state pending failed observed announced=0
-
-    for ((i = 1; i <= attempts; i++)); do
-        pending=""
-        failed=""
-        if ! observed=$(check_states); then
-            echo "error: required contexts and the PR status rollup are unreadable for" \
-                 "PR #$PR_NUMBER; refusing to merge with unknown CI state." >&2
-            return 1
-        fi
-        if [[ -z "$observed" ]]; then
-            echo "error: required contexts are unreadable and PR #$PR_NUMBER reports no" \
-                 "status checks; refusing to treat missing CI evidence as green." >&2
-            return 1
-        fi
-        while IFS= read -r line; do
-            [[ -z "$line" ]] && continue
-            name="${line%%|*}"
-            state="${line##*|}"
-            case "${state^^}" in
-                SUCCESS|NEUTRAL|SKIPPED)
-                    ;;
-                FAILURE|ERROR|CANCELLED|TIMED_OUT|ACTION_REQUIRED|STARTUP_FAILURE)
-                    failed+="${name} (${state}) "
-                    ;;
-                *)
-                    pending+="${name} (${state}) "
-                    ;;
-            esac
-        done <<<"$observed"
-
-        if [[ -n "$failed" ]]; then
-            echo "error: status check(s) are RED on PR #$PR_NUMBER: ${failed}" >&2
-            echo "       Required contexts could not be enumerated (issue #610), but a red" \
-                 "check is authoritative on its own - fix CI and push again." >&2
-            return 1
-        fi
-        if [[ -z "$pending" ]]; then
-            (( announced )) && echo "note: reported check(s) are green; merging." >&2
-            return 0
-        fi
-        if (( i < attempts )); then
-            if (( announced == 0 )); then
-                echo "note: required status-check contexts are not enumerable for PR" \
-                     "#$PR_NUMBER - waiting on the check(s) the PR itself reports:" \
-                     "${pending}" >&2
-                announced=1
-            fi
-            sleep "$delay"
-        fi
-    done
-
-    echo "error: status check(s) are still pending or unknown on PR #$PR_NUMBER" \
-         "after $attempts check(s): ${pending}" >&2
-    echo "       Not merging without terminal green CI evidence." >&2
+    echo "error: required status-check posture is incomplete for PR #$PR_NUMBER;" \
+         "both branch-protection and ruleset declarations must be readable." >&2
+    echo "       Observed PR checks cannot establish the missing required-context set." >&2
     return 1
 }
 

@@ -965,38 +965,29 @@ FLOW_CI_STATUS: success | failure | running | pending | not-found | unknown
 
 Act on `FLOW_CI_STATUS`:
 
-- `success` -> proceed to Step 9.
+- `success` with `FLOW_CI_REF` equal to the supplied merge SHA -> proceed to
+  Step 9.
 - `failure` -> **STOP**. Do not deploy. Report `FLOW_CI_URL` and every
-  `FLOW_CI_FAILED_STEP` line: which step failed is the whole diagnosis, and
-  pipeline colour does not carry it. A red `deploy` step (a transient SSH
-  connect timeout on kyle's push pipelines, say) is a different problem from a
-  red `test-unit`, and only the step name distinguishes them.
-- `running` / `pending` -> the wait window expired with the pipeline still
-  going. Non-blocking: report that CI was still running and let the user decide
-  whether to wait, rather than deploying on an unknown result.
-- `not-found` -> no pipeline carries this SHA (CI may not be wired for the repo,
-  or the push has not registered yet). Warn and proceed.
-- `unknown` -> the helper could not reach a provider (no credentials, no
-  network). It is fail-open by design: warn and proceed.
+  `FLOW_CI_FAILED_STEP` line so the failed step remains explicit.
+- `running` / `pending` / `not-found` / `unknown` -> **STOP**. CI for the exact
+  merge SHA is unverified; report the provider/ref/pipeline/URL fields and do
+  not deploy or mark the flow complete.
 
 `--wait` defaults to 600s and polls every 15s; pass `--wait <seconds>` to change
-it, or omit `--wait` for a single-shot read. Add `--event pull_request` when
-resolving a PR pipeline rather than the post-merge push pipeline, and
-`--exit-code` if you want a `failure` verdict to exit 1.
+it, or omit `--wait` for a single-shot read. Add `--event pull_request` only
+when deliberately resolving a PR pipeline, and retain the exact SHA/path/repo
+arguments.
 
-On exit 127 the helper family is not installed: fall back to
-`${CLAUDE_PLUGIN_ROOT}/scripts/flow-ci-status.sh` (bundled with the plugin,
-#590), else the CPP-checkout copy - either may prompt once; tell the user to run
-**`$flow-repair`** to restore the prompt-free lane. If no copy exists at all,
-skip CI verification with a warning rather than improvising a lookup, and say
-plainly in the final summary that CI was NOT verified.
+On exit 127, the installed native flow skill is incomplete. **STOP** and ask the
+owner to reinstall or upgrade `flow@codex-power-pack`; do not improvise a lookup
+or treat a Claude plugin/CPP checkout as native helper authority.
 
-Report: `Step 8/9: Verify CI complete - pipeline #{N} passed` or
-`Step 8/9: Verify CI skipped ({not-found|unknown})`
+Report: `Step 8/9: Verify CI complete - exact-SHA pipeline #{N} passed` or
+`Step 8/9: Verify CI stopped ({running|pending|not-found|unknown|missing-helper})`
 
 ### Step 9: Deploy (optional)
 
-Only if a Makefile with a `deploy` target exists in the main repo. Because
+Only after Step 8 exact-SHA CI success, and only if a Makefile with a `deploy` target exists in the main repo. Because
 `$flow-auto` runs `make deploy` inline (it does NOT call `$flow-deploy`), the
 deploy-verification gate is wired in here too - otherwise the flagship
 "one command to ship" path would deploy without validating the deployment.
