@@ -62,10 +62,12 @@ class _TextId:
         return self.value
 
 
+@dataclass(frozen=True, slots=True)
 class WaveId(_TextId):
     """Host-local wave namespace."""
 
 
+@dataclass(frozen=True, slots=True)
 class RoleId(_TextId):
     """Role within a wave."""
 
@@ -82,22 +84,27 @@ class _UuidId:
         return str(self.value)
 
 
+@dataclass(frozen=True, slots=True)
 class ThreadId(_UuidId):
     """Native Codex thread identity."""
 
 
+@dataclass(frozen=True, slots=True)
 class OwnerGenerationId(_UuidId):
     """Generation fence for a role owner."""
 
 
+@dataclass(frozen=True, slots=True)
 class CoordinatorGenerationId(_UuidId):
     """Typed coordinator generation used for coordinator-only authority."""
 
 
+@dataclass(frozen=True, slots=True)
 class ClaimId(_UuidId):
     """Durable worktree claim identifier."""
 
 
+@dataclass(frozen=True, slots=True)
 class GrantId(_UuidId):
     """One-use durable grant identifier."""
 
