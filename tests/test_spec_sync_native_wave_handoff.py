@@ -65,6 +65,7 @@ def test_corpus_binds_existing_contracts_and_one_compiler() -> None:
     assert corpus["consumer_issue"] == 201
     assert corpus["evidence_status"] == "contract_conformance_fixture"
     assert corpus["runtime_admission_implemented"] is False
+    assert corpus["scenario_semantics"].startswith("Each scenario is a minimal witness delta")
     assert sources["native_wave"]["sha256"] == NATIVE_CONTRACT_SHA256
     assert sources["spec_sync"]["identity_version"] == "spec-sync:v1"
     assert sources["spec_sync"]["compiler_count"] == 1

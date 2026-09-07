@@ -253,7 +253,8 @@ the current coordinator generation can append a native `queued` event.
 
 ### Stable same-input digest
 
-The handoff digest is lowercase SHA-256 over RFC 8785-style canonical JSON of:
+The handoff digest is lowercase SHA-256 over canonical UTF-8 JSON with sorted
+object keys, no insignificant whitespace, and normalized scalar spellings for:
 
 - contract and source-contract versions/hashes;
 - immutable artifact snapshot fields and file digests;
@@ -317,6 +318,11 @@ suppressed and no assignment event is appended.
 An exact canonical blocker with current `CLOSED` evidence satisfies only that
 edge. It does not make another open/unknown edge eligible and does not imply
 that the candidate is otherwise ready.
+
+Each corpus scenario is a minimal witness delta against an otherwise valid
+common package. An `eligible` case means only that the isolated condition does
+not block admission when every omitted common precondition is valid; it is not
+a standalone package or evidence that #201's runtime admission exists.
 
 ## Conformance evidence and ownership
 

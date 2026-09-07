@@ -5,6 +5,7 @@
   "consumer_issue": 201,
   "evidence_status": "contract_conformance_fixture",
   "runtime_admission_implemented": false,
+  "scenario_semantics": "Each scenario is a minimal witness delta against an otherwise valid common package; eligible means only that the isolated condition does not block admission.",
   "source_contracts": {
     "native_wave": {
       "path": "docs/native-codex-wave-contract.md",
