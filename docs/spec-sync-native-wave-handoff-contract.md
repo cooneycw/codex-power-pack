@@ -108,10 +108,11 @@ mapping continues to identify the same compiled group.
 
 An issue key is serialized as lowercase `owner/repository#number`, after the
 repository owner and name have been resolved by a trusted collector. The
-number is a positive decimal integer without leading signs. An unqualified
-`#number` may be resolved relative to its source repository only before the
-handoff is serialized; the serialized dependency graph never contains an
-unqualified issue number.
+number is its minimal positive decimal spelling: no sign, no leading zero, and
+zero is invalid. Thus `#044` is not an alias for `#44`; nonminimal input is
+rejected before hashing. An unqualified `#number` may be resolved relative to
+its source repository only before the handoff is serialized; the serialized
+dependency graph never contains an unqualified issue number.
 
 Equality compares the complete key, not the numeric suffix. A dependency on
 `cooneycw/kyle#44` may be satisfied only by state evidence whose key is exactly
@@ -166,7 +167,8 @@ The mapping set is valid only when:
 - each selected group and stable identity is claimed once;
 - each mapping's repository, tasks path, and group reconstruct its exact
   `spec-sync:v1` identity;
-- each mapped issue key is unique within the selected synchronization; and
+- each mapped issue key is unique within the selected synchronization, so two
+  distinct groups cannot claim one issue; and
 - the ledger source is derived from the same immutable `tasks.md` snapshot or
   from its one idempotent write-back successor explicitly linked by digest.
 
@@ -181,10 +183,22 @@ used for admission. Each edge records its source artifact or issue declaration
 and its canonicalized endpoints. Internal task ordering may collapse inside a
 group; cross-group and issue blockers may not disappear during that collapse.
 
-The graph must be acyclic after task-to-group and group-to-issue projection. A
-self-edge, missing endpoint, duplicate task ownership, or strongly connected
-component with more than one node invalidates the package. The consumer may
-not break a cycle by ordering its members heuristically.
+Validation is ordered and cannot skip a level:
+
+1. Validate all task endpoints and the complete task graph before projection.
+   Any task self-edge or task cycle is invalid, including a cycle whose tasks
+   all belong to one group.
+2. Project valid task edges to groups. A lawful edge whose endpoints belong to
+   the same group is internal ordering and is omitted from the group graph; it
+   is not a forbidden projected self-edge. Then validate explicit group edges,
+   endpoints, self-edges, and cycles.
+3. Project the valid group graph through the one-to-one group-to-issue mapping,
+   then validate issue endpoints, self-edges, and cycles.
+
+A missing endpoint, duplicate task ownership, duplicate issue claim, or cycle
+at any applicable level invalidates the package. The consumer may not hide an
+intra-group task cycle by collapsing it, mistake a valid intra-group DAG edge
+for an invalid group self-edge, or break a cycle heuristically.
 
 ### 5. Complete issue inventory
 
@@ -230,6 +244,11 @@ inventory. Classification and ranking are replayed through the existing
 `classify_repository` and `recommend` entry points; the handoff does not
 reimplement them.
 
+`candidate_key` must equal the canonical issue key on the exact selected
+`mapping_identity` row. Independent validity is insufficient: a valid mapping
+for `stage-1` issue `#310` cannot be combined with an unrelated locally
+recommended `#999`. A mismatch produces no assignment input.
+
 Local availability does not override the qualified dependency graph. A
 candidate that project-next ranks first remains suppressed when the handoff has
 an `OPEN` or `UNKNOWN` external blocker or cannot prove the external key's
@@ -253,8 +272,28 @@ the current coordinator generation can append a native `queued` event.
 
 ### Stable same-input digest
 
-The handoff digest is lowercase SHA-256 over canonical UTF-8 JSON with sorted
-object keys, no insignificant whitespace, and normalized scalar spellings for:
+The handoff digest is lowercase SHA-256 over this exact serialization:
+
+- the value domain is JSON `null`, Boolean, Unicode string, and signed 64-bit
+  integer; binary floats, NaN/infinity, and arbitrary-precision numbers are
+  forbidden;
+- every input string and object key must already be Unicode NFC, or validation
+  rejects it rather than silently normalizing it;
+- object keys are sorted by Unicode code-point order; arrays with semantic
+  order retain it; repository scope sorts by repository, mappings by stable
+  identity, selected task IDs lexically, dependency edges by `(source, target)`,
+  repository proofs by `(repository, mode)`, and issue records by complete
+  canonical issue key;
+- strings escape quote as `\"`, reverse solidus as `\\`, and backspace, tab,
+  line feed, form feed, and carriage return as `\b`, `\t`, `\n`, `\f`, and
+  `\r`; other U+0000 through U+001F controls use lowercase `\u00xx`; `/` and
+  all other valid Unicode are emitted directly; integers use minimal base-10
+  spelling, and literals are exactly lowercase `true`, `false`, and `null`; and
+- separators are exactly `,` and `:` with no whitespace, there is no trailing
+  newline, bytes are UTF-8, and the lowercase 64-hex SHA-256 covers those exact
+  bytes.
+
+The serialized value contains:
 
 - contract and source-contract versions/hashes;
 - immutable artifact snapshot fields and file digests;
@@ -264,12 +303,10 @@ object keys, no insignificant whitespace, and normalized scalar spellings for:
 - inventory scope, collection/base revisions, normalized query/terminal proof,
   exact issue states, state-evidence digests, and canonical inventory digest.
 
-Maps are sorted by stable identity, task IDs naturally by canonical string, and
-issue/dependency records by complete canonical key. Duplicate keys are rejected
-before hashing. Observational `observed_at`, `collected_at`, `fresh_until`, log
-sequence, and transport metadata are excluded. Therefore a same-input rerun at
-a different observation time has the same stable mapping identity and handoff
-digest.
+Duplicate keys are rejected before hashing. Observational `observed_at`,
+`collected_at`, `fresh_until`, log sequence, and transport metadata are
+excluded. Therefore a same-input rerun at a different observation time has the
+same stable mapping identity and handoff digest.
 
 A changed artifact commit or file digest, mapping, dependency edge, candidate,
 project-next result, inventory scope, issue state, state-evidence revision, or
@@ -307,6 +344,7 @@ suppressed and no assignment event is appended.
 | `mapping_stale` | identity reconstructs to another repository/path/group | no assignment input |
 | `duplicate_group_claim` | one stable identity or group maps to multiple issue keys | no assignment input |
 | `duplicate_task_claim` | one task occurs in multiple selected groups | no assignment input |
+| `duplicate_issue_claim` | two distinct stable identities or groups map to one issue key | no assignment input |
 | `dependency_cycle` | explicit directed edges form a cycle | no assignment input |
 | `inventory_incomplete` | missing scope/key/query page/terminal proof or failed collection | no assignment input |
 | `inventory_stale` | freshness or consumer/base revision no longer matches | no assignment input |
@@ -314,6 +352,7 @@ suppressed and no assignment event is appended.
 | `blocker_open` | exact canonical blocker key has `OPEN` evidence | no assignment input |
 | `blocker_unknown` | exact key is absent, contradictory, or `UNKNOWN` | no assignment input |
 | `qualified_key_collision` | evidence matches only the numeric suffix or another repository | no assignment input |
+| `candidate_mapping_mismatch` | candidate key differs from the selected mapping row's issue key | no assignment input |
 
 An exact canonical blocker with current `CLOSED` evidence satisfies only that
 edge. It does not make another open/unknown edge eligible and does not imply

@@ -27,6 +27,22 @@
   "digest_contract": {
     "algorithm": "sha256",
     "encoding": "canonical-json-sorted-keys-no-insignificant-whitespace",
+    "value_domain": ["null", "boolean", "unicode-nfc-string", "signed-64-bit-integer"],
+    "forbidden_values": ["binary-float", "nan", "infinity", "non-nfc-string"],
+    "object_key_order": "unicode-code-point",
+    "semantic_array_order": "preserved",
+    "set_like_array_order": {
+      "repository_scope": "repository",
+      "mapping_rows": "stable_identity",
+      "selected_task_ids": "lexical-string",
+      "dependency_edges": ["source", "target"],
+      "repository_proofs": ["repository", "mode"],
+      "issue_records": "canonical-issue-key"
+    },
+    "string_escapes": "quote-backslash-and-b-t-n-f-r-short-escapes-other-controls-lowercase-u00xx-slash-and-other-unicode-direct",
+    "scalar_encoding": "utf8-direct-minimal-decimal-lowercase-literals",
+    "separators": [",", ":"],
+    "trailing_newline": false,
     "included": [
       "source_contract_bindings",
       "artifact_snapshot",
@@ -201,7 +217,12 @@
       "witness": {
         "selected_task_ids": ["T001", "T002"],
         "mapped_task_ids": ["T001"],
-        "missing_task_ids": ["T002"]
+        "missing_task_ids": ["T002"],
+        "valid_counterpart": {
+          "selected_task_ids": ["T001", "T002"],
+          "mapped_task_ids": ["T001", "T002"],
+          "missing_task_ids": []
+        }
       },
       "expected": {
         "disposition": "rejected",
@@ -284,10 +305,15 @@
       "covers": ["dependency_cycle"],
       "witness": {
         "nodes": ["T001", "T002"],
+        "group_membership": {
+          "T001": "stage-1",
+          "T002": "stage-1"
+        },
         "directed_edges": [
           ["T001", "T002"],
           ["T002", "T001"]
-        ]
+        ],
+        "projected_group_edges_if_validation_were_skipped": []
       },
       "expected": {
         "disposition": "rejected",
@@ -313,7 +339,27 @@
             "response_digest": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
           }
         ],
-        "missing_repository_proofs": ["cooneycw/kyle"]
+        "missing_repository_proofs": ["cooneycw/kyle"],
+        "valid_counterpart": {
+          "repository_scope": [
+            "cooneycw/codex-power-pack",
+            "cooneycw/kyle"
+          ],
+          "repository_proofs": [
+            {
+              "repository": "cooneycw/codex-power-pack",
+              "mode": "full-repository",
+              "terminal_page": true
+            },
+            {
+              "repository": "cooneycw/kyle",
+              "mode": "referenced-keys",
+              "terminal_page": true,
+              "keys": ["cooneycw/kyle#412"]
+            }
+          ],
+          "missing_repository_proofs": []
+        }
       },
       "expected": {
         "disposition": "rejected",
@@ -509,6 +555,70 @@
       "expected": {
         "disposition": "excluded",
         "reason": "outside_artifact_scope",
+        "assignment_input": null
+      }
+    },
+    {
+      "id": "H-020",
+      "name": "two distinct groups claiming one issue key are rejected",
+      "covers": ["duplicate_issue_claim"],
+      "witness": {
+        "issue_key": "cooneycw/codex-power-pack#310",
+        "claims": [
+          {
+            "stable_identity": "spec-sync:v1:cooneycw/codex-power-pack:.specify/specs/demo/tasks.md:stage-1",
+            "group_id": "stage-1"
+          },
+          {
+            "stable_identity": "spec-sync:v1:cooneycw/codex-power-pack:.specify/specs/demo/tasks.md:stage-2",
+            "group_id": "stage-2"
+          }
+        ]
+      },
+      "expected": {
+        "disposition": "rejected",
+        "reason": "duplicate_issue_claim",
+        "assignment_input": null
+      }
+    },
+    {
+      "id": "H-021",
+      "name": "valid intra-group task ordering survives validation then collapses lawfully",
+      "covers": ["valid_intra_group_dag", "ordered_cycle_validation"],
+      "witness": {
+        "nodes": ["T001", "T002"],
+        "group_membership": {
+          "T001": "stage-1",
+          "T002": "stage-1"
+        },
+        "directed_edges": [
+          ["T002", "T001"]
+        ],
+        "task_graph_acyclic": true,
+        "projected_group_edges": [],
+        "projection_rule": "omit_lawful_intra_group_edge_after_task_validation"
+      },
+      "expected": {
+        "disposition": "eligible",
+        "assignment_input": {
+          "candidate_key": "cooneycw/codex-power-pack#310"
+        }
+      }
+    },
+    {
+      "id": "H-022",
+      "name": "candidate must equal the selected mapping issue key",
+      "covers": ["candidate_mapping_mismatch"],
+      "witness": {
+        "selected_mapping": {
+          "mapping_identity": "spec-sync:v1:cooneycw/codex-power-pack:.specify/specs/demo/tasks.md:stage-1",
+          "issue_key": "cooneycw/codex-power-pack#310"
+        },
+        "candidate_key": "cooneycw/codex-power-pack#999"
+      },
+      "expected": {
+        "disposition": "rejected",
+        "reason": "candidate_mapping_mismatch",
         "assignment_input": null
       }
     }

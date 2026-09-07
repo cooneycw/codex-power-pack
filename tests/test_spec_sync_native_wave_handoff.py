@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,7 @@ PROJECT_NEXT_CONTRACT_PATH = ROOT / "docs" / "project-next-contract.md"
 SPEC_SYNC_PATH = ROOT / ".codex" / "skills" / "spec-sync" / "scripts" / "spec_sync.py"
 PACKAGED_SPEC_SYNC_PATH = ROOT / "plugins" / "spec" / "skills" / "spec-sync" / "scripts" / "spec_sync.py"
 NATIVE_CONTRACT_SHA256 = "779c2aa4f1470ef66c5eb87b0b3bdb1e22386408a633bf5a31a99ff2c307ded5"
+CANONICAL_ISSUE_KEY = re.compile(r"[a-z0-9_.-]+/[a-z0-9_.-]+#[1-9][0-9]*")
 
 _spec = importlib.util.spec_from_file_location("spec_sync_native_wave_contract", SPEC_SYNC_PATH)
 assert _spec is not None and _spec.loader is not None
@@ -44,9 +46,20 @@ def scenarios_by_id(corpus: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return result
 
 
+def canonical_bytes(payload: Any) -> bytes:
+    return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+
+
 def canonical_digest(payload: Any) -> str:
-    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
-    return hashlib.sha256(encoded).hexdigest()
+    return hashlib.sha256(canonical_bytes(payload)).hexdigest()
+
+
+def string_values(payload: Any) -> list[str]:
+    if isinstance(payload, dict):
+        return [value for item in payload.values() for value in string_values(item)]
+    if isinstance(payload, list):
+        return [value for item in payload for value in string_values(item)]
+    return [payload] if isinstance(payload, str) else []
 
 
 def write_tasks(path: Path, body: str) -> Path:
@@ -79,10 +92,32 @@ def test_corpus_binds_existing_contracts_and_one_compiler() -> None:
     assert hashlib.sha256(NATIVE_CONTRACT_PATH.read_bytes()).hexdigest() == NATIVE_CONTRACT_SHA256
 
 
+def test_digest_contract_has_exact_serialization_not_a_style_label() -> None:
+    digest = load_corpus()["digest_contract"]
+
+    assert digest["algorithm"] == "sha256"
+    assert digest["value_domain"] == ["null", "boolean", "unicode-nfc-string", "signed-64-bit-integer"]
+    assert digest["forbidden_values"] == ["binary-float", "nan", "infinity", "non-nfc-string"]
+    assert digest["object_key_order"] == "unicode-code-point"
+    assert digest["semantic_array_order"] == "preserved"
+    assert digest["set_like_array_order"] == {
+        "repository_scope": "repository",
+        "mapping_rows": "stable_identity",
+        "selected_task_ids": "lexical-string",
+        "dependency_edges": ["source", "target"],
+        "repository_proofs": ["repository", "mode"],
+        "issue_records": "canonical-issue-key",
+    }
+    assert digest["string_escapes"].endswith("slash-and-other-unicode-direct")
+    assert digest["separators"] == [",", ":"]
+    assert digest["trailing_newline"] is False
+    assert canonical_bytes({"z": None, "a": [True, 7, "é"]}) == '{"a":[true,7,"é"],"z":null}'.encode()
+
+
 def test_corpus_has_reviewable_coverage_without_claiming_runtime_proof() -> None:
     corpus = load_corpus()
     scenarios = scenarios_by_id(corpus)
-    assert set(scenarios) == {f"H-{number:03d}" for number in range(1, 20)}
+    assert set(scenarios) == {f"H-{number:03d}" for number in range(1, 23)}
 
     coverage = {tag for scenario in scenarios.values() for tag in scenario["covers"]}
     required = {
@@ -96,7 +131,10 @@ def test_corpus_has_reviewable_coverage_without_claiming_runtime_proof() -> None
         "mapping_stale",
         "duplicate_group_claim",
         "duplicate_task_claim",
+        "duplicate_issue_claim",
         "dependency_cycle",
+        "valid_intra_group_dag",
+        "ordered_cycle_validation",
         "inventory_incomplete",
         "inventory_stale",
         "inventory_digest_mismatch",
@@ -106,6 +144,7 @@ def test_corpus_has_reviewable_coverage_without_claiming_runtime_proof() -> None
         "qualified_key_collision",
         "project_next_unchanged",
         "external_blocker_suppresses_assignment",
+        "candidate_mapping_mismatch",
         "old_spec_excluded",
     }
     assert required <= coverage
@@ -242,7 +281,12 @@ def test_rejection_cases_contain_structural_witnesses_not_only_expected_labels()
     assert any(item["bound_sha256"] != item["actual_sha256"] for item in artifact["files"])
 
     missing = scenarios["H-005"]["witness"]
-    assert set(missing["missing_task_ids"]) == set(missing["selected_task_ids"]) - set(missing["mapped_task_ids"])
+    missing_set = set(missing["selected_task_ids"]) - set(missing["mapped_task_ids"])
+    assert missing_set
+    assert set(missing["missing_task_ids"]) == missing_set
+    valid_missing = missing["valid_counterpart"]
+    assert set(valid_missing["selected_task_ids"]) - set(valid_missing["mapped_task_ids"]) == set()
+    assert valid_missing["missing_task_ids"] == []
 
     ambiguous = scenarios["H-006"]["witness"]
     assert len(ambiguous["claims"]) > 1
@@ -257,9 +301,25 @@ def test_rejection_cases_contain_structural_witnesses_not_only_expected_labels()
     duplicate_task = scenarios["H-009"]["witness"]
     assert len(set(duplicate_task["group_ids"])) > 1
 
+    duplicate_issue = scenarios["H-020"]["witness"]
+    assert len({claim["stable_identity"] for claim in duplicate_issue["claims"]}) > 1
+    assert len({claim["group_id"] for claim in duplicate_issue["claims"]}) > 1
+    assert duplicate_issue["issue_key"] == "cooneycw/codex-power-pack#310"
+
     cycle = scenarios["H-010"]["witness"]
     edges = {tuple(edge) for edge in cycle["directed_edges"]}
     assert any((target, source) in edges for source, target in edges)
+    assert len(set(cycle["group_membership"].values())) == 1
+    assert cycle["projected_group_edges_if_validation_were_skipped"] == []
+
+    valid_dag = scenarios["H-021"]
+    valid_edges = {tuple(edge) for edge in valid_dag["witness"]["directed_edges"]}
+    assert valid_edges
+    assert not any((target, source) in valid_edges for source, target in valid_edges if source != target)
+    assert len(set(valid_dag["witness"]["group_membership"].values())) == 1
+    assert valid_dag["witness"]["task_graph_acyclic"] is True
+    assert valid_dag["witness"]["projected_group_edges"] == []
+    assert valid_dag["expected"]["assignment_input"] is not None
 
 
 def test_inventory_failures_have_operational_evidence() -> None:
@@ -267,10 +327,15 @@ def test_inventory_failures_have_operational_evidence() -> None:
 
     incomplete = scenarios["H-011"]["witness"]
     proved_repositories = {proof["repository"] for proof in incomplete["repository_proofs"]}
-    assert set(incomplete["repository_scope"]) - proved_repositories == set(
-        incomplete["missing_repository_proofs"]
-    )
+    missing_proofs = set(incomplete["repository_scope"]) - proved_repositories
+    assert missing_proofs
+    assert missing_proofs == set(incomplete["missing_repository_proofs"])
     assert all(proof["terminal_page"] for proof in incomplete["repository_proofs"])
+    valid_inventory = incomplete["valid_counterpart"]
+    valid_proved = {proof["repository"] for proof in valid_inventory["repository_proofs"]}
+    assert set(valid_inventory["repository_scope"]) - valid_proved == set()
+    assert valid_inventory["missing_repository_proofs"] == []
+    assert all(proof["terminal_page"] for proof in valid_inventory["repository_proofs"])
 
     stale = scenarios["H-012"]["witness"]
     assert stale["bound_consumer_revision"] != stale["current_consumer_revision"]
@@ -309,6 +374,17 @@ def test_qualified_blockers_never_alias_by_issue_number() -> None:
     assert collision["expected"]["assignment_input"] is None
 
 
+def test_all_canonical_issue_keys_use_minimal_positive_decimal_numbers() -> None:
+    values = string_values(load_corpus())
+    issue_keys = {value for value in values if "#" in value and "/" in value and not value.startswith("http")}
+
+    assert issue_keys
+    assert all(CANONICAL_ISSUE_KEY.fullmatch(key) for key in issue_keys)
+    assert CANONICAL_ISSUE_KEY.fullmatch("cooneycw/kyle#44")
+    assert CANONICAL_ISSUE_KEY.fullmatch("cooneycw/kyle#044") is None
+    assert CANONICAL_ISSUE_KEY.fullmatch("cooneycw/kyle#0") is None
+
+
 def test_project_next_13_entry_points_remain_unchanged_but_are_not_global_admission() -> None:
     scenario = scenarios_by_id(load_corpus())["H-018"]
     state = RepositoryState.from_dict(scenario["witness"]["project_next_state"])
@@ -328,6 +404,18 @@ def test_project_next_13_entry_points_remain_unchanged_but_are_not_global_admiss
     assert scenario["expected"]["assignment_input"] is None
 
 
+def test_candidate_key_must_match_the_exact_selected_mapping_row() -> None:
+    scenario = scenarios_by_id(load_corpus())["H-022"]
+    witness = scenario["witness"]
+
+    assert witness["selected_mapping"]["mapping_identity"].endswith(":stage-1")
+    assert witness["selected_mapping"]["issue_key"] == "cooneycw/codex-power-pack#310"
+    assert witness["candidate_key"] == "cooneycw/codex-power-pack#999"
+    assert witness["candidate_key"] != witness["selected_mapping"]["issue_key"]
+    assert scenario["expected"]["reason"] == "candidate_mapping_mismatch"
+    assert scenario["expected"]["assignment_input"] is None
+
+
 def test_docs_align_reason_codes_consumer_boundary_and_old_spec_exclusion() -> None:
     contract = CONTRACT_PATH.read_text(encoding="utf-8")
     project_next_contract = PROJECT_NEXT_CONTRACT_PATH.read_text(encoding="utf-8")
@@ -337,13 +425,16 @@ def test_docs_align_reason_codes_consumer_boundary_and_old_spec_exclusion() -> N
         "`spec-sync-native-wave-handoff/v1`",
         "`project-next` behavioral contract version `1.3`",
         "partial dependency-grammar convergence recorded by #184",
+        "The handoff digest is lowercase SHA-256 over this exact serialization",
         "Inventory completeness is evidence, not a Boolean assertion",
-        "Observational `observed_at`, `collected_at`, `fresh_until`",
+        "Observational `observed_at`",
         "closed local issue never satisfies a qualified blocker",
         "#201 must implement the normative admission checks",
+        "`candidate_key` must equal the canonical issue key",
         "unrelated historical 36-task specification",
     ):
         assert phrase in contract
+    assert all(field in contract for field in ("`observed_at`", "`collected_at`", "`fresh_until`"))
 
     rejection_reasons = {
         scenario["expected"]["reason"]
