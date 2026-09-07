@@ -59,12 +59,17 @@ def test_flow_doctor_checks_the_installed_plugin_helper_family() -> None:
     assert "Flow helper(s) not at ~/.claude/scripts/" not in text
 
 
-def test_ci_runs_live_upstream_currency_gate() -> None:
+def test_ci_separates_exact_pin_integrity_from_latest_upstream_reporting() -> None:
     pipeline = (REPO_ROOT / ".woodpecker.yml").read_text(encoding="utf-8")
     makefile = (REPO_ROOT / "Makefile").read_text(encoding="utf-8")
 
+    assert "codex-skills-pin-integrity:" in pipeline
+    assert "--pin-ref" in pipeline
+    assert "make codex-skills-pin-check CPP_ROOT=/tmp/claude-power-pack-pinned" in pipeline
     assert "codex-skills-currency:" in pipeline
-    assert "--source-check --cpp-root /tmp/claude-power-pack-current" in pipeline
+    assert "event: [manual, cron]" in pipeline
+    assert "make codex-skills-currency-check CPP_ROOT=/tmp/claude-power-pack-current" in pipeline
+    assert "codex-skills-pin-check:" in makefile
     assert "codex-skills-currency-check:" in makefile
 
 
