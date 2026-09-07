@@ -39,14 +39,13 @@ The flow commands call a family of helper scripts by name -
 alongside. They are invoked at the stable path `<SKILL_DIR>/scripts/<helper>`,
 which is what the shipped permission allowlist rules match (issue #581).
 
-- **Installed from the marketplace** (`/plugin install flow@cpp`): the plugin
-  bundles the helpers, but they must be placed at that stable path first. **Run
-  `$flow-repair` once after installing.** Without it, Step 1 exits 127 (issue
-  #590). Re-run it after a plugin upgrade; `$flow-doctor` reports when the
-  installed copies have gone stale.
+- **Using a retired CPP plugin cache** (#662): run `/plugin uninstall
+  flow@cpp`, then migrate to the checkout-backed symlink surface restored by
+  #663. `$flow-repair` remains compatible with the cache during migration.
 - **Installed from a CPP clone** (`$cxpp-init` Tier 2 or later `$cxpp-update`):
-  nothing to do - the installer already links every `scripts/*.sh`. `$flow-repair`
-  is harmless and idempotent if you run it anyway.
+  nothing to do - the installer already links every executable helper in
+  `scripts/` (issue #669). `$flow-repair` is harmless and idempotent if you run
+  it anyway.
 
 `$flow-doctor` reports helper and allowlist state without changing anything.
 
@@ -58,7 +57,7 @@ $flow-auto 42
   start → analyze → ELI5 (plan + necessity gate) → implement → update docs → finish → merge → deploy
 ```
 
-The ELI5 step is an approval checkpoint: it restates the issue's intent in plain language, gives a necessity verdict (Still needed / Partially addressed / No longer needed / Needs reframing) with evidence from code merged since the issue was filed, and waits for plan approval before any code is written. Run `$flow-auto <issue> --yes` (or add an `eli5: auto-approve` trailer) for unattended runs; a `No longer needed` verdict always stops for a human decision.
+The ELI5 step is an approval checkpoint: it restates the issue's intent in plain language, gives a necessity verdict (Still needed / Partially addressed / No longer needed / Needs reframing) with evidence from code merged since the issue was filed, and waits for plan approval before any code is written. It has no bypass (issue #775): `--yes` / `--auto-approve` are recognized only to report that the gate is not skippable, and no `eli5: auto-approve` trailer is read from an issue body or commit message - that channel is written by the issue's filer or by whoever merged last, not by whoever ran the command. A `No longer needed` verdict likewise always stops for a human decision.
 
 Or step by step:
 ```
