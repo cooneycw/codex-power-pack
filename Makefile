@@ -25,14 +25,14 @@ harness-lint:
 	@python3 scripts/harness_lint.py --check
 
 skill-contract-lint:
-	@python3 scripts/skill_contract_baseline.py --check
-	@python3 scripts/skill_contract_lint.py --check
+	@uv run --extra dev python scripts/skill_contract_baseline.py --check
+	@uv run --extra dev python scripts/skill_contract_lint.py --check
 
 project-next-check:
-	@python3 scripts/project_next_sync.py --check
+	@uv run --extra dev python scripts/project_next_sync.py --check
 
 project-next-sync:
-	@python3 scripts/project_next_sync.py --write
+	@uv run --extra dev python scripts/project_next_sync.py --write
 
 skill-eval-check:
 	@uv run --extra dev python scripts/skill-eval.py deterministic

@@ -115,6 +115,35 @@ reproduces 123 adopted files across 55 generated skills. The command prints the
 source, tree, overlay SHA-256, manifest SHA-256, file count, and packaged-skill
 count so review evidence identifies the exact transformation it checked.
 
+## Required integrity and upstream reporting
+
+Issue #195's policy was selected by the coordinator under the user's delegated
+responsibility to return the CxPP pipeline to green; it was not presented as a
+named option explicitly selected by the user. The decision record is
+[issue comment 5573443666](https://github.com/cooneycw/codex-power-pack/issues/195#issuecomment-5573443666).
+
+Required `push` and `pull_request` CI keeps secret scanning first, invokes the
+same `make verify` contract used locally, reproduces the clean immutable PIN, and
+runs dependency auditing. The single `.woodpecker.yml` workflow preserves the
+observed aggregate contexts `ci/woodpecker/pr/woodpecker` and
+`ci/woodpecker/push/woodpecker`. Latest CPP main is a different question: the
+temporary `codex-skills-currency` lane runs only for explicit `manual` or `cron`
+events, after no required step. Issue #207 owns the structured drift report and
+the actual schedule rollout; event filters in YAML do not configure a cron job.
+
+Before migration on 2026-09-07, repository `cooneycw/codex-power-pack` (ID
+1178797075) reported no classic protection for `main` and no repository rulesets.
+The status contexts were authored by a User account, so the candidate policy does
+not invent a GitHub App binding. Repository settings and enforcement proof are
+coordinator-owned: retain the prior/effective read-backs, test required-check and
+admin enforcement only against a uniquely named sacrificial base branch with
+exact base/head guards, and never aim a probe at `main`, `master`, or the default
+branch. A red exact-head probe must be rejected by an ordinary merge while its
+base remains unchanged; a later green exact head is the positive control. If the
+red probe unexpectedly merges, preserve that failed-proof evidence and stop. Only
+after the isolated proof may the coordinator apply and read back the normalized
+policy on `main`; a later ordinary green main merge supplies production evidence.
+
 To change a CxPP-owned runtime adaptation, patch the generated skill copy in
 this repo, mirror it into the matching plugin payload, and run
 `scripts/codex_skills_sync.py --write` plus the local verification gates.
