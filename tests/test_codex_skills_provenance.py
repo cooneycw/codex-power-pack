@@ -527,6 +527,7 @@ def test_reviewed_adoption_policy_covers_all_59_paths_from_the_frozen_audit() ->
     assert policy.historical_audit["report_sha256"] == (
         "cc752f61b4f8e0aef496f65f8a435192382ff3229b201918566fb4cb2252e8ba"
     )
+    assert policy.boundaries == sync.ADOPTION_BOUNDARIES
 
 
 @pytest.mark.parametrize("hidden_change", ["bytes", "mode"])
@@ -556,6 +557,8 @@ def test_adoption_policy_rejects_hidden_tracked_overlay_edits(
         ("duplicate", "duplicate disposition"),
         ("unsafe-path", "escapes its root"),
         ("target-mismatch", "reviewed #196 target commit"),
+        ("audit-mismatch", "historical audit identity"),
+        ("boundary-mismatch", "policy boundary"),
         ("overlay-digest", "retention overlay digest mismatch"),
     ],
 )
@@ -576,6 +579,10 @@ def test_adoption_policy_rejects_malformed_duplicate_unsafe_or_mismatched_data(
         value["historical_audit"]["changes"]["changed"][0] = "../escape"
     elif mutation == "target-mismatch":
         value["source"]["commit"] = "0" * 40
+    elif mutation == "audit-mismatch":
+        value["historical_audit"]["baseline_manifest_sha256"] = "0" * 64
+    elif mutation == "boundary-mismatch":
+        value["boundaries"]["native_collisions"].pop()
     else:
         retained = next(item for item in value["dispositions"] if item["overlay"])
         retained["overlay"]["sha256"] = "0" * 64

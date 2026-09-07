@@ -312,6 +312,7 @@ def test_declared_deferral_is_reported_separately_from_raw_upstream_drift(
         {disposition.path: disposition},
         "2" * 64,
         {"report_sha256": "3" * 64},
+        {},
     )
     monkeypatch.setattr(
         sync,
