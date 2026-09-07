@@ -1,0 +1,649 @@
+{
+  "schema_version": 1,
+  "kind": "cxpp-selective-cpp-adoption",
+  "source": {
+    "repo": "https://github.com/cooneycw/claude-power-pack",
+    "commit": "f64a654f76ea8d26a33eb33f785f6e1065a823b6",
+    "tree": "29fc82d3e980bb0f29ef60ed207f92f4e1096f13",
+    "codex_skills_tree": "71046ffedd4deec84737881086c36d887f40d124"
+  },
+  "historical_audit": {
+    "report_sha256": "cc752f61b4f8e0aef496f65f8a435192382ff3229b201918566fb4cb2252e8ba",
+    "generated_at": "2026-09-07T18:37:24Z",
+    "cxpp_commit": "c2deddded086f061fa0f5c4ba27ac250c831c943",
+    "cxpp_tree": "5d099e9df494f83ab0b681038f1365799449b7aa",
+    "baseline_pin_commit": "4726ccf43899ac20ec886e588f1b9faf3da51065",
+    "baseline_manifest_sha256": "c0b9908274dc1ebf76338b8a345abb6c98c28acbf9355056786fa6afbbf5d397",
+    "baseline_overlay_sha256": "ba6c7f5d547f570d495aecf069b75da5ee98e9ef82d82d27f861286b87232a93",
+    "baseline_adapted_payload_sha256": "592b37fae2a81e47b01bc8ac10a72d9ef5cdaa5cd8d98c83848dce5d968f5edb",
+    "target_adapted_payload_sha256": "df25b2c274a009e4e91339e061bf6563cee1f376a4cde191aaa06989b0d7e7d4",
+    "changes": {
+      "added": [
+        "flow-auto/scripts/flow-ci-status.sh",
+        "flow-auto/scripts/flow-driver-capability.sh",
+        "flow-finish/scripts/knowledge-graduation-check.py",
+        "flow-register/SKILL.md",
+        "flow-register/reference.md",
+        "flow-register/scripts/flow-wave-lexicon.sh",
+        "flow-register/scripts/flow-wave-mailbox.sh",
+        "flow-register/scripts/flow-wave-registry.sh",
+        "flow-wave/SKILL.md",
+        "flow-wave/reference.md",
+        "flow-wave/scripts/flow-driver-capability.sh",
+        "flow-wave/scripts/flow-pr-watch.sh",
+        "flow-wave/scripts/flow-wave-lexicon.sh",
+        "flow-wave/scripts/flow-wave-mailbox.sh",
+        "flow-wave/scripts/flow-wave-plan.py",
+        "flow-wave/scripts/flow-wave-registry.sh",
+        "flow-wave/scripts/flow-wave-residuals.py",
+        "flow-wave/scripts/speckit-tasks-to-issues.sh"
+      ],
+      "changed": [
+        "cpp-dockers/reference.md",
+        "cpp-help/reference.md",
+        "cpp-load-best-practices/SKILL.md",
+        "cpp-load-mcp-docs/SKILL.md",
+        "documentation-help/scripts/c4-mermaid.py",
+        "flow-auto/SKILL.md",
+        "flow-auto/reference.md",
+        "flow-auto/scripts/codex-skill-sync.py",
+        "flow-auto/scripts/flow-finish-gate.sh",
+        "flow-auto/scripts/flow-stale-check.sh",
+        "flow-auto/scripts/flow-start-resolve.sh",
+        "flow-auto/scripts/gh-pr-merge.sh",
+        "flow-auto_codex/reference.md",
+        "flow-check/reference.md",
+        "flow-check/scripts/flow-finish-gate.sh",
+        "flow-cleanup/SKILL.md",
+        "flow-doctor/SKILL.md",
+        "flow-doctor/reference.md",
+        "flow-doctor/scripts/flow-helpers-install.sh",
+        "flow-eli5/SKILL.md",
+        "flow-eli5/reference.md",
+        "flow-finish/reference.md",
+        "flow-finish/scripts/codex-skill-sync.py",
+        "flow-finish/scripts/flow-finish-gate.sh",
+        "flow-finish/scripts/flow-stale-check.sh",
+        "flow-help/SKILL.md",
+        "flow-help/reference.md",
+        "flow-merge/SKILL.md",
+        "flow-merge/reference.md",
+        "flow-merge/scripts/flow-finish-gate.sh",
+        "flow-merge/scripts/gh-pr-merge.sh",
+        "flow-repair/SKILL.md",
+        "flow-repair/scripts/flow-helpers-install.sh",
+        "flow-repair/scripts/flow-start-resolve.sh",
+        "flow-start/SKILL.md",
+        "flow-start/reference.md",
+        "flow-start/scripts/flow-start-resolve.sh",
+        "flow-status/SKILL.md"
+      ],
+      "removed": [
+        "flow-auto/scripts/plugin-sync.sh",
+        "flow-finish/scripts/plugin-sync.sh",
+        "flow-repair/reference.md"
+      ]
+    }
+  },
+  "counts": {
+    "adopt": 6,
+    "adapt": 27,
+    "defer": 26
+  },
+  "boundaries": {
+    "excluded_source_skills": [
+      "claude-md-help",
+      "claude-md-lint"
+    ],
+    "native_collisions": [
+      "documentation-c4",
+      "documentation-pptx",
+      "evaluate-issue",
+      "project-init",
+      "project-lite",
+      "project-next",
+      "qa-help",
+      "qa-test",
+      "second-opinion-help",
+      "second-opinion-models",
+      "second-opinion-start",
+      "security-deep",
+      "security-help",
+      "security-quick",
+      "security-scan",
+      "self-improvement-retro"
+    ],
+    "missing_plugin_destinations": [
+      {
+        "skill": "flow-register",
+        "reason": "no-contract-record"
+      },
+      {
+        "skill": "flow-wave",
+        "reason": "no-contract-record"
+      }
+    ],
+    "reviewed_exclusions": [
+      "browser-help",
+      "browser-session",
+      "cicd-woodpecker",
+      "cpp-dockers",
+      "cpp-happy-check",
+      "cpp-help",
+      "cpp-load-best-practices",
+      "cpp-load-mcp-docs",
+      "flow-auto_codex",
+      "flow-repair"
+    ]
+  },
+  "dispositions": [
+    {
+      "path": "documentation-help/scripts/c4-mermaid.py",
+      "source_change": "changed",
+      "action": "adopt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Adopt the upstream diagram helper correction without changing the native documentation contract.",
+      "overlay": null
+    },
+    {
+      "path": "flow-auto/scripts/plugin-sync.sh",
+      "source_change": "removed",
+      "action": "adopt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Adopt upstream retirement of the obsolete helper; CxPP plugin mirroring remains owned by scripts/codex_skills_sync.py.",
+      "overlay": null
+    },
+    {
+      "path": "flow-check/reference.md",
+      "source_change": "changed",
+      "action": "adopt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Adopt the current quality-check procedure through the normal Codex path normalization.",
+      "overlay": null
+    },
+    {
+      "path": "flow-eli5/SKILL.md",
+      "source_change": "changed",
+      "action": "adopt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Adopt the strengthened non-bypassable plan-gate skill contract.",
+      "overlay": null
+    },
+    {
+      "path": "flow-eli5/reference.md",
+      "source_change": "changed",
+      "action": "adopt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Adopt the strengthened ELI5 evidence and approval procedure.",
+      "overlay": null
+    },
+    {
+      "path": "flow-finish/scripts/plugin-sync.sh",
+      "source_change": "removed",
+      "action": "adopt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Adopt upstream retirement of the obsolete helper while retaining CxPP-owned package mirroring.",
+      "overlay": null
+    },
+    {
+      "path": "flow-auto/SKILL.md",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Import the lifecycle update while retaining the native selector description and Codex worktree contract.",
+      "overlay": null
+    },
+    {
+      "path": "flow-auto/reference.md",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Import current lifecycle safeguards through installed helpers, explicit repository CI identity, and native runner paths without claiming deferred Wave support.",
+      "overlay": null
+    },
+    {
+      "path": "flow-auto/scripts/codex-skill-sync.py",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Retain this helper as a CPP conditional generator; CxPP publication remains owned by scripts/codex_skills_sync.py.",
+      "overlay": null
+    },
+    {
+      "path": "flow-auto/scripts/flow-ci-status.sh",
+      "source_change": "added",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Adopt the exact-commit CI resolver with mandatory SHA, checkout path, and repository identity.",
+      "overlay": null
+    },
+    {
+      "path": "flow-auto/scripts/flow-finish-gate.sh",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Import qualified rerun behavior while preserving CxPP runner discovery and --extra dev execution.",
+      "overlay": null
+    },
+    {
+      "path": "flow-auto/scripts/flow-stale-check.sh",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Import declared-checkout and FLOW_STALE_PATH safeguards through installed native helper paths.",
+      "overlay": null
+    },
+    {
+      "path": "flow-auto/scripts/flow-start-resolve.sh",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Import local-pickup, worktree-base, and ancestry safeguards while retaining the all-plain-git visible-sibling lane.",
+      "overlay": null
+    },
+    {
+      "path": "flow-auto/scripts/gh-pr-merge.sh",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Import review, base-move, and closing-keyword checks while refusing automatic --admin retries.",
+      "overlay": null
+    },
+    {
+      "path": "flow-check/scripts/flow-finish-gate.sh",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Import qualified rerun behavior while preserving CxPP runner discovery and --extra dev execution.",
+      "overlay": null
+    },
+    {
+      "path": "flow-cleanup/SKILL.md",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Retain the native selector, plugin installation, and visible-sibling worktree adapter around the upstream update.",
+      "overlay": null
+    },
+    {
+      "path": "flow-doctor/SKILL.md",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Retain the native selector and bundled-plugin diagnostic boundary around the upstream update.",
+      "overlay": null
+    },
+    {
+      "path": "flow-doctor/reference.md",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Import current diagnostics while preserving bundled helpers and the host-managed MCP boundary.",
+      "overlay": null
+    },
+    {
+      "path": "flow-doctor/scripts/flow-helpers-install.sh",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Keep native doctor checks scoped to bundled plugin helpers, not user installation mutation.",
+      "overlay": null
+    },
+    {
+      "path": "flow-finish/reference.md",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Import finish safeguards through native bundle and runner paths while omitting the unreviewed graduation lifecycle.",
+      "overlay": null
+    },
+    {
+      "path": "flow-finish/scripts/codex-skill-sync.py",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Retain this helper as a CPP conditional generator; CxPP publication remains owned by scripts/codex_skills_sync.py.",
+      "overlay": null
+    },
+    {
+      "path": "flow-finish/scripts/flow-finish-gate.sh",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Import qualified rerun behavior while preserving CxPP runner discovery and --extra dev execution.",
+      "overlay": null
+    },
+    {
+      "path": "flow-finish/scripts/flow-stale-check.sh",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Import declared-checkout and FLOW_STALE_PATH safeguards through installed native helper paths.",
+      "overlay": null
+    },
+    {
+      "path": "flow-help/SKILL.md",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Retain the native selector and plugin help boundary around the upstream update.",
+      "overlay": null
+    },
+    {
+      "path": "flow-help/reference.md",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Import supported help updates without advertising deferred flow-register or flow-wave packages.",
+      "overlay": null
+    },
+    {
+      "path": "flow-merge/SKILL.md",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Retain the native selector, installed helper, and coordinator-owned merge boundary.",
+      "overlay": null
+    },
+    {
+      "path": "flow-merge/reference.md",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Import clean-stop and base-move evidence through native bundle paths without an automatic protection override.",
+      "overlay": null
+    },
+    {
+      "path": "flow-merge/scripts/flow-finish-gate.sh",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Import qualified rerun behavior while preserving CxPP runner discovery and --extra dev execution.",
+      "overlay": null
+    },
+    {
+      "path": "flow-merge/scripts/gh-pr-merge.sh",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Import review, base-move, and closing-keyword checks while refusing automatic --admin retries.",
+      "overlay": null
+    },
+    {
+      "path": "flow-start/SKILL.md",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Retain the native selector and visible-sibling worktree adapter around the upstream update.",
+      "overlay": null
+    },
+    {
+      "path": "flow-start/reference.md",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Import local-pickup and worktree-base safeguards through the installed resolver without a CPP clone requirement.",
+      "overlay": null
+    },
+    {
+      "path": "flow-start/scripts/flow-start-resolve.sh",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Import local-pickup, worktree-base, and ancestry safeguards while retaining the all-plain-git visible-sibling lane.",
+      "overlay": null
+    },
+    {
+      "path": "flow-status/SKILL.md",
+      "source_change": "changed",
+      "action": "adapt",
+      "owner": "CxPP maintainers / #196",
+      "reason": "Retain the native selector and plugin-only installation boundary around the upstream update.",
+      "overlay": null
+    },
+    {
+      "path": "cpp-dockers/reference.md",
+      "source_change": "changed",
+      "action": "defer",
+      "owner": "CxPP maintainers / #173",
+      "reason": "Preserve the reviewed retirement disposition and current bytes until the 2027-03-31 exclusion review.",
+      "overlay": {
+        "path": "vendor/claude-power-pack/overlays/retain/cpp-dockers/reference.md",
+        "sha256": "e9163a6419eee1e440aaf937a9b6cd70ecc1fc2dc5f4de77f6cbbe170d060299",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "cpp-help/reference.md",
+      "source_change": "changed",
+      "action": "defer",
+      "owner": "CxPP maintainers / #173",
+      "reason": "Preserve the reviewed replacement disposition and current bytes until the 2027-03-31 exclusion review.",
+      "overlay": {
+        "path": "vendor/claude-power-pack/overlays/retain/cpp-help/reference.md",
+        "sha256": "eea1a775b687ef54e082521ad097c59090aa16d7ebfe3bcc61cf08a424f92d18",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "cpp-load-best-practices/SKILL.md",
+      "source_change": "changed",
+      "action": "defer",
+      "owner": "CxPP maintainers / #173",
+      "reason": "Preserve the reviewed AGENTS.md replacement and current bytes until the exclusion review.",
+      "overlay": {
+        "path": "vendor/claude-power-pack/overlays/retain/cpp-load-best-practices/SKILL.md",
+        "sha256": "fbcf53a7698d2832e4ae392f404adb169a142abffd3bcb9270bec10431260ab4",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "cpp-load-mcp-docs/SKILL.md",
+      "source_change": "changed",
+      "action": "defer",
+      "owner": "CxPP maintainers / #173",
+      "reason": "Preserve the reviewed HOST_MANAGED replacement and current bytes until the exclusion review.",
+      "overlay": {
+        "path": "vendor/claude-power-pack/overlays/retain/cpp-load-mcp-docs/SKILL.md",
+        "sha256": "e461555bd4af5c6d8cf164536df9320288ae421b51f884b321d03c4e2662f8d1",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "flow-auto/scripts/flow-driver-capability.sh",
+      "source_change": "added",
+      "action": "defer",
+      "owner": "#200 / #201 / #202",
+      "reason": "The Claude wrapper capability matrix is not a native Codex runtime snapshot or packaged contract.",
+      "overlay": null
+    },
+    {
+      "path": "flow-auto_codex/reference.md",
+      "source_change": "changed",
+      "action": "defer",
+      "owner": "CxPP maintainers / #173",
+      "reason": "Preserve the reviewed replacement by flow-auto plus explicit claude-code-review.",
+      "overlay": {
+        "path": "vendor/claude-power-pack/overlays/retain/flow-auto_codex/reference.md",
+        "sha256": "47eaf5ec003af5dcab075e7c00b830877028317174af658e2b7631ed05a519cb",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "flow-finish/scripts/knowledge-graduation-check.py",
+      "source_change": "added",
+      "action": "defer",
+      "owner": "CxPP spec maintainers / #196",
+      "reason": "The new graduation ledger mutates an unreviewed native spec lifecycle and awaits an explicit owner decision.",
+      "overlay": null
+    },
+    {
+      "path": "flow-register/SKILL.md",
+      "source_change": "added",
+      "action": "defer",
+      "owner": "#200 / #201 / #202",
+      "reason": "Native registration requires its judged runtime contract and package before publication.",
+      "overlay": null
+    },
+    {
+      "path": "flow-register/reference.md",
+      "source_change": "added",
+      "action": "defer",
+      "owner": "#200 / #201 / #202",
+      "reason": "Claude UDS and identity procedures are design input, not shipped native support.",
+      "overlay": null
+    },
+    {
+      "path": "flow-register/scripts/flow-wave-lexicon.sh",
+      "source_change": "added",
+      "action": "defer",
+      "owner": "#205 / #206 / #202",
+      "reason": "Native durable events, generation, and correlated acknowledgements remain separately owned.",
+      "overlay": null
+    },
+    {
+      "path": "flow-register/scripts/flow-wave-mailbox.sh",
+      "source_change": "added",
+      "action": "defer",
+      "owner": "#205 / #206 / #202",
+      "reason": "The host mailbox is a design input pending the native delivery contract.",
+      "overlay": null
+    },
+    {
+      "path": "flow-register/scripts/flow-wave-registry.sh",
+      "source_change": "added",
+      "action": "defer",
+      "owner": "#200 / #206 / #202",
+      "reason": "CPP UDS and Claude process identity are not native owner-generation registration.",
+      "overlay": null
+    },
+    {
+      "path": "flow-repair/SKILL.md",
+      "source_change": "changed",
+      "action": "defer",
+      "owner": "CxPP maintainers / #173",
+      "reason": "Preserve the reviewed replacement by bundled helpers, flow-doctor, and cxpp-update.",
+      "overlay": {
+        "path": "vendor/claude-power-pack/overlays/retain/flow-repair/SKILL.md",
+        "sha256": "73958ef9b7c1322ed1cff3d246e15fef77f805e3d7492f6e6294e31af64cc281",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "flow-repair/reference.md",
+      "source_change": "removed",
+      "action": "defer",
+      "owner": "CxPP maintainers / #173",
+      "reason": "Retain the reviewed native bundled-helper replacement even though the selected source removed this reference.",
+      "overlay": {
+        "path": "vendor/claude-power-pack/overlays/retain/flow-repair/reference.md",
+        "sha256": "8cb616c1a47a62e237a043303bb12cecbe5e596eb9e91f1442deaab11c461f39",
+        "mode": "100644"
+      }
+    },
+    {
+      "path": "flow-repair/scripts/flow-helpers-install.sh",
+      "source_change": "changed",
+      "action": "defer",
+      "owner": "CxPP maintainers / #173",
+      "reason": "Retain the reviewed no-host-installation native helper behavior.",
+      "overlay": {
+        "path": "vendor/claude-power-pack/overlays/retain/flow-repair/scripts/flow-helpers-install.sh",
+        "sha256": "f8cd8a83098bf854a4b3d6468998a616b2afd7185e861b2b2225425dcc3f8367",
+        "mode": "100755"
+      }
+    },
+    {
+      "path": "flow-repair/scripts/flow-start-resolve.sh",
+      "source_change": "changed",
+      "action": "defer",
+      "owner": "CxPP maintainers / #173",
+      "reason": "Retain the reviewed bundled native resolver under the excluded flow-repair lifecycle.",
+      "overlay": {
+        "path": "vendor/claude-power-pack/overlays/retain/flow-repair/scripts/flow-start-resolve.sh",
+        "sha256": "a25946a9144c4eb9fcbbaf5aaf13711bda24fd1d96fb4d966218f5af92f16aef",
+        "mode": "100755"
+      }
+    },
+    {
+      "path": "flow-wave/SKILL.md",
+      "source_change": "added",
+      "action": "defer",
+      "owner": "#200 / #201 / #202",
+      "reason": "Native orchestration requires its judged runtime and package before publication.",
+      "overlay": null
+    },
+    {
+      "path": "flow-wave/reference.md",
+      "source_change": "added",
+      "action": "defer",
+      "owner": "#200 / #201 / #202",
+      "reason": "The CPP wave procedure is design input and cannot claim production native support.",
+      "overlay": null
+    },
+    {
+      "path": "flow-wave/scripts/flow-driver-capability.sh",
+      "source_change": "added",
+      "action": "defer",
+      "owner": "#200 / #201 / #202",
+      "reason": "The Claude wrapper matrix is not the #197 native capability snapshot.",
+      "overlay": null
+    },
+    {
+      "path": "flow-wave/scripts/flow-pr-watch.sh",
+      "source_change": "added",
+      "action": "defer",
+      "owner": "#201 / #202",
+      "reason": "Planner and watcher behavior must consume the native dependency, CI, and transport contracts.",
+      "overlay": null
+    },
+    {
+      "path": "flow-wave/scripts/flow-wave-lexicon.sh",
+      "source_change": "added",
+      "action": "defer",
+      "owner": "#205 / #206 / #202",
+      "reason": "Native durable event and acknowledgement semantics remain separately owned.",
+      "overlay": null
+    },
+    {
+      "path": "flow-wave/scripts/flow-wave-mailbox.sh",
+      "source_change": "added",
+      "action": "defer",
+      "owner": "#205 / #206 / #202",
+      "reason": "The host mailbox is a design input pending the native delivery contract.",
+      "overlay": null
+    },
+    {
+      "path": "flow-wave/scripts/flow-wave-plan.py",
+      "source_change": "added",
+      "action": "defer",
+      "owner": "#201 / #202",
+      "reason": "A native planner must preserve project-next 1.3 and the reviewed deterministic ranking contract.",
+      "overlay": null
+    },
+    {
+      "path": "flow-wave/scripts/flow-wave-registry.sh",
+      "source_change": "added",
+      "action": "defer",
+      "owner": "#200 / #206 / #202",
+      "reason": "CPP UDS and Claude process identity are not native owner-generation registration.",
+      "overlay": null
+    },
+    {
+      "path": "flow-wave/scripts/flow-wave-residuals.py",
+      "source_change": "added",
+      "action": "defer",
+      "owner": "#201 / #202",
+      "reason": "Residual planning awaits the native dependency and lifecycle contract.",
+      "overlay": null
+    },
+    {
+      "path": "flow-wave/scripts/speckit-tasks-to-issues.sh",
+      "source_change": "added",
+      "action": "defer",
+      "owner": "#201 consuming #199 / #202",
+      "reason": "Do not ship a second issue compiler; spec-sync remains the sole compiler.",
+      "overlay": null
+    }
+  ]
+}

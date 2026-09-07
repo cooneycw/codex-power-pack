@@ -46,6 +46,7 @@ desktop.ini
 
 # Project specific
 *.json
+!vendor/claude-power-pack/adoption-policy.json
 !plugins/secrets/hooks/hooks.json
 !plugins/self-improvement/hooks/hooks.json
 !package.json
