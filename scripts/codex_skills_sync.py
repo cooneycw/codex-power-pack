@@ -114,6 +114,12 @@ ADOPTION_AUDIT_IDENTITIES = {
 ADOPTION_CHANGE_SET_SHA256 = (
     "b232d95fb3ddc6b3252609f8fa9ddda7a3d921f155d285606f3f8e2030bc817c"
 )
+ADOPTION_DECISIONS_SHA256 = (
+    "6cf7036f98f23df04e9bc7f94393da71e83017ad76503e4d61a99b67b6208beb"
+)
+ADOPTION_RETAINED_PAYLOADS_SHA256 = (
+    "958d4cecdb59f855e3bc0860c42b50a9c255735cb86a34b58b66755a8bc4904b"
+)
 ADOPTION_BOUNDARIES = {
     "excluded_source_skills": ["claude-md-help", "claude-md-lint"],
     "native_collisions": [
@@ -1911,6 +1917,16 @@ def _sha256_value(value: object, *, label: str) -> str:
     return value
 
 
+def _unique_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    """Reject ambiguous JSON objects before any policy dictionary exists."""
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise IntegrityError(f"adoption policy has duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
 def _load_adoption_policy(*, required: bool = True) -> AdoptionPolicy | None:
     """Load the reviewed one-time #196 decision from committed Git objects.
 
@@ -1934,7 +1950,9 @@ def _load_adoption_policy(*, required: bool = True) -> AdoptionPolicy | None:
     if checked_policy_mode != policy_mode:
         raise IntegrityError("adoption policy checked-out mode differs from CxPP commit")
     try:
-        raw = json.loads(policy_bytes.decode("utf-8"))
+        raw = json.loads(
+            policy_bytes.decode("utf-8"), object_pairs_hook=_unique_json_object
+        )
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise IntegrityError("adoption policy is not valid UTF-8 JSON") from exc
 
@@ -2075,6 +2093,8 @@ def _load_adoption_policy(*, required: bool = True) -> AdoptionPolicy | None:
         raise IntegrityError("adoption policy dispositions must be a list")
 
     dispositions: dict[str, AdoptionDisposition] = {}
+    decision_map: dict[str, str] = {}
+    retained_payloads: dict[str, dict[str, str]] = {}
     actual_counts = {action: 0 for action in ADOPTION_COUNTS}
     for index, value in enumerate(dispositions_raw):
         entry = _object(
@@ -2136,12 +2156,14 @@ def _load_adoption_policy(*, required: bool = True) -> AdoptionPolicy | None:
             if checked_mode != mode:
                 raise IntegrityError(f"retention overlay checked-out mode differs from CxPP commit: {path}")
             retained = PreparedPayload(content, mode)
+            retained_payloads[path] = {"sha256": digest, "mode": mode_value}
 
         if action == "defer" and source_change in {"changed", "removed"} and retained is None:
             raise IntegrityError(f"deferred historical payload has no retention overlay: {path}")
         dispositions[path] = AdoptionDisposition(
             path, source_change, action, owner.strip(), reason.strip(), retained
         )
+        decision_map[path] = action
         actual_counts[action] += 1
 
     if set(dispositions) != set(change_kind):
@@ -2152,6 +2174,20 @@ def _load_adoption_policy(*, required: bool = True) -> AdoptionPolicy | None:
         raise IntegrityError(
             "adoption disposition count mismatch: "
             f"declared={counts}, actual={actual_counts}, reviewed={ADOPTION_COUNTS}"
+        )
+    decision_digest = hashlib.sha256(
+        json.dumps(decision_map, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    if decision_digest != ADOPTION_DECISIONS_SHA256:
+        raise IntegrityError(
+            "adoption path/action decisions do not match the reviewed #196 disposition map"
+        )
+    retained_digest = hashlib.sha256(
+        json.dumps(retained_payloads, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    if retained_digest != ADOPTION_RETAINED_PAYLOADS_SHA256:
+        raise IntegrityError(
+            "retained payload bytes/modes do not match reviewed historical evidence"
         )
 
     return AdoptionPolicy(
