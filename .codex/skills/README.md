@@ -39,9 +39,10 @@ the manifest recorded in `vendor/claude-power-pack/`. For shared command behavio
 edit upstream in CPP and refresh. For CxPP-owned runtime adaptations such as the
 configurable worktree base (`FLOW_WORKTREE_BASE`, issue #136; default the
 visible-sibling `../<repo>-<branch>`, issue #133), `.codex/friction.jsonl`, and
-CxPP-first `lib/cicd` selection in finish lanes (issue #142), update the generated
-skill surface here, keep plugin payloads byte-identical, add or adjust tests, and
-re-snapshot the manifest.
+CxPP-first `lib/cicd` selection in finish lanes (issue #142), update the
+deterministic transform and its tests, then refresh from the exact reviewed CPP
+commit. A selective-adoption manifest cannot be re-snapshotted from working-tree
+bytes.
 
 ## Harness lint
 
@@ -108,12 +109,28 @@ validation failure from replacing the previous PIN, manifest, generated tree, or
 plugin payloads. Publication spans multiple directories and is not claimed to be
 crash-atomic.
 
-The repaired baseline is CPP commit
-`4726ccf43899ac20ec886e588f1b9faf3da51065` (source tree
-`e097372d00a31e074f91b89b2e6c25dc859f5c6f`). A clean detached checkout
-reproduces 123 adopted files across 55 generated skills. The command prints the
-source, tree, overlay SHA-256, manifest SHA-256, file count, and packaged-skill
-count so review evidence identifies the exact transformation it checked.
+The selected source is CPP commit
+`f64a654f76ea8d26a33eb33f785f6e1065a823b6` (source tree
+`29fc82d3e980bb0f29ef60ed207f92f4e1096f13`, `codex/skills` tree
+`71046ffedd4deec84737881086c36d887f40d124`). The versioned
+`vendor/claude-power-pack/adoption-policy.json` binds the accepted #207 report
+and all 59 reviewed source changes to one disposition: 6 direct adoptions, 27
+CxPP adaptations, and 26 declared deferrals. Nine deferred historical payloads
+are reproduced byte-for-byte, including executable mode, from committed files
+under `vendor/claude-power-pack/overlays/retain/`; 17 new payloads are explicitly
+omitted with owners and reasons. A clean detached checkout reproduces 122
+adopted files across 55 generated skills. The exact-pin command prints the
+source, tree, transformation and policy digests, manifest digest, file count,
+package count, and declared-deferral count.
+
+Refresh reads the policy and every retention overlay from committed Git objects
+and independently compares their checked-out bytes and modes. Malformed,
+duplicate, unsafe, uncommitted, hidden-edited, digest-mismatched, or target-
+mismatched inputs fail before any generated, plugin, PIN, or manifest write.
+Changing the current transformation script therefore cannot redefine the
+historical 59-path audit. Updating the PIN requires a newly reviewed policy;
+`--source-report` remains able to describe a newer immutable CPP ref without
+publishing it.
 
 ## Required integrity and upstream reporting
 
@@ -153,14 +170,17 @@ sync, or issue APIs.
 
 A complete report exits zero whether its `status` is `current` or `drift`.
 Resolution, provenance, adaptation, current-baseline, or incomplete-report
-failures exit nonzero and emit no success JSON. The version-1 canonical JSON
+failures exit nonzero and emit no success JSON. The version-2 canonical JSON
 records the UTC timestamp; CxPP commit/tree; current PIN; target CPP commit,
 repository, source tree, and `codex/skills` tree; overlay, manifest, and adapted
 payload digests; sorted added/removed/changed paths; excluded-family matches;
-native-name collisions; and new skills without usable plugin destinations.
-Those omissions are adoption work for issue #196, not claims that the source was
-adopted. `REPORT_SHA256` digests the exact compact JSON on the `REPORT_JSON`
-line, so a reviewer can independently recompute it.
+native-name collisions; new skills without usable plugin destinations; the
+committed adoption-policy identity; and all 26 declared deferrals with owners,
+reasons, and retained-versus-omitted status. At the selected target, those
+deferrals remain visible as raw upstream drift even while exact-pin verification
+succeeds for the approved mixed projection. Future paths and executable-bit-only
+changes remain discoverable. `REPORT_SHA256` digests the exact compact JSON on
+the `REPORT_JSON` line, so a reviewer can independently recompute it.
 
 The JSON and digest are retained as Woodpecker step output, the accepted
 artifact-equivalent for #207. That retention is deliberately bounded: this
@@ -188,9 +208,9 @@ red probe unexpectedly merges, preserve that failed-proof evidence and stop. Onl
 after the isolated proof may the coordinator apply and read back the normalized
 policy on `main`; a later ordinary green main merge supplies production evidence.
 
-To change a CxPP-owned runtime adaptation, patch the generated skill copy in
-this repo, mirror it into the matching plugin payload, and run
-`scripts/codex_skills_sync.py --write` plus the local verification gates.
+To change a CxPP-owned runtime adaptation, update the deterministic transform and
+its reviewed adoption inputs, then refresh from the exact source and run the
+local verification gates. Do not patch generated or plugin payloads directly.
 
 Plugin installation does not make every skill implicitly eligible. The
 versioned set in `.agents/skill-invocation-policy.json` controls prompt

@@ -107,6 +107,8 @@ def _configure_destination(
     monkeypatch.setattr(sync, "VENDOR_DIR", vendor)
     monkeypatch.setattr(sync, "MANIFEST_PATH", vendor / "codex-skills.sha256")
     monkeypatch.setattr(sync, "PIN_PATH", vendor / "PIN")
+    monkeypatch.setattr(sync, "ADOPTION_POLICY_PATH", vendor / "adoption-policy.json")
+    monkeypatch.setattr(sync, "RETAIN_OVERLAY_ROOT", vendor / "overlays" / "retain")
     monkeypatch.setattr(sync, "PLUGINS_ROOT", plugins)
     monkeypatch.setattr(sync, "OVERLAY_PATH", overlay)
 
@@ -197,7 +199,7 @@ def test_complete_drift_is_stable_successful_data_and_never_mutates(
     report, digest = _reported_json(output)
     canonical = json.dumps(report, sort_keys=True, separators=(",", ":"))
     assert digest == hashlib.sha256(canonical.encode()).hexdigest()
-    assert report["schema_version"] == 1
+    assert report["schema_version"] == 2
     assert report["complete"] is True
     assert report["generated_at"] == FIXED_TIMESTAMP
     assert report["status"] == "drift"
@@ -211,6 +213,7 @@ def test_complete_drift_is_stable_successful_data_and_never_mutates(
         "excluded_source_skills": 1,
         "native_collisions": 1,
         "missing_plugin_destinations": 1,
+        "declared_deferrals": 0,
     }
     assert report["changes"] == {
         "added": ["flow-auto/reference.md", "flow-wave/SKILL.md"],
@@ -226,6 +229,14 @@ def test_complete_drift_is_stable_successful_data_and_never_mutates(
         "new_skills_missing_plugin_destinations": [
             {"skill": "flow-wave", "reason": "no-contract-record"}
         ],
+    }
+    assert report["adoption"] == {
+        "policy_path": None,
+        "policy_sha256": None,
+        "target_commit": None,
+        "historical_report_sha256": None,
+        "counts": {"adopt": 0, "adapt": 0, "defer": 0},
+        "declared_deferrals": [],
     }
     assert "CODEX_UPSTREAM_REPORT: ok" in output
     assert _tree_bytes(root) == before
@@ -278,6 +289,54 @@ def test_executable_bit_only_change_is_reported_and_changes_payload_identity(
         report["baseline"]["adapted_payload_sha256"]
         != report["target"]["adapted_payload_sha256"]
     )
+
+
+def test_declared_deferral_is_reported_separately_from_raw_upstream_drift(
+    report_fixture: tuple[Path, Path, str, str],
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _, source, _, target = report_fixture
+    disposition = sync.AdoptionDisposition(
+        "flow-wave/SKILL.md",
+        "added",
+        "defer",
+        "#202",
+        "native package is not delivered",
+        None,
+    )
+    policy = sync.AdoptionPolicy(
+        target,
+        "0" * 40,
+        "1" * 40,
+        {disposition.path: disposition},
+        "2" * 64,
+        {"report_sha256": "3" * 64},
+    )
+    monkeypatch.setattr(
+        sync,
+        "_load_adoption_policy",
+        lambda *, required=True: policy,
+    )
+    capsys.readouterr()
+
+    assert sync.run_source_report(source, target, generated_at=FIXED_TIMESTAMP) == 0
+
+    report, _ = _reported_json(capsys.readouterr().out)
+    assert report["counts"]["declared_deferrals"] == 1
+    assert report["changes"]["added"] == [
+        "flow-auto/reference.md",
+        "flow-wave/SKILL.md",
+    ]
+    assert report["adoption"]["declared_deferrals"] == [
+        {
+            "path": "flow-wave/SKILL.md",
+            "source_change": "added",
+            "retention": "omitted",
+            "owner": "#202",
+            "reason": "native package is not delivered",
+        }
+    ]
 
 
 def test_uncommitted_baseline_mode_change_is_an_execution_error(

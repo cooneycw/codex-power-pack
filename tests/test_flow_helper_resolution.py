@@ -22,6 +22,9 @@ RESOLVERS = [
     REPO_ROOT / "plugins/flow/skills/flow-start/scripts/flow-start-resolve.sh",
 ]
 
+CI_STATUS_HELPER = REPO_ROOT / ".codex/skills/flow-auto/scripts/flow-ci-status.sh"
+MERGE_HELPER = REPO_ROOT / ".codex/skills/flow-auto/scripts/gh-pr-merge.sh"
+
 
 @pytest.mark.parametrize("path", LOAD_BEARING_REFERENCES, ids=lambda path: path.parent.name)
 def test_load_bearing_helpers_resolve_from_the_installed_skill(path: Path) -> None:
@@ -73,6 +76,148 @@ def test_ci_separates_exact_pin_integrity_from_latest_upstream_reporting() -> No
     assert "codex-skills-pin-check:" in makefile
     assert "codex-skills-currency-check:" in makefile
     assert "codex-skills-upstream-report:" in makefile
+
+
+@pytest.mark.parametrize(
+    "args, missing",
+    [
+        ([], "SHA is required"),
+        (["a" * 40], "--path is required"),
+        (["a" * 40, "--path", "."], "--repo is required"),
+    ],
+)
+def test_ci_status_requires_explicit_sha_path_and_repository(
+    args: list[str], missing: str
+) -> None:
+    result = subprocess.run(
+        [str(CI_STATUS_HELPER), *args],
+        cwd=REPO_ROOT,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert result.returncode == 2
+    assert missing in result.stderr
+
+
+def _write_executable(path: Path, text: str) -> None:
+    path.write_text("#!/usr/bin/env bash\n" + text, encoding="utf-8")
+    path.chmod(0o755)
+
+
+def _merge_stubs(
+    tmp_path: Path, *, check_state: str, required: bool, protection_failure: bool = False
+) -> tuple[dict[str, str], Path]:
+    calls = tmp_path / "merge-calls.log"
+    gh = tmp_path / "gh"
+    required_line = "echo required-context" if required else ":"
+    merge_result = (
+        "echo \"failed to merge pull request: GraphQL: You're not authorized to "
+        "push to this branch. (mergePullRequest)\" >&2; exit 1"
+        if protection_failure
+        else "exit 0"
+    )
+    _write_executable(
+        gh,
+        f'echo "gh $*" >> "{calls}"\n'
+        'if [[ "$1 $2" == "pr list" ]]; then exit 0; fi\n'
+        'if [[ "$1" == "api" ]]; then\n'
+        '  if [[ "$2" == *"/protection/required_status_checks"* ]]; then '
+        f'{required_line}; fi\n'
+        '  exit 0\n'
+        'fi\n'
+        'if [[ "$1 $2" == "repo view" ]]; then\n'
+        '  if [[ "$*" == *defaultBranchRef* ]]; then echo main; '
+        'elif [[ "$*" == *nameWithOwner* ]]; then echo cooneycw/codex-power-pack; '
+        'else echo ADMIN; fi\n'
+        '  exit 0\n'
+        'fi\n'
+        'if [[ "$1 $2" == "pr view" ]]; then\n'
+        '  if [[ "$*" == *baseRefName* ]]; then echo main; '
+        f'elif [[ "$*" == *statusCheckRollup* ]]; then echo "required-context|{check_state}"; '
+        'elif [[ "$*" == *mergeable* ]]; then echo MERGEABLE; '
+        'elif [[ "$*" == *reviewDecision* ]]; then :; '
+        'elif [[ "$*" == *mergeCommit* ]]; then :; '
+        'elif [[ "$*" == *"--json state"* ]]; then echo OPEN; '
+        'else :; fi\n'
+        '  exit 0\n'
+        'fi\n'
+        f'if [[ "$1 $2" == "pr merge" ]]; then {merge_result}; fi\n'
+        'exit 0\n',
+    )
+    git = tmp_path / "git"
+    _write_executable(
+        git,
+        f'echo "git $*" >> "{calls}"\n'
+        'if [[ "$*" == *"rev-parse --show-toplevel"* ]]; then pwd; '
+        'elif [[ "$*" == *"rev-parse refs/remotes/origin/main"* ]]; then printf "%040d\\n" 1; '
+        'elif [[ "$*" == *"rev-parse HEAD^{tree}"* ]]; then printf "%040d\\n" 2; '
+        'elif [[ "$*" == "rev-parse HEAD" ]]; then printf "%040d\\n" 3; '
+        'elif [[ "$*" == *"merge-base --is-ancestor"* ]]; then exit 1; fi\n'
+        'exit 0\n',
+    )
+    env = os.environ | {
+        "GH_PR_MERGE_GH": str(gh),
+        "GH_PR_MERGE_GIT": str(git),
+        "GH_PR_MERGE_CHECK_ATTEMPTS": "1",
+        "GH_PR_MERGE_CHECK_DELAY": "0",
+        "GH_PR_MERGE_POLL_DELAY": "0",
+        "GH_PR_MERGE_BASE_RETRY_DELAY": "0",
+    }
+    env.pop("WOODPECKER_API_TOKEN", None)
+    env.pop("WOODPECKER_SERVER", None)
+    return env, calls
+
+
+@pytest.mark.parametrize("check_state", ["FAILURE", "PENDING", "UNKNOWN"])
+def test_merge_helper_refuses_failed_pending_or_unknown_required_checks(
+    tmp_path: Path, check_state: str
+) -> None:
+    (tmp_path / ".git").write_text("gitdir: /fixture/worktree\n", encoding="utf-8")
+    env, calls = _merge_stubs(tmp_path, check_state=check_state, required=True)
+    result = subprocess.run(
+        [str(MERGE_HELPER), "196", "issue-196-fixture"],
+        cwd=tmp_path,
+        env=env,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert result.returncode == 1
+    assert not any(
+        line.startswith("gh pr merge") for line in calls.read_text().splitlines()
+    )
+
+
+def test_merge_helper_never_automatically_retries_with_admin(tmp_path: Path) -> None:
+    (tmp_path / ".git").write_text("gitdir: /fixture/worktree\n", encoding="utf-8")
+    env, calls = _merge_stubs(
+        tmp_path,
+        check_state="SUCCESS",
+        required=False,
+        protection_failure=True,
+    )
+    result = subprocess.run(
+        [str(MERGE_HELPER), "196", "issue-196-fixture"],
+        cwd=tmp_path,
+        env=env,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    merge_calls = [
+        line for line in calls.read_text().splitlines() if line.startswith("gh pr merge")
+    ]
+    assert result.returncode == 1
+    assert len(merge_calls) == 1
+    assert "--admin" not in merge_calls[0]
+    assert "refusing an automatic --admin retry" in result.stderr
 
 
 @pytest.mark.skipif(

@@ -80,8 +80,11 @@ def test_finish_gate_helpers_prefer_cxpp_and_provision_runtime_dependencies() ->
         )
         assert 'CICD_RUNTIME_KIND="cxpp"' in source
         assert 'CICD_RUNTIME_KIND="cpp-compat"' in source
-        assert 'uv run --project "$CPP_DIR" --extra dev python -m lib.cicd' in source
-        assert 'uv run --project "$CPP_DIR" python -m lib.cicd' in source
+        assert 'CICD_UV_ARGS=(--project "$CPP_DIR")' in source
+        assert 'CICD_UV_ARGS+=(--extra dev)' in source
+        assert 'uv run "${CICD_UV_ARGS[@]}" python -m lib.cicd' in source
+        assert "CPP_GATE_RERUN_FAILED=1" in source
+        assert "CPP_GATE_RERUN_FAILED=0" in source
 
 
 def test_finish_gate_executes_cxpp_runner_with_dev_extra(tmp_path: Path) -> None:
@@ -95,7 +98,7 @@ def test_finish_gate_executes_cxpp_runner_with_dev_extra(tmp_path: Path) -> None
     fake_uv = bin_dir / "uv"
     fake_uv.write_text(
         "#!/usr/bin/env bash\n"
-        'printf "%s\\n%s\\n" "$*" "$UV_CACHE_DIR" > "$FLOW_GATE_TEST_INVOCATION"\n',
+        'printf "%s\\n%s\\n%s\\n" "$*" "$UV_CACHE_DIR" "${CPP_GATE_RERUN_FAILED:-}" > "$FLOW_GATE_TEST_INVOCATION"\n',
         encoding="utf-8",
     )
     fake_uv.chmod(0o755)
@@ -124,6 +127,34 @@ def test_finish_gate_executes_cxpp_runner_with_dev_extra(tmp_path: Path) -> None
     assert invocation.read_text(encoding="utf-8").splitlines() == [
         f"run --project {cxpp} --extra dev python -m lib.cicd run --plan finish",
         str(sandbox_tmp / "codex-power-pack-uv-cache"),
+        "1",
+    ]
+
+
+def test_finish_gate_fallback_executes_available_make_targets(tmp_path: Path) -> None:
+    marker = tmp_path / "fallback.log"
+    (tmp_path / "Makefile").write_text(
+        "lint:\n\t@printf 'lint\\n' >> " + str(marker) + "\n"
+        "test:\n\t@printf 'test\\n' >> " + str(marker) + "\n"
+        "typecheck:\n\t@printf 'typecheck\\n' >> " + str(marker) + "\n",
+        encoding="utf-8",
+    )
+    helper = REPO_ROOT / ".codex/skills/flow-auto/scripts/flow-finish-gate.sh"
+    result = subprocess.run(
+        [str(helper)],
+        cwd=tmp_path,
+        env=os.environ | {"FLOW_GATE_CPP_DIR": ""},
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert "FLOW_FINISH_GATE: ok" in result.stdout
+    assert marker.read_text(encoding="utf-8").splitlines() == [
+        "lint",
+        "test",
+        "typecheck",
     ]
 
 
