@@ -1,0 +1,515 @@
+{
+  "contract_version": "1.0",
+  "schema_id": "spec-sync-native-wave-handoff/v1",
+  "tracking_issue": 199,
+  "consumer_issue": 201,
+  "evidence_status": "contract_conformance_fixture",
+  "runtime_admission_implemented": false,
+  "source_contracts": {
+    "native_wave": {
+      "path": "docs/native-codex-wave-contract.md",
+      "sha256": "779c2aa4f1470ef66c5eb87b0b3bdb1e22386408a633bf5a31a99ff2c307ded5"
+    },
+    "spec_sync": {
+      "identity_version": "spec-sync:v1",
+      "authoritative_surface": ".codex/skills/spec-sync/scripts/spec_sync.py",
+      "packaged_surface": "plugins/spec/skills/spec-sync/scripts/spec_sync.py",
+      "compiler_count": 1
+    },
+    "project_next": {
+      "path": "docs/project-next-contract.md",
+      "contract_version": "1.3",
+      "partial_grammar_convergence_issue": 184,
+      "relationship": "decided_partial_convergence"
+    }
+  },
+  "digest_contract": {
+    "algorithm": "sha256",
+    "encoding": "canonical-json-sorted-keys-no-insignificant-whitespace",
+    "included": [
+      "source_contract_bindings",
+      "artifact_snapshot",
+      "mapping_rows",
+      "dependency_edges",
+      "candidate_key",
+      "project_next_result_digest",
+      "inventory_normalized_evidence"
+    ],
+    "excluded_observations": [
+      "observed_at",
+      "collected_at",
+      "fresh_until",
+      "transport_metadata",
+      "log_sequence"
+    ]
+  },
+  "excluded_inputs": [
+    {
+      "description": "unrelated historical 36-task specification",
+      "task_count": 36,
+      "selected": false,
+      "synchronized": false
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "H-001",
+      "name": "stage mapping rerun is stable",
+      "covers": ["stage_identity", "same_input_digest", "ledger_idempotence"],
+      "runs": [
+        {
+          "observed_at": "2026-09-07T12:00:00Z",
+          "digest_input": {
+            "artifact_snapshot": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "mapping_identity": "spec-sync:v1:cooneycw/codex-power-pack:.specify/specs/demo/tasks.md:stage-1",
+            "candidate_key": "cooneycw/codex-power-pack#310",
+            "dependency_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "inventory_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "project_next_result_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          }
+        },
+        {
+          "observed_at": "2026-09-07T12:05:00Z",
+          "digest_input": {
+            "artifact_snapshot": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "mapping_identity": "spec-sync:v1:cooneycw/codex-power-pack:.specify/specs/demo/tasks.md:stage-1",
+            "candidate_key": "cooneycw/codex-power-pack#310",
+            "dependency_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "inventory_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "project_next_result_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          }
+        }
+      ],
+      "witness": {
+        "granularity": "stage",
+        "group_id": "stage-1",
+        "task_ids": ["T001", "T002"]
+      },
+      "expected": {
+        "disposition": "eligible",
+        "digest_relation": "equal",
+        "assignment_input": {
+          "candidate_key": "cooneycw/codex-power-pack#310"
+        }
+      }
+    },
+    {
+      "id": "H-002",
+      "name": "story mapping rerun is stable",
+      "covers": ["story_identity", "same_input_digest"],
+      "runs": [
+        {
+          "observed_at": "2026-09-07T12:00:00Z",
+          "digest_input": {
+            "artifact_snapshot": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "mapping_identity": "spec-sync:v1:cooneycw/codex-power-pack:.specify/specs/demo/tasks.md:us-2",
+            "candidate_key": "cooneycw/codex-power-pack#311",
+            "dependency_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+            "inventory_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+            "project_next_result_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+          }
+        },
+        {
+          "observed_at": "2026-09-07T12:07:00Z",
+          "digest_input": {
+            "artifact_snapshot": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "mapping_identity": "spec-sync:v1:cooneycw/codex-power-pack:.specify/specs/demo/tasks.md:us-2",
+            "candidate_key": "cooneycw/codex-power-pack#311",
+            "dependency_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+            "inventory_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+            "project_next_result_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+          }
+        }
+      ],
+      "witness": {
+        "granularity": "story",
+        "group_id": "us-2",
+        "task_ids": ["T003"]
+      },
+      "expected": {
+        "disposition": "eligible",
+        "digest_relation": "equal",
+        "assignment_input": {
+          "candidate_key": "cooneycw/codex-power-pack#311"
+        }
+      }
+    },
+    {
+      "id": "H-003",
+      "name": "new inventory evidence changes handoff digest but not mapping identity",
+      "covers": ["inventory_refresh", "mapping_identity_independent_of_observation"],
+      "runs": [
+        {
+          "observed_at": "2026-09-07T12:00:00Z",
+          "digest_input": {
+            "mapping_identity": "spec-sync:v1:cooneycw/codex-power-pack:.specify/specs/demo/tasks.md:stage-1",
+            "inventory_digest": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+            "collection_revision": "inventory-revision-a"
+          }
+        },
+        {
+          "observed_at": "2026-09-07T12:10:00Z",
+          "digest_input": {
+            "mapping_identity": "spec-sync:v1:cooneycw/codex-power-pack:.specify/specs/demo/tasks.md:stage-1",
+            "inventory_digest": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+            "collection_revision": "inventory-revision-b"
+          }
+        }
+      ],
+      "witness": {
+        "changed_fields": ["inventory_digest", "collection_revision"],
+        "unchanged_fields": ["mapping_identity"]
+      },
+      "expected": {
+        "disposition": "eligible",
+        "digest_relation": "different",
+        "assignment_input": {
+          "candidate_key": "cooneycw/codex-power-pack#310"
+        }
+      }
+    },
+    {
+      "id": "H-004",
+      "name": "artifact digest mismatch is rejected",
+      "covers": ["artifact_mismatch", "immutable_provenance"],
+      "witness": {
+        "artifact_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "files": [
+          {
+            "path": ".specify/specs/demo/spec.md",
+            "bound_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "actual_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "path": ".specify/specs/demo/plan.md",
+            "bound_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "actual_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+          }
+        ]
+      },
+      "expected": {
+        "disposition": "rejected",
+        "reason": "artifact_mismatch",
+        "assignment_input": null
+      }
+    },
+    {
+      "id": "H-005",
+      "name": "selected task without mapping is rejected",
+      "covers": ["mapping_missing"],
+      "witness": {
+        "selected_task_ids": ["T001", "T002"],
+        "mapped_task_ids": ["T001"],
+        "missing_task_ids": ["T002"]
+      },
+      "expected": {
+        "disposition": "rejected",
+        "reason": "mapping_missing",
+        "assignment_input": null
+      }
+    },
+    {
+      "id": "H-006",
+      "name": "task resolving through two mappings is rejected",
+      "covers": ["mapping_ambiguous"],
+      "witness": {
+        "task_id": "T002",
+        "claims": [
+          {
+            "stable_identity": "spec-sync:v1:cooneycw/codex-power-pack:.specify/specs/demo/tasks.md:stage-1",
+            "issue_key": "cooneycw/codex-power-pack#310"
+          },
+          {
+            "stable_identity": "spec-sync:v1:cooneycw/codex-power-pack:.specify/specs/demo/tasks.md:stage-2",
+            "issue_key": "cooneycw/codex-power-pack#311"
+          }
+        ]
+      },
+      "expected": {
+        "disposition": "rejected",
+        "reason": "mapping_ambiguous",
+        "assignment_input": null
+      }
+    },
+    {
+      "id": "H-007",
+      "name": "mapping identity for another repository is stale",
+      "covers": ["mapping_stale"],
+      "witness": {
+        "expected_identity": "spec-sync:v1:cooneycw/codex-power-pack:.specify/specs/demo/tasks.md:stage-1",
+        "ledger_identity": "spec-sync:v1:cooneycw/kyle:.specify/specs/demo/tasks.md:stage-1",
+        "group_id": "stage-1"
+      },
+      "expected": {
+        "disposition": "rejected",
+        "reason": "mapping_stale",
+        "assignment_input": null
+      }
+    },
+    {
+      "id": "H-008",
+      "name": "one group claimed by two issue keys is rejected",
+      "covers": ["duplicate_group_claim"],
+      "witness": {
+        "stable_identity": "spec-sync:v1:cooneycw/codex-power-pack:.specify/specs/demo/tasks.md:stage-1",
+        "issue_keys": [
+          "cooneycw/codex-power-pack#310",
+          "cooneycw/codex-power-pack#312"
+        ]
+      },
+      "expected": {
+        "disposition": "rejected",
+        "reason": "duplicate_group_claim",
+        "assignment_input": null
+      }
+    },
+    {
+      "id": "H-009",
+      "name": "one task claimed by two groups is rejected",
+      "covers": ["duplicate_task_claim"],
+      "witness": {
+        "task_id": "T003",
+        "group_ids": ["stage-1", "stage-2"]
+      },
+      "expected": {
+        "disposition": "rejected",
+        "reason": "duplicate_task_claim",
+        "assignment_input": null
+      }
+    },
+    {
+      "id": "H-010",
+      "name": "task dependency cycle is rejected",
+      "covers": ["dependency_cycle"],
+      "witness": {
+        "nodes": ["T001", "T002"],
+        "directed_edges": [
+          ["T001", "T002"],
+          ["T002", "T001"]
+        ]
+      },
+      "expected": {
+        "disposition": "rejected",
+        "reason": "dependency_cycle",
+        "assignment_input": null
+      }
+    },
+    {
+      "id": "H-011",
+      "name": "missing external scope proof makes inventory incomplete",
+      "covers": ["inventory_incomplete", "external_scope"],
+      "witness": {
+        "repository_scope": [
+          "cooneycw/codex-power-pack",
+          "cooneycw/kyle"
+        ],
+        "repository_proofs": [
+          {
+            "repository": "cooneycw/codex-power-pack",
+            "mode": "full-repository",
+            "query": "state=all&limit=1000",
+            "terminal_page": true,
+            "response_digest": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+          }
+        ],
+        "missing_repository_proofs": ["cooneycw/kyle"]
+      },
+      "expected": {
+        "disposition": "rejected",
+        "reason": "inventory_incomplete",
+        "assignment_input": null
+      }
+    },
+    {
+      "id": "H-012",
+      "name": "inventory bound to an old consumer revision is stale",
+      "covers": ["inventory_stale", "recollection_required"],
+      "witness": {
+        "collection_revision": "inventory-revision-12-a",
+        "bound_consumer_revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "current_consumer_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "invalidation_signal": "base_revision_changed"
+      },
+      "expected": {
+        "disposition": "rejected",
+        "reason": "inventory_stale",
+        "required_action": "recollect",
+        "assignment_input": null
+      }
+    },
+    {
+      "id": "H-013",
+      "name": "inventory canonical digest mismatch is rejected",
+      "covers": ["inventory_digest_mismatch"],
+      "witness": {
+        "canonical_payload": {
+          "repository_scope": ["cooneycw/codex-power-pack"],
+          "collection_revision": "inventory-revision-13",
+          "issues": [
+            {
+              "key": "cooneycw/codex-power-pack#310",
+              "state": "OPEN",
+              "evidence_digest": "sha256:8888888888888888888888888888888888888888888888888888888888888888"
+            }
+          ]
+        },
+        "declared_digest": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected": {
+        "disposition": "rejected",
+        "reason": "inventory_digest_mismatch",
+        "assignment_input": null
+      }
+    },
+    {
+      "id": "H-014",
+      "name": "exact qualified closed blocker satisfies only its edge",
+      "covers": ["closed_external_blocker", "qualified_identity"],
+      "witness": {
+        "consumer_key": "cooneycw/codex-power-pack#193",
+        "blocker_key": "cooneycw/kyle#412",
+        "inventory_record": {
+          "key": "cooneycw/kyle#412",
+          "state": "CLOSED",
+          "collection_revision": "kyle-key-412-revision-a",
+          "evidence_digest": "sha256:9999999999999999999999999999999999999999999999999999999999999999"
+        }
+      },
+      "expected": {
+        "disposition": "eligible",
+        "satisfied_edge": [
+          "cooneycw/codex-power-pack#193",
+          "cooneycw/kyle#412"
+        ],
+        "assignment_input": {
+          "candidate_key": "cooneycw/codex-power-pack#193"
+        }
+      }
+    },
+    {
+      "id": "H-015",
+      "name": "exact qualified open blocker is rejected",
+      "covers": ["blocker_open", "qualified_identity"],
+      "witness": {
+        "consumer_key": "cooneycw/codex-power-pack#194",
+        "blocker_key": "cooneycw/sage#52",
+        "inventory_record": {
+          "key": "cooneycw/sage#52",
+          "state": "OPEN",
+          "collection_revision": "sage-key-52-revision-a",
+          "evidence_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      },
+      "expected": {
+        "disposition": "rejected",
+        "reason": "blocker_open",
+        "assignment_input": null
+      }
+    },
+    {
+      "id": "H-016",
+      "name": "unknown qualified blocker is rejected",
+      "covers": ["blocker_unknown", "qualified_identity"],
+      "witness": {
+        "consumer_key": "cooneycw/codex-power-pack#208",
+        "blocker_key": "cooneycw/kyle#413",
+        "inventory_record": {
+          "key": "cooneycw/kyle#413",
+          "state": "UNKNOWN",
+          "collection_revision": "kyle-key-413-revision-unavailable",
+          "evidence_digest": null
+        }
+      },
+      "expected": {
+        "disposition": "rejected",
+        "reason": "blocker_unknown",
+        "assignment_input": null
+      }
+    },
+    {
+      "id": "H-017",
+      "name": "closed local same number cannot satisfy qualified external blocker",
+      "covers": ["qualified_key_collision", "same_number_different_repository"],
+      "witness": {
+        "consumer_key": "cooneycw/codex-power-pack#193",
+        "required_blocker_key": "cooneycw/kyle#44",
+        "available_evidence": [
+          {
+            "key": "cooneycw/codex-power-pack#44",
+            "state": "CLOSED",
+            "evidence_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "key": "cooneycw/kyle#44",
+            "state": "UNKNOWN",
+            "evidence_digest": null
+          }
+        ]
+      },
+      "expected": {
+        "disposition": "rejected",
+        "reason": "qualified_key_collision",
+        "assignment_input": null
+      }
+    },
+    {
+      "id": "H-018",
+      "name": "local project-next candidate cannot bypass unresolved external evidence",
+      "covers": ["project_next_unchanged", "external_blocker_suppresses_assignment"],
+      "witness": {
+        "project_next_state": {
+          "repository": "cooneycw/codex-power-pack",
+          "default_branch": "main",
+          "collected_at": "2026-09-07T12:00:00Z",
+          "inventory_complete": true,
+          "issues": [
+            {
+              "number": 193,
+              "title": "Implement CxPP consumer",
+              "body": "Local acceptance is ready.",
+              "labels": ["priority-high", "task"],
+              "updated_at": "2026-09-07T11:00:00Z"
+            }
+          ]
+        },
+        "candidate_key": "cooneycw/codex-power-pack#193",
+        "external_dependencies": [
+          {
+            "blocker_key": "cooneycw/kyle#412",
+            "state": "UNKNOWN",
+            "evidence_digest": null
+          }
+        ]
+      },
+      "expected": {
+        "project_next_contract_version": "1.3",
+        "project_next_next_startable_issue": 193,
+        "disposition": "rejected",
+        "reason": "blocker_unknown",
+        "assignment_input": null
+      }
+    },
+    {
+      "id": "H-019",
+      "name": "unrelated historical 36-task specification is excluded",
+      "covers": ["old_spec_excluded", "artifact_scope"],
+      "witness": {
+        "selected_artifact": {
+          "description": "issue-199 reviewed artifact bundle",
+          "selected": true
+        },
+        "excluded_artifact": {
+          "description": "unrelated historical 36-task specification",
+          "task_count": 36,
+          "selected": false,
+          "synchronized": false
+        }
+      },
+      "expected": {
+        "disposition": "excluded",
+        "reason": "outside_artifact_scope",
+        "assignment_input": null
+      }
+    }
+  ]
+}
