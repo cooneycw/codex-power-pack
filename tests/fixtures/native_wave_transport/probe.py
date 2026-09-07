@@ -30,6 +30,8 @@ def identity():
     for _ in range(32):
         status = Path(f"/proc/{pid}/status").read_text()
         if re.search(r"^Name:\s+codex$", status, re.M):
+            if pid == 1:
+                raise ValueError("host_owner_unobservable: namespace PID1 is not a stable host owner")
             start = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[19]
             return {
                 "thread": thread,
@@ -110,6 +112,8 @@ def current(state, role, actor):
 
 
 def register(state, role, actor):
+    if time.monotonic() - state["started"] > 900:
+        raise ValueError("live_window_expired")
     if role not in state["scheduled"]:
         raise ValueError("unscheduled_participant")
     existing = state["participants"].get(role)
@@ -254,6 +258,8 @@ def notify(root, actor, role, eid, runner=subprocess.run):
         status = "queue_accepted" if result.returncode == 0 and match else "queue_error"
     except subprocess.TimeoutExpired:
         status = "queue_timeout"
+    except OSError:
+        status = "queue_error"
     with transaction(root) as state:
         observe(state, status, event=eid, role=role, duration=round(time.monotonic() - started, 3))
     return status
@@ -269,8 +275,44 @@ def export_rows(state):
         "participants": state["scheduled"],
         "limits": {"queue_s": 10, "ack_s": 120, "withheld_s": 30, "attempts": 2, "window_s": 900},
     }
+    fields = {
+        "sequence",
+        "kind",
+        "elapsed",
+        "role",
+        "event",
+        "generation",
+        "assignment",
+        "event_kind",
+        "attempt",
+        "batch",
+        "duration",
+        "disposition",
+        "reason",
+        "count",
+        "purpose",
+        "parent",
+        "remaining_s",
+        "cli",
+        "model",
+        "effort",
+        "initial_sandbox",
+        "replacement_sandbox",
+        "approval",
+        "helper_sha256",
+    }
     for row in state["observations"]:
-        yield {"evidence": "observed", **row}
+        if row["kind"] == "operator_observation":
+            continue  # Human interpretation belongs in a separately reviewed attributed record.
+        yield {"evidence": "observed", **{k: v for k, v in row.items() if k in fields}}
+    for name, assignment in state["assignments"].items():
+        yield {
+            "evidence": "fixture",
+            "kind": "assignment_disposition",
+            "assignment": name,
+            "state": assignment["state"],
+            "actions": assignment["actions"],
+        }
 
 
 def main():

@@ -144,9 +144,32 @@ call. This batch is labeled `stale-controls`; it is not nine independent queue
 latency measurements. These live negative gates followed the first synthetic
 action; their rejection codes and absence of another action are observed.
 Offline tests separately check every negative binding before any action.
+The batch mapping, in `cases.json` order, is:
+
+| Event suffix | Override | Recipient ACK |
+|---|---|---|
+| 010 | `wave=wrong-wave` | binding_mismatch |
+| 011 | `assignment=old-assignment` | binding_mismatch |
+| 012 | `revision=0` | binding_mismatch |
+| 013 | `generation=old-generation` | stale_generation |
+| 014 | `coordinator=old-coordinator` | stale_coordinator |
+| 015 | `policy=0` | binding_mismatch |
+| 016 | `plan=other-plan` | binding_mismatch |
+| 017 | `capability=other-runtime` | binding_mismatch |
+| 018 | `provenance=payload_only` | payload_only |
+
 No event exceeded two notification attempts. One malformed
 operator CLI call omitted the recipient argument and failed before notifying;
 the corrected call supplied it. No transport failure was hidden by that correction.
+
+The exact executed helper is retained in reachable commit
+`f5286ca65b81337ba3640ba55f6f99b2b7bfb567`, followed by the final hardening
+commit. Extract and verify without executing or exporting its unfiltered state:
+
+```bash
+git show f5286ca65b81337ba3640ba55f6f99b2b7bfb567:tests/fixtures/native_wave_transport/probe.py > /tmp/probe-198-live.py
+sha256sum /tmp/probe-198-live.py
+```
 
 The observed live helper SHA-256 was
 `d37c0c88cc72b85eb06143fd0e8a2f4f15c83f1227b58077d50228f8c8242c74`.
