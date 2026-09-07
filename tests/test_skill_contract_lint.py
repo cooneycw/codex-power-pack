@@ -21,7 +21,7 @@ def test_repository_passes_semantic_skill_contract() -> None:
 
 
 def test_reviewed_exclusions_expire_loudly() -> None:
-    findings = skill_lint.lint_contract(today=date(2026, 10, 1))
+    findings = skill_lint.lint_contract(today=date(2027, 4, 1))
 
     expired = [finding for finding in findings if finding.rule == "expired-exclusion"]
     assert len(expired) == 10
