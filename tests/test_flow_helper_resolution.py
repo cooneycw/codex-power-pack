@@ -79,6 +79,7 @@ def test_flow_docs_do_not_publish_deferred_claude_runtime_contracts() -> None:
     assert "/plugin" not in flow_help
     assert ".claude/security.yml" not in flow_help
     assert "/plugin" not in flow_eli5
+    assert "$flow-auto_codex" not in flow_eli5
 
 
 def test_ci_separates_exact_pin_integrity_from_latest_upstream_reporting() -> None:

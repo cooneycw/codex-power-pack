@@ -1247,6 +1247,10 @@ def _adapt_deferred_native_boundaries(
         )
         if count != 1:
             raise IntegrityError("flow-eli5 source no longer has the reviewed standalone install")
+        text = text.replace(
+            "and neither does `$flow-auto_codex`",
+            "and neither does any separately reviewed wrapper",
+        )
 
     if skill_dir.name == "flow-finish" and source_file.name == "reference.md":
         graduation = re.compile(
