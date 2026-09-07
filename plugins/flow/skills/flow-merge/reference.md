@@ -102,7 +102,10 @@ On `FLOW_FINISH_GATE: fail` (exit 1): **STOP** - the quality gate failed on
 the post-merge tree. Fix, commit, then re-run `$flow-merge`. On `ok` (or
 `skipped` / `warn`, each with a warning - `warn` means a test step exited 0
 having executed no tests, issue #621: report its counts, do not call it "tests
-passed"), push the merge so the PR reflects the post-merge
+passed"; `warn` also means a test failed on the first attempt and PASSED when
+re-run against only its failed ids, issue #769: the ids are on the
+`RERUN_PASSED:` line above the marker; proceed, but report them and never call
+the run a clean pass), push the merge so the PR reflects the post-merge
 tree before squashing:
 
 ```bash
@@ -141,6 +144,35 @@ fi
 - Use `--squash` by default (clean history)
 - The remote branch is deleted by `--delete-branch` (primary repo) or by the
   helper's explicit `git push origin --delete` (linked worktree)
+- **`MERGE_RC` = 3 is a FIRST-CLASS CLEAN STOP, not a failure (issue #579):**
+  the PR awaits a required human review. Report the helper's handoff message
+  (PR URL + "approve or merge on GitHub, then re-run $flow-merge"), leave the
+  worktree, branch, and PR intact - skip Steps 4-6, do not retry, and never
+  re-invoke with `--admin` yourself; the review override is the owner's
+  explicit, human-typed call. Do not treat this stop as something to fix.
+- **`MERGE_RC` = 5 is a CLEAN STOP (issue #726):** the squash title, body, or a
+  commit subject on the branch has a NEGATED close/fix/resolve keyword
+  ("does not close #N") that GitHub would still honor. Leave the worktree,
+  branch, and PR intact - report the printed context, reword the offending
+  text, and re-run `$flow-merge` (or re-run the helper with
+  `--allow-negated-close` only after the user consciously confirms).
+- **`MERGE_RC` = 6 is a FIRST-CLASS CLEAN STOP, not a failure (issue #767):**
+  the base advanced while required checks were running, so the gated tree is
+  not the tree that would land. Leave the worktree, branch, and PR intact -
+  skip Steps 4-6, do not retry, and never self-escalate to `--admin`. Sync the
+  branch with the base, re-run the quality gate on that merged tree, push, and
+  re-run `$flow-merge`.
+- **`MERGE_RC` = 7 is a CLEAN STOP (issue #794):** same shape as 5, but the
+  keyword is not negated - it is merely adjacent to `#N` (not clause-initial,
+  or `#N` is immediately followed by a possessive/slash-compound) and reads as
+  incidental rather than a directive. Leave the worktree, branch, and PR
+  intact - report the printed context, reword the clause, and re-run
+  `$flow-merge` (or re-run with `--allow-incidental-close` only after the user
+  consciously confirms).
+- **`MERGE_RC` = 8 means the incidental-close guard's own self-check failed
+  (issue #794):** this is a BROKEN CHECK, not a clean scan of the PR, and must
+  never be read as "no hazard found" - report it and investigate the guard
+  before re-running; there is no override.
 - If the merge genuinely failed (`MERGE_RC` non-zero - conflicts, checks failing,
   PR not `MERGED`), report and stop. A non-zero `gh` exit whose PR is nonetheless
   `MERGED` is not a failure - the helper treats it as success and cleanup proceeds

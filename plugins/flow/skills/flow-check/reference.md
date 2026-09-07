@@ -136,7 +136,10 @@ it BARE (#581 discipline; on exit 127 the helper is not installed - suggest
 ```
 
 - `FLOW_FINISH_GATE: ok` - count a PASS.
-- `FLOW_FINISH_GATE: warn` - count a WARN (non-blocking).
+- `FLOW_FINISH_GATE: warn` - count a WARN (non-blocking); this also means a test
+  failed on the first attempt and PASSED when re-run against only its failed ids
+  (issue #769) - the ids are on the `RERUN_PASSED:` line above the marker;
+  proceed, but report them and never call the run a clean pass.
 - `FLOW_FINISH_GATE: skipped` - `lib/cicd` or Makefile unavailable: count a SKIP.
 
 ### Step 5b: Guard Against Silently-Ignored New Files (advisory)
@@ -195,4 +198,4 @@ Based on results:
   runner plans carry the same three (issue #617). Keep the sets aligned: a step
   CI runs but the check omits turns this report into a false green
 - Use it to validate changes before committing or as a pre-flight check
-- The security gate uses the same `.claude/security.yml` configuration as `$flow-finish`
+- The security gate uses the same `.codex/security.yml` configuration as `$flow-finish`

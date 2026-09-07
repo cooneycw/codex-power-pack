@@ -169,11 +169,9 @@ for script in flow-start-resolve.sh flow-stale-check.sh flow-worktree-guard.sh f
 done
 ```
 
-Then run the installer's own read-only check, which additionally catches
-**stale** copies - the failure mode a marketplace install can hit that a clone
-cannot. A plugin-only install receives helpers by copy (a symlink into a
-version-stamped plugin cache would dangle at the next upgrade), and a copy does
-not follow a plugin upgrade. `--check` compares content and never writes:
+Then run the installer's own read-only check, which additionally catches stale
+host copies. A legacy cache fallback receives helpers by copy; a checkout uses
+symlinks that follow `git pull`. `--check` compares content and never writes:
 
 ```bash
 <SKILL_DIR>/scripts/flow-helpers-install.sh --check
@@ -286,8 +284,11 @@ CI/CD Readiness: skipped (lib/cicd not available)
 
 CPP itself no longer runs any MCP server on a fixed local port. The second-opinion
 server is external (the `cooneycw/mcp-second-opinion` repo) and is reached over the
-root `.mcp.json` streamable-http pointer (localhost `http://127.0.0.1:8080/mcp` or a
-Tailscale URL); browser automation is the upstream `@playwright/mcp` npx/stdio server.
+root `.mcp.json` streamable-http pointer - `${SECOND_OPINION_URL:-http://127.0.0.1:8080}/mcp`,
+i.e. localhost 8080 by DEFAULT, overridable per host by exporting
+`SECOND_OPINION_URL` with the base url (issue #633); browser automation is the
+upstream `@playwright/mcp` npx/stdio server; Tavily web tools use the upstream
+`tavily-mcp` npx/stdio server.
 Report how second-opinion is wired rather than probing a hardcoded port:
 
 ```bash
@@ -299,9 +300,11 @@ if [ -f ".mcp.json" ] && grep -q "second-opinion" .mcp.json 2>/dev/null; then
 else
   echo "  [ ] second-opinion: not registered in .mcp.json"
   echo "      Run the external cooneycw/mcp-second-opinion server, then point .mcp.json"
-  echo "      at it (http://127.0.0.1:8080/mcp for localhost, or a Tailscale URL)."
+  echo "      at it (default http://127.0.0.1:8080/mcp; export SECOND_OPINION_URL to"
+  echo "      override the base url per host - a Tailscale URL, or a moved port)."
 fi
 echo "  [-] playwright: upstream @playwright/mcp over npx/stdio (no port to probe)"
+echo "  [-] tavily: upstream tavily-mcp over npx/stdio (no port to probe)"
 ```
 
 ### Step 8: Generate Report
@@ -348,6 +351,7 @@ Output a single diagnostic report in this format:
 |--------|-----------|--------|---------|
 | second-opinion | .mcp.json (streamable-http) | ✅/❌ | Registered in .mcp.json (external server) / Not registered |
 | playwright | npx/stdio | - | Upstream @playwright/mcp (no port) |
+| tavily | npx/stdio | - | Upstream tavily-mcp (no port) |
 
 ### Active Worktrees
 
@@ -395,15 +399,15 @@ Output a single diagnostic report in this format:
 2. ⚠️ **worktree-remove.sh not found** - `/flow` creates worktrees outside the repo on the git lane (issue #627) and removes them with this script; without it, cleanup falls back to inline `git worktree remove` (no #597 claim check). Install it: `ln -sf ~/Projects/claude-power-pack/scripts/worktree-remove.sh <SKILL_DIR>/scripts/`
 2b. ⚠️ **Flow allowlist missing/incomplete** - `/flow:*` will prompt for read-only git/gh plumbing on every run. Merge via `$cxpp-update` or `$cxpp-init`; rationale and caveats in `templates/claude-settings-permissions.md`
 2c. ⚠️ **Flow helper(s) not at <SKILL_DIR>/scripts/ (clone install)** - the #581 zero-prompt lane degrades to CPP-checkout fallback paths, which prompt. Run `$flow-repair`, `$cxpp-update` (Step 5b re-links new scripts), or `$cxpp-init` Tier 2
-2d. ❌ **Flow helper(s) missing, no CPP checkout (marketplace-only install)** - `$flow-start` and `$flow-auto` will exit 127 at Step 1 (issue #590). Run `$flow-repair` to install the bundled helpers into `<SKILL_DIR>/scripts/`
-2e. ⚠️ **Flow helpers stale** - `flow-helpers-install.sh --check` reports installed copies differing from the bundled source, i.e. the plugin was upgraded but the copies at `<SKILL_DIR>/scripts/` were not. Run `$flow-repair`
+2d. ❌ **Flow helper(s) missing, no CPP checkout** - `$flow-start` and `$flow-auto` will exit 127 at Step 1. Clone CPP, then run `$flow-repair`; the canonical symlink tier returns in #663
+2e. ⚠️ **Flow helpers stale** - `flow-helpers-install.sh --check` reports installed copies differing from their checkout or legacy-cache source. Run `$flow-repair`
 3. ⚠️ **uv not installed** - Install: `curl -LsSf https://astral.sh/uv/install.sh | sh`
 4. ❌ **cicd.yml missing** - Run `$cicd-init` to auto-detect framework and generate configuration
 5. ⚠️ **Makefile gaps** - Run `$cicd-check` for details or `$cicd-init` to add missing targets
 6. ❌ **No CI pipeline** - Run `$cicd-pipeline` to generate GitHub Actions or Woodpecker CI config
 7. ⚠️ **No health endpoints** - Add `health.endpoints` to `.codex/cicd.yml` for post-deploy verification
 8. ⚠️ **No smoke tests** - Add `health.smoke_tests` to `.codex/cicd.yml` for post-deploy testing
-9. ⚠️ **second-opinion not registered** - It is an external server now. Run the `cooneycw/mcp-second-opinion` repo's server, then point the root `.mcp.json` `second-opinion` entry at it (`http://127.0.0.1:8080/mcp` for localhost, or a Tailscale URL).
+9. ⚠️ **second-opinion not registered** - It is an external server now. Run the `cooneycw/mcp-second-opinion` repo's server; the root `.mcp.json` entry reaches it at `${SECOND_OPINION_URL:-http://127.0.0.1:8080}/mcp` (default 8080; export `SECOND_OPINION_URL` for a moved port or a Tailscale URL).
 
 *All checks passed!* → "Environment is ready for `/flow` workflow."
 ```

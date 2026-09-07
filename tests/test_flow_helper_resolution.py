@@ -22,6 +22,9 @@ RESOLVERS = [
     REPO_ROOT / "plugins/flow/skills/flow-start/scripts/flow-start-resolve.sh",
 ]
 
+CI_STATUS_HELPER = REPO_ROOT / ".codex/skills/flow-auto/scripts/flow-ci-status.sh"
+MERGE_HELPER = REPO_ROOT / ".codex/skills/flow-auto/scripts/gh-pr-merge.sh"
+
 
 @pytest.mark.parametrize("path", LOAD_BEARING_REFERENCES, ids=lambda path: path.parent.name)
 def test_load_bearing_helpers_resolve_from_the_installed_skill(path: Path) -> None:
@@ -59,6 +62,26 @@ def test_flow_doctor_checks_the_installed_plugin_helper_family() -> None:
     assert "Flow helper(s) not at ~/.claude/scripts/" not in text
 
 
+def test_flow_docs_do_not_publish_deferred_claude_runtime_contracts() -> None:
+    flow_auto = (REPO_ROOT / ".codex/skills/flow-auto/reference.md").read_text(
+        encoding="utf-8"
+    )
+    flow_help = (REPO_ROOT / ".codex/skills/flow-help/reference.md").read_text(
+        encoding="utf-8"
+    )
+    flow_eli5 = (REPO_ROOT / ".codex/skills/flow-eli5/reference.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "/codex:auto" not in flow_auto
+    assert "/qwen:auto" not in flow_auto
+    assert "/gemma:auto" not in flow_auto
+    assert "/plugin" not in flow_help
+    assert ".claude/security.yml" not in flow_help
+    assert "/plugin" not in flow_eli5
+    assert "$flow-auto_codex" not in flow_eli5
+
+
 def test_ci_separates_exact_pin_integrity_from_latest_upstream_reporting() -> None:
     pipeline = (REPO_ROOT / ".woodpecker.yml").read_text(encoding="utf-8")
     makefile = (REPO_ROOT / "Makefile").read_text(encoding="utf-8")
@@ -73,6 +96,332 @@ def test_ci_separates_exact_pin_integrity_from_latest_upstream_reporting() -> No
     assert "codex-skills-pin-check:" in makefile
     assert "codex-skills-currency-check:" in makefile
     assert "codex-skills-upstream-report:" in makefile
+
+
+@pytest.mark.parametrize(
+    "args, missing",
+    [
+        ([], "SHA is required"),
+        (["a" * 40], "--path is required"),
+        (["a" * 40, "--path", "."], "--repo is required"),
+    ],
+)
+def test_ci_status_requires_explicit_sha_path_and_repository(
+    args: list[str], missing: str
+) -> None:
+    result = subprocess.run(
+        [str(CI_STATUS_HELPER), *args],
+        cwd=REPO_ROOT,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert result.returncode == 2
+    assert missing in result.stderr
+
+
+def _write_executable(path: Path, text: str) -> None:
+    path.write_text("#!/usr/bin/env bash\n" + text, encoding="utf-8")
+    path.chmod(0o755)
+
+
+def _merge_stubs(
+    tmp_path: Path,
+    *,
+    check_state: str | None,
+    required: bool,
+    protection_failure: bool = False,
+    classic_protection_readable: bool = True,
+    rules_protection_readable: bool = True,
+    status_readable: bool = True,
+    head_readable: bool = True,
+    remote_head_digit: int = 3,
+    head_changes: bool = False,
+    base_failure: bool = False,
+) -> tuple[dict[str, str], Path]:
+    calls = tmp_path / "merge-calls.log"
+    gh = tmp_path / "gh"
+    required_line = "echo required-context" if required else ":"
+    classic_api_result = "exit 0" if classic_protection_readable else "exit 1"
+    rules_api_result = "exit 0" if rules_protection_readable else "exit 1"
+    status_result = (
+        "exit 1"
+        if not status_readable
+        else ":"
+        if check_state is None
+        else f'echo "required-context|{check_state}"'
+    )
+    head_reads = tmp_path / "head-reads"
+    if head_changes:
+        head_result = (
+            f'if [[ -e "{head_reads}" ]]; then printf "%040d\\n" 4; '
+            f'else : > "{head_reads}"; printf "%040d\\n" 3; fi'
+        )
+    else:
+        head_result = (
+            f'printf "%040d\\n" {remote_head_digit}' if head_readable else "exit 1"
+        )
+    if protection_failure:
+        merge_result = (
+            "echo \"failed to merge pull request: GraphQL: You're not authorized to "
+            "push to this branch. (mergePullRequest)\" >&2; exit 1"
+        )
+    elif base_failure:
+        merge_result = (
+            'echo "failed to merge pull request: Base branch was modified. '
+            'Review and try the merge again." >&2; exit 1'
+        )
+    else:
+        merge_result = "exit 0"
+    _write_executable(
+        gh,
+        f'echo "gh $*" >> "{calls}"\n'
+        'if [[ "$1 $2" == "pr list" ]]; then exit 0; fi\n'
+        'if [[ "$1" == "api" ]]; then\n'
+        '  if [[ "$2" == *"/protection/required_status_checks"* ]]; then '
+        f'{required_line}; {classic_api_result}; fi\n'
+        f'  {rules_api_result}\n'
+        'fi\n'
+        'if [[ "$1 $2" == "repo view" ]]; then\n'
+        '  if [[ "$*" == *defaultBranchRef* ]]; then echo main; '
+        'elif [[ "$*" == *nameWithOwner* ]]; then echo cooneycw/codex-power-pack; '
+        'else echo ADMIN; fi\n'
+        '  exit 0\n'
+        'fi\n'
+        'if [[ "$1 $2" == "pr view" ]]; then\n'
+        '  if [[ "$*" == *baseRefName* ]]; then echo main; '
+        f'elif [[ "$*" == *headRefOid* ]]; then {head_result}; '
+        f'elif [[ "$*" == *statusCheckRollup* ]]; then {status_result}; '
+        'elif [[ "$*" == *mergeable* ]]; then echo MERGEABLE; '
+        'elif [[ "$*" == *reviewDecision* ]]; then :; '
+        'elif [[ "$*" == *mergeCommit* ]]; then :; '
+        'elif [[ "$*" == *"--json state"* ]]; then echo OPEN; '
+        'else :; fi\n'
+        '  exit 0\n'
+        'fi\n'
+        f'if [[ "$1 $2" == "pr merge" ]]; then {merge_result}; fi\n'
+        'exit 0\n',
+    )
+    git = tmp_path / "git"
+    _write_executable(
+        git,
+        f'echo "git $*" >> "{calls}"\n'
+        'if [[ "$*" == *"rev-parse --show-toplevel"* ]]; then pwd; '
+        'elif [[ "$*" == *"rev-parse refs/remotes/origin/main"* ]]; then printf "%040d\\n" 1; '
+        'elif [[ "$*" == *"rev-parse HEAD^{tree}"* ]]; then printf "%040d\\n" 2; '
+        'elif [[ "$*" == "rev-parse HEAD" ]]; then printf "%040d\\n" 3; '
+        'elif [[ "$*" == *"merge-base --is-ancestor"* ]]; then exit 1; fi\n'
+        'exit 0\n',
+    )
+    env = os.environ | {
+        "GH_PR_MERGE_GH": str(gh),
+        "GH_PR_MERGE_GIT": str(git),
+        "GH_PR_MERGE_CHECK_ATTEMPTS": "1",
+        "GH_PR_MERGE_CHECK_DELAY": "0",
+        "GH_PR_MERGE_POLL_DELAY": "0",
+        "GH_PR_MERGE_BASE_RETRY_DELAY": "0",
+    }
+    env.pop("WOODPECKER_API_TOKEN", None)
+    env.pop("WOODPECKER_SERVER", None)
+    return env, calls
+
+
+@pytest.mark.parametrize("check_state", ["FAILURE", "PENDING", "UNKNOWN"])
+def test_merge_helper_refuses_failed_pending_or_unknown_required_checks(
+    tmp_path: Path, check_state: str
+) -> None:
+    (tmp_path / ".git").write_text("gitdir: /fixture/worktree\n", encoding="utf-8")
+    env, calls = _merge_stubs(tmp_path, check_state=check_state, required=True)
+    result = subprocess.run(
+        [str(MERGE_HELPER), "196", "issue-196-fixture"],
+        cwd=tmp_path,
+        env=env,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert result.returncode == 1
+    assert not any(
+        line.startswith("gh pr merge") for line in calls.read_text().splitlines()
+    )
+
+
+def test_merge_helper_never_automatically_retries_with_admin(tmp_path: Path) -> None:
+    (tmp_path / ".git").write_text("gitdir: /fixture/worktree\n", encoding="utf-8")
+    env, calls = _merge_stubs(
+        tmp_path,
+        check_state="SUCCESS",
+        required=False,
+        protection_failure=True,
+    )
+    result = subprocess.run(
+        [str(MERGE_HELPER), "196", "issue-196-fixture"],
+        cwd=tmp_path,
+        env=env,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    merge_calls = [
+        line for line in calls.read_text().splitlines() if line.startswith("gh pr merge")
+    ]
+    assert result.returncode == 1
+    assert len(merge_calls) == 1
+    assert "--admin" not in merge_calls[0]
+    assert '--match-head-commit 0000000000000000000000000000000000000003' in merge_calls[0]
+    assert "refusing an automatic --admin retry" in result.stderr
+
+
+@pytest.mark.parametrize(
+    ("check_state", "status_readable"),
+    [(None, True), ("SUCCESS", False), ("PENDING", True), ("SUCCESS", True)],
+    ids=["empty-rollup", "unreadable-rollup", "pending", "observed-green"],
+)
+def test_merge_helper_fails_closed_when_protection_and_status_are_unknown(
+    tmp_path: Path, check_state: str | None, status_readable: bool
+) -> None:
+    (tmp_path / ".git").write_text("gitdir: /fixture/worktree\n", encoding="utf-8")
+    env, calls = _merge_stubs(
+        tmp_path,
+        check_state=check_state,
+        required=False,
+        classic_protection_readable=False,
+        rules_protection_readable=False,
+        status_readable=status_readable,
+    )
+    result = subprocess.run(
+        [str(MERGE_HELPER), "196", "issue-196-fixture"],
+        cwd=tmp_path,
+        env=env,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert result.returncode == 1
+    assert not any(
+        line.startswith("gh pr merge") for line in calls.read_text().splitlines()
+    )
+
+
+def test_merge_helper_fails_closed_when_only_one_protection_source_is_readable(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / ".git").write_text("gitdir: /fixture/worktree\n", encoding="utf-8")
+    env, calls = _merge_stubs(
+        tmp_path,
+        check_state="SUCCESS",
+        required=False,
+        classic_protection_readable=True,
+        rules_protection_readable=False,
+    )
+    result = subprocess.run(
+        [str(MERGE_HELPER), "196", "issue-196-fixture"],
+        cwd=tmp_path,
+        env=env,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert result.returncode == 1
+    assert "required status-check posture is incomplete" in result.stderr
+    assert not any(
+        line.startswith("gh pr merge") for line in calls.read_text().splitlines()
+    )
+
+
+@pytest.mark.parametrize(
+    ("head_readable", "remote_head_digit"),
+    [(False, 3), (True, 4)],
+    ids=["unreadable", "local-mismatch"],
+)
+def test_merge_helper_refuses_unbound_pr_head(
+    tmp_path: Path, head_readable: bool, remote_head_digit: int
+) -> None:
+    (tmp_path / ".git").write_text("gitdir: /fixture/worktree\n", encoding="utf-8")
+    env, calls = _merge_stubs(
+        tmp_path,
+        check_state="SUCCESS",
+        required=False,
+        head_readable=head_readable,
+        remote_head_digit=remote_head_digit,
+    )
+    result = subprocess.run(
+        [str(MERGE_HELPER), "196", "issue-196-fixture"],
+        cwd=tmp_path,
+        env=env,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert result.returncode == 1
+    assert "cannot bind PR #196 to the checked-out head" in result.stderr
+    assert not any(
+        line.startswith("gh pr merge") for line in calls.read_text().splitlines()
+    )
+
+
+def test_merge_helper_refuses_head_change_before_merge(tmp_path: Path) -> None:
+    (tmp_path / ".git").write_text("gitdir: /fixture/worktree\n", encoding="utf-8")
+    env, calls = _merge_stubs(
+        tmp_path,
+        check_state="SUCCESS",
+        required=False,
+        head_changes=True,
+    )
+    result = subprocess.run(
+        [str(MERGE_HELPER), "196", "issue-196-fixture"],
+        cwd=tmp_path,
+        env=env,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert result.returncode == 1
+    assert "changed after pre-merge validation" in result.stderr
+    assert not any(
+        line.startswith("gh pr merge") for line in calls.read_text().splitlines()
+    )
+
+
+def test_merge_helper_does_not_retry_after_base_move_rejection(tmp_path: Path) -> None:
+    (tmp_path / ".git").write_text("gitdir: /fixture/worktree\n", encoding="utf-8")
+    env, calls = _merge_stubs(
+        tmp_path,
+        check_state="SUCCESS",
+        required=False,
+        base_failure=True,
+    )
+    result = subprocess.run(
+        [str(MERGE_HELPER), "196", "issue-196-fixture"],
+        cwd=tmp_path,
+        env=env,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    merge_calls = [
+        line for line in calls.read_text().splitlines() if line.startswith("gh pr merge")
+    ]
+    assert result.returncode == 1
+    assert len(merge_calls) == 1
+    assert "--match-head-commit" in merge_calls[0]
+    assert "refusing an automatic retry" in result.stderr
 
 
 @pytest.mark.skipif(

@@ -3,26 +3,17 @@
 # (issue #590).
 #
 # Problem:
-#   ADR 0001 Phase B5 made `/plugin install flow@cpp` the canonical install path,
-#   but the flow commands call ~14 helper scripts that only the repo-local
-#   `/cpp:init` / `/cpp:update` installer ever linked into <SKILL_DIR>/scripts/. A
-#   marketplace-only user got exit 127 at Step 1 of /flow:start and /flow:auto,
-#   with auto.md explicitly forbidding an inline-bash workaround (#581).
-#
-#   Bundling the helpers in the plugin (plugin-sync EXTRA_FILES, the same
-#   mechanism the secrets plugin uses for its masking hook, #479) is only half
-#   the fix: the #581 allowlist rules in templates/claude-settings-permissions.json
-#   match the STABLE bare path `<SKILL_DIR>/scripts/<helper>`, never a versioned
-#   plugin-cache path. So the bundled copies still have to reach that path - this
-#   script is what puts them there, from whichever source exists.
+#   Flow commands call ~14 helpers at the stable <SKILL_DIR>/scripts/ paths the
+#   #581 allowlist matches. This installer puts them there from the CPP checkout.
+#   During the #662/#663 migration it also accepts a legacy plugin-cache source,
+#   so hosts can keep working until they uninstall the installed flow plugin.
 #
 # Source selection (first match wins):
 #   1. A CPP checkout (this script's own dir is <checkout>/scripts) -> SYMLINK,
 #      so the helpers follow `git pull` exactly as /cpp:init Tier 2 does today.
-#   2. A plugin bundle (this script's own dir is <plugin>/scripts, no CLAUDE.md
-#      one level up) -> COPY. Plugin cache paths are version-stamped
-#      (.../cpp/flow/1.0.0/...), so a symlink into one dangles on the next plugin
-#      upgrade; a copy never dangles, and --check detects when it goes stale.
+#   2. A installed Codex plugin bundle (this script's own dir is <cache>/scripts, no
+#      CLAUDE.md one level up) -> COPY. A symlink into a installed plugin cache would
+#      dangle when the family is uninstalled; --check detects stale copies.
 #
 # Usage:
 #   flow-helpers-install.sh            # install/refresh, idempotent
@@ -44,8 +35,23 @@ TARGET_DIR="$HOME_DIR/.claude/scripts"
 
 # The load-bearing family. flow-start-resolve.sh resolves its live-driver
 # sibling via $SELF_DIR, so the guard must travel with it. The advisory guards
-# fail open when absent, but a plugin-only user should get the zero-prompt lane
+# fail open when absent, but a plugin user should keep the zero-prompt lane
 # whole, not degraded.
+#
+# Despite the script's name this is NOT a flow-only list - it already carries
+# gh-pr-merge.sh, worktree-remove.sh, friction-log.sh, check-ignored-additions.sh
+# and this installer itself. The membership rule is simpler than the name
+# suggests: THIS IS THE STABLE-PATH INSTALL SET. Anything that
+# templates/claude-settings-permissions.json pre-approves at
+# `Bash(<SKILL_DIR>/scripts/<name>:*)` belongs here, whatever family it comes from,
+# because that rule matches a command PREFIX - so a helper the rule blesses but
+# nothing installs leaves the rule matching a path that does not exist (issue
+# #677: cpp-commands-link.sh and install-drift.sh were both missing, so on any
+# host provisioned WITHOUT interactive /cpp:init the rule was inert and
+# /cpp:update Step 5c fell back to the checkout copy - which the rule does not
+# match - and prompted, the exact friction the stable path removes). Do not
+# re-litigate a non-flow addition on naming grounds; the template is the
+# membership test, and tests/test_permissions_template_link_parity.py enforces it.
 HELPERS=(
     flow-start-resolve.sh
     flow-live-driver-guard.sh
@@ -67,7 +73,12 @@ for arg in "$@"; do
         --check) MODE="check" ;;
         --force) FORCE=1 ;;
         --help|-h)
-            sed -n '2,37p' "$0" | sed 's/^# \{0,1\}//'
+            # 2,28p: the doc block ends at line 28 (the last `# Env:` entry).
+            # It was 2,37p, which spilled `set -uo pipefail`, three variable
+            # assignments and two stray comment lines into --help output (#686).
+            # tests/test_flow_helpers_install.py pins the boundary so the range
+            # cannot silently re-drift when the header grows.
+            sed -n '2,28p' "$0" | sed 's/^# \{0,1\}//'
             exit 0
             ;;
         *)
@@ -80,14 +91,14 @@ done
 # --- Source detection -------------------------------------------------------
 # Self-source is the degenerate case: the copy at <SKILL_DIR>/scripts/ is itself
 # one of the installed helpers, so running IT would diff every file against
-# itself and always report "ok" - staleness after a plugin upgrade would be
+# itself and always report "ok" - stale plugin copies would be
 # invisible, which is the one failure mode a copy-based install can hit. When
 # self and target coincide, look for a real upstream first.
 SOURCE_DIR="${FLOW_HELPERS_SOURCE:-$SELF_DIR}"
 NO_UPSTREAM=0
 if [[ -z "${FLOW_HELPERS_SOURCE:-}" && "$SOURCE_DIR" == "$TARGET_DIR" ]]; then
     upstream=""
-    # The plugin bundle, when this runs from an installed plugin.
+    # A installed Codex plugin bundle, while the #662/#663 migration is in progress.
     if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && -f "$CLAUDE_PLUGIN_ROOT/scripts/flow-start-resolve.sh" ]]; then
         upstream="$CLAUDE_PLUGIN_ROOT/scripts"
     else
@@ -201,14 +212,14 @@ for name in "${HELPERS[@]}"; do
             exit 2
         fi
     else
-        # Copy: a version-stamped plugin path must not become a dangling symlink.
+        # Copy: a version-stamped legacy cache must not become a dangling symlink.
         if [[ "$FORCE" -eq 0 && -f "$dest" && ! -L "$dest" ]] && diff -q "$src" "$dest" >/dev/null 2>&1; then
             chmod +x "$dest" 2>/dev/null || true
             echo "ok   $name (already current)"
             continue
         fi
         # Replace rather than write through: $dest may be a symlink into an old
-        # plugin version, and `cp` would follow it and write into the cache.
+        # cached version, and `cp` would follow it and write into the cache.
         rm -f "$dest"
         if cp "$src" "$dest" && chmod +x "$dest"; then
             echo "copy $name"

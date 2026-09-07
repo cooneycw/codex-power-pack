@@ -24,6 +24,10 @@ Complete end-to-end workflow: start worktree → analyze issue → ELI5 plan + n
   `EnterWorktree` operates on the session cwd's repo and cannot create the
   worktree in another one.
 
+## Native capability boundary
+
+CPP delegated-driver capability identities are harness-specific and are not a native CxPP runtime contract. Native capability discovery, registration, and packaging remain explicit inputs to #200/#201/#202; this skill does not advertise those unshipped packages. Capability does not bypass the Step 3 necessity gate.
+
 ## Instructions
 
 When the user invokes `$flow-auto <ISSUE> [PROJECT]`, perform these steps sequentially. Stop immediately if any step fails.
@@ -138,20 +142,17 @@ misdetected `current-branch`/`resume` lane, not a wrong-repo `EnterWorktree`.
 If the stable path is missing (exit 127), fall back in this order - the first
 that exists (issue #590):
 
-1. `${CLAUDE_PLUGIN_ROOT}/scripts/flow-start-resolve.sh` - the flow plugin
-   bundles the helper family, so a marketplace-only install (no CPP clone) has
-   this copy. `CLAUDE_PLUGIN_ROOT` is unset outside a plugin install.
-2. `<SKILL_DIR>/scripts/flow-start-resolve.sh` from the CPP checkout.
+1. `<SKILL_DIR>/scripts/flow-start-resolve.sh` from the CPP checkout.
 
 Either fallback may prompt once: the allowlist rules match only the stable
 `<SKILL_DIR>/scripts/` path. Tell the user to run **`$flow-repair`**, which
 installs the family there and restores the prompt-free lane. If BOTH fallbacks
 exit 127 there is no helper source at all - **STOP** and report that flow needs
-`/plugin install flow@cpp` (then `$flow-repair`) or a CPP checkout.
+a CPP checkout plus `$flow-repair` (the symlink tier returns in issue #663).
 
 The helper prints a `key=value` contract ending in `FLOW_START_RESOLVE: ok`.
 On `FLOW_START_RESOLVE: error` (with an `ERROR=` line): **STOP** and report it.
-Contract keys: `LANE` (`current-branch|fresh|resume|remote-pickup|cross-repo`),
+Contract keys: `LANE` (`current-branch|fresh|resume|remote-pickup|local-pickup|cross-repo`),
 `CROSS_REPO` (1 = the target repo is not the session repo, issue #578),
 `GIT_LANE` (ALWAYS 1 now - worktrees are created outside the repo by default
 (issue #627), so every run rides the git lane: enter with `cd`, never
@@ -164,9 +165,12 @@ for the whole run, issue #626 - see the compose-safety rule below), `ISSUE_STATE
 `ISSUE_TITLE`, `BRANCH` (the enforced issue-anchored name), `WT_PATH` (created
 outside the repo: `$FLOW_WORKTREE_BASE/<repo>-<branch>` when set, else a visible
 sibling `<parent>/<repo>-<branch>`, issue #627), `DEFAULT_BRANCH`, `REMOTE_BRANCH`
-(pickup lane), `WT_CREATED` (1 = the helper already ran `git worktree add`),
-`LIVE_DRIVER` / `PR_HEAD` (the #503 resume hazards - the helper wraps its
-sibling `<SKILL_DIR>/scripts/flow-live-driver-guard.sh`), `CLAIM` / `CLAIM_PID` /
+(remote-pickup lane), `WT_CREATED` (1 = the helper already ran `git worktree add`),
+`WT_BASE` (present only when `WT_CREATED=1`; names a reused pre-existing branch
+instead of the base ref when the lane did not actually branch fresh off it -
+`LANE` alone is not a promise of that, issue #793), `LIVE_DRIVER` / `PR_HEAD`
+(the #503 resume hazards - the helper wraps its sibling
+`<SKILL_DIR>/scripts/flow-live-driver-guard.sh`), `CLAIM` / `CLAIM_PID` /
 `CLAIM_SESSION` (the #597 cross-session claim on issue-N, read BEFORE any
 worktree is created), `CONFIRM_REQUIRED`.
 
@@ -190,11 +194,19 @@ the git cleanup fallback.
 
 - `LANE=current-branch`: already on the issue's branch in the session cwd - use
   the current directory (nothing to enter).
-- `LANE=fresh` / `LANE=cross-repo` / `LANE=remote-pickup`: the helper already
-  created (or added) the worktree at `WT_PATH` (`WT_CREATED=1`) - a visible
-  sibling `../<repo>-<branch>`, or under `FLOW_WORKTREE_BASE` when set, branched
-  from `origin/<DEFAULT_BRANCH>` (or the remote issue branch for pickup). `cd
-  <WT_PATH>`.
+- `LANE=fresh` / `LANE=cross-repo` / `LANE=remote-pickup` / `LANE=local-pickup`:
+  the helper already created (or added) the worktree at `WT_PATH`
+  (`WT_CREATED=1`) - a visible sibling `../<repo>-<branch>`, or under
+  `FLOW_WORKTREE_BASE` when set, branched from `origin/<DEFAULT_BRANCH>` (or
+  the remote/local issue branch for pickup). `cd <WT_PATH>`. Check `WT_BASE`
+  (issue #793): when it names a reused branch rather than the base ref, the
+  checkout did not freshly branch off `origin/<DEFAULT_BRANCH>` - it reused an
+  existing branch whose tip was verified to already be contained in it.
+- `FLOW_START_RESOLVE: error` naming a branch as unmerged/not-an-ancestor
+  (issue #793): a pre-existing branch for this issue carries commits the base
+  does not have - possibly another worker's in-flight work. **STOP** and
+  report it; do not retry blindly. The user may need to delete/rename the
+  branch, or rebase it onto the base themselves.
 - `LANE=resume`: a prior session's worktree exists at `WT_PATH`. If
   `CONFIRM_REQUIRED=1` (`LIVE_DRIVER=suspected` - a dirty file touched within
   ~30m, another live session may own this checkout (issue #503) - and/or
@@ -307,8 +319,7 @@ wins), then produce the report against THAT spec, including its report template
 and depth floor:
 
 1. the installed global skill: `~/.claude/skills/flow-eli5/SKILL.md`
-2. the installed `flow` plugin's `eli5.md` command (`plugins/flow/commands/eli5.md` in a marketplace checkout)
-3. inside the CPP repo itself: `.claude/commands/flow/eli5.md`
+2. inside the CPP repo itself: `.claude/commands/flow/eli5.md`
 
 Do NOT produce the report from the summary below alone - outside the CPP repo the
 repo-relative path does not exist, and the summary omits the template and floor.
@@ -333,9 +344,31 @@ The three sections, for orientation:
   ```
   Run the close only with reviewer assent; surface the recommendation either way.
 - **Verdict `Partially addressed` or `Needs reframing`** -> the plan to approve is the adjusted one (remaining work / corrected approach), not the original issue body.
-- **Approval:** By default, **pause and wait for reviewer approval** of the plan before continuing to Step 4. For unattended runs, accept `--yes` (alias `--auto-approve`) on `$flow-auto`, or an `eli5: auto-approve` trailer in the issue body or HEAD commit message, to proceed without pausing. Auto-approve never overrides a `No longer needed` verdict.
+- **Approval:** Always **pause and wait for reviewer approval** of the plan before continuing to Step 4. This is unconditional.
 
-Report: `Step 3/9: ELI5 complete - verdict: {Still needed|Partially addressed|No longer needed|Needs reframing}; approval: {granted|auto-granted|close recommended}`
+**The gate has no bypass (issue #775).** There is no flag, trailer, marker,
+environment variable, or governance tier that lets Step 3 proceed without a
+reviewer approving Section C, and none may be added. Every such channel grants
+approval *before the plan exists*, so it is not an approval of the plan - only
+standing consent to whatever plan the run later produces.
+
+- `--yes` / `--auto-approve`: recognized, and refused. If a caller passes one,
+  say the gate is not skippable and pause anyway - never honor it silently and
+  never ignore it silently.
+- An `eli5: auto-approve` trailer in the issue body or the HEAD commit message:
+  **never read**. Do not scan either for approval. This channel is not chosen by
+  whoever invoked the run - an issue body is written by whoever filed the issue,
+  and on a worktree freshly branched off main HEAD *is* main's tip commit,
+  written by whoever merged last. One merged commit carrying the trailer would
+  disarm the gate for every later run branched from that tip, across unrelated
+  issues and unrelated sessions.
+
+Unattended runs are not an exception: hand the report to the orchestrator or
+reviewer and wait, rather than approving on their behalf.
+
+Report: `Step 3/9: ELI5 complete - verdict: {Still needed|Partially addressed|No longer needed|Needs reframing}; approval: {granted|close recommended}`
+
+There is deliberately no `auto-granted` value: a field that can still be produced means something can still skip the gate (issue #775).
 
 ---
 
@@ -368,10 +401,14 @@ merges during implementation moves `origin/main` under you; discovering it only
 at the Step-7 #462 guard means your edits were already made against stale copies
 of the very files the sibling changed. Surface it now - a bare invocation
 (advisory: warns, never blocks; the #581 invocation discipline from Step 1
-applies to every helper call below):
+applies to every helper call below). Pass the worktree path from the Step-1
+contract (`WT_PATH`) verbatim as the trailing literal argument - the checkout
+is DECLARED, never inferred from the Bash cwd, which drifts on any earlier
+`cd` and once made this advisory answer for the wrong tree (issue #614, the
+#592 rule); the emitted `FLOW_STALE_PATH:` line must name the run's worktree:
 
 ```bash
-<SKILL_DIR>/scripts/flow-stale-check.sh origin/main
+<SKILL_DIR>/scripts/flow-stale-check.sh origin/main /path/to/worktree
 ```
 
 (Exit 127 - helper family not installed: fall back to
@@ -383,11 +420,15 @@ and continue. `$flow-repair` installs the family at the stable path.)
 - If it reports `FLOW_STALE_BASE: collision` - or names a file you are about to
   touch under "Changed upstream" - bring the base in now, before piling edits on
   a stale tree: `git merge --no-edit origin/main`, resolve any conflict in the
-  named file(s), then implement. If the merge touched any
-  `.claude/commands/**/*.md`, re-run the LOCAL `scripts/plugin-sync.sh --write`
-  and `python3 scripts/codex-skill-sync.py --write`, then stage `plugins/` and
-  `codex/skills/`, so the in-repo generated surfaces do not drift - the parity
-  gates check all 15 families (issue #506; Codex skills #555, cutover #556).
+  named file(s), then implement. If git refuses to START the merge because
+  local changes overlap incoming ones, commit the work first (`git add -A` +
+  `git commit -m "wip(flow): pre-merge snapshot"`) and merge on the clean tree
+  - never stash: the stash stack is SHARED across every worktree of the repo
+  and a bare pop can restore a sibling session's work (#635). If the merge touched any
+  `.claude/commands/**/*.md`, re-run the LOCAL
+  `python3 scripts/codex-skill-sync.py --write`, then stage `codex/skills/`, so
+  the generated Codex surface does not drift (issue #506; Codex skills #555,
+  marketplace retired #662).
 - If it reports `current` or `moved-clean` with no overlap, proceed - the Step-7
   #462 guard remains the final backstop.
 
@@ -490,54 +531,66 @@ so the commit lands on a current tree and the gate reflects what will merge (the
 #462 Step-7 guard stays the final backstop). Bare invocation first (#581
 discipline; on exit 127 fall back to the plugin-bundled copy at
 `${CLAUDE_PLUGIN_ROOT}/scripts/flow-stale-check.sh` (#590), else the
-CPP-checkout copy):
+CPP-checkout copy). As at Step 4, pass the worktree path as the trailing
+literal argument (declared, not inferred - issue #614) and check the emitted
+`FLOW_STALE_PATH:` names this run's worktree:
 
 ```bash
-<SKILL_DIR>/scripts/flow-stale-check.sh origin/main
+<SKILL_DIR>/scripts/flow-stale-check.sh origin/main /path/to/worktree
 ```
 
 ```bash
 # If the base moved, merge it in now so the gate + commit ride the current tree.
-# The Step-4 implementation is still UNCOMMITTED here, and git refuses to merge
-# into a dirty tree ("Please commit your changes or stash them before you merge")
-# - so STASH the work FIRST, merge, then restore it. This inverts the
-# merge-then-commit order the surrounding prose implies (issue #521; hit on
-# flow:auto #502 and #509). A clean tree (e.g. a resumed run already committed)
-# skips the stash.
+# COMMIT the Step-4 work FIRST, then merge on the clean tree (issue #635; this
+# supersedes the #521 stash-first order). Stashes live in the repo's COMMON git
+# dir, so every linked worktree shares ONE stack: with ~7 concurrent sessions,
+# two runs stash-pushed seconds apart and each bare `git stash pop` silently
+# restored the OTHER session's uncommitted work into the wrong worktree. A WIP
+# commit is branch-local - a sibling session cannot take it - and the Step-7
+# squash flattens it, so nothing visible changes in what ships. (#521's premise
+# was also too broad: git refuses a dirty-tree merge only when incoming changes
+# OVERLAP locally-modified files; commit-first is safe in every case.) NEVER
+# use `git stash push` or a bare `git stash pop` in a shared-worktree flow.
 git fetch origin main --quiet
 if [ "$(git rev-list --count HEAD..origin/main)" -gt 0 ]; then
-    STASHED=0
     if [ -n "$(git status --porcelain)" ]; then
-        git stash push -u -m "flow-auto-pre-stale-merge" && STASHED=1
+        git add -A
+        git commit -m "wip(flow): pre-merge snapshot"
     fi
     if ! git merge --no-edit origin/main; then
         echo "STOP: 'git merge origin/main' hit CONFLICTS. Resolve them, 'git add' + 'git commit', then re-run Step 6."
         git diff --name-only --diff-filter=U
-        [ "$STASHED" -eq 1 ] && echo "NOTE: your Step-4 work is stashed ('git stash list') - pop it after resolving."
+        echo "NOTE: your Step-4 work is safe in the 'wip(flow): pre-merge snapshot' commit on this branch."
         exit 1
     fi
-    # Restore the Step-4 work on top of the freshly-merged base.
-    if [ "$STASHED" -eq 1 ] && ! git stash pop; then
-        echo "STOP: restoring your stashed Step-4 work onto the merged base hit conflicts. Resolve them and 'git add' (do NOT 'git merge --abort'), then re-run Step 6."
-        git diff --name-only --diff-filter=U
-        exit 1
-    fi
-    # Keep the in-repo generated surfaces from drifting when the merge pulled ANY
-    # command-family source: the packaged plugin copies AND the Codex skills are
-    # both regenerated from .claude/commands/ and share the exact sibling-merge
-    # drift race the flow-* skill mirror had - the parity gates cover all 15
-    # families, not just flow (issue #506; Codex skills #555, flat codex/prompts/
-    # retired at the #556 cutover). Use the LOCAL scripts (they derive repo-root
-    # from their own path, so they re-sync THIS worktree, not $CPP_DIR); [ -x ... ]
-    # keeps each CPP-only, a no-op elsewhere. The Step-6 commit below stages the
-    # regenerated files.
-    if [ -x scripts/plugin-sync.sh ] && git diff --name-only ORIG_HEAD..HEAD | grep -q '^\.claude/commands/.*\.md$'; then
-        scripts/plugin-sync.sh --write || true
-    fi
+    # Keep the generated Codex surface current when the merge pulled ANY command
+    # source (issue #506; marketplace copies retired in #662). Use the LOCAL
+    # script so it re-syncs THIS worktree, not $CPP_DIR; [ -x ... ] keeps this
+    # CPP-only and a no-op elsewhere. The Step-6 commit stages generated files.
     if [ -x scripts/codex-skill-sync.py ] && git diff --name-only ORIG_HEAD..HEAD | grep -q '^\.claude/commands/.*\.md$'; then
         python3 scripts/codex-skill-sync.py --write || true
     fi
 fi
+```
+
+**Collapsing the branch to one commit - the SAFE recipe (issue #657).** Prefer
+NO collapse at all: since #655 the merge helper passes an explicit
+`--subject`/`--body` derived from the PR, so a WIP-first branch squashes with
+the right message and collapsing buys nothing. If you collapse anyway (e.g. to
+curate history before pushing), the target matters more than the mechanics:
+`git reset --soft` onto a base that has MOVED past your index silently stages
+the deletion of everything the moved base added - a conflict-free,
+honestly-green merge then lands those deletions on main (poker-measure lost a
+merged 2,085-line feature to exactly this on 2026-08-11). The safe shape:
+
+```bash
+# Collapse onto your ORIGINAL base, never a moved origin/main:
+git reset --soft "$(git merge-base HEAD origin/main)"
+# Before committing, prove the collapse deletes nothing you did not delete:
+git diff --staged --diff-filter=D --name-only   # MUST be empty unless intended
+git commit -m "type(scope): Description (Closes #N)"
+# THEN bring the moved base in:
+git merge --no-edit origin/main
 ```
 
 1. **Quality gates** - ONE audited helper owns the deterministic-runner
@@ -567,10 +620,13 @@ fi
      collected. Proceed, but report the counts to the user verbatim (they are in
      the runner's `warnings` array above the marker) and say plainly that this
      gate proved nothing about the change. Never summarize such a run as "tests
-     passed". If the skips look load-bearing (a suite that needs a live database,
-     a service, a credential), say which prerequisite is missing and offer to run
-     the fuller target - the agentic-poker case was `make test-pg` sitting unused
-     beside the `make test` the gate ran.
+     passed". `warn` also means a test failed on the first attempt and PASSED
+     when re-run against only its failed ids (issue #769) - the ids are on the
+     `RERUN_PASSED:` line above the marker. Proceed, but report those ids and
+     never call the run a clean pass. If the skips look load-bearing (a suite
+     that needs a live database, a service, a credential), say which prerequisite
+     is missing and offer to run the fuller target - the agentic-poker case was
+     `make test-pg` sitting unused beside the `make test` the gate ran.
    - `FLOW_FINISH_GATE: fail` (exit 1): parse the runner/make output above the
      marker, report the failed step, **STOP**.
    - `FLOW_FINISH_GATE: skipped` (exit 0): no runner AND no Makefile
@@ -604,6 +660,12 @@ fi
 2. **Commit** - if there are uncommitted changes:
    - Use conventional commit format: `type(scope): Description (Closes #N)`
    - Include `Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>`
+   - **An already-clean tree here is a LEGITIMATE state, not a failure** (issue
+     #635): when the stale-base merge above ran, the Step-4 work is already on
+     the branch in the `wip(flow): pre-merge snapshot` commit. Skip this commit
+     step cleanly and leave the WIP commit as-is - the Step-7 squash flattens
+     branch history and the PR title/body carry the conventional message, so
+     the WIP message never reaches `main`. Do NOT add a STOP for this state.
 
 3. **Push** the branch:
    ```bash
@@ -645,24 +707,19 @@ Report: `Step 6/9: Finish complete - PR #XX created`
            echo "(Do NOT 'git merge --abort' - that discards the resolution.)"
            exit 1
        fi
-       # If the merge pulled ANY command-family source, re-sync the in-repo
-       # generated surfaces - the packaged plugin copies AND the Codex skills
-       # (all families, not just flow - issue #506; Codex skills #555, flat
-       # codex/prompts/ retired at the #556 cutover) - then COMMIT them: this
+       # If the merge pulled ANY command-family source, re-sync the generated
+       # Codex skills (all families, not just flow - issue #506) and COMMIT them: this
        # branch is squashed straight after `git push` below with no further commit
-       # step, so uncommitted plugins/ or codex/skills/ would leave the squash
+       # step, so uncommitted codex/skills/ would leave the squash
        # carrying stale copies and fail the parity gates on main - the exact race
        # this guards. LOCAL scripts re-sync THIS worktree; [ -x ... ] keeps each
        # CPP-only.
-       if [ -x scripts/plugin-sync.sh ] && git diff --name-only ORIG_HEAD..HEAD | grep -q '^\.claude/commands/.*\.md$'; then
-           scripts/plugin-sync.sh --write || true
-       fi
        if [ -x scripts/codex-skill-sync.py ] && git diff --name-only ORIG_HEAD..HEAD | grep -q '^\.claude/commands/.*\.md$'; then
            python3 scripts/codex-skill-sync.py --write || true
        fi
-       if ! git diff --quiet -- plugins/ codex/skills/; then
-           git add plugins/ codex/skills/
-           git commit -m "chore(generated): re-sync plugin + codex skill copies after merging origin/main (#506)"
+       if ! git diff --quiet -- codex/skills/; then
+           git add codex/skills/
+           git commit -m "chore(generated): re-sync codex skill copies after merging origin/main (#506)"
        fi
    fi
    ```
@@ -722,6 +779,52 @@ Report: `Step 6/9: Finish complete - PR #XX created`
    # Trust PR state over the local exit code.
    [[ "$(gh pr view "$PR_NUMBER" --json state --jq '.state' 2>/dev/null)" == "MERGED" ]]
    ```
+   - **Helper exit 3 is a FIRST-CLASS CLEAN STOP, not a failure (issue #579):**
+     the PR awaits a required human review (`reviewDecision: REVIEW_REQUIRED` or
+     `CHANGES_REQUESTED`). The branch is already synced and re-gated (step 1
+     above), so the run's job is done: report the helper's handoff message (PR
+     URL + "approve or merge on GitHub, then $flow-merge"), leave the worktree,
+     branch, and PR INTACT - do NOT run cleanup, do NOT retry, and NEVER
+     re-invoke with `--admin` yourself: overriding a review requirement is the
+     owner's explicit, human-typed call. End the run here. Do not "fix" this
+     stop - it is the designed handoff.
+   - **Helper exit 4 is also a CLEAN STOP (issue #657):** the operator opted in
+     to `GH_PR_MERGE_STRICT_DELETIONS=1` and the PR deletes files vs its base.
+     The PR is left open and untouched. Review the paths in the
+     `GH_PR_MERGE_DELETIONS:` marker line; if the deletions are intended,
+     re-run without strict mode. Flow itself never sets this variable.
+   - **Helper exit 5 is also a CLEAN STOP (issue #726):** the squash title,
+     body, or a commit subject on the branch has a NEGATED close/fix/resolve
+     keyword ("does not close #N") that GitHub would still honor. The PR is
+     left open and untouched - report the printed context, reword the
+     offending text, and re-run (or re-run the helper with
+     `--allow-negated-close` only after the user consciously confirms).
+   - **Helper exit 6 is also a CLEAN STOP, not a failure (issue #767):** the
+     base advanced while required checks were running, so the tree that was
+     gated is not the tree that would land. Leave the worktree, branch, and PR
+     intact. Do not retry the merge and do not self-escalate to `--admin`.
+     Re-run Step 7 from sub-step 1: sync with `origin/main`, re-run the quality
+     gate on the merged tree, push, then invoke the merge again.
+   - **Helper exit 7 is also a CLEAN STOP (issue #794):** same shape as 5, but
+     the keyword is not negated - it is merely adjacent to `#N` (not
+     clause-initial, or `#N` is immediately followed by a possessive/
+     slash-compound) and reads as incidental rather than a directive. The PR
+     is left open and untouched - report the printed context, reword the
+     clause, and re-run (or re-run with `--allow-incidental-close` only after
+     the user consciously confirms).
+   - **Helper exit 8 means the incidental-close guard's own self-check failed
+     (issue #794):** a BROKEN CHECK, not a clean scan - never read it as "no
+     hazard found". Report it and investigate the guard; there is no override.
+   - The helper also prints greppable markers per run (issues #657/#767, every
+     one fail-open where it reports `skipped`):
+     `GH_PR_MERGE_BASE_MOVED: <old-sha> -> <new-sha>|0|skipped` around the
+     required-check wait; `GH_PR_MERGE_DELETIONS: <n> <paths...>|0|skipped`
+     before the squash - read that one; a PR landing deletions the issue scope
+     does not explain is the collapse-onto-moved-base signature - and
+     `GH_PR_MERGE_COMPLETENESS: ok|violation|skipped` after a confirmed merge.
+     A `violation` (the landed squash touched paths outside the PR's file
+     list) never changes the exit code - the merge landed - but must be
+     REPORTED to the user, not narrated past.
    - If the merge genuinely failed (non-zero helper exit - conflicts, failing
      checks, PR not `MERGED`): **STOP**. Report and exit. A non-zero `gh` exit
      whose PR is nonetheless `MERGED` is NOT a failure - the helper already treats
@@ -823,127 +926,68 @@ Report: `Step 7/9: Merge complete - worktree cleaned up`
 
 After merging to main, verify that the CI pipeline passes before deploying.
 
-1. **Detect CI system and poll for results:**
+ONE audited helper owns this (issue #766): `scripts/flow-ci-status.sh` resolves
+the pipeline for a commit SHA, waits for it to finish, and names the failed
+steps. Invoke it BARE with the literal SHA and checkout path (#581 discipline;
+the checkout is DECLARED, never inferred from the Bash cwd - the #614 rule):
 
 ```bash
-cd "$MAIN_REPO"
-COMMIT_SHA=$(git rev-parse HEAD)
-SHORT_SHA=$(git rev-parse --short HEAD)
-REPO_FULL=$(gh repo view --json nameWithOwner --jq '.nameWithOwner')
+<SKILL_DIR>/scripts/flow-ci-status.sh <merge-sha> --path /path/to/main/repo --repo owner/name --wait
 ```
 
-2. **Check Woodpecker CI** (if `WOODPECKER_API_TOKEN` is set):
+Do NOT hand-roll this with `curl`, `gh run list`, or - worst of all - a grep over
+`woodpecker-cli pipeline ls`. Step 8 previously inlined a curl+jq lookup gated on
+`WOODPECKER_API_TOKEN` already being exported, which it usually is not (the token
+lives in an AWS secret, not a shell profile), so the model improvised. On
+flow:auto #516 the improvised grep matched an unrelated PR pipeline from a
+DIFFERENT concurrent session and reported a failure while the run's own pipeline
+was still queued. With several sessions merging into one repo, any positional
+grep over that shared list is a coin flip. The helper matches on `.commit` and
+cannot make that mistake; it also fetches the token from AWS Secrets Manager
+itself when it is not exported.
 
-```bash
-if [[ -n "$WOODPECKER_API_TOKEN" ]]; then
-    WOODPECKER_SERVER="${WOODPECKER_SERVER:-https://woodpecker.essent-ai.com}"
-    echo "Polling Woodpecker CI for commit $SHORT_SHA..."
+The helper now has three provider lanes (#768): the Woodpecker HTTP API when a
+token resolves, `woodpecker-cli` in machine-readable `go-template` mode when it
+does not, and GitHub Actions. The CLI lane still anchors on the exact commit
+SHA, which is precisely what the #516 improvisation failed to do.
 
-    # Woodpecker v3 API requires numeric repo ID, not owner/name
-    # First resolve repo ID via lookup endpoint
-    REPO_ID=$(curl -s -H "Authorization: Bearer $WOODPECKER_API_TOKEN" \
-        -H "Accept: application/json" \
-        "$WOODPECKER_SERVER/api/repos/lookup/$REPO_FULL" | jq -r '.id' 2>/dev/null)
-
-    if [[ -z "$REPO_ID" || "$REPO_ID" == "null" ]]; then
-        echo "WARNING: Could not resolve Woodpecker repo ID for $REPO_FULL. Skipping CI verification."
-    else
-        # Poll up to 10 minutes (60 attempts, 10s apart)
-        for i in $(seq 1 60); do
-            PIPELINE_JSON=$(curl -s -H "Authorization: Bearer $WOODPECKER_API_TOKEN" \
-                -H "Accept: application/json" \
-                "$WOODPECKER_SERVER/api/repos/$REPO_ID/pipelines?per_page=5" | \
-                jq --arg sha "$COMMIT_SHA" '[.[] | select(.commit == $sha)] | .[0]' 2>/dev/null)
-
-            if [[ -n "$PIPELINE_JSON" && "$PIPELINE_JSON" != "null" ]]; then
-                STATUS=$(echo "$PIPELINE_JSON" | jq -r '.status')
-                PIPELINE_NUM=$(echo "$PIPELINE_JSON" | jq -r '.number')
-
-                case "$STATUS" in
-                    success)
-                        echo "Woodpecker pipeline #$PIPELINE_NUM passed."
-                        break
-                        ;;
-                    failure|error|killed)
-                        echo "Woodpecker pipeline #$PIPELINE_NUM FAILED (status: $STATUS)."
-                        echo "View: $WOODPECKER_SERVER/repos/$REPO_FULL/pipeline/$PIPELINE_NUM"
-                        # STOP - do not deploy
-                        exit 1
-                        ;;
-                    *)
-                        echo "Pipeline #$PIPELINE_NUM status: $STATUS (attempt $i/60)..."
-                        sleep 10
-                        ;;
-                esac
-            else
-                if [[ $i -ge 60 ]]; then
-                    echo "WARNING: No Woodpecker pipeline found for $SHORT_SHA after 10 minutes."
-                    break
-                fi
-                sleep 10
-            fi
-        done
-    fi
-fi
-```
-
-3. **Check GitHub Actions** (fallback if no Woodpecker token):
-
-```bash
-if [[ -z "$WOODPECKER_API_TOKEN" ]]; then
-    echo "Polling GitHub Actions for commit $SHORT_SHA..."
-
-    for i in $(seq 1 60); do
-        RUN_JSON=$(gh run list --commit "$COMMIT_SHA" --json status,conclusion,databaseId,name --jq '.[0]' 2>/dev/null)
-
-        if [[ -n "$RUN_JSON" && "$RUN_JSON" != "null" ]]; then
-            GH_STATUS=$(echo "$RUN_JSON" | jq -r '.status')
-            GH_CONCLUSION=$(echo "$RUN_JSON" | jq -r '.conclusion')
-            RUN_ID=$(echo "$RUN_JSON" | jq -r '.databaseId')
-
-            if [[ "$GH_STATUS" == "completed" ]]; then
-                if [[ "$GH_CONCLUSION" == "success" ]]; then
-                    echo "GitHub Actions run #$RUN_ID passed."
-                    break
-                else
-                    echo "GitHub Actions run #$RUN_ID FAILED (conclusion: $GH_CONCLUSION)."
-                    echo "View: gh run view $RUN_ID"
-                    exit 1
-                fi
-            else
-                echo "Run #$RUN_ID status: $GH_STATUS (attempt $i/60)..."
-                sleep 10
-            fi
-        else
-            if [[ $i -ge 60 ]]; then
-                echo "WARNING: No GitHub Actions run found for $SHORT_SHA after 10 minutes."
-                break
-            fi
-            sleep 10
-        fi
-    done
-fi
-```
-
-4. **No CI detected:**
-
-If neither `WOODPECKER_API_TOKEN` is set nor GitHub Actions runs are found, skip with a warning:
+The helper prints a machine-readable contract, the failed-step lines (when any)
+immediately before the verdict:
 
 ```
-WARNING: No CI system detected. Skipping verification.
+FLOW_CI_PROVIDER: woodpecker | github-actions | none
+FLOW_CI_REF: <sha>
+FLOW_CI_PIPELINE: <number|->
+FLOW_CI_URL: <url|->
+FLOW_CI_FAILED_STEP: <name>        (repeated, only on failure)
+FLOW_CI_STATUS: success | failure | running | pending | not-found | unknown
 ```
 
-- If CI **passes**: proceed to Step 9.
-- If CI **fails**: **STOP**. Report the failure and exit. Do not deploy broken code.
-- If CI **not found** after timeout: warn and proceed (non-blocking).
+Act on `FLOW_CI_STATUS`:
 
-Report: `Step 8/9: Verify CI complete - pipeline #{N} passed` or `Step 8/9: Verify CI skipped (no CI detected)`
+- `success` with `FLOW_CI_REF` equal to the supplied merge SHA -> proceed to
+  Step 9.
+- `failure` -> **STOP**. Do not deploy. Report `FLOW_CI_URL` and every
+  `FLOW_CI_FAILED_STEP` line so the failed step remains explicit.
+- `running` / `pending` / `not-found` / `unknown` -> **STOP**. CI for the exact
+  merge SHA is unverified; report the provider/ref/pipeline/URL fields and do
+  not deploy or mark the flow complete.
 
----
+`--wait` defaults to 600s and polls every 15s; pass `--wait <seconds>` to change
+it, or omit `--wait` for a single-shot read. Add `--event pull_request` only
+when deliberately resolving a PR pipeline, and retain the exact SHA/path/repo
+arguments.
+
+On exit 127, the installed native flow skill is incomplete. **STOP** and ask the
+owner to reinstall or upgrade `flow@codex-power-pack`; do not improvise a lookup
+or treat a Claude plugin/CPP checkout as native helper authority.
+
+Report: `Step 8/9: Verify CI complete - exact-SHA pipeline #{N} passed` or
+`Step 8/9: Verify CI stopped ({running|pending|not-found|unknown|missing-helper})`
 
 ### Step 9: Deploy (optional)
 
-Only if a Makefile with a `deploy` target exists in the main repo. Because
+Only after Step 8 exact-SHA CI success, and only if a Makefile with a `deploy` target exists in the main repo. Because
 `$flow-auto` runs `make deploy` inline (it does NOT call `$flow-deploy`), the
 deploy-verification gate is wired in here too - otherwise the flagship
 "one command to ship" path would deploy without validating the deployment.
@@ -1144,7 +1188,7 @@ Key failure scenarios:
 
 - This is the "one command to ship" - takes an issue number and delivers it end-to-end
 - The analyze step ensures Claude understands the issue before writing code
-- The ELI5 step (Step 3) is a human checkpoint: it restates intent in plain language, verifies the issue is still worth doing, and gates implementation on plan approval. Use `--yes` (or an `eli5: auto-approve` trailer) for fully unattended runs; a `No longer needed` verdict never auto-implements
+- The ELI5 step (Step 3) is a human checkpoint: it restates intent in plain language, verifies the issue is still worth doing, and gates implementation on plan approval. It has **no bypass** (issue #775) - no `--yes`, no `--auto-approve`, and no `eli5: auto-approve` trailer read from the issue body or HEAD commit message; the trailer channel in particular was chosen by neither the invoker nor anyone reviewing the run. A `No longer needed` verdict never implements either
 - Each step builds on the previous one; there's no skipping
 - Worktrees are visible siblings created on the git lane (issue #627): Step 1 (via `flow-start-resolve.sh`) runs `git worktree add` at `<parent>/<repo>-<branch>` (or `$FLOW_WORKTREE_BASE/<repo>-<branch>` when set), enters with `cd`, and Step 7 removes with `worktree-remove.sh`. The native `EnterWorktree`/`ExitWorktree` fresh lane is retired (#440 superseded for the default). The issue-anchored `issue-<N>-<slug>` branch name, the ELI5 gate, and quality gates are CPP policy layered on top
 - Step 1's plumbing is deterministic (issue #581): `<SKILL_DIR>/scripts/flow-start-resolve.sh` owns target-repo resolution, issue fetch, branch derivation, existing-work triage, the #503 guard, and git-lane creation, emitting a `key=value` contract; the model's only decision is `EnterWorktree` vs `cd`. Helpers are invoked bare at their stable `<SKILL_DIR>/scripts/` paths so the shipped allowlist rules match (`templates/claude-settings-permissions.json`) and Phase 1 runs prompt-free

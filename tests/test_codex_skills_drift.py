@@ -73,6 +73,28 @@ def test_pin_records_a_claude_power_pack_commit() -> None:
     assert re.search(r"^commit: [0-9a-f]{40}$", text, re.MULTILINE), "PIN has no pinned commit SHA"
 
 
+def test_selective_adoption_pin_and_inventory_are_exact() -> None:
+    assert sync.read_pin().commit == sync.ADOPTION_TARGET_COMMIT
+    policy = sync._load_adoption_policy()
+    assert policy is not None
+    assert policy.source_commit == sync.ADOPTION_TARGET_COMMIT
+    assert len(sync.read_manifest()) == 122
+    for omitted in (
+        "flow-auto/scripts/flow-driver-capability.sh",
+        "flow-finish/scripts/knowledge-graduation-check.py",
+        "flow-register/SKILL.md",
+        "flow-wave/SKILL.md",
+    ):
+        assert omitted not in sync.read_manifest()
+        assert not (sync.SKILLS_ROOT / omitted).exists()
+    for removed in (
+        "flow-auto/scripts/plugin-sync.sh",
+        "flow-finish/scripts/plugin-sync.sh",
+    ):
+        assert removed not in sync.read_manifest()
+        assert not (sync.SKILLS_ROOT / removed).exists()
+
+
 def test_current_flow_resolver_is_part_of_the_vendored_manifest() -> None:
     manifest = sync.read_manifest()
     required = {

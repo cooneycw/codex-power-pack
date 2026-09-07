@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -89,6 +91,8 @@ def _configure_destination(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> P
     monkeypatch.setattr(sync, "VENDOR_DIR", vendor)
     monkeypatch.setattr(sync, "MANIFEST_PATH", vendor / "codex-skills.sha256")
     monkeypatch.setattr(sync, "PIN_PATH", vendor / "PIN")
+    monkeypatch.setattr(sync, "ADOPTION_POLICY_PATH", vendor / "adoption-policy.json")
+    monkeypatch.setattr(sync, "RETAIN_OVERLAY_ROOT", vendor / "overlays" / "retain")
     monkeypatch.setattr(sync, "PLUGINS_ROOT", plugins)
     return root
 
@@ -491,3 +495,213 @@ def test_refresh_validation_failure_preserves_every_published_byte(
 
     assert sync.run_refresh(source, refresh_ref) == 2
     assert _tree_bytes(root) == before
+
+
+def _committed_policy_fixture(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> tuple[Path, Path]:
+    root = tmp_path / "policy-repo"
+    skills = root / ".codex" / "skills"
+    source_vendor = MODULE_PATH.parents[1] / "vendor" / "claude-power-pack"
+    vendor = root / "vendor" / "claude-power-pack"
+    plugins = root / "plugins"
+    skills.mkdir(parents=True)
+    plugins.mkdir()
+    vendor.parent.mkdir(parents=True)
+    shutil.copytree(source_vendor / "overlays", vendor / "overlays")
+    shutil.copy2(source_vendor / "adoption-policy.json", vendor / "adoption-policy.json")
+    _git(root, "init", "-q", "-b", "main")
+    _git(root, "add", ".")
+    _git(root, "commit", "-q", "-m", "reviewed adoption policy")
+    monkeypatch.setattr(sync, "REPO_ROOT", root)
+    monkeypatch.setattr(sync, "SKILLS_ROOT", skills)
+    monkeypatch.setattr(sync, "VENDOR_DIR", vendor)
+    monkeypatch.setattr(sync, "MANIFEST_PATH", vendor / "codex-skills.sha256")
+    monkeypatch.setattr(sync, "PIN_PATH", vendor / "PIN")
+    monkeypatch.setattr(sync, "ADOPTION_POLICY_PATH", vendor / "adoption-policy.json")
+    monkeypatch.setattr(sync, "RETAIN_OVERLAY_ROOT", vendor / "overlays" / "retain")
+    monkeypatch.setattr(sync, "PLUGINS_ROOT", plugins)
+    return root, vendor
+
+
+def _assert_policy_stops_refresh_before_publication(
+    root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    message: str,
+) -> None:
+    before = _tree_bytes(root)
+
+    def unexpected_source_validation(*args: object, **kwargs: object) -> tuple[str, str]:
+        pytest.fail("source validation ran after invalid adoption policy")
+
+    monkeypatch.setattr(sync, "_validate_source_checkout", unexpected_source_validation)
+    assert sync.run_refresh(root / "source-not-used", sync.ADOPTION_TARGET_COMMIT) == 2
+    assert message in capsys.readouterr().err
+    assert _tree_bytes(root) == before
+
+
+def test_reviewed_adoption_policy_covers_all_59_paths_from_the_frozen_audit() -> None:
+    policy = sync._load_adoption_policy()
+    assert policy is not None
+    assert len(policy.dispositions) == 59
+    assert {
+        action: sum(item.action == action for item in policy.dispositions.values())
+        for action in sync.ADOPTION_COUNTS
+    } == sync.ADOPTION_COUNTS
+    assert sum(item.retained is not None for item in policy.dispositions.values()) == 9
+    assert policy.historical_audit["report_sha256"] == (
+        "cc752f61b4f8e0aef496f65f8a435192382ff3229b201918566fb4cb2252e8ba"
+    )
+    assert policy.boundaries == sync.ADOPTION_BOUNDARIES
+
+
+def test_adoption_policy_rejects_count_preserving_action_swap_before_publication(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    root, vendor = _committed_policy_fixture(tmp_path, monkeypatch)
+    path = vendor / "adoption-policy.json"
+    value = json.loads(path.read_text(encoding="utf-8"))
+    by_path = {item["path"]: item for item in value["dispositions"]}
+    by_path["flow-auto/scripts/flow-ci-status.sh"]["action"] = "defer"
+    by_path["flow-auto/scripts/flow-driver-capability.sh"]["action"] = "adapt"
+    path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+    _git(root, "add", "vendor/claude-power-pack/adoption-policy.json")
+    _git(root, "commit", "-q", "-m", "swap two reviewed actions")
+
+    _assert_policy_stops_refresh_before_publication(
+        root, monkeypatch, capsys, "path/action decisions"
+    )
+
+
+@pytest.mark.parametrize("mutation", ["bytes", "mode"])
+def test_adoption_policy_rejects_coordinated_retained_payload_change(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    mutation: str,
+) -> None:
+    root, vendor = _committed_policy_fixture(tmp_path, monkeypatch)
+    policy_path = vendor / "adoption-policy.json"
+    value = json.loads(policy_path.read_text(encoding="utf-8"))
+    disposition = next(
+        item
+        for item in value["dispositions"]
+        if item["path"] == "flow-repair/reference.md"
+    )
+    overlay_path = root / disposition["overlay"]["path"]
+    if mutation == "bytes":
+        overlay_path.write_bytes(overlay_path.read_bytes() + b"coordinated change\n")
+        disposition["overlay"]["sha256"] = hashlib.sha256(
+            overlay_path.read_bytes()
+        ).hexdigest()
+    else:
+        overlay_path.chmod(0o755)
+        disposition["overlay"]["mode"] = "100755"
+    policy_path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+    _git(root, "add", "vendor/claude-power-pack")
+    _git(root, "commit", "-q", "-m", f"coordinate retained {mutation} change")
+
+    _assert_policy_stops_refresh_before_publication(
+        root, monkeypatch, capsys, "reviewed historical evidence"
+    )
+
+
+@pytest.mark.parametrize("location", ["top-level", "nested"])
+def test_adoption_policy_rejects_conflicting_duplicate_json_keys_before_publication(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    location: str,
+) -> None:
+    root, vendor = _committed_policy_fixture(tmp_path, monkeypatch)
+    path = vendor / "adoption-policy.json"
+    text = path.read_text(encoding="utf-8")
+    if location == "top-level":
+        text = text.replace(
+            '{\n  "schema_version": 1,',
+            '{\n  "schema_version": 2,\n  "schema_version": 1,',
+            1,
+        )
+        duplicate = "schema_version"
+    else:
+        text = text.replace(
+            f'    "commit": "{sync.ADOPTION_TARGET_COMMIT}",',
+            f'    "commit": "{"0" * 40}",\n'
+            f'    "commit": "{sync.ADOPTION_TARGET_COMMIT}",',
+            1,
+        )
+        duplicate = "commit"
+    path.write_text(text, encoding="utf-8")
+    _git(root, "add", "vendor/claude-power-pack/adoption-policy.json")
+    _git(root, "commit", "-q", "-m", f"duplicate {location} JSON key")
+
+    _assert_policy_stops_refresh_before_publication(
+        root, monkeypatch, capsys, f"duplicate JSON key: {duplicate}"
+    )
+
+
+@pytest.mark.parametrize("hidden_change", ["bytes", "mode"])
+def test_adoption_policy_rejects_hidden_tracked_overlay_edits(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, hidden_change: str
+) -> None:
+    root, vendor = _committed_policy_fixture(tmp_path, monkeypatch)
+    overlay_rel = "vendor/claude-power-pack/overlays/retain/cpp-help/reference.md"
+    overlay = root / overlay_rel
+    _git(root, "update-index", "--assume-unchanged", overlay_rel)
+    if hidden_change == "bytes":
+        overlay.write_bytes(overlay.read_bytes() + b"hidden\n")
+        expected = "checked-out bytes differ"
+    else:
+        overlay.chmod(0o755)
+        expected = "checked-out mode differs"
+    assert _git(root, "status", "--porcelain", "--untracked-files=all") == ""
+
+    with pytest.raises(sync.IntegrityError, match=expected):
+        sync._load_adoption_policy()
+
+
+@pytest.mark.parametrize(
+    "mutation, message",
+    [
+        ("unknown-field", "field mismatch"),
+        ("duplicate", "duplicate disposition"),
+        ("unsafe-path", "escapes its root"),
+        ("target-mismatch", "reviewed #196 target commit"),
+        ("audit-mismatch", "historical audit identity"),
+        ("boundary-mismatch", "policy boundary"),
+        ("overlay-digest", "retention overlay digest mismatch"),
+    ],
+)
+def test_adoption_policy_rejects_malformed_duplicate_unsafe_or_mismatched_data(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+    message: str,
+) -> None:
+    root, vendor = _committed_policy_fixture(tmp_path, monkeypatch)
+    path = vendor / "adoption-policy.json"
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if mutation == "unknown-field":
+        value["unexpected"] = True
+    elif mutation == "duplicate":
+        value["dispositions"].append(value["dispositions"][0])
+    elif mutation == "unsafe-path":
+        value["historical_audit"]["changes"]["changed"][0] = "../escape"
+    elif mutation == "target-mismatch":
+        value["source"]["commit"] = "0" * 40
+    elif mutation == "audit-mismatch":
+        value["historical_audit"]["baseline_manifest_sha256"] = "0" * 64
+    elif mutation == "boundary-mismatch":
+        value["boundaries"]["native_collisions"].pop()
+    else:
+        retained = next(item for item in value["dispositions"] if item["overlay"])
+        retained["overlay"]["sha256"] = "0" * 64
+    path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+    _git(root, "add", "vendor/claude-power-pack/adoption-policy.json")
+    _git(root, "commit", "-q", "-m", f"mutate policy: {mutation}")
+
+    with pytest.raises(sync.IntegrityError, match=message):
+        sync._load_adoption_policy()

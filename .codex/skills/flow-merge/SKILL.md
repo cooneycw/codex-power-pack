@@ -8,7 +8,7 @@ description: "Flow: Merge PR and Clean Up - Merge the current branch's PR, then 
 
 Generated from a Claude Code command. Where the procedure references these Claude-only surfaces, adapt as follows:
 
-- Codex worktrees: use the bundled resolver and plain git. Worktrees live at `$FLOW_WORKTREE_BASE/<repo>-<branch>` when configured, otherwise as a visible sibling `../<repo>-<branch>`; enter with `cd` and clean up with `git worktree remove`. Never use Claude's hidden worktree directory.
+- Native worktrees (`EnterWorktree`/`ExitWorktree` tool calls, `../<repo>-<branch>/` paths): use plain git instead, with the worktree as a VISIBLE SIBLING of the repo - `git worktree add ../<repo>-<branch> -b <branch>` (or `$FLOW_WORKTREE_BASE/<repo>-<branch>` when that env var is set), work inside it, then `git worktree remove ../<repo>-<branch>` when done.
 - Helper scripts referenced as `scripts/<name>` are bundled under `scripts/` in this skill directory (byte-identical copies from the claude-power-pack checkout); some expect sibling repo resources, so prefer a full checkout when one is available.
 
 # Flow: Merge PR and Clean Up
