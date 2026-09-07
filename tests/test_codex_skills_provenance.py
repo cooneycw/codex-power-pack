@@ -371,10 +371,24 @@ def test_validated_refresh_publishes_frozen_payload_and_preserves_local_overlays
     native = sync.SKILLS_ROOT / "project-next" / "SKILL.md"
     native.parent.mkdir()
     native.write_text("native\n", encoding="utf-8")
+    stale_agent_payload = (
+        sync.PLUGINS_ROOT
+        / "flow"
+        / "skills"
+        / "flow-auto"
+        / "agents"
+        / "stale-runtime.txt"
+    )
+    stale_agent_payload.write_text("stale\n", encoding="utf-8")
 
     _git(source, "switch", "-q", "main")
     helper = source / "codex" / "skills" / "flow-auto" / "scripts" / "fixture.sh"
     helper.write_text("#!/usr/bin/env bash\necho refreshed\n", encoding="utf-8")
+    source_agent_payload = (
+        source / "codex" / "skills" / "flow-auto" / "agents" / "runtime.txt"
+    )
+    source_agent_payload.parent.mkdir()
+    source_agent_payload.write_text("source-owned runtime\n", encoding="utf-8")
     _git(source, "add", ".")
     _git(source, "commit", "-q", "-m", "refreshed CPP source")
     commit = _git(source, "rev-parse", "HEAD")
@@ -386,8 +400,70 @@ def test_validated_refresh_publishes_frozen_payload_and_preserves_local_overlays
         encoding="utf-8"
     ).endswith("echo refreshed\n")
     assert metadata.read_bytes() == metadata_before
+    assert (
+        sync.PLUGINS_ROOT
+        / "flow"
+        / "skills"
+        / "flow-auto"
+        / "agents"
+        / "runtime.txt"
+    ).read_text(encoding="utf-8") == "source-owned runtime\n"
+    assert not stale_agent_payload.exists()
     assert native.read_text(encoding="utf-8") == "native\n"
     assert sync.compute_manifest() == sync.read_manifest()
+    assert sync.run_pin_check(source) == 0
+
+
+@pytest.mark.parametrize("target_name", ["PIN_PATH", "MANIFEST_PATH"])
+def test_refresh_refuses_symlinked_provenance_file_without_external_write(
+    provenance_fixture: tuple[Path, Path, str], tmp_path: Path, target_name: str
+) -> None:
+    root, source, commit = provenance_fixture
+    target: Path = getattr(sync, target_name)
+    external = tmp_path / f"external-{target.name}"
+    external.write_bytes(target.read_bytes())
+    target.unlink()
+    target.symlink_to(external)
+    before = _tree_bytes(root)
+    external_before = external.read_bytes()
+
+    assert sync.run_refresh(source, commit) == 2
+    assert _tree_bytes(root) == before
+    assert external.read_bytes() == external_before
+
+
+@pytest.mark.parametrize("symlink_level", ["provenance-dir", "vendor-parent"])
+def test_refresh_refuses_symlinked_provenance_parent_without_external_write(
+    provenance_fixture: tuple[Path, Path, str], tmp_path: Path, symlink_level: str
+) -> None:
+    root, source, commit = provenance_fixture
+    link = sync.VENDOR_DIR if symlink_level == "provenance-dir" else root / "vendor"
+    external = tmp_path / f"external-{symlink_level}"
+    link.rename(external)
+    sentinel = external / "external-sentinel.txt"
+    sentinel.write_text("must remain unchanged\n", encoding="utf-8")
+    link.symlink_to(external, target_is_directory=True)
+    root_before = _tree_bytes(root)
+    external_before = _tree_bytes(external)
+
+    assert sync.run_refresh(source, commit) == 2
+    assert _tree_bytes(root) == root_before
+    assert _tree_bytes(external) == external_before
+
+
+@pytest.mark.parametrize("target_name", ["PIN_PATH", "MANIFEST_PATH"])
+def test_refresh_refuses_non_regular_provenance_destination_before_writes(
+    provenance_fixture: tuple[Path, Path, str], target_name: str
+) -> None:
+    root, source, commit = provenance_fixture
+    target: Path = getattr(sync, target_name)
+    target.unlink()
+    target.mkdir()
+    (target / "sentinel.txt").write_text("unchanged\n", encoding="utf-8")
+    before = _tree_bytes(root)
+
+    assert sync.run_refresh(source, commit) == 2
+    assert _tree_bytes(root) == before
 
 
 @pytest.mark.parametrize("failure", ["dirty", "head-mismatch", "unsafe-destination"])

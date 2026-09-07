@@ -279,6 +279,11 @@ class PreparedPayload(NamedTuple):
     mode: int
 
 
+class PreparedPlugin(NamedTuple):
+    destination: Path
+    metadata: PreparedPayload | None
+
+
 def _safe_relative_path(value: str, *, label: str, trailing_slash: bool = False) -> str:
     """Validate a repository-relative POSIX path without normalizing attacker input."""
     if not value or "\x00" in value or "\\" in value or value.startswith("/"):
@@ -420,13 +425,41 @@ def _validate_source_checkout(cpp_root: Path, *, commit: str, repo: str) -> tupl
     return head, tree
 
 
-def _assert_destination_tree_safe(root: Path, *, label: str) -> None:
-    """Reject roots or existing descendants that could redirect publication."""
+def _assert_repo_ancestors_safe(path: Path, *, label: str) -> None:
+    """Reject lexical or symlink redirection at any component below REPO_ROOT."""
+    lexical_repo = REPO_ROOT.absolute()
+    lexical_path = path.absolute()
+    try:
+        relative = lexical_path.relative_to(lexical_repo)
+    except ValueError as exc:
+        raise IntegrityError(f"{label}: destination escapes repository root") from exc
+
+    current = lexical_repo
+    for index, part in enumerate(relative.parts):
+        current /= part
+        if current.is_symlink():
+            raise IntegrityError(f"{label}: symlink component is unsafe: {current}")
+        if index < len(relative.parts) - 1 and current.exists() and not current.is_dir():
+            raise IntegrityError(f"{label}: parent component is not a directory: {current}")
+
     resolved_repo = REPO_ROOT.resolve()
-    resolved_root = root.resolve(strict=False)
-    if not resolved_root.is_relative_to(resolved_repo):
+    if not path.resolve(strict=False).is_relative_to(resolved_repo):
         raise IntegrityError(f"{label}: destination escapes repository root")
+
+
+def _assert_destination_tree_safe(root: Path, *, label: str) -> None:
+    """Reject roots, ancestors, or existing descendants that redirect writes."""
+    _assert_repo_ancestors_safe(root, label=label)
+    if root.exists() and not root.is_dir():
+        raise IntegrityError(f"{label}: destination root is not a directory")
     _assert_no_symlinks(root, label=label)
+
+
+def _assert_publication_file_safe(path: Path, *, label: str) -> None:
+    """Require a regular-or-absent in-repo file with ordinary directory parents."""
+    _assert_repo_ancestors_safe(path, label=label)
+    if path.exists() and not path.is_file():
+        raise IntegrityError(f"{label}: existing destination is not a regular file")
 
 
 def _is_local_path(path: Path) -> bool:
@@ -1193,31 +1226,36 @@ def _plugin_payload_destinations(skill_name: str) -> list[Path]:
     )
 
 
-def _sync_plugin_payload(skill_name: str) -> None:
-    """Mirror an adopted skill into an existing plugin, preserving UI metadata."""
+def _sync_plugin_payload(
+    skill_name: str,
+    prepared_plugin: PreparedPlugin | None = None,
+    *,
+    prevalidated: bool = False,
+) -> None:
+    """Mirror one skill, preserving only the plugin-owned openai.yaml metadata."""
     source = SKILLS_ROOT / skill_name
-    destination = _packaged_skill_inventory({skill_name})[skill_name]
-    if destination is None:
+    if not prevalidated:
+        prepared_plugin = _validate_refresh_destinations({skill_name})[skill_name]
+    if prepared_plugin is None:
         return
+    destination, metadata = prepared_plugin
     if not destination.is_dir():
         raise IntegrityError(f"expected plugin package is missing: {destination}")
-    agents_dir = destination / "agents"
-    for existing in list(destination.iterdir()):
-        if existing == agents_dir:
-            continue
-        if existing.is_dir():
-            shutil.rmtree(existing)
-        else:
-            existing.unlink()
+    shutil.rmtree(destination)
     for source_file in sorted(
         path for path in source.rglob("*") if path.is_file() and not _is_python_cache(path)
     ):
         rel = source_file.relative_to(source)
-        if rel.parts[0] == "agents":
+        if rel.as_posix() == "agents/openai.yaml":
             continue
         target = destination / rel
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source_file, target)
+    if metadata is not None:
+        metadata_path = destination / "agents" / "openai.yaml"
+        metadata_path.parent.mkdir(parents=True, exist_ok=True)
+        metadata_path.write_bytes(metadata.content)
+        metadata_path.chmod(metadata.mode)
 
 
 def _prepare_source_payloads(
@@ -1363,16 +1401,42 @@ def _plugin_payload_drift(actual: dict[str, bytes]) -> tuple[list[str], int]:
     return drift, packaged_skills
 
 
-def _validate_refresh_destinations(skill_names: set[str]) -> None:
+def _validate_refresh_destinations(
+    skill_names: set[str],
+) -> dict[str, PreparedPlugin | None]:
     if not PLUGINS_ROOT.is_dir():
         raise IntegrityError(f"plugin root is missing at {PLUGINS_ROOT}")
     _assert_destination_tree_safe(SKILLS_ROOT, label="generated skills")
     _assert_destination_tree_safe(PLUGINS_ROOT, label="plugin payloads")
+    _assert_destination_tree_safe(VENDOR_DIR, label="provenance directory")
+    _assert_publication_file_safe(PIN_PATH, label="PIN publication")
+    _assert_publication_file_safe(MANIFEST_PATH, label="manifest publication")
+
+    prepared: dict[str, PreparedPlugin | None] = {}
     for skill_name, destination in _packaged_skill_inventory(skill_names).items():
-        if destination is not None and not destination.is_dir():
+        if destination is None:
+            prepared[skill_name] = None
+            continue
+        if not destination.is_dir():
             raise IntegrityError(
                 f"expected plugin package is missing for {skill_name}: {destination}"
             )
+        metadata_path = destination / "agents" / "openai.yaml"
+        _assert_publication_file_safe(
+            metadata_path, label=f"plugin metadata for {skill_name}"
+        )
+        metadata: PreparedPayload | None = None
+        if metadata_path.is_file():
+            try:
+                metadata = PreparedPayload(
+                    metadata_path.read_bytes(), metadata_path.stat().st_mode & 0o777
+                )
+            except OSError as exc:
+                raise IntegrityError(
+                    f"cannot freeze plugin metadata for {skill_name}"
+                ) from exc
+        prepared[skill_name] = PreparedPlugin(destination, metadata)
+    return prepared
 
 
 def run_pin_check(cpp_root: Path) -> int:
@@ -1451,7 +1515,7 @@ def run_refresh(cpp_root: Path, ref: str) -> int:
             for skill_name, payloads in prepared_by_skill.items()
             for rel, payload in payloads.items()
         }
-        _validate_refresh_destinations(set(prepared_by_skill))
+        prepared_plugins = _validate_refresh_destinations(set(prepared_by_skill))
     except IntegrityError as exc:
         print(f"codex-skills-sync: refresh validation failed: {exc}", file=sys.stderr)
         return 2
@@ -1470,7 +1534,9 @@ def run_refresh(cpp_root: Path, ref: str) -> int:
     for src_dir in src_dirs:
         dest = SKILLS_ROOT / src_dir.name
         _write_skill_payload(dest, prepared_by_skill[src_dir.name])
-        _sync_plugin_payload(src_dir.name)
+        _sync_plugin_payload(
+            src_dir.name, prepared_plugins[src_dir.name], prevalidated=True
+        )
 
     _write_pin(ref)
     print(
