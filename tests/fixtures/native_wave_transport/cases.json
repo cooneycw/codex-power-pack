@@ -1,0 +1,24 @@
+{
+  "contract_version": "1.0",
+  "contract_sha256": "779c2aa4f1470ef66c5eb87b0b3bdb1e22386408a633bf5a31a99ff2c307ded5",
+  "cases": [
+    {"id": "contact", "live_required": true, "expect": "worker-first and coordinator-first contact with explicit read/ACK"},
+    {"id": "idle", "live_required": true, "expect": "prior recipient turn ended; queue causes a new reasoning turn and correlated ACK"},
+    {"id": "busy", "live_required": true, "expect": "send timestamp overlaps recipient busy interval; ACK observed or timing inconclusive"},
+    {"id": "replay", "live_required": true, "expect": "duplicate/reordered assignment and gate pointers; one synthetic action, no stale authorization"},
+    {"id": "replacement", "live_required": true, "expect": "new disposable process/thread generation; old control rejected or explicit coordinator hold"},
+    {"id": "timeout", "live_required": true, "expect": "withheld wake observed for 30s; missing ACK for 120s is unknown readiness, never death"},
+    {"id": "provenance", "live_required": true, "expect": "payload-only authority rejected; local binding is not same-user cryptographic authentication"}
+  ],
+  "stale_controls": [
+    {"wave": "wrong-wave"},
+    {"assignment": "old-assignment"},
+    {"revision": 0},
+    {"generation": "old-generation"},
+    {"coordinator": "old-coordinator"},
+    {"policy": 0},
+    {"plan": "other-plan"},
+    {"capability": "other-runtime"},
+    {"provenance": "payload_only"}
+  ]
+}
