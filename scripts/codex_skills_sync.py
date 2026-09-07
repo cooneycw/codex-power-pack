@@ -1151,7 +1151,7 @@ fi
 
 
 def _adapt_flow_merge_helper(skill_dir: Path, source_file: Path, text: str) -> str:
-    """Keep explicit owner override support but never add --admin automatically."""
+    """Keep native merge checks fail-closed and bind them to one reviewed head."""
     if source_file.name != "gh-pr-merge.sh" or skill_dir.name not in {
         "flow-auto",
         "flow-merge",
@@ -1174,6 +1174,152 @@ def _adapt_flow_merge_helper(skill_dir: Path, source_file: Path, text: str) -> s
     text, count = retry.subn(replacement, text, count=1)
     if count != 1:
         raise IntegrityError("gh-pr-merge source no longer has the reviewed admin-retry block")
+
+    observed_checks = re.compile(
+        r"# Neither mechanism could be read \(issue #610\), so nothing is KNOWN to be\n"
+        r".*?^wait_for_observed_checks\(\) \{\n.*?^\}\n",
+        re.MULTILINE | re.DOTALL,
+    )
+    observed_replacement = r'''# Neither required-context mechanism could be read (issue #610). Native CxPP
+# may use the PR rollup as evidence, but unreadable or empty evidence is UNKNOWN
+# and therefore a clean stop. A red state or a state that remains pending is also
+# a hard stop; the merge request is never used as a substitute status-check gate.
+wait_for_observed_checks() {
+    local attempts="${GH_PR_MERGE_CHECK_ATTEMPTS:-60}"
+    local delay="${GH_PR_MERGE_CHECK_DELAY:-10}"
+    local i line name state pending failed observed announced=0
+
+    for ((i = 1; i <= attempts; i++)); do
+        pending=""
+        failed=""
+        if ! observed=$(check_states); then
+            echo "error: required contexts and the PR status rollup are unreadable for" \
+                 "PR #$PR_NUMBER; refusing to merge with unknown CI state." >&2
+            return 1
+        fi
+        if [[ -z "$observed" ]]; then
+            echo "error: required contexts are unreadable and PR #$PR_NUMBER reports no" \
+                 "status checks; refusing to treat missing CI evidence as green." >&2
+            return 1
+        fi
+        while IFS= read -r line; do
+            [[ -z "$line" ]] && continue
+            name="${line%%|*}"
+            state="${line##*|}"
+            case "${state^^}" in
+                SUCCESS|NEUTRAL|SKIPPED)
+                    ;;
+                FAILURE|ERROR|CANCELLED|TIMED_OUT|ACTION_REQUIRED|STARTUP_FAILURE)
+                    failed+="${name} (${state}) "
+                    ;;
+                *)
+                    pending+="${name} (${state}) "
+                    ;;
+            esac
+        done <<<"$observed"
+
+        if [[ -n "$failed" ]]; then
+            echo "error: status check(s) are RED on PR #$PR_NUMBER: ${failed}" >&2
+            echo "       Required contexts could not be enumerated (issue #610), but a red" \
+                 "check is authoritative on its own - fix CI and push again." >&2
+            return 1
+        fi
+        if [[ -z "$pending" ]]; then
+            (( announced )) && echo "note: reported check(s) are green; merging." >&2
+            return 0
+        fi
+        if (( i < attempts )); then
+            if (( announced == 0 )); then
+                echo "note: required status-check contexts are not enumerable for PR" \
+                     "#$PR_NUMBER - waiting on the check(s) the PR itself reports:" \
+                     "${pending}" >&2
+                announced=1
+            fi
+            sleep "$delay"
+        fi
+    done
+
+    echo "error: status check(s) are still pending or unknown on PR #$PR_NUMBER" \
+         "after $attempts check(s): ${pending}" >&2
+    echo "       Not merging without terminal green CI evidence." >&2
+    return 1
+}
+'''
+    text, count = observed_checks.subn(observed_replacement, text, count=1)
+    if count != 1:
+        raise IntegrityError("gh-pr-merge source no longer has the reviewed observed-check wait")
+
+    base_metadata = r'''# Resolve the PR base once for every feature that needs it. A failed or empty
+# metadata read remains fail-open at each caller; GitHub is the final arbiter.
+PR_BASE_BRANCH=$("$GH_BIN" pr view "$PR_NUMBER" --json baseRefName --jq '.baseRefName' 2>/dev/null)
+'''
+    head_guard = base_metadata + r'''
+# Bind every pre-merge decision to the exact PR head checked out locally. Capture
+# once before the status/review gates, verify it again immediately before merge,
+# and pass GitHub's atomic expected-head predicate to close the final race.
+EXPECTED_HEAD_SHA=$("$GH_BIN" pr view "$PR_NUMBER" --json headRefOid --jq '.headRefOid' 2>/dev/null)
+LOCAL_HEAD_SHA=$("$GIT_BIN" rev-parse HEAD 2>/dev/null)
+if [[ ! "$EXPECTED_HEAD_SHA" =~ ^[0-9a-f]{40}$ || "$LOCAL_HEAD_SHA" != "$EXPECTED_HEAD_SHA" ]]; then
+    echo "error: cannot bind PR #$PR_NUMBER to the checked-out head; expected a" \
+         "matching 40-character headRefOid, got PR='${EXPECTED_HEAD_SHA:-unreadable}'" \
+         "local='${LOCAL_HEAD_SHA:-unreadable}'." >&2
+    exit 1
+fi
+
+verify_expected_head() {
+    local current_pr_head current_local_head
+    current_pr_head=$("$GH_BIN" pr view "$PR_NUMBER" --json headRefOid --jq '.headRefOid' 2>/dev/null) || return 1
+    current_local_head=$("$GIT_BIN" rev-parse HEAD 2>/dev/null) || return 1
+    [[ "$current_pr_head" =~ ^[0-9a-f]{40}$ ]] || return 1
+    [[ "$current_pr_head" == "$EXPECTED_HEAD_SHA" && "$current_local_head" == "$EXPECTED_HEAD_SHA" ]]
+}
+'''
+    if text.count(base_metadata) != 1:
+        raise IntegrityError("gh-pr-merge source no longer has the reviewed base metadata read")
+    text = text.replace(base_metadata, head_guard, 1)
+
+    run_squash = re.compile(
+        r"# Attempt the squash, retrying \(bounded\) only when the base moved under us at\n"
+        r".*?^run_squash\(\) \{\n.*?^\}\n",
+        re.MULTILINE | re.DOTALL,
+    )
+    run_squash_replacement = r'''# Attempt one exact-head squash. A base-move rejection is a clean stop: a fresh
+# helper run must repeat the full head/base/status/review clearance before trying
+# again, so a partial automatic retry can never merge a differently gated tree.
+run_squash() {
+    # $@: extra gh flags (--delete-branch in the primary repo)
+    local errfile
+    errfile=$(mktemp)
+    if ! verify_expected_head; then
+        echo "error: PR #$PR_NUMBER or the local checkout changed after pre-merge" \
+             "validation; refusing to merge a different head." >&2
+        merge_exit=1
+        LAST_MERGE_ERR="PR head changed after pre-merge validation"
+        rm -f "$errfile"
+        return
+    fi
+
+    "$GH_BIN" pr merge "$PR_NUMBER" --squash \
+        --match-head-commit "$EXPECTED_HEAD_SHA" "$@" 2>"$errfile"
+    merge_exit=$?
+    cat "$errfile" >&2
+    LAST_MERGE_ERR=$(cat "$errfile")
+    if [[ $merge_exit -ne 0 ]] && grep -q "Base branch was modified" "$errfile"; then
+        echo "error: base branch moved at squash time; refusing an automatic retry" \
+             "without repeating the full merge clearance." >&2
+    fi
+    rm -f "$errfile"
+}
+'''
+    text, count = run_squash.subn(run_squash_replacement, text, count=1)
+    if count != 1:
+        raise IntegrityError("gh-pr-merge source no longer has the reviewed squash retry")
+
+    text = text.replace(
+        "#   GH_PR_MERGE_BASE_RETRY_ATTEMPTS  squash retries on \"Base branch was modified\" (default: 2)\n"
+        "#   GH_PR_MERGE_BASE_RETRY_DELAY     seconds before each such retry (default: 2)\n",
+        "#   A base-move rejection is not retried automatically; re-run after regating.\n",
+    )
     text = text.replace(
         "an admin override is applied automatically\n"
         "#                    only for the residual ADMINISTRATIVE protection family",

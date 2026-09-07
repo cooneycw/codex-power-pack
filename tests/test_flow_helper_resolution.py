@@ -128,17 +128,43 @@ def _write_executable(path: Path, text: str) -> None:
 
 
 def _merge_stubs(
-    tmp_path: Path, *, check_state: str, required: bool, protection_failure: bool = False
+    tmp_path: Path,
+    *,
+    check_state: str | None,
+    required: bool,
+    protection_failure: bool = False,
+    protection_readable: bool = True,
+    status_readable: bool = True,
+    head_readable: bool = True,
+    remote_head_digit: int = 3,
+    base_failure: bool = False,
 ) -> tuple[dict[str, str], Path]:
     calls = tmp_path / "merge-calls.log"
     gh = tmp_path / "gh"
     required_line = "echo required-context" if required else ":"
-    merge_result = (
-        "echo \"failed to merge pull request: GraphQL: You're not authorized to "
-        "push to this branch. (mergePullRequest)\" >&2; exit 1"
-        if protection_failure
-        else "exit 0"
+    api_result = "exit 0" if protection_readable else "exit 1"
+    status_result = (
+        "exit 1"
+        if not status_readable
+        else ":"
+        if check_state is None
+        else f'echo "required-context|{check_state}"'
     )
+    head_result = (
+        f'printf "%040d\\n" {remote_head_digit}' if head_readable else "exit 1"
+    )
+    if protection_failure:
+        merge_result = (
+            "echo \"failed to merge pull request: GraphQL: You're not authorized to "
+            "push to this branch. (mergePullRequest)\" >&2; exit 1"
+        )
+    elif base_failure:
+        merge_result = (
+            'echo "failed to merge pull request: Base branch was modified. '
+            'Review and try the merge again." >&2; exit 1'
+        )
+    else:
+        merge_result = "exit 0"
     _write_executable(
         gh,
         f'echo "gh $*" >> "{calls}"\n'
@@ -146,7 +172,7 @@ def _merge_stubs(
         'if [[ "$1" == "api" ]]; then\n'
         '  if [[ "$2" == *"/protection/required_status_checks"* ]]; then '
         f'{required_line}; fi\n'
-        '  exit 0\n'
+        f'  {api_result}\n'
         'fi\n'
         'if [[ "$1 $2" == "repo view" ]]; then\n'
         '  if [[ "$*" == *defaultBranchRef* ]]; then echo main; '
@@ -156,7 +182,8 @@ def _merge_stubs(
         'fi\n'
         'if [[ "$1 $2" == "pr view" ]]; then\n'
         '  if [[ "$*" == *baseRefName* ]]; then echo main; '
-        f'elif [[ "$*" == *statusCheckRollup* ]]; then echo "required-context|{check_state}"; '
+        f'elif [[ "$*" == *headRefOid* ]]; then {head_result}; '
+        f'elif [[ "$*" == *statusCheckRollup* ]]; then {status_result}; '
         'elif [[ "$*" == *mergeable* ]]; then echo MERGEABLE; '
         'elif [[ "$*" == *reviewDecision* ]]; then :; '
         'elif [[ "$*" == *mergeCommit* ]]; then :; '
@@ -237,7 +264,100 @@ def test_merge_helper_never_automatically_retries_with_admin(tmp_path: Path) -> 
     assert result.returncode == 1
     assert len(merge_calls) == 1
     assert "--admin" not in merge_calls[0]
+    assert '--match-head-commit 0000000000000000000000000000000000000003' in merge_calls[0]
     assert "refusing an automatic --admin retry" in result.stderr
+
+
+@pytest.mark.parametrize(
+    ("check_state", "status_readable"),
+    [(None, True), ("SUCCESS", False), ("PENDING", True)],
+    ids=["empty-rollup", "unreadable-rollup", "pending-expiry"],
+)
+def test_merge_helper_fails_closed_when_protection_and_status_are_unknown(
+    tmp_path: Path, check_state: str | None, status_readable: bool
+) -> None:
+    (tmp_path / ".git").write_text("gitdir: /fixture/worktree\n", encoding="utf-8")
+    env, calls = _merge_stubs(
+        tmp_path,
+        check_state=check_state,
+        required=False,
+        protection_readable=False,
+        status_readable=status_readable,
+    )
+    result = subprocess.run(
+        [str(MERGE_HELPER), "196", "issue-196-fixture"],
+        cwd=tmp_path,
+        env=env,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert result.returncode == 1
+    assert not any(
+        line.startswith("gh pr merge") for line in calls.read_text().splitlines()
+    )
+
+
+@pytest.mark.parametrize(
+    ("head_readable", "remote_head_digit"),
+    [(False, 3), (True, 4)],
+    ids=["unreadable", "local-mismatch"],
+)
+def test_merge_helper_refuses_unbound_pr_head(
+    tmp_path: Path, head_readable: bool, remote_head_digit: int
+) -> None:
+    (tmp_path / ".git").write_text("gitdir: /fixture/worktree\n", encoding="utf-8")
+    env, calls = _merge_stubs(
+        tmp_path,
+        check_state="SUCCESS",
+        required=False,
+        head_readable=head_readable,
+        remote_head_digit=remote_head_digit,
+    )
+    result = subprocess.run(
+        [str(MERGE_HELPER), "196", "issue-196-fixture"],
+        cwd=tmp_path,
+        env=env,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    assert result.returncode == 1
+    assert "cannot bind PR #196 to the checked-out head" in result.stderr
+    assert not any(
+        line.startswith("gh pr merge") for line in calls.read_text().splitlines()
+    )
+
+
+def test_merge_helper_does_not_retry_after_base_move_rejection(tmp_path: Path) -> None:
+    (tmp_path / ".git").write_text("gitdir: /fixture/worktree\n", encoding="utf-8")
+    env, calls = _merge_stubs(
+        tmp_path,
+        check_state="SUCCESS",
+        required=False,
+        base_failure=True,
+    )
+    result = subprocess.run(
+        [str(MERGE_HELPER), "196", "issue-196-fixture"],
+        cwd=tmp_path,
+        env=env,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    merge_calls = [
+        line for line in calls.read_text().splitlines() if line.startswith("gh pr merge")
+    ]
+    assert result.returncode == 1
+    assert len(merge_calls) == 1
+    assert "--match-head-commit" in merge_calls[0]
+    assert "refusing an automatic retry" in result.stderr
 
 
 @pytest.mark.skipif(
