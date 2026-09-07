@@ -66,11 +66,13 @@ def test_ci_separates_exact_pin_integrity_from_latest_upstream_reporting() -> No
     assert "codex-skills-pin-integrity:" in pipeline
     assert "--pin-ref" in pipeline
     assert "make codex-skills-pin-check CPP_ROOT=/tmp/claude-power-pack-pinned" in pipeline
-    assert "codex-skills-currency:" in pipeline
-    assert "event: [manual, cron]" in pipeline
-    assert "make codex-skills-currency-check CPP_ROOT=/tmp/claude-power-pack-current" in pipeline
+    assert "codex-skills-upstream-report:" in pipeline
+    assert "--latest-ref" in pipeline
+    assert "cron: codex-skills-upstream-report" in pipeline
+    assert "make codex-skills-upstream-report CPP_ROOT=/tmp/claude-power-pack-current" in pipeline
     assert "codex-skills-pin-check:" in makefile
     assert "codex-skills-currency-check:" in makefile
+    assert "codex-skills-upstream-report:" in makefile
 
 
 @pytest.mark.skipif(

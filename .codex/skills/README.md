@@ -127,9 +127,53 @@ same `make verify` contract used locally, reproduces the clean immutable PIN, an
 runs dependency auditing. The single `.woodpecker.yml` workflow preserves the
 observed aggregate contexts `ci/woodpecker/pr/woodpecker` and
 `ci/woodpecker/push/woodpecker`. Latest CPP main is a different question: the
-temporary `codex-skills-currency` lane runs only for explicit `manual` or `cron`
-events, after no required step. Issue #207 owns the structured drift report and
-the actual schedule rollout; event filters in YAML do not configure a cron job.
+`codex-skills-upstream-report` lane runs only for an explicit `manual` event or
+the named `codex-skills-upstream-report` cron event, after no required step.
+Woodpecker resolves a directory of workflow files before `.woodpecker.yml` and
+reports each file as its own forge status, so this event-isolated lane stays in
+the existing root workflow rather than replacing the protected aggregate
+contexts with a new multi-workflow layout.
+
+### Latest-upstream report
+
+The CI lane resolves CPP `refs/heads/main` once through the fixed public
+repository URL, validates the result as one 40-character commit, and fetches and
+checks out that exact commit detached. It then runs:
+
+```bash
+make codex-skills-upstream-report CPP_ROOT=/tmp/claude-power-pack-current \
+  CPP_REF=<resolved-commit>
+```
+
+The command validates the target origin, commit, clean worktree, and consumed
+bytes against immutable Git objects. It also proves that the current CxPP
+overlay, PIN, manifest, package inventory, and adopted payload bytes belong to
+the reported CxPP commit. It never calls the refresh, manifest-write, plugin
+sync, or issue APIs.
+
+A complete report exits zero whether its `status` is `current` or `drift`.
+Resolution, provenance, adaptation, current-baseline, or incomplete-report
+failures exit nonzero and emit no success JSON. The version-1 canonical JSON
+records the UTC timestamp; CxPP commit/tree; current PIN; target CPP commit,
+repository, source tree, and `codex/skills` tree; overlay, manifest, and adapted
+payload digests; sorted added/removed/changed paths; excluded-family matches;
+native-name collisions; and new skills without usable plugin destinations.
+Those omissions are adoption work for issue #196, not claims that the source was
+adopted. `REPORT_SHA256` digests the exact compact JSON on the `REPORT_JSON`
+line, so a reviewer can independently recompute it.
+
+The JSON and digest are retained as Woodpecker step output, the accepted
+artifact-equivalent for #207. That retention is deliberately bounded: this
+repository configures no archive duration, Woodpecker performs no automatic
+archive or backup, and an administrator can purge pipeline logs. Evidence must
+therefore record the pipeline/step locator and the server's observed retention
+boundary; it must not claim indefinite storage.
+
+The YAML event filter does not create a schedule. After the reviewed change is
+merged, the coordinator creates and reads back one enabled Woodpecker cron named
+`codex-skills-upstream-report` on `main` at `@daily`, then records one manual run
+and one cron-context run with their exact CxPP/CPP commits, context, JSON, digest,
+and log locator. Repository CI settings and this proof remain coordinator-owned.
 
 Before migration on 2026-09-07, repository `cooneycw/codex-power-pack` (ID
 1178797075) reported no classic protection for `main` and no repository rulesets.
