@@ -54,14 +54,20 @@ steps:
     when:
       - event: [push, pull_request]
 
-  # Temporary latest-upstream visibility (#195). Manual/cron triggering stays
-  # separate from required PR/push integrity; #207 owns the structured report
-  # and actual schedule rollout.
-  codex-skills-currency:
+  # Complete upstream drift is advisory evidence, not a failed integrity gate.
+  # The named cron itself is configured separately in Woodpecker repository
+  # settings; this filter cannot create or schedule it.
+  codex-skills-upstream-report:
     image: python:3.11-alpine
     commands:
       - apk add --no-cache git make
-      - git clone --depth=1 https://github.com/cooneycw/claude-power-pack.git /tmp/claude-power-pack-current
-      - make codex-skills-currency-check CPP_ROOT=/tmp/claude-power-pack-current
+      - CPP_REF="$(python3 scripts/codex_skills_sync.py --latest-ref)"
+      - git init /tmp/claude-power-pack-current
+      - git -C /tmp/claude-power-pack-current remote add origin https://github.com/cooneycw/claude-power-pack.git
+      - git -C /tmp/claude-power-pack-current fetch --depth=1 origin "$CPP_REF"
+      - git -C /tmp/claude-power-pack-current checkout --detach "$CPP_REF"
+      - make codex-skills-upstream-report CPP_ROOT=/tmp/claude-power-pack-current CPP_REF="$CPP_REF"
     when:
-      - event: [manual, cron]
+      - event: manual
+      - event: cron
+        cron: codex-skills-upstream-report

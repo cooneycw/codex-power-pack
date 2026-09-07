@@ -1,6 +1,6 @@
 .PHONY: test lint format typecheck verify build update_docs clean help secret-scan dep-audit \
 	codex-skills codex-skills-check codex-skills-refresh codex-skills-currency-check harness-lint \
-	codex-skills-pin-check project-next-check project-next-sync skill-contract-lint skill-eval-check skill-eval-live \
+	codex-skills-pin-check codex-skills-upstream-report project-next-check project-next-sync skill-contract-lint skill-eval-check skill-eval-live \
 	release-validate
 
 # claude-power-pack checkout the generated Codex skills are pulled from (codex-power-pack#75).
@@ -70,6 +70,12 @@ codex-skills-refresh:
 codex-skills-currency-check:
 	@python3 scripts/codex_skills_sync.py --source-check --cpp-root "$(CPP_ROOT)"
 
+# Emit canonical JSON + digest for one validated immutable CPP ref. Complete drift
+# is successful reporting; resolution/provenance/adaptation failures are errors.
+codex-skills-upstream-report:
+	@test -n "$(CPP_REF)" || (echo "CPP_REF is required" >&2; exit 2)
+	@python3 scripts/codex_skills_sync.py --source-report --cpp-root "$(CPP_ROOT)" --ref "$(CPP_REF)"
+
 # Reproduce the adopted payload from the exact clean immutable source recorded in PIN.
 codex-skills-pin-check:
 	@python3 scripts/codex_skills_sync.py --pin-check --cpp-root "$(CPP_ROOT)"
@@ -123,5 +129,6 @@ help:
 	@echo "  make codex-skills-refresh - Re-pull skills from a CPP checkout (CPP_ROOT=, CPP_REF=)"
 	@echo "  make codex-skills-pin-check - Verify exact pinned CPP source reproduction (CPP_ROOT=)"
 	@echo "  make codex-skills-currency-check - Compare the vendor snapshot with CPP_ROOT"
+	@echo "  make codex-skills-upstream-report - Report immutable latest-source drift (CPP_ROOT=, CPP_REF=)"
 	@echo ""
 	@echo "  make clean       - Remove build artifacts"
