@@ -1,0 +1,700 @@
+{
+  "contract_version": "1.0",
+  "tracking_issue": 197,
+  "state_vocabulary": [
+    "queued",
+    "read",
+    "accepted",
+    "implementing",
+    "pr_open",
+    "held",
+    "completed",
+    "cancelled"
+  ],
+  "transition_authority": {
+    "queued": "current_coordinator_generation",
+    "read": "assigned_worker_generation",
+    "accepted": "assigned_worker_generation",
+    "implementing": "assigned_worker_generation_with_current_gate",
+    "pr_open": "assigned_worker_generation",
+    "held": "current_coordinator_generation",
+    "completed": "current_coordinator_generation",
+    "cancelled": "current_coordinator_generation"
+  },
+  "local_action_suppression": {
+    "authorities": ["assigned_worker_generation", "current_coordinator_generation"],
+    "reasons": [
+      "gate_mismatch",
+      "ownership_unknown",
+      "prerequisite_failed",
+      "coordinator_unavailable"
+    ],
+    "changes_authoritative_assignment_state": false,
+    "durable_hold_authority": "current_coordinator_generation",
+    "durable_release_authority": "current_coordinator_generation"
+  },
+  "provenance": {
+    "levels": ["transport_observed", "registry_bound_local", "payload_only"],
+    "payload_only_may_transition": false,
+    "queue_acceptance_proves": "enqueued_only",
+    "same_user_mailbox_is_cryptographic_authentication": false
+  },
+  "scenarios": [
+    {
+      "id": "NW-001",
+      "title": "One coordinator and three workers use native thread identities",
+      "evidence_status": "future_required_unproved",
+      "covers": ["three_worker_identity", "mutable_labels_rejected"],
+      "states_exercised": [],
+      "given": [
+        "one current coordinator generation",
+        "three independently launched Codex threads with unique UUIDs",
+        "terminal and tmux labels may change"
+      ],
+      "events": [],
+      "expected": {
+        "final_state": null,
+        "assertions": [
+          "roles remain bound to thread UUID plus owner generation",
+          "no Claude session ID, terminal label, or shared GitHub author is native identity",
+          "fixture presence and registration do not claim the completed live proof owned by issue 203"
+        ]
+      }
+    },
+    {
+      "id": "NW-002",
+      "title": "Worker-first and coordinator-first registration converge",
+      "evidence_status": "contract_fixture",
+      "covers": ["worker_first_registration", "coordinator_first_registration"],
+      "states_exercised": [],
+      "given": ["an empty wave namespace", "atomic role ownership records"],
+      "events": [
+        {
+          "event_id": "evt-nw-002-01",
+          "kind": "role.registered",
+          "actor_role": "worker-B",
+          "actor_generation": "worker-b-g1",
+          "assignment_id": null,
+          "assignment_revision": null,
+          "policy_revision": 2,
+          "disposition": "applied"
+        },
+        {
+          "event_id": "evt-nw-002-02",
+          "kind": "role.registered",
+          "actor_role": "coordinator",
+          "actor_generation": "coord-g1",
+          "assignment_id": null,
+          "assignment_revision": null,
+          "policy_revision": 2,
+          "disposition": "applied"
+        }
+      ],
+      "expected": {
+        "final_state": null,
+        "assertions": [
+          "registration order does not change the final owner bindings",
+          "contact readiness remains separate from process liveness"
+        ]
+      }
+    },
+    {
+      "id": "NW-003",
+      "title": "Live conflict refuses and verified-dead replacement fences",
+      "evidence_status": "contract_fixture",
+      "covers": ["live_owner_conflict", "stale_owner_replacement", "unknown_liveness_fails_closed"],
+      "states_exercised": [],
+      "given": ["worker-B is owned by worker-b-g1", "PID reuse is possible"],
+      "events": [
+        {
+          "event_id": "evt-nw-003-01",
+          "kind": "role.claim_attempted",
+          "actor_role": "worker-B",
+          "actor_generation": "worker-b-g2",
+          "assignment_id": null,
+          "assignment_revision": null,
+          "policy_revision": 2,
+          "disposition": "rejected",
+          "reason": "current_owner_alive"
+        },
+        {
+          "event_id": "evt-nw-003-02",
+          "kind": "role.claim_attempted",
+          "actor_role": "worker-B",
+          "actor_generation": "worker-b-g2",
+          "assignment_id": null,
+          "assignment_revision": null,
+          "policy_revision": 2,
+          "disposition": "rejected",
+          "reason": "liveness_unknown"
+        },
+        {
+          "event_id": "evt-nw-003-03",
+          "kind": "role.owner_replaced",
+          "actor_role": "coordinator",
+          "actor_generation": "coord-g1",
+          "assignment_id": null,
+          "assignment_revision": null,
+          "policy_revision": 2,
+          "disposition": "applied",
+          "reason": "boot_pid_start_evidence_proves_old_generation_dead"
+        }
+      ],
+      "expected": {
+        "final_state": null,
+        "assertions": [
+          "a timeout alone never authorizes replacement",
+          "worker-b-g1 is fenced before worker-b-g2 gains write authority"
+        ]
+      }
+    },
+    {
+      "id": "NW-004",
+      "title": "Queue acceptance without read remains queued",
+      "evidence_status": "contract_fixture",
+      "covers": ["queue_not_read", "readiness_not_liveness"],
+      "states_exercised": ["queued"],
+      "given": ["assignment a-004 was appended before wake", "the queue command returns success"],
+      "events": [
+        {
+          "event_id": "evt-nw-004-01",
+          "kind": "assignment.queued",
+          "actor_role": "coordinator",
+          "actor_generation": "coord-g1",
+          "assignment_id": "a-004",
+          "assignment_revision": 1,
+          "policy_revision": 2,
+          "disposition": "applied"
+        },
+        {
+          "event_id": "evt-nw-004-02",
+          "kind": "transport.accepted",
+          "actor_role": "coordinator",
+          "actor_generation": "coord-g1",
+          "assignment_id": "a-004",
+          "assignment_revision": 1,
+          "policy_revision": 2,
+          "disposition": "observed"
+        }
+      ],
+      "expected": {
+        "final_state": "queued",
+        "assertions": ["no read or acceptance is inferred", "timeout changes readiness only"]
+      }
+    },
+    {
+      "id": "NW-005",
+      "title": "Read and acceptance use distinct correlated events",
+      "evidence_status": "contract_fixture",
+      "covers": ["read_vs_accept", "correlated_acknowledgements"],
+      "states_exercised": ["queued", "read", "accepted"],
+      "given": ["assignment a-005 targets worker-b-g1 at revision 1"],
+      "events": [
+        {
+          "event_id": "evt-nw-005-01",
+          "kind": "assignment.queued",
+          "actor_role": "coordinator",
+          "actor_generation": "coord-g1",
+          "assignment_id": "a-005",
+          "assignment_revision": 1,
+          "policy_revision": 2,
+          "disposition": "applied"
+        },
+        {
+          "event_id": "evt-nw-005-02",
+          "kind": "assignment.read",
+          "actor_role": "worker-B",
+          "actor_generation": "worker-b-g1",
+          "assignment_id": "a-005",
+          "assignment_revision": 1,
+          "policy_revision": 2,
+          "correlation_id": "evt-nw-005-01",
+          "disposition": "applied"
+        },
+        {
+          "event_id": "evt-nw-005-03",
+          "kind": "assignment.accepted",
+          "actor_role": "worker-B",
+          "actor_generation": "worker-b-g1",
+          "assignment_id": "a-005",
+          "assignment_revision": 1,
+          "policy_revision": 2,
+          "correlation_id": "evt-nw-005-01",
+          "disposition": "applied"
+        }
+      ],
+      "expected": {
+        "final_state": "accepted",
+        "assertions": ["read precedes acceptance", "both acknowledgements cite the assignment event"]
+      }
+    },
+    {
+      "id": "NW-006",
+      "title": "Payload sender assertion has no transition authority",
+      "evidence_status": "contract_fixture",
+      "covers": ["payload_sender_untrusted", "provenance_required"],
+      "states_exercised": ["accepted"],
+      "given": ["assignment a-006 is accepted", "a payload says it is from the coordinator"],
+      "events": [
+        {
+          "event_id": "evt-nw-006-01",
+          "kind": "gate.approved",
+          "actor_role": "coordinator",
+          "actor_generation": "coord-g1",
+          "assignment_id": "a-006",
+          "assignment_revision": 1,
+          "worker_generation": "worker-b-g1",
+          "policy_revision": 2,
+          "plan_digest": "sha256:plan-006",
+          "provenance": "payload_only",
+          "disposition": "rejected",
+          "reason": "actor_generation_not_registry_bound"
+        }
+      ],
+      "expected": {
+        "final_state": "accepted",
+        "assertions": ["payload text cannot approve implementation"]
+      }
+    },
+    {
+      "id": "NW-007",
+      "title": "Exact current gate authorizes implementation",
+      "evidence_status": "contract_fixture",
+      "covers": ["gate_exact_binding", "plan_digest_binding"],
+      "states_exercised": ["accepted", "implementing"],
+      "given": ["assignment a-007 revision 2 is accepted by worker-b-g2"],
+      "events": [
+        {
+          "event_id": "evt-nw-007-01",
+          "kind": "gate.approved",
+          "actor_role": "coordinator",
+          "actor_generation": "coord-g2",
+          "assignment_id": "a-007",
+          "assignment_revision": 2,
+          "worker_generation": "worker-b-g2",
+          "policy_revision": 3,
+          "plan_digest": "sha256:plan-007-current",
+          "provenance": "registry_bound_local",
+          "disposition": "applied"
+        },
+        {
+          "event_id": "evt-nw-007-02",
+          "kind": "assignment.implementing",
+          "actor_role": "worker-B",
+          "actor_generation": "worker-b-g2",
+          "assignment_id": "a-007",
+          "assignment_revision": 2,
+          "policy_revision": 3,
+          "plan_digest": "sha256:plan-007-current",
+          "correlation_id": "evt-nw-007-01",
+          "disposition": "applied"
+        }
+      ],
+      "expected": {
+        "final_state": "implementing",
+        "assertions": ["all assignment, generation, policy, and plan bindings match"]
+      }
+    },
+    {
+      "id": "NW-008",
+      "title": "Old assignment, worker, and coordinator gates are fenced",
+      "evidence_status": "contract_fixture",
+      "covers": ["stale_assignment", "stale_worker_generation", "stale_coordinator_generation"],
+      "states_exercised": ["accepted"],
+      "given": ["a-008 revision 2 belongs to worker-b-g2 and coord-g2"],
+      "events": [
+        {
+          "event_id": "evt-nw-008-01",
+          "kind": "gate.approved",
+          "actor_role": "coordinator",
+          "actor_generation": "coord-g1",
+          "assignment_id": "a-008-old",
+          "assignment_revision": 1,
+          "worker_generation": "worker-b-g1",
+          "policy_revision": 2,
+          "plan_digest": "sha256:plan-008-old",
+          "provenance": "registry_bound_local",
+          "disposition": "rejected",
+          "reason": "stale_assignment_and_generations"
+        }
+      ],
+      "expected": {
+        "final_state": "accepted",
+        "assertions": ["old committed events remain auditable", "stale processes cannot append fresh authority"]
+      }
+    },
+    {
+      "id": "NW-009",
+      "title": "Policy revision requires rebrief before action",
+      "evidence_status": "contract_fixture",
+      "covers": ["stale_policy", "local_action_suppression"],
+      "states_exercised": ["accepted"],
+      "given": ["assignment a-009 was accepted under policy 2", "the wave policy is now 3"],
+      "events": [
+        {
+          "event_id": "evt-nw-009-01",
+          "kind": "worker.action_suppressed",
+          "actor_role": "worker-B",
+          "actor_generation": "worker-b-g1",
+          "assignment_id": "a-009",
+          "assignment_revision": 1,
+          "policy_revision": 2,
+          "disposition": "observed",
+          "reason": "policy_revision_stale"
+        }
+      ],
+      "expected": {
+        "final_state": "accepted",
+        "assertions": ["worker stops without waiting for coordinator", "only coordinator may append or release a durable hold"]
+      }
+    },
+    {
+      "id": "NW-010",
+      "title": "Duplicate and reordered events apply once without regression",
+      "evidence_status": "contract_fixture",
+      "covers": ["event_replay", "event_reordering", "terminal_no_regression"],
+      "states_exercised": ["pr_open", "completed"],
+      "given": ["assignment a-010 completed from exact PR head head-010"],
+      "events": [
+        {
+          "event_id": "evt-nw-010-01",
+          "kind": "assignment.completed",
+          "actor_role": "coordinator",
+          "actor_generation": "coord-g1",
+          "assignment_id": "a-010",
+          "assignment_revision": 1,
+          "policy_revision": 2,
+          "pr_head": "head-010",
+          "payload_digest": "sha256:event-payload-010",
+          "disposition": "applied"
+        },
+        {
+          "event_id": "evt-nw-010-01",
+          "replay_of": "evt-nw-010-01",
+          "kind": "assignment.completed",
+          "actor_role": "coordinator",
+          "actor_generation": "coord-g1",
+          "assignment_id": "a-010",
+          "assignment_revision": 1,
+          "policy_revision": 2,
+          "pr_head": "head-010",
+          "payload_digest": "sha256:event-payload-010",
+          "disposition": "idempotent"
+        },
+        {
+          "event_id": "evt-nw-010-03",
+          "kind": "assignment.read",
+          "actor_role": "worker-B",
+          "actor_generation": "worker-b-g1",
+          "assignment_id": "a-010",
+          "assignment_revision": 1,
+          "policy_revision": 2,
+          "disposition": "rejected",
+          "reason": "terminal_state_cannot_regress"
+        }
+      ],
+      "expected": {
+        "final_state": "completed",
+        "assertions": ["completion applies once", "late read does not regress state"]
+      }
+    },
+    {
+      "id": "NW-011",
+      "title": "Compaction reconstructs durable state without new identity",
+      "evidence_status": "contract_fixture",
+      "covers": ["compaction_recovery", "durable_reconstruction"],
+      "states_exercised": ["held"],
+      "given": ["thread t-011 and worker-b-g1 remain running", "the transcript is compacted", "a coordinator hold is committed"],
+      "events": [
+        {
+          "event_id": "evt-nw-011-01",
+          "kind": "assignment.held",
+          "actor_role": "coordinator",
+          "actor_generation": "coord-g1",
+          "assignment_id": "a-011",
+          "assignment_revision": 1,
+          "policy_revision": 2,
+          "resume_state": "implementing",
+          "disposition": "applied",
+          "reason": "coordinator_pause"
+        }
+      ],
+      "expected": {
+        "final_state": "held",
+        "assertions": ["thread and owner generation are unchanged", "state is rebuilt from durable events rather than conversational memory"]
+      }
+    },
+    {
+      "id": "NW-012",
+      "title": "Process restart rebinds the same thread to a new generation",
+      "evidence_status": "contract_fixture",
+      "covers": ["owner_restart", "assignment_rebind", "old_generation_ack_rejected"],
+      "states_exercised": ["accepted", "held"],
+      "given": ["thread t-012 resumes as worker-b-g2", "worker-b-g1 was fenced"],
+      "events": [
+        {
+          "event_id": "evt-nw-012-01",
+          "kind": "assignment.rebound",
+          "actor_role": "coordinator",
+          "actor_generation": "coord-g2",
+          "assignment_id": "a-012",
+          "assignment_revision": 2,
+          "worker_generation": "worker-b-g2",
+          "policy_revision": 2,
+          "disposition": "applied"
+        },
+        {
+          "event_id": "evt-nw-012-02",
+          "kind": "assignment.accepted",
+          "actor_role": "worker-B",
+          "actor_generation": "worker-b-g1",
+          "assignment_id": "a-012",
+          "assignment_revision": 1,
+          "policy_revision": 2,
+          "disposition": "rejected",
+          "reason": "old_worker_generation"
+        }
+      ],
+      "expected": {
+        "final_state": "held",
+        "assertions": ["thread identity is stable", "effects are reconciled before coordinator releases the rebound assignment"]
+      }
+    },
+    {
+      "id": "NW-013",
+      "title": "Cancellation is terminal and delayed approval cannot revive it",
+      "evidence_status": "contract_fixture",
+      "covers": ["cancellation", "delayed_gate", "fresh_assignment_after_cancel"],
+      "states_exercised": ["accepted", "cancelled"],
+      "given": ["assignment a-013 is accepted"],
+      "events": [
+        {
+          "event_id": "evt-nw-013-01",
+          "kind": "assignment.cancelled",
+          "actor_role": "coordinator",
+          "actor_generation": "coord-g1",
+          "assignment_id": "a-013",
+          "assignment_revision": 1,
+          "policy_revision": 2,
+          "disposition": "applied"
+        },
+        {
+          "event_id": "evt-nw-013-02",
+          "kind": "gate.approved",
+          "actor_role": "coordinator",
+          "actor_generation": "coord-g1",
+          "assignment_id": "a-013",
+          "assignment_revision": 1,
+          "worker_generation": "worker-b-g1",
+          "policy_revision": 2,
+          "plan_digest": "sha256:plan-013",
+          "provenance": "registry_bound_local",
+          "disposition": "rejected",
+          "reason": "assignment_cancelled"
+        }
+      ],
+      "expected": {
+        "final_state": "cancelled",
+        "assertions": ["only a new assignment ID can restart issue work"]
+      }
+    },
+    {
+      "id": "NW-014",
+      "title": "PR head change invalidates exact-head clearance",
+      "evidence_status": "contract_fixture",
+      "covers": ["pr_head_change", "exact_head_ci", "coordinator_hold_release"],
+      "states_exercised": ["implementing", "pr_open", "held"],
+      "given": ["PR 314 was reviewed at head-old", "the branch now points at head-new"],
+      "events": [
+        {
+          "event_id": "evt-nw-014-01",
+          "kind": "assignment.pr_open",
+          "actor_role": "worker-B",
+          "actor_generation": "worker-b-g1",
+          "assignment_id": "a-014",
+          "assignment_revision": 1,
+          "policy_revision": 2,
+          "pr_base": "main-base",
+          "pr_head": "head-new",
+          "disposition": "applied"
+        },
+        {
+          "event_id": "evt-nw-014-02",
+          "kind": "merge.cleared",
+          "actor_role": "coordinator",
+          "actor_generation": "coord-g1",
+          "assignment_id": "a-014",
+          "assignment_revision": 1,
+          "policy_revision": 2,
+          "pr_head": "head-old",
+          "disposition": "rejected",
+          "reason": "pr_head_mismatch"
+        },
+        {
+          "event_id": "evt-nw-014-03",
+          "kind": "assignment.held",
+          "actor_role": "coordinator",
+          "actor_generation": "coord-g1",
+          "assignment_id": "a-014",
+          "assignment_revision": 1,
+          "policy_revision": 2,
+          "resume_state": "pr_open",
+          "disposition": "applied",
+          "reason": "renew_review_and_ci_for_head_new"
+        }
+      ],
+      "expected": {
+        "final_state": "held",
+        "assertions": ["old review and CI evidence cannot authorize head-new"]
+      }
+    },
+    {
+      "id": "NW-015",
+      "title": "Remote merge succeeds before completion event is recorded",
+      "evidence_status": "contract_fixture",
+      "covers": ["merge_crash_reconcile", "completion_replay", "external_effect_not_exactly_once"],
+      "states_exercised": ["pr_open", "completed"],
+      "given": ["authorized PR head head-015 merged remotely", "the coordinator crashed before appending completion"],
+      "events": [
+        {
+          "event_id": "evt-nw-015-01",
+          "kind": "external.merge_observed",
+          "actor_role": "coordinator",
+          "actor_generation": "coord-g2",
+          "assignment_id": "a-015",
+          "assignment_revision": 1,
+          "policy_revision": 2,
+          "pr_head": "head-015",
+          "merge_commit": "merge-015",
+          "disposition": "reconciled"
+        },
+        {
+          "event_id": "evt-nw-015-02",
+          "kind": "assignment.completed",
+          "actor_role": "coordinator",
+          "actor_generation": "coord-g2",
+          "assignment_id": "a-015",
+          "assignment_revision": 1,
+          "policy_revision": 2,
+          "pr_head": "head-015",
+          "correlation_id": "evt-nw-015-01",
+          "disposition": "applied"
+        }
+      ],
+      "expected": {
+        "final_state": "completed",
+        "assertions": ["recovery queries PR and merge commit before acting", "merge is not invoked a second time"]
+      }
+    },
+    {
+      "id": "NW-016",
+      "title": "Interrupted implementation reconciles branch and worktree effects",
+      "evidence_status": "contract_fixture",
+      "covers": ["interrupted_work_reconcile", "coordinator_unavailable", "ownership_unknown"],
+      "states_exercised": ["implementing", "held"],
+      "given": ["worker-b-g1 stopped after modifying its worktree", "worker-b-g2 resumes the same thread"],
+      "events": [
+        {
+          "event_id": "evt-nw-016-01",
+          "kind": "worker.action_suppressed",
+          "actor_role": "worker-B",
+          "actor_generation": "worker-b-g2",
+          "assignment_id": "a-016",
+          "assignment_revision": 1,
+          "policy_revision": 2,
+          "disposition": "observed",
+          "reason": "existing_effects_and_uncertain_ownership"
+        },
+        {
+          "event_id": "evt-nw-016-02",
+          "kind": "assignment.held",
+          "actor_role": "coordinator",
+          "actor_generation": "coord-g2",
+          "assignment_id": "a-016",
+          "assignment_revision": 1,
+          "policy_revision": 2,
+          "resume_state": "implementing",
+          "disposition": "applied",
+          "reason": "inspect_claim_branch_worktree_commits_and_dirt"
+        }
+      ],
+      "expected": {
+        "final_state": "held",
+        "assertions": ["the new process does not edit before reconciliation", "coordinator absence never forces unsafe continuation"]
+      }
+    },
+    {
+      "id": "NW-017",
+      "title": "Native capabilities do not inherit codex-auto restrictions",
+      "evidence_status": "contract_fixture",
+      "covers": ["native_capabilities", "driver_capability_separation", "runtime_snapshot"],
+      "states_exercised": ["queued"],
+      "given": ["worker-B declares a native gpt-5.6-sol runtime snapshot", "flow_driver is flow:auto"],
+      "events": [
+        {
+          "event_id": "evt-nw-017-01",
+          "kind": "assignment.queued",
+          "actor_role": "coordinator",
+          "actor_generation": "coord-g1",
+          "assignment_id": "a-017",
+          "assignment_revision": 1,
+          "worker_generation": "worker-b-g1",
+          "policy_revision": 2,
+          "capability_snapshot_id": "sha256:native-capabilities-017",
+          "flow_driver": "flow:auto",
+          "disposition": "applied"
+        }
+      ],
+      "expected": {
+        "final_state": "queued",
+        "assertions": [
+          "assignment requirements are checked against the native snapshot",
+          "Claude-led codex:auto web or deliverable fences are not copied into native capabilities"
+        ]
+      }
+    },
+    {
+      "id": "NW-018",
+      "title": "Same event ID with different canonical content is a conflict",
+      "evidence_status": "contract_fixture",
+      "covers": ["event_id_payload_conflict", "duplicate_identity_not_content_equivalence"],
+      "states_exercised": ["queued"],
+      "given": ["evt-nw-018-01 already queued assignment a-018 with payload digest A"],
+      "events": [
+        {
+          "event_id": "evt-nw-018-01",
+          "kind": "assignment.queued",
+          "actor_role": "coordinator",
+          "actor_generation": "coord-g1",
+          "assignment_id": "a-018",
+          "assignment_revision": 1,
+          "worker_generation": "worker-b-g1",
+          "policy_revision": 2,
+          "payload_digest": "sha256:event-payload-018-a",
+          "disposition": "applied"
+        },
+        {
+          "event_id": "evt-nw-018-01",
+          "conflict_with": "evt-nw-018-01",
+          "kind": "assignment.queued",
+          "actor_role": "coordinator",
+          "actor_generation": "coord-g1",
+          "assignment_id": "a-018",
+          "assignment_revision": 1,
+          "worker_generation": "worker-b-g1",
+          "policy_revision": 2,
+          "payload_digest": "sha256:event-payload-018-b",
+          "disposition": "rejected",
+          "reason": "event_id_payload_conflict"
+        }
+      ],
+      "expected": {
+        "final_state": "queued",
+        "assertions": [
+          "the original event remains authoritative",
+          "the conflicting retry is surfaced and cannot transition state"
+        ]
+      }
+    }
+  ]
+}

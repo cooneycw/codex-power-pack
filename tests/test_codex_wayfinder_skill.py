@@ -42,10 +42,10 @@ def test_native_and_packaged_payloads_match_with_explicit_metadata() -> None:
     assert "$codex-wayfinder" in metadata["interface"]["default_prompt"]
 
 
-def test_starter_map_has_one_safe_frontier_and_no_invented_decisions() -> None:
+def test_active_map_has_resolved_decisions_and_one_safe_frontier() -> None:
     map_payload = frontmatter(MAP_ROOT / "map.md")["wayfinder"]
-    assert map_payload["status"] == "proposed"
-    assert map_payload["destination_status"] == "proposed"
+    assert map_payload["status"] == "active"
+    assert map_payload["destination_status"] == "agreed"
 
     tickets: dict[str, tuple[dict[str, Any], str]] = {}
     for path in sorted((MAP_ROOT / "tickets").glob("*.md")):
@@ -59,8 +59,21 @@ def test_starter_map_has_one_safe_frontier_and_no_invented_decisions() -> None:
         "prove-communication-contract",
         "define-specification-handoff",
     }
-    assert all(payload["status"] == "open" for payload, _ in tickets.values())
-    assert all("Pending" in text.split("## Resolution", 1)[1] for _, text in tickets.values())
+    assert {
+        ticket_id: payload["status"]
+        for ticket_id, (payload, _) in tickets.items()
+    } == {
+        "choose-first-milestone": "closed",
+        "define-session-identity": "closed",
+        "prove-communication-contract": "open",
+        "define-specification-handoff": "open",
+    }
+    for ticket_id, (_, text) in tickets.items():
+        resolution = text.split("## Resolution", 1)[1]
+        if ticket_id in {"choose-first-milestone", "define-session-identity"}:
+            assert "Pending" not in resolution
+        else:
+            assert "Pending" in resolution
 
     path_to_id = {
         path.name: frontmatter(path)["wayfinder"]["id"]
@@ -74,15 +87,18 @@ def test_starter_map_has_one_safe_frontier_and_no_invented_decisions() -> None:
         ticket_id
         for ticket_id, (payload, _) in tickets.items()
         if payload["status"] == "open"
-        and not blockers[ticket_id]
+        and all(tickets[blocker][0]["status"] == "closed" for blocker in blockers[ticket_id])
         and payload["claim"] == {"owner": None, "claimed_at": None}
     ]
-    assert frontier == ["choose-first-milestone"]
+    assert frontier == ["prove-communication-contract"]
 
     map_text = (MAP_ROOT / "map.md").read_text(encoding="utf-8")
     decisions = map_text.split("## Decisions so far", 1)[1].split("## Not yet specified", 1)[0]
-    assert decisions.strip() == "None yet."
-    assert "No first-milestone preference has been selected" in map_text
+    assert "tickets/01-choose-first-milestone.md" in decisions
+    assert "tickets/02-define-session-identity.md" in decisions
+    assert "The user selected native Codex waves in CxPP" in map_text
+    assert "The end-to-end acceptance matrix" in map_text
+    assert "Implementing or deploying the wave port" in map_text
 
 
 def test_starter_ticket_dependencies_are_complete_and_acyclic() -> None:
