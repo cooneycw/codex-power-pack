@@ -62,6 +62,25 @@ def test_flow_doctor_checks_the_installed_plugin_helper_family() -> None:
     assert "Flow helper(s) not at ~/.claude/scripts/" not in text
 
 
+def test_flow_docs_do_not_publish_deferred_claude_runtime_contracts() -> None:
+    flow_auto = (REPO_ROOT / ".codex/skills/flow-auto/reference.md").read_text(
+        encoding="utf-8"
+    )
+    flow_help = (REPO_ROOT / ".codex/skills/flow-help/reference.md").read_text(
+        encoding="utf-8"
+    )
+    flow_eli5 = (REPO_ROOT / ".codex/skills/flow-eli5/reference.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "/codex:auto" not in flow_auto
+    assert "/qwen:auto" not in flow_auto
+    assert "/gemma:auto" not in flow_auto
+    assert "/plugin" not in flow_help
+    assert ".claude/security.yml" not in flow_help
+    assert "/plugin" not in flow_eli5
+
+
 def test_ci_separates_exact_pin_integrity_from_latest_upstream_reporting() -> None:
     pipeline = (REPO_ROOT / ".woodpecker.yml").read_text(encoding="utf-8")
     makefile = (REPO_ROOT / "Makefile").read_text(encoding="utf-8")

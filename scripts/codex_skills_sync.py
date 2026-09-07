@@ -895,6 +895,7 @@ def _adapt_flow_text(skill_dir: Path, source_file: Path, text: str) -> str:
 
     text = text.replace(_GENERIC_WORKTREE_ADAPTATION, _CXPP_WORKTREE_ADAPTATION)
     text = text.replace(".claude/friction.jsonl", ".codex/friction.jsonl")
+    text = text.replace(".claude/security.yml", ".codex/security.yml")
 
     for helper in sorted(FLOW_RUNTIME_HELPERS):
         helper_owner = next(
@@ -1188,31 +1189,64 @@ def _adapt_deferred_native_boundaries(
     """Keep unshipped Wave/spec capabilities out of the published native surface."""
     if skill_dir.name == "flow-auto" and source_file.name == "reference.md":
         capability = re.compile(
-            r"```bash\n(?:<SKILL_DIR>/scripts/|~/.claude/scripts/)flow-driver-capability\.sh list.*?\n"
-            r"(?:<SKILL_DIR>/scripts/|~/.claude/scripts/)flow-driver-capability\.sh show flow:auto\n"
-            r"```\n\nIn a (?:`\$flow-wave`|`/flow-wave`), register with "
-            r"`--driver flow:auto` so the roster records which\n"
-            r"driver this role is actually running\.\n",
+            r"## Capability contract \(issue #783\)\n.*?(?=\n## Instructions\n)",
             re.DOTALL,
         )
         text, count = capability.subn(
-            "Native wave capability discovery and registration remain explicit inputs to "
-            "#200/#201/#202; this skill does not advertise those unshipped packages.\n",
+            "## Native capability boundary\n\n"
+            "CPP delegated-driver capability identities are harness-specific and are not a "
+            "native CxPP runtime contract. Native capability discovery, registration, and "
+            "packaging remain explicit inputs to #200/#201/#202; this skill does not advertise "
+            "those unshipped packages. Capability does not bypass the Step 3 necessity gate.\n",
             text,
             count=1,
         )
+        if count != 1:
+            raise IntegrityError("flow-auto source no longer has the reviewed capability section")
         text = text.replace(
             "<SKILL_DIR>/scripts/flow-ci-status.sh <merge-sha> --path /path/to/main/repo --wait",
             "<SKILL_DIR>/scripts/flow-ci-status.sh <merge-sha> --path /path/to/main/repo --repo owner/name --wait",
         )
 
     if skill_dir.name == "flow-help" and source_file.name == "reference.md":
+        plugin_cache = re.compile(
+            r"- \*\*Using a retired CPP plugin cache\*\* \(#662\):.*?"
+            r"`\$flow-repair` remains compatible with the cache during migration\.\n",
+            re.DOTALL,
+        )
+        text, count = plugin_cache.subn(
+            "- **Migrating from a retired CPP plugin cache** (#662): remove the old Claude "
+            "installation through its own plugin manager, then use `$cxpp-init` or "
+            "`$cxpp-update` to install the native CxPP bundle.\n",
+            text,
+            count=1,
+        )
+        if count != 1:
+            raise IntegrityError("flow-help source no longer has the reviewed cache migration")
         text = re.sub(
             r"^\| `(?:\$|/)flow-(?:register|wave)[^\n]*\n",
             "",
             text,
             flags=re.MULTILINE,
         )
+
+    if skill_dir.name == "flow-eli5" and source_file.name == "reference.md":
+        standalone_install = re.compile(
+            r"This gate also ships standalone as \*\*eli5-gate\*\*\n.*?"
+            r"issues for the gate itself belong there, not in CPP\.\n",
+            re.DOTALL,
+        )
+        text, count = standalone_install.subn(
+            "This gate also ships standalone as **eli5-gate** "
+            "(https://github.com/cooneycw/eli5-gate). Claude users should follow that "
+            "project's installation guidance; CxPP supplies the native `$flow-eli5` package. "
+            "That repository remains canonical for the gate core, and improvement issues for "
+            "the core belong there.\n",
+            text,
+            count=1,
+        )
+        if count != 1:
+            raise IntegrityError("flow-eli5 source no longer has the reviewed standalone install")
 
     if skill_dir.name == "flow-finish" and source_file.name == "reference.md":
         graduation = re.compile(
