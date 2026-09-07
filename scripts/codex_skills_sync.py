@@ -2147,7 +2147,7 @@ def _load_adoption_policy(*, required: bool = True) -> AdoptionPolicy | None:
             if hashlib.sha256(content).hexdigest() != digest:
                 raise IntegrityError(f"retention overlay digest mismatch: {path}")
             mode_value = overlay_record["mode"]
-            if mode_value not in {"100644", "100755"}:
+            if not isinstance(mode_value, str) or mode_value not in {"100644", "100755"}:
                 raise IntegrityError(f"retention overlay has unsupported mode: {path}")
             mode = _tracked_file_mode(head, overlay_path, label=f"retention overlay for {path}")
             if mode != (0o755 if mode_value == "100755" else 0o644):
