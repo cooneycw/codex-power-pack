@@ -11,7 +11,7 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from pathlib import PurePosixPath
 from typing import TypeAlias
@@ -32,11 +32,18 @@ def _require_digest(value: str, label: str = "digest") -> None:
 
 
 def _require_utc(value: datetime, label: str) -> None:
-    if value.tzinfo is None or value.utcoffset() is None:
-        raise ValueError(f"{label} must be timezone-aware")
+    if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() != timedelta(0):
+        raise ValueError(f"{label} must be an aware UTC datetime")
+
+
+def _require_int(value: object, label: str, *, minimum: int = 0) -> None:
+    if isinstance(value, bool) or not isinstance(value, int) or value < minimum:
+        raise ValueError(f"{label} must be an integer >= {minimum}")
 
 
 def _require_canonical_absolute_path(value: str, label: str) -> None:
+    if "\0" in value or value.startswith("//"):
+        raise ValueError(f"{label} contains an ambiguous path spelling")
     path = PurePosixPath(value)
     if not path.is_absolute() or str(path) != value or ".." in path.parts:
         raise ValueError(f"{label} must be a canonical absolute POSIX path")
@@ -129,8 +136,7 @@ class AssignmentRef:
     def __post_init__(self) -> None:
         if not isinstance(self.assignment_id, UUID):
             raise TypeError("assignment_id requires UUID")
-        if self.revision < 1:
-            raise ValueError("assignment revision must be positive")
+        _require_int(self.revision, "assignment revision", minimum=1)
         _require_digest(self.digest, "assignment digest")
 
 
@@ -254,10 +260,10 @@ class ProcessCoordinates:
         _require_name(self.host_instance_id, "host_instance_id")
         if not isinstance(self.boot_id, UUID):
             raise TypeError("boot_id requires UUID")
+        _require_int(self.pid, "pid", minimum=2)
         if self.pid <= 1:
             raise ValueError("pid must identify a host-observable non-PID1 process")
-        if self.start_ticks < 0:
-            raise ValueError("start_ticks must be non-negative")
+        _require_int(self.start_ticks, "start_ticks")
 
 
 @dataclass(frozen=True, slots=True)
@@ -268,8 +274,7 @@ class ProcessObservation:
     provenance: str
 
     def __post_init__(self) -> None:
-        if self.observed_monotonic_ns < 0:
-            raise ValueError("observed_monotonic_ns must be non-negative")
+        _require_int(self.observed_monotonic_ns, "observed_monotonic_ns")
         if not self.provenance.strip():
             raise ValueError("process observation provenance is required")
 
@@ -291,6 +296,7 @@ class AcceptedProcessEvidence:
     revalidated_monotonic_ns: int
 
     def __post_init__(self) -> None:
+        _require_int(self.revalidated_monotonic_ns, "revalidated_monotonic_ns")
         if self.revalidated_monotonic_ns < self.observation.observed_monotonic_ns:
             raise ValueError("accepted evidence cannot predate its observation")
 
@@ -343,12 +349,13 @@ class CapabilitySnapshot:
     delivery_mechanisms: tuple[str, ...]
     wake_mechanisms: tuple[str, ...]
     web_mode: str
+    captured_at: datetime
     evidence: tuple[CapabilityEvidence, ...]
     snapshot_id: CapabilitySnapshotId
 
     def __post_init__(self) -> None:
-        if self.schema_version < 1:
-            raise ValueError("capability schema_version must be positive")
+        _require_int(self.schema_version, "capability schema_version", minimum=1)
+        _require_utc(self.captured_at, "capability captured_at")
         scalar_values = (
             self.cli_version,
             self.runtime_version,
@@ -360,6 +367,10 @@ class CapabilitySnapshot:
         )
         if any(not value.strip() for value in scalar_values):
             raise ValueError("capability scalar values must be non-empty")
+        if self.sandbox_mode not in {"read-only", "workspace-write", "danger-full-access"}:
+            raise ValueError("sandbox_mode is not a declared Codex security mode")
+        if self.approval_policy not in {"untrusted", "on-failure", "on-request", "never"}:
+            raise ValueError("approval_policy is not a declared Codex approval mode")
         for field_name in (
             "workspace_roots",
             "additional_writable_roots",
@@ -370,6 +381,8 @@ class CapabilitySnapshot:
             "wake_mechanisms",
         ):
             values = getattr(self, field_name)
+            if not isinstance(values, tuple) or any(not isinstance(item, str) or not item for item in values):
+                raise ValueError(f"{field_name} must be an immutable tuple of non-empty strings")
             if values != _canonical_tuple(values):
                 raise ValueError(f"{field_name} must be sorted and unique")
         canonical_evidence = tuple(
@@ -399,6 +412,7 @@ class CapabilitySnapshot:
         delivery_mechanisms: tuple[str, ...] = (),
         wake_mechanisms: tuple[str, ...] = (),
         web_mode: str,
+        captured_at: datetime,
         evidence: tuple[CapabilityEvidence, ...] = (),
     ) -> CapabilitySnapshot:
         canonical_evidence = tuple(
@@ -420,6 +434,7 @@ class CapabilitySnapshot:
             "delivery_mechanisms": _canonical_tuple(delivery_mechanisms),
             "wake_mechanisms": _canonical_tuple(wake_mechanisms),
             "web_mode": web_mode,
+            "captured_at": captured_at,
             "evidence": canonical_evidence,
         }
         payload = cls._digest_payload(values)
@@ -428,6 +443,9 @@ class CapabilitySnapshot:
     @staticmethod
     def _digest_payload(values: dict[str, object]) -> dict[str, object]:
         payload = dict(values)
+        captured_at = values["captured_at"]
+        assert isinstance(captured_at, datetime)
+        payload["captured_at"] = captured_at.isoformat().replace("+00:00", "Z")
         payload["evidence"] = [
             {"field": item.field.value, "evidence_class": item.evidence_class, "provenance": item.provenance}
             for item in values["evidence"]  # type: ignore[union-attr]
@@ -453,6 +471,7 @@ class CapabilitySnapshot:
                 "delivery_mechanisms",
                 "wake_mechanisms",
                 "web_mode",
+                "captured_at",
                 "evidence",
             )
         }
@@ -482,8 +501,9 @@ class CapabilityRequirements:
     digest: str
 
     def __post_init__(self) -> None:
-        if self.schema_version < 1:
-            raise ValueError("requirements schema_version must be positive")
+        _require_int(self.schema_version, "requirements schema_version", minimum=1)
+        if not isinstance(self.fields, tuple):
+            raise ValueError("capability requirements fields must be immutable")
         canonical = tuple(sorted(self.fields, key=lambda item: item.field.value))
         if self.fields != canonical or len({item.field for item in self.fields}) != len(self.fields):
             raise ValueError("capability requirements must be sorted with unique fields")
@@ -536,8 +556,8 @@ class RoleOwner:
     record_version: int
 
     def __post_init__(self) -> None:
-        if self.policy_revision < 1 or self.record_version < 1:
-            raise ValueError("owner policy and record versions must be positive")
+        _require_int(self.policy_revision, "owner policy revision", minimum=1)
+        _require_int(self.record_version, "owner record version", minimum=1)
 
 
 @dataclass(frozen=True, slots=True)
@@ -553,8 +573,11 @@ class StoredAssignment:
     acknowledged: bool
 
     def __post_init__(self) -> None:
-        if self.policy_revision < 1:
-            raise ValueError("assignment policy revision must be positive")
+        _require_int(self.policy_revision, "assignment policy revision", minimum=1)
+        if not isinstance(self.acknowledged, bool):
+            raise ValueError("assignment acknowledged must be boolean")
+        if not isinstance(self.required_evidence, tuple):
+            raise ValueError("required evidence references must be immutable")
         if self.required_evidence != tuple(sorted(self.required_evidence, key=lambda item: str(item.record_id))):
             raise ValueError("required evidence references must be canonical")
 
@@ -570,6 +593,10 @@ class ExpectedOwnerBindings:
     owner_record_version: int
     assignment: AssignmentRef | None = None
     claim_id: ClaimId | None = None
+
+    def __post_init__(self) -> None:
+        _require_int(self.policy_revision, "expected policy revision", minimum=1)
+        _require_int(self.owner_record_version, "expected owner record version", minimum=1)
 
 
 @dataclass(frozen=True, slots=True)
@@ -592,8 +619,9 @@ class WorktreeEvidence:
     provenance: str
 
     def __post_init__(self) -> None:
-        if self.observed_monotonic_ns < 0 or not self.provenance.strip():
-            raise ValueError("worktree evidence requires time and provenance")
+        _require_int(self.observed_monotonic_ns, "worktree observed_monotonic_ns")
+        if not self.provenance.strip():
+            raise ValueError("worktree evidence requires provenance")
         if self.exists and not self.branch:
             raise ValueError("materialized worktree evidence requires a branch")
 
@@ -624,8 +652,10 @@ class WorktreeClaim:
     file_lane_digest: str
 
     def __post_init__(self) -> None:
-        if self.record_version < 1 or self.issue_number < 1 or not self.branch.strip():
-            raise ValueError("claim version, issue, and branch must be valid")
+        _require_int(self.record_version, "claim record version", minimum=1)
+        _require_int(self.issue_number, "claim issue number", minimum=1)
+        if not self.branch.strip():
+            raise ValueError("claim branch must be valid")
         _require_digest(self.file_lane_digest, "file lane digest")
 
 
@@ -642,12 +672,25 @@ class StoredGrant:
     expires_at: datetime
     consumed: bool
     authorized_by: CoordinatorGenerationId | None = None
+    target_owner_generation: OwnerGenerationId | None = None
+    target_owner_version: int | None = None
 
     def __post_init__(self) -> None:
         _require_utc(self.not_before, "grant not_before")
         _require_utc(self.expires_at, "grant expires_at")
-        if self.policy_revision < 1 or self.created_store_revision < 0 or self.expires_at <= self.not_before:
-            raise ValueError("grant revisions and validity window must be valid")
+        _require_int(self.policy_revision, "grant policy revision", minimum=1)
+        _require_int(self.created_store_revision, "grant created store revision")
+        if not isinstance(self.consumed, bool) or self.expires_at <= self.not_before:
+            raise ValueError("grant consumption flag and validity window must be valid")
+        has_target = self.target_owner_generation is not None and self.target_owner_version is not None
+        if self.target_owner_version is not None:
+            _require_int(self.target_owner_version, "grant target owner version", minimum=1)
+        if self.purpose is GrantPurpose.REGISTER and (
+            self.target_owner_generation is not None or self.target_owner_version is not None
+        ):
+            raise ValueError("registration grants cannot name a prior owner")
+        if self.purpose is not GrantPurpose.REGISTER and not has_target:
+            raise ValueError("takeover and recovery grants require an exact target owner")
 
 
 @dataclass(frozen=True, slots=True)
@@ -681,6 +724,9 @@ class RegisterOwner:
     policy_revision: int
     grant_id: GrantId
 
+    def __post_init__(self) -> None:
+        _require_int(self.policy_revision, "registration policy revision", minimum=1)
+
 
 @dataclass(frozen=True, slots=True)
 class ReplaceDeadOwner:
@@ -690,6 +736,10 @@ class ReplaceDeadOwner:
     expected_generation: OwnerGenerationId
     capability_snapshot_id: CapabilitySnapshotId
     policy_revision: int
+
+    def __post_init__(self) -> None:
+        _require_int(self.expected_owner_version, "expected owner version", minimum=1)
+        _require_int(self.policy_revision, "replacement policy revision", minimum=1)
 
 
 @dataclass(frozen=True, slots=True)
@@ -703,6 +753,27 @@ class AuthorizedTakeover:
     grant_id: GrantId
     expected_coordinator_generation: CoordinatorGenerationId
 
+    def __post_init__(self) -> None:
+        _require_int(self.expected_owner_version, "expected owner version", minimum=1)
+        _require_int(self.policy_revision, "takeover policy revision", minimum=1)
+
+
+@dataclass(frozen=True, slots=True)
+class RecoverCoordinator:
+    wave_id: WaveId
+    role_id: RoleId
+    expected_owner_version: int
+    expected_generation: OwnerGenerationId
+    capability_snapshot_id: CapabilitySnapshotId
+    policy_revision: int
+    grant_id: GrantId
+
+    def __post_init__(self) -> None:
+        if self.role_id != RoleId("coordinator"):
+            raise ValueError("coordinator recovery can only target the coordinator role")
+        _require_int(self.expected_owner_version, "expected coordinator version", minimum=1)
+        _require_int(self.policy_revision, "coordinator recovery policy revision", minimum=1)
+
 
 @dataclass(frozen=True, slots=True)
 class UpdateCapability:
@@ -710,7 +781,25 @@ class UpdateCapability:
     capability_snapshot_id: CapabilitySnapshotId
 
 
-OwnerChangeIntent: TypeAlias = RegisterOwner | ReplaceDeadOwner | AuthorizedTakeover | UpdateCapability
+@dataclass(frozen=True, slots=True)
+class RebriefOwner:
+    expected: ExpectedOwnerBindings
+    new_policy_revision: int
+
+    def __post_init__(self) -> None:
+        _require_int(self.new_policy_revision, "new policy revision", minimum=1)
+        if self.new_policy_revision <= self.expected.policy_revision:
+            raise ValueError("rebrief policy revision must advance")
+
+
+OwnerChangeIntent: TypeAlias = (
+    RegisterOwner
+    | ReplaceDeadOwner
+    | AuthorizedTakeover
+    | RecoverCoordinator
+    | UpdateCapability
+    | RebriefOwner
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -720,6 +809,10 @@ class PreparedOwnerChange:
     replacement: RoleOwner
     consumed_grant_id: GrantId | None
     fresh_liveness: Liveness | None
+
+    def __post_init__(self) -> None:
+        if self.expected_owner_version is not None:
+            _require_int(self.expected_owner_version, "prepared owner version", minimum=1)
 
 
 @dataclass(frozen=True, slots=True)
@@ -732,12 +825,19 @@ class ReserveClaim:
     assignment: AssignmentRef
     file_lane_digest: str
 
+    def __post_init__(self) -> None:
+        _require_int(self.issue_number, "reservation issue number", minimum=1)
+        _require_digest(self.file_lane_digest, "reservation file lane digest")
+
 
 @dataclass(frozen=True, slots=True)
 class FinalizeClaim:
     expected: ExpectedOwnerBindings
     claim_id: ClaimId
     expected_claim_version: int
+
+    def __post_init__(self) -> None:
+        _require_int(self.expected_claim_version, "expected claim version", minimum=1)
 
 
 @dataclass(frozen=True, slots=True)
@@ -746,12 +846,18 @@ class ReleaseClaim:
     claim_id: ClaimId
     expected_claim_version: int
 
+    def __post_init__(self) -> None:
+        _require_int(self.expected_claim_version, "expected claim version", minimum=1)
+
 
 @dataclass(frozen=True, slots=True)
 class MarkReconciliationRequired:
     expected: ExpectedOwnerBindings
     claim_id: ClaimId
     expected_claim_version: int
+
+    def __post_init__(self) -> None:
+        _require_int(self.expected_claim_version, "expected claim version", minimum=1)
 
 
 ClaimChangeIntent: TypeAlias = ReserveClaim | FinalizeClaim | ReleaseClaim | MarkReconciliationRequired
@@ -768,6 +874,9 @@ class RebindClaimIntent:
     reconciliation: DurableRecordRef
     rebound_assignment: AssignmentRef
 
+    def __post_init__(self) -> None:
+        _require_int(self.expected_claim_version, "expected claim version", minimum=1)
+
 
 @dataclass(frozen=True, slots=True)
 class PreparedClaimChange:
@@ -775,6 +884,10 @@ class PreparedClaimChange:
     expected_claim_version: int | None
     replacement: WorktreeClaim
     reconciliation: DurableRecordRef | None = None
+
+    def __post_init__(self) -> None:
+        if self.expected_claim_version is not None:
+            _require_int(self.expected_claim_version, "prepared claim version", minimum=1)
 
 
 @dataclass(frozen=True, slots=True)
@@ -785,6 +898,11 @@ class BootstrapGrantSpec:
     grant_id: GrantId
     expires_at: datetime
 
+    def __post_init__(self) -> None:
+        _require_utc(self.expires_at, "bootstrap grant expires_at")
+        if self.purpose is not GrantPurpose.REGISTER:
+            raise ValueError("wave bootstrap can only provision registration grants")
+
 
 @dataclass(frozen=True, slots=True)
 class BootstrapRequest:
@@ -793,6 +911,15 @@ class BootstrapRequest:
     policy_revision: int
     grants: tuple[BootstrapGrantSpec, ...]
     created_at: datetime
+
+    def __post_init__(self) -> None:
+        _require_int(self.policy_revision, "bootstrap policy revision", minimum=1)
+        _require_utc(self.created_at, "bootstrap created_at")
+        invalid_grants = not isinstance(self.grants, tuple) or any(
+            not isinstance(grant, BootstrapGrantSpec) for grant in self.grants
+        )
+        if invalid_grants:
+            raise ValueError("bootstrap grants must be an immutable tuple of BootstrapGrantSpec")
 
 
 @dataclass(frozen=True, slots=True)
@@ -805,10 +932,16 @@ class PreparedBootstrap:
 class RecoveryDelegationRequest:
     wave_id: WaveId
     expected_coordinator_generation: CoordinatorGenerationId
+    expected_coordinator_version: int
     successor_thread_id: ThreadId
     grant_id: GrantId
     expires_at: datetime
     created_at: datetime
+
+    def __post_init__(self) -> None:
+        _require_int(self.expected_coordinator_version, "expected coordinator version", minimum=1)
+        _require_utc(self.expires_at, "recovery delegation expires_at")
+        _require_utc(self.created_at, "recovery delegation created_at")
 
 
 @dataclass(frozen=True, slots=True)
@@ -825,8 +958,24 @@ class TransactionMismatchError(RuntimeError):
     """A transaction-bound value was supplied to another transaction."""
 
 
-class StageConflictError(RuntimeError):
-    """The store rejected a staged CAS or uniqueness constraint."""
+class SerializationConflict(RuntimeError):
+    """A serializable transaction or staged CAS lost a race."""
+
+
+class StoreBusy(RuntimeError):
+    """The host-wide store remained busy beyond its bounded retry policy."""
+
+
+class StoreUnavailable(RuntimeError):
+    """The host-wide store could not be opened or reached."""
+
+
+class CorruptStore(RuntimeError):
+    """Durable rows or their digests failed validation."""
+
+
+class DurabilityFailure(RuntimeError):
+    """A commit could not establish its configured durability guarantee."""
 
 
 def utc_now() -> datetime:
