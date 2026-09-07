@@ -10,8 +10,6 @@ worktrees (or uses `FLOW_WORKTREE_BASE` when configured).
 
 # Flow: Auto - Full Issue Lifecycle in One Shot
 
-<!-- Isolated #195 required-integrity negative-control marker. -->
-
 Complete end-to-end workflow: start worktree → analyze issue → ELI5 plan + necessity gate → implement → finish (PR) → merge → deploy.
 
 ## Arguments
