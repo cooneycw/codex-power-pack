@@ -1927,7 +1927,7 @@ def _load_adoption_policy(*, required: bool = True) -> AdoptionPolicy | None:
             raise IntegrityError(f"adoption policy has duplicate disposition: {path}")
         if source_change != change_kind.get(path):
             raise IntegrityError(f"adoption disposition source change mismatch: {path}")
-        if action not in ADOPTION_COUNTS:
+        if not isinstance(action, str) or action not in ADOPTION_COUNTS:
             raise IntegrityError(f"adoption disposition has invalid action: {path}")
         if not isinstance(owner, str) or not owner.strip():
             raise IntegrityError(f"adoption disposition has no owner: {path}")
