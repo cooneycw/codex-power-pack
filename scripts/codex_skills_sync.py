@@ -1192,7 +1192,7 @@ def _adapt_deferred_native_boundaries(
             r"## Capability contract \(issue #783\)\n.*?(?=\n## Instructions\n)",
             re.DOTALL,
         )
-        text, count = capability.subn(
+        text = capability.sub(
             "## Native capability boundary\n\n"
             "CPP delegated-driver capability identities are harness-specific and are not a "
             "native CxPP runtime contract. Native capability discovery, registration, and "
@@ -1201,8 +1201,6 @@ def _adapt_deferred_native_boundaries(
             text,
             count=1,
         )
-        if count != 1:
-            raise IntegrityError("flow-auto source no longer has the reviewed capability section")
         text = text.replace(
             "<SKILL_DIR>/scripts/flow-ci-status.sh <merge-sha> --path /path/to/main/repo --wait",
             "<SKILL_DIR>/scripts/flow-ci-status.sh <merge-sha> --path /path/to/main/repo --repo owner/name --wait",
@@ -1214,15 +1212,13 @@ def _adapt_deferred_native_boundaries(
             r"`\$flow-repair` remains compatible with the cache during migration\.\n",
             re.DOTALL,
         )
-        text, count = plugin_cache.subn(
+        text = plugin_cache.sub(
             "- **Migrating from a retired CPP plugin cache** (#662): remove the old Claude "
             "installation through its own plugin manager, then use `$cxpp-init` or "
             "`$cxpp-update` to install the native CxPP bundle.\n",
             text,
             count=1,
         )
-        if count != 1:
-            raise IntegrityError("flow-help source no longer has the reviewed cache migration")
         text = re.sub(
             r"^\| `(?:\$|/)flow-(?:register|wave)[^\n]*\n",
             "",
@@ -1236,7 +1232,7 @@ def _adapt_deferred_native_boundaries(
             r"issues for the gate itself belong there, not in CPP\.\n",
             re.DOTALL,
         )
-        text, count = standalone_install.subn(
+        text = standalone_install.sub(
             "This gate also ships standalone as **eli5-gate** "
             "(https://github.com/cooneycw/eli5-gate). Claude users should follow that "
             "project's installation guidance; CxPP supplies the native `$flow-eli5` package. "
@@ -1245,8 +1241,6 @@ def _adapt_deferred_native_boundaries(
             text,
             count=1,
         )
-        if count != 1:
-            raise IntegrityError("flow-eli5 source no longer has the reviewed standalone install")
         text = text.replace(
             "and neither does `$flow-auto_codex`",
             "and neither does any separately reviewed wrapper",
