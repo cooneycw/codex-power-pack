@@ -137,7 +137,7 @@ PYTHONPATH="${HOME}/Projects/claude-power-pack/lib" python3 -m lib.security gate
 - If the gate produces **warnings** (high findings): display them but proceed.
 - If `lib/security` is not available, skip this step (warn the user).
 
-**Gate behavior by severity (defaults - configurable in `.claude/security.yml`):**
+**Gate behavior by severity (defaults - configurable in `.codex/security.yml`):**
 
 | Severity | Effect on `$flow-finish` | What to do |
 |----------|--------------------------|------------|
@@ -146,7 +146,7 @@ PYTHONPATH="${HOME}/Projects/claude-power-pack/lib" python3 -m lib.security gate
 | MEDIUM | Passes silently | No action needed |
 | LOW | Passes silently | No action needed |
 
-To suppress a known false positive, add it to `.claude/security.yml`:
+To suppress a known false positive, add it to `.codex/security.yml`:
 ```yaml
 suppressions:
   - id: HARDCODED_SECRET

@@ -24,26 +24,9 @@ Complete end-to-end workflow: start worktree → analyze issue → ELI5 plan + n
   `EnterWorktree` operates on the session cwd's repo and cannot create the
   worktree in another one.
 
-## Capability contract (issue #783)
+## Native capability boundary
 
-| | |
-|---|---|
-| **Scope** | **general** - Claude implements directly, so the deliverable can be a diff, a written finding, a recommendation, or a decision |
-| **Web** | **yes** - WebFetch / WebSearch are available for live sources |
-| **Cannot take** | nothing on these axes |
-
-This is the unconstrained driver, and stating that is the point: the three
-delegated drivers (`/codex:auto`, `/qwen:auto`, `/gemma:auto`) each wrap their
-model in an IMPLEMENTATION-ONLY execution fence and none can reach a live
-source, so **research tickets and anything needing current information belong
-here**. Before #783 that was true but written down nowhere an orchestrator could
-read before assigning; it was discovered when a worker refused.
-
-Native wave capability discovery and registration remain explicit inputs to #200/#201/#202; this skill does not advertise those unshipped packages.
-
-This says nothing about *whether the work should be done* - that is the Step 3
-ELI5 gate, and it is unaffected. Capability and necessity are separate questions;
-this one is answerable before assignment, and that is its whole value.
+CPP delegated-driver capability identities are harness-specific and are not a native CxPP runtime contract. Native capability discovery, registration, and packaging remain explicit inputs to #200/#201/#202; this skill does not advertise those unshipped packages. Capability does not bypass the Step 3 necessity gate.
 
 ## Instructions
 

@@ -13,7 +13,7 @@
     "unpackaged_skills": 10,
     "marketplace_plugins": 16,
     "implicit_skills": 2,
-    "references": 656,
+    "references": 649,
     "unexplained_references": 0
   },
   "marketplace": {
@@ -6308,12 +6308,22 @@
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/SKILL.md",
-      "line": 12,
-      "token": "/plugin",
+      "line": 11,
+      "token": "EnterWorktree",
       "kind": "host_command",
-      "target": "/plugin",
+      "target": "EnterWorktree",
       "classification": "adapted",
       "id": "REF-0177"
+    },
+    {
+      "source_skill": "flow-auto",
+      "path": "plugins/flow/skills/flow-auto/SKILL.md",
+      "line": 11,
+      "token": "ExitWorktree",
+      "kind": "host_command",
+      "target": "ExitWorktree",
+      "classification": "adapted",
+      "id": "REF-0178"
     },
     {
       "source_skill": "flow-auto",
@@ -6323,7 +6333,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0178"
+      "id": "REF-0179"
     },
     {
       "source_skill": "flow-auto",
@@ -6333,7 +6343,7 @@
       "kind": "skill",
       "target": "project-next",
       "classification": "resolvable",
-      "id": "REF-0179"
+      "id": "REF-0180"
     },
     {
       "source_skill": "flow-auto",
@@ -6343,82 +6353,72 @@
       "kind": "host_command",
       "target": "EnterWorktree",
       "classification": "adapted",
-      "id": "REF-0180"
-    },
-    {
-      "source_skill": "flow-auto",
-      "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 29,
-      "token": "$flow-auto",
-      "kind": "skill",
-      "target": "flow-auto",
-      "classification": "resolvable",
       "id": "REF-0181"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 71,
-      "token": "$cxpp-init",
+      "line": 33,
+      "token": "$flow-auto",
       "kind": "skill",
-      "target": "cxpp-init",
+      "target": "flow-auto",
       "classification": "resolvable",
       "id": "REF-0182"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 71,
-      "token": "$cxpp-update",
+      "line": 75,
+      "token": "$cxpp-init",
       "kind": "skill",
-      "target": "cxpp-update",
+      "target": "cxpp-init",
       "classification": "resolvable",
       "id": "REF-0183"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 71,
-      "token": ".claude/",
-      "kind": "host_path",
-      "target": ".claude/",
-      "classification": "adapted",
+      "line": 75,
+      "token": "$cxpp-update",
+      "kind": "skill",
+      "target": "cxpp-update",
+      "classification": "resolvable",
       "id": "REF-0184"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 77,
-      "token": "$self-improvement-retro",
-      "kind": "skill",
-      "target": "self-improvement-retro",
-      "classification": "resolvable",
+      "line": 75,
+      "token": ".claude/",
+      "kind": "host_path",
+      "target": ".claude/",
+      "classification": "adapted",
       "id": "REF-0185"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
       "line": 81,
-      "token": "CLAUDE_PLUGIN_ROOT",
-      "kind": "host_path",
-      "target": "CLAUDE_PLUGIN_ROOT",
-      "classification": "adapted",
+      "token": "$self-improvement-retro",
+      "kind": "skill",
+      "target": "self-improvement-retro",
+      "classification": "resolvable",
       "id": "REF-0186"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 95,
-      "token": "EnterWorktree",
-      "kind": "host_command",
-      "target": "EnterWorktree",
+      "line": 85,
+      "token": "CLAUDE_PLUGIN_ROOT",
+      "kind": "host_path",
+      "target": "CLAUDE_PLUGIN_ROOT",
       "classification": "adapted",
       "id": "REF-0187"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 96,
+      "line": 99,
       "token": "EnterWorktree",
       "kind": "host_command",
       "target": "EnterWorktree",
@@ -6428,7 +6428,7 @@
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 98,
+      "line": 100,
       "token": "EnterWorktree",
       "kind": "host_command",
       "target": "EnterWorktree",
@@ -6438,47 +6438,47 @@
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 118,
-      "token": "$flow-auto",
-      "kind": "skill",
-      "target": "flow-auto",
-      "classification": "resolvable",
+      "line": 102,
+      "token": "EnterWorktree",
+      "kind": "host_command",
+      "target": "EnterWorktree",
+      "classification": "adapted",
       "id": "REF-0190"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 136,
-      "token": "EnterWorktree",
-      "kind": "host_command",
-      "target": "EnterWorktree",
-      "classification": "adapted",
+      "line": 122,
+      "token": "$flow-auto",
+      "kind": "skill",
+      "target": "flow-auto",
+      "classification": "resolvable",
       "id": "REF-0191"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 141,
-      "token": "CLAUDE_PLUGIN_ROOT",
-      "kind": "host_path",
-      "target": "CLAUDE_PLUGIN_ROOT",
+      "line": 140,
+      "token": "EnterWorktree",
+      "kind": "host_command",
+      "target": "EnterWorktree",
       "classification": "adapted",
       "id": "REF-0192"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 143,
-      "token": "CLAUDE_PLUGIN_ROOT",
-      "kind": "host_path",
-      "target": "CLAUDE_PLUGIN_ROOT",
-      "classification": "adapted",
+      "line": 148,
+      "token": "$flow-repair",
+      "kind": "skill",
+      "target": "flow-repair",
+      "classification": "excluded",
       "id": "REF-0193"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 147,
+      "line": 151,
       "token": "$flow-repair",
       "kind": "skill",
       "target": "flow-repair",
@@ -6488,27 +6488,27 @@
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 150,
-      "token": "$flow-repair",
-      "kind": "skill",
-      "target": "flow-repair",
-      "classification": "excluded",
+      "line": 159,
+      "token": "EnterWorktree",
+      "kind": "host_command",
+      "target": "EnterWorktree",
+      "classification": "adapted",
       "id": "REF-0195"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 150,
-      "token": "/plugin",
+      "line": 192,
+      "token": "EnterWorktree",
       "kind": "host_command",
-      "target": "/plugin",
+      "target": "EnterWorktree",
       "classification": "adapted",
       "id": "REF-0196"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 158,
+      "line": 238,
       "token": "EnterWorktree",
       "kind": "host_command",
       "target": "EnterWorktree",
@@ -6518,27 +6518,27 @@
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 188,
-      "token": "EnterWorktree",
-      "kind": "host_command",
-      "target": "EnterWorktree",
+      "line": 257,
+      "token": ".claude/",
+      "kind": "host_path",
+      "target": ".claude/",
       "classification": "adapted",
       "id": "REF-0198"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 226,
-      "token": "EnterWorktree",
-      "kind": "host_command",
-      "target": "EnterWorktree",
-      "classification": "adapted",
+      "line": 314,
+      "token": "$flow-eli5",
+      "kind": "skill",
+      "target": "flow-eli5",
+      "classification": "resolvable",
       "id": "REF-0199"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 245,
+      "line": 321,
       "token": ".claude/",
       "kind": "host_path",
       "target": ".claude/",
@@ -6548,17 +6548,17 @@
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 302,
-      "token": "$flow-eli5",
-      "kind": "skill",
-      "target": "flow-eli5",
-      "classification": "resolvable",
+      "line": 321,
+      "token": "/skills",
+      "kind": "native_command",
+      "target": "/skills",
+      "classification": "native",
       "id": "REF-0201"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 309,
+      "line": 322,
       "token": ".claude/",
       "kind": "host_path",
       "target": ".claude/",
@@ -6568,187 +6568,187 @@
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 309,
-      "token": "/skills",
-      "kind": "native_command",
-      "target": "/skills",
-      "classification": "native",
+      "line": 343,
+      "token": "$flow-auto",
+      "kind": "skill",
+      "target": "flow-auto",
+      "classification": "resolvable",
       "id": "REF-0203"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 311,
-      "token": ".claude/",
+      "line": 415,
+      "token": "CLAUDE_PLUGIN_ROOT",
       "kind": "host_path",
-      "target": ".claude/",
+      "target": "CLAUDE_PLUGIN_ROOT",
       "classification": "adapted",
       "id": "REF-0204"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 332,
-      "token": "$flow-auto",
+      "line": 418,
+      "token": "$flow-repair",
       "kind": "skill",
-      "target": "flow-auto",
-      "classification": "resolvable",
+      "target": "flow-repair",
+      "classification": "excluded",
       "id": "REF-0205"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 336,
-      "token": "$flow-auto",
-      "kind": "skill",
-      "target": "flow-auto",
-      "classification": "resolvable",
+      "line": 428,
+      "token": ".claude/",
+      "kind": "host_path",
+      "target": ".claude/",
+      "classification": "adapted",
       "id": "REF-0206"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 378,
-      "token": "CLAUDE_PLUGIN_ROOT",
-      "kind": "host_path",
-      "target": "CLAUDE_PLUGIN_ROOT",
-      "classification": "adapted",
+      "line": 429,
+      "token": "/skills",
+      "kind": "native_command",
+      "target": "/skills",
+      "classification": "native",
       "id": "REF-0207"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 381,
-      "token": "$flow-repair",
-      "kind": "skill",
-      "target": "flow-repair",
-      "classification": "excluded",
+      "line": 435,
+      "token": "EnterWorktree",
+      "kind": "host_command",
+      "target": "EnterWorktree",
+      "classification": "adapted",
       "id": "REF-0208"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 387,
-      "token": ".claude/",
-      "kind": "host_path",
-      "target": ".claude/",
-      "classification": "adapted",
+      "line": 477,
+      "token": "$claude-code-review",
+      "kind": "skill",
+      "target": "claude-code-review",
+      "classification": "resolvable",
       "id": "REF-0209"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 389,
-      "token": "/skills",
-      "kind": "native_command",
-      "target": "/skills",
-      "classification": "native",
+      "line": 505,
+      "token": "$documentation-c4",
+      "kind": "skill",
+      "target": "documentation-c4",
+      "classification": "resolvable",
       "id": "REF-0210"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 394,
-      "token": "EnterWorktree",
-      "kind": "host_command",
-      "target": "EnterWorktree",
+      "line": 533,
+      "token": "CLAUDE_PLUGIN_ROOT",
+      "kind": "host_path",
+      "target": "CLAUDE_PLUGIN_ROOT",
       "classification": "adapted",
       "id": "REF-0211"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 436,
-      "token": "$claude-code-review",
-      "kind": "skill",
-      "target": "claude-code-review",
-      "classification": "resolvable",
+      "line": 570,
+      "token": ".claude/",
+      "kind": "host_path",
+      "target": ".claude/",
+      "classification": "adapted",
       "id": "REF-0212"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 464,
-      "token": "$documentation-c4",
-      "kind": "skill",
-      "target": "documentation-c4",
-      "classification": "resolvable",
+      "line": 610,
+      "token": "CLAUDE_PLUGIN_ROOT",
+      "kind": "host_path",
+      "target": "CLAUDE_PLUGIN_ROOT",
+      "classification": "adapted",
       "id": "REF-0213"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 492,
-      "token": "CLAUDE_PLUGIN_ROOT",
-      "kind": "host_path",
-      "target": "CLAUDE_PLUGIN_ROOT",
-      "classification": "adapted",
+      "line": 612,
+      "token": "$flow-repair",
+      "kind": "skill",
+      "target": "flow-repair",
+      "classification": "excluded",
       "id": "REF-0214"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 527,
-      "token": ".claude/",
+      "line": 656,
+      "token": "CLAUDE_PLUGIN_ROOT",
       "kind": "host_path",
-      "target": ".claude/",
+      "target": "CLAUDE_PLUGIN_ROOT",
       "classification": "adapted",
       "id": "REF-0215"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 534,
-      "token": ".claude/",
-      "kind": "host_path",
-      "target": ".claude/",
-      "classification": "adapted",
+      "line": 706,
+      "token": "$flow-merge",
+      "kind": "skill",
+      "target": "flow-merge",
+      "classification": "resolvable",
       "id": "REF-0216"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 537,
-      "token": ".claude/",
-      "kind": "host_path",
-      "target": ".claude/",
-      "classification": "adapted",
+      "line": 713,
+      "token": "/skills",
+      "kind": "native_command",
+      "target": "/skills",
+      "classification": "native",
       "id": "REF-0217"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 557,
-      "token": "CLAUDE_PLUGIN_ROOT",
+      "line": 717,
+      "token": ".claude/",
       "kind": "host_path",
-      "target": "CLAUDE_PLUGIN_ROOT",
+      "target": ".claude/",
       "classification": "adapted",
       "id": "REF-0218"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 559,
-      "token": "$flow-repair",
-      "kind": "skill",
-      "target": "flow-repair",
-      "classification": "excluded",
+      "line": 720,
+      "token": "/skills",
+      "kind": "native_command",
+      "target": "/skills",
+      "classification": "native",
       "id": "REF-0219"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 600,
-      "token": "CLAUDE_PLUGIN_ROOT",
-      "kind": "host_path",
-      "target": "CLAUDE_PLUGIN_ROOT",
-      "classification": "adapted",
+      "line": 721,
+      "token": "/skills",
+      "kind": "native_command",
+      "target": "/skills",
+      "classification": "native",
       "id": "REF-0220"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 644,
+      "line": 736,
       "token": "$flow-merge",
       "kind": "skill",
       "target": "flow-merge",
@@ -6758,137 +6758,137 @@
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 653,
-      "token": "/skills",
-      "kind": "native_command",
-      "target": "/skills",
-      "classification": "native",
+      "line": 762,
+      "token": "ExitWorktree",
+      "kind": "host_command",
+      "target": "ExitWorktree",
+      "classification": "adapted",
       "id": "REF-0222"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 657,
-      "token": ".claude/",
-      "kind": "host_path",
-      "target": ".claude/",
-      "classification": "adapted",
+      "line": 786,
+      "token": "$flow-merge",
+      "kind": "skill",
+      "target": "flow-merge",
+      "classification": "resolvable",
       "id": "REF-0223"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 660,
-      "token": ".claude/",
-      "kind": "host_path",
-      "target": ".claude/",
+      "line": 861,
+      "token": "EnterWorktree",
+      "kind": "host_command",
+      "target": "EnterWorktree",
       "classification": "adapted",
       "id": "REF-0224"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 663,
-      "token": "/skills",
-      "kind": "native_command",
-      "target": "/skills",
-      "classification": "native",
+      "line": 861,
+      "token": "ExitWorktree",
+      "kind": "host_command",
+      "target": "ExitWorktree",
+      "classification": "adapted",
       "id": "REF-0225"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 664,
-      "token": "/skills",
-      "kind": "native_command",
-      "target": "/skills",
-      "classification": "native",
+      "line": 916,
+      "token": "$flow-auto",
+      "kind": "skill",
+      "target": "flow-auto",
+      "classification": "resolvable",
       "id": "REF-0226"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 679,
-      "token": "$flow-merge",
-      "kind": "skill",
-      "target": "flow-merge",
-      "classification": "resolvable",
+      "line": 988,
+      "token": "CLAUDE_PLUGIN_ROOT",
+      "kind": "host_path",
+      "target": "CLAUDE_PLUGIN_ROOT",
+      "classification": "adapted",
       "id": "REF-0227"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 705,
-      "token": "ExitWorktree",
-      "kind": "host_command",
-      "target": "ExitWorktree",
-      "classification": "adapted",
+      "line": 990,
+      "token": "$flow-repair",
+      "kind": "skill",
+      "target": "flow-repair",
+      "classification": "excluded",
       "id": "REF-0228"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 758,
-      "token": "EnterWorktree",
-      "kind": "host_command",
-      "target": "EnterWorktree",
-      "classification": "adapted",
+      "line": 1000,
+      "token": "$flow-auto",
+      "kind": "skill",
+      "target": "flow-auto",
+      "classification": "resolvable",
       "id": "REF-0229"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 758,
-      "token": "ExitWorktree",
-      "kind": "host_command",
-      "target": "ExitWorktree",
-      "classification": "adapted",
+      "line": 1000,
+      "token": "$flow-deploy",
+      "kind": "skill",
+      "target": "flow-deploy",
+      "classification": "resolvable",
       "id": "REF-0230"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 813,
-      "token": "$flow-auto",
-      "kind": "skill",
-      "target": "flow-auto",
-      "classification": "resolvable",
+      "line": 1009,
+      "token": "fixed-claude-power-pack-runtime",
+      "kind": "host_path",
+      "target": "fixed-claude-power-pack-runtime",
+      "classification": "adapted",
       "id": "REF-0231"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 947,
-      "token": "$flow-auto",
-      "kind": "skill",
-      "target": "flow-auto",
-      "classification": "resolvable",
+      "line": 1032,
+      "token": ".claude/",
+      "kind": "host_path",
+      "target": ".claude/",
+      "classification": "adapted",
       "id": "REF-0232"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 947,
-      "token": "$flow-deploy",
-      "kind": "skill",
-      "target": "flow-deploy",
-      "classification": "resolvable",
+      "line": 1035,
+      "token": ".claude/",
+      "kind": "host_path",
+      "target": ".claude/",
+      "classification": "adapted",
       "id": "REF-0233"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 956,
-      "token": "fixed-claude-power-pack-runtime",
+      "line": 1054,
+      "token": ".claude/",
       "kind": "host_path",
-      "target": "fixed-claude-power-pack-runtime",
+      "target": ".claude/",
       "classification": "adapted",
       "id": "REF-0234"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 979,
+      "line": 1062,
       "token": ".claude/",
       "kind": "host_path",
       "target": ".claude/",
@@ -6898,7 +6898,7 @@
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 982,
+      "line": 1065,
       "token": ".claude/",
       "kind": "host_path",
       "target": ".claude/",
@@ -6908,242 +6908,212 @@
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1001,
-      "token": ".claude/",
-      "kind": "host_path",
-      "target": ".claude/",
-      "classification": "adapted",
+      "line": 1101,
+      "token": "$cicd-health",
+      "kind": "skill",
+      "target": "cicd-health",
+      "classification": "resolvable",
       "id": "REF-0237"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1009,
-      "token": ".claude/",
-      "kind": "host_path",
-      "target": ".claude/",
-      "classification": "adapted",
+      "line": 1101,
+      "token": "$cicd-smoke",
+      "kind": "skill",
+      "target": "cicd-smoke",
+      "classification": "resolvable",
       "id": "REF-0238"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1012,
-      "token": ".claude/",
-      "kind": "host_path",
-      "target": ".claude/",
-      "classification": "adapted",
+      "line": 1148,
+      "token": "$self-improvement-retro",
+      "kind": "skill",
+      "target": "self-improvement-retro",
+      "classification": "resolvable",
       "id": "REF-0239"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1048,
-      "token": "$cicd-health",
+      "line": 1154,
+      "token": "$flow-merge",
       "kind": "skill",
-      "target": "cicd-health",
+      "target": "flow-merge",
       "classification": "resolvable",
       "id": "REF-0240"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1048,
-      "token": "$cicd-smoke",
+      "line": 1169,
+      "token": "$flow-start",
       "kind": "skill",
-      "target": "cicd-smoke",
+      "target": "flow-start",
       "classification": "resolvable",
       "id": "REF-0241"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1095,
-      "token": "$self-improvement-retro",
+      "line": 1171,
+      "token": "$flow-eli5",
       "kind": "skill",
-      "target": "self-improvement-retro",
+      "target": "flow-eli5",
       "classification": "resolvable",
       "id": "REF-0242"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1101,
-      "token": "$flow-merge",
+      "line": 1173,
+      "token": "$documentation-c4",
       "kind": "skill",
-      "target": "flow-merge",
+      "target": "documentation-c4",
       "classification": "resolvable",
       "id": "REF-0243"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1116,
-      "token": "$flow-start",
+      "line": 1174,
+      "token": "$flow-finish",
       "kind": "skill",
-      "target": "flow-start",
+      "target": "flow-finish",
       "classification": "resolvable",
       "id": "REF-0244"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1118,
-      "token": "$flow-eli5",
+      "line": 1175,
+      "token": "$flow-merge",
       "kind": "skill",
-      "target": "flow-eli5",
+      "target": "flow-merge",
       "classification": "resolvable",
       "id": "REF-0245"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1120,
-      "token": "$documentation-c4",
+      "line": 1177,
+      "token": "$flow-deploy",
       "kind": "skill",
-      "target": "documentation-c4",
+      "target": "flow-deploy",
       "classification": "resolvable",
       "id": "REF-0246"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1121,
-      "token": "$flow-finish",
-      "kind": "skill",
-      "target": "flow-finish",
-      "classification": "resolvable",
+      "line": 1202,
+      "token": "EnterWorktree",
+      "kind": "host_command",
+      "target": "EnterWorktree",
+      "classification": "adapted",
       "id": "REF-0247"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1122,
-      "token": "$flow-merge",
-      "kind": "skill",
-      "target": "flow-merge",
-      "classification": "resolvable",
+      "line": 1202,
+      "token": "ExitWorktree",
+      "kind": "host_command",
+      "target": "ExitWorktree",
+      "classification": "adapted",
       "id": "REF-0248"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1124,
-      "token": "$flow-deploy",
-      "kind": "skill",
-      "target": "flow-deploy",
-      "classification": "resolvable",
+      "line": 1203,
+      "token": "EnterWorktree",
+      "kind": "host_command",
+      "target": "EnterWorktree",
+      "classification": "adapted",
       "id": "REF-0249"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1149,
-      "token": "EnterWorktree",
-      "kind": "host_command",
-      "target": "EnterWorktree",
-      "classification": "adapted",
+      "line": 1205,
+      "token": "$flow-auto",
+      "kind": "skill",
+      "target": "flow-auto",
+      "classification": "resolvable",
       "id": "REF-0250"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1149,
-      "token": "ExitWorktree",
+      "line": 1205,
+      "token": "EnterWorktree",
       "kind": "host_command",
-      "target": "ExitWorktree",
+      "target": "EnterWorktree",
       "classification": "adapted",
       "id": "REF-0251"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1150,
-      "token": "EnterWorktree",
-      "kind": "host_command",
-      "target": "EnterWorktree",
-      "classification": "adapted",
+      "line": 1209,
+      "token": "$flow-deploy",
+      "kind": "skill",
+      "target": "flow-deploy",
+      "classification": "resolvable",
       "id": "REF-0252"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1152,
-      "token": "$flow-auto",
+      "line": 1209,
+      "token": "$flow-eli5",
       "kind": "skill",
-      "target": "flow-auto",
+      "target": "flow-eli5",
       "classification": "resolvable",
       "id": "REF-0253"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1152,
-      "token": "EnterWorktree",
-      "kind": "host_command",
-      "target": "EnterWorktree",
-      "classification": "adapted",
+      "line": 1209,
+      "token": "$flow-finish",
+      "kind": "skill",
+      "target": "flow-finish",
+      "classification": "resolvable",
       "id": "REF-0254"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1156,
-      "token": "$flow-deploy",
+      "line": 1209,
+      "token": "$flow-merge",
       "kind": "skill",
-      "target": "flow-deploy",
+      "target": "flow-merge",
       "classification": "resolvable",
       "id": "REF-0255"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1156,
-      "token": "$flow-eli5",
+      "line": 1209,
+      "token": "$flow-start",
       "kind": "skill",
-      "target": "flow-eli5",
+      "target": "flow-start",
       "classification": "resolvable",
       "id": "REF-0256"
     },
     {
       "source_skill": "flow-auto",
       "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1156,
-      "token": "$flow-finish",
-      "kind": "skill",
-      "target": "flow-finish",
-      "classification": "resolvable",
-      "id": "REF-0257"
-    },
-    {
-      "source_skill": "flow-auto",
-      "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1156,
-      "token": "$flow-merge",
-      "kind": "skill",
-      "target": "flow-merge",
-      "classification": "resolvable",
-      "id": "REF-0258"
-    },
-    {
-      "source_skill": "flow-auto",
-      "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1156,
-      "token": "$flow-start",
-      "kind": "skill",
-      "target": "flow-start",
-      "classification": "resolvable",
-      "id": "REF-0259"
-    },
-    {
-      "source_skill": "flow-auto",
-      "path": "plugins/flow/skills/flow-auto/reference.md",
-      "line": 1157,
+      "line": 1210,
       "token": "$self-improvement-retro",
       "kind": "skill",
       "target": "self-improvement-retro",
       "classification": "resolvable",
-      "id": "REF-0260"
+      "id": "REF-0257"
     },
     {
       "source_skill": "flow-check",
@@ -7153,7 +7123,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0261"
+      "id": "REF-0258"
     },
     {
       "source_skill": "flow-check",
@@ -7163,7 +7133,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0262"
+      "id": "REF-0259"
     },
     {
       "source_skill": "flow-check",
@@ -7173,7 +7143,7 @@
       "kind": "skill",
       "target": "flow-finish",
       "classification": "resolvable",
-      "id": "REF-0263"
+      "id": "REF-0260"
     },
     {
       "source_skill": "flow-check",
@@ -7183,7 +7153,7 @@
       "kind": "skill",
       "target": "flow-check",
       "classification": "resolvable",
-      "id": "REF-0264"
+      "id": "REF-0261"
     },
     {
       "source_skill": "flow-check",
@@ -7193,7 +7163,7 @@
       "kind": "host_path",
       "target": "fixed-claude-power-pack-runtime",
       "classification": "adapted",
-      "id": "REF-0265"
+      "id": "REF-0262"
     },
     {
       "source_skill": "flow-check",
@@ -7203,12 +7173,42 @@
       "kind": "skill",
       "target": "flow-repair",
       "classification": "excluded",
+      "id": "REF-0263"
+    },
+    {
+      "source_skill": "flow-check",
+      "path": "plugins/flow/skills/flow-check/reference.md",
+      "line": 182,
+      "token": "$flow-finish",
+      "kind": "skill",
+      "target": "flow-finish",
+      "classification": "resolvable",
+      "id": "REF-0264"
+    },
+    {
+      "source_skill": "flow-check",
+      "path": "plugins/flow/skills/flow-check/reference.md",
+      "line": 188,
+      "token": "$flow-finish",
+      "kind": "skill",
+      "target": "flow-finish",
+      "classification": "resolvable",
+      "id": "REF-0265"
+    },
+    {
+      "source_skill": "flow-check",
+      "path": "plugins/flow/skills/flow-check/reference.md",
+      "line": 189,
+      "token": "$flow-finish",
+      "kind": "skill",
+      "target": "flow-finish",
+      "classification": "resolvable",
       "id": "REF-0266"
     },
     {
       "source_skill": "flow-check",
       "path": "plugins/flow/skills/flow-check/reference.md",
-      "line": 179,
+      "line": 190,
       "token": "$flow-finish",
       "kind": "skill",
       "target": "flow-finish",
@@ -7218,7 +7218,7 @@
     {
       "source_skill": "flow-check",
       "path": "plugins/flow/skills/flow-check/reference.md",
-      "line": 185,
+      "line": 195,
       "token": "$flow-finish",
       "kind": "skill",
       "target": "flow-finish",
@@ -7228,52 +7228,12 @@
     {
       "source_skill": "flow-check",
       "path": "plugins/flow/skills/flow-check/reference.md",
-      "line": 186,
+      "line": 201,
       "token": "$flow-finish",
       "kind": "skill",
       "target": "flow-finish",
       "classification": "resolvable",
       "id": "REF-0269"
-    },
-    {
-      "source_skill": "flow-check",
-      "path": "plugins/flow/skills/flow-check/reference.md",
-      "line": 187,
-      "token": "$flow-finish",
-      "kind": "skill",
-      "target": "flow-finish",
-      "classification": "resolvable",
-      "id": "REF-0270"
-    },
-    {
-      "source_skill": "flow-check",
-      "path": "plugins/flow/skills/flow-check/reference.md",
-      "line": 192,
-      "token": "$flow-finish",
-      "kind": "skill",
-      "target": "flow-finish",
-      "classification": "resolvable",
-      "id": "REF-0271"
-    },
-    {
-      "source_skill": "flow-check",
-      "path": "plugins/flow/skills/flow-check/reference.md",
-      "line": 198,
-      "token": "$flow-finish",
-      "kind": "skill",
-      "target": "flow-finish",
-      "classification": "resolvable",
-      "id": "REF-0272"
-    },
-    {
-      "source_skill": "flow-check",
-      "path": "plugins/flow/skills/flow-check/reference.md",
-      "line": 198,
-      "token": ".claude/",
-      "kind": "host_path",
-      "target": ".claude/",
-      "classification": "adapted",
-      "id": "REF-0273"
     },
     {
       "source_skill": "flow-cleanup",
@@ -7283,7 +7243,27 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0274"
+      "id": "REF-0270"
+    },
+    {
+      "source_skill": "flow-cleanup",
+      "path": "plugins/flow/skills/flow-cleanup/SKILL.md",
+      "line": 11,
+      "token": "EnterWorktree",
+      "kind": "host_command",
+      "target": "EnterWorktree",
+      "classification": "adapted",
+      "id": "REF-0271"
+    },
+    {
+      "source_skill": "flow-cleanup",
+      "path": "plugins/flow/skills/flow-cleanup/SKILL.md",
+      "line": 11,
+      "token": "ExitWorktree",
+      "kind": "host_command",
+      "target": "ExitWorktree",
+      "classification": "adapted",
+      "id": "REF-0272"
     },
     {
       "source_skill": "flow-cleanup",
@@ -7293,7 +7273,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0275"
+      "id": "REF-0273"
     },
     {
       "source_skill": "flow-cleanup",
@@ -7303,7 +7283,7 @@
       "kind": "host_command",
       "target": "EnterWorktree",
       "classification": "adapted",
-      "id": "REF-0276"
+      "id": "REF-0274"
     },
     {
       "source_skill": "flow-cleanup",
@@ -7313,7 +7293,7 @@
       "kind": "host_command",
       "target": "ExitWorktree",
       "classification": "adapted",
-      "id": "REF-0277"
+      "id": "REF-0275"
     },
     {
       "source_skill": "flow-cleanup",
@@ -7323,7 +7303,7 @@
       "kind": "skill",
       "target": "flow-cleanup",
       "classification": "resolvable",
-      "id": "REF-0278"
+      "id": "REF-0276"
     },
     {
       "source_skill": "flow-cleanup",
@@ -7333,7 +7313,7 @@
       "kind": "skill",
       "target": "flow-merge",
       "classification": "resolvable",
-      "id": "REF-0279"
+      "id": "REF-0277"
     },
     {
       "source_skill": "flow-deploy",
@@ -7343,7 +7323,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0280"
+      "id": "REF-0278"
     },
     {
       "source_skill": "flow-deploy",
@@ -7353,7 +7333,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0281"
+      "id": "REF-0279"
     },
     {
       "source_skill": "flow-deploy",
@@ -7363,7 +7343,7 @@
       "kind": "skill",
       "target": "flow-deploy",
       "classification": "resolvable",
-      "id": "REF-0282"
+      "id": "REF-0280"
     },
     {
       "source_skill": "flow-deploy",
@@ -7373,7 +7353,7 @@
       "kind": "skill",
       "target": "flow-merge",
       "classification": "resolvable",
-      "id": "REF-0283"
+      "id": "REF-0281"
     },
     {
       "source_skill": "flow-deploy",
@@ -7383,7 +7363,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "adapted",
-      "id": "REF-0284"
+      "id": "REF-0282"
     },
     {
       "source_skill": "flow-deploy",
@@ -7393,7 +7373,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "adapted",
-      "id": "REF-0285"
+      "id": "REF-0283"
     },
     {
       "source_skill": "flow-deploy",
@@ -7403,7 +7383,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "adapted",
-      "id": "REF-0286"
+      "id": "REF-0284"
     },
     {
       "source_skill": "flow-deploy",
@@ -7413,7 +7393,7 @@
       "kind": "skill",
       "target": "flow-deploy",
       "classification": "resolvable",
-      "id": "REF-0287"
+      "id": "REF-0285"
     },
     {
       "source_skill": "flow-deploy",
@@ -7423,7 +7403,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "adapted",
-      "id": "REF-0288"
+      "id": "REF-0286"
     },
     {
       "source_skill": "flow-deploy",
@@ -7433,7 +7413,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "adapted",
-      "id": "REF-0289"
+      "id": "REF-0287"
     },
     {
       "source_skill": "flow-deploy",
@@ -7443,7 +7423,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "adapted",
-      "id": "REF-0290"
+      "id": "REF-0288"
     },
     {
       "source_skill": "flow-deploy",
@@ -7453,7 +7433,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "adapted",
-      "id": "REF-0291"
+      "id": "REF-0289"
     },
     {
       "source_skill": "flow-deploy",
@@ -7463,7 +7443,7 @@
       "kind": "host_path",
       "target": "fixed-claude-power-pack-runtime",
       "classification": "adapted",
-      "id": "REF-0292"
+      "id": "REF-0290"
     },
     {
       "source_skill": "flow-deploy",
@@ -7473,7 +7453,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "adapted",
-      "id": "REF-0293"
+      "id": "REF-0291"
     },
     {
       "source_skill": "flow-deploy",
@@ -7483,7 +7463,7 @@
       "kind": "host_path",
       "target": "fixed-claude-power-pack-runtime",
       "classification": "adapted",
-      "id": "REF-0294"
+      "id": "REF-0292"
     },
     {
       "source_skill": "flow-deploy",
@@ -7493,7 +7473,7 @@
       "kind": "host_path",
       "target": "fixed-claude-power-pack-runtime",
       "classification": "adapted",
-      "id": "REF-0295"
+      "id": "REF-0293"
     },
     {
       "source_skill": "flow-deploy",
@@ -7503,7 +7483,7 @@
       "kind": "skill",
       "target": "cicd-health",
       "classification": "resolvable",
-      "id": "REF-0296"
+      "id": "REF-0294"
     },
     {
       "source_skill": "flow-deploy",
@@ -7513,7 +7493,7 @@
       "kind": "skill",
       "target": "cicd-smoke",
       "classification": "resolvable",
-      "id": "REF-0297"
+      "id": "REF-0295"
     },
     {
       "source_skill": "flow-deploy",
@@ -7523,7 +7503,7 @@
       "kind": "skill",
       "target": "self-improvement-deployment",
       "classification": "resolvable",
-      "id": "REF-0298"
+      "id": "REF-0296"
     },
     {
       "source_skill": "flow-deploy",
@@ -7533,7 +7513,7 @@
       "kind": "skill",
       "target": "self-improvement-deployment",
       "classification": "resolvable",
-      "id": "REF-0299"
+      "id": "REF-0297"
     },
     {
       "source_skill": "flow-deploy",
@@ -7543,7 +7523,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "adapted",
-      "id": "REF-0300"
+      "id": "REF-0298"
     },
     {
       "source_skill": "flow-doctor",
@@ -7553,6 +7533,26 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
+      "id": "REF-0299"
+    },
+    {
+      "source_skill": "flow-doctor",
+      "path": "plugins/flow/skills/flow-doctor/SKILL.md",
+      "line": 11,
+      "token": "EnterWorktree",
+      "kind": "host_command",
+      "target": "EnterWorktree",
+      "classification": "adapted",
+      "id": "REF-0300"
+    },
+    {
+      "source_skill": "flow-doctor",
+      "path": "plugins/flow/skills/flow-doctor/SKILL.md",
+      "line": 11,
+      "token": "ExitWorktree",
+      "kind": "host_command",
+      "target": "ExitWorktree",
+      "classification": "adapted",
       "id": "REF-0301"
     },
     {
@@ -7748,7 +7748,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 183,
+      "line": 181,
       "token": "CLAUDE_PLUGIN_ROOT",
       "kind": "host_path",
       "target": "CLAUDE_PLUGIN_ROOT",
@@ -7758,7 +7758,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 186,
+      "line": 184,
       "token": "CLAUDE_PLUGIN_ROOT",
       "kind": "host_path",
       "target": "CLAUDE_PLUGIN_ROOT",
@@ -7768,7 +7768,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 191,
+      "line": 189,
       "token": "$flow-repair",
       "kind": "skill",
       "target": "flow-repair",
@@ -7778,7 +7778,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 199,
+      "line": 197,
       "token": ".claude/",
       "kind": "host_path",
       "target": ".claude/",
@@ -7788,7 +7788,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 204,
+      "line": 202,
       "token": ".claude/",
       "kind": "host_path",
       "target": ".claude/",
@@ -7798,7 +7798,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 209,
+      "line": 207,
       "token": ".claude/",
       "kind": "host_path",
       "target": ".claude/",
@@ -7808,7 +7808,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 249,
+      "line": 247,
       "token": "fixed-claude-power-pack-runtime",
       "kind": "host_path",
       "target": "fixed-claude-power-pack-runtime",
@@ -7818,7 +7818,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 343,
+      "line": 346,
       "token": ".claude/",
       "kind": "host_path",
       "target": ".claude/",
@@ -7828,7 +7828,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 359,
+      "line": 363,
       "token": "$flow-start",
       "kind": "skill",
       "target": "flow-start",
@@ -7838,7 +7838,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 386,
+      "line": 390,
       "token": "$cicd-init",
       "kind": "skill",
       "target": "cicd-init",
@@ -7848,7 +7848,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 386,
+      "line": 390,
       "token": "$flow-deploy",
       "kind": "skill",
       "target": "flow-deploy",
@@ -7858,7 +7858,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 386,
+      "line": 390,
       "token": "$flow-finish",
       "kind": "skill",
       "target": "flow-finish",
@@ -7868,7 +7868,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 387,
+      "line": 391,
       "token": "fixed-claude-power-pack-runtime",
       "kind": "host_path",
       "target": "fixed-claude-power-pack-runtime",
@@ -7878,7 +7878,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 388,
+      "line": 392,
       "token": "fixed-claude-power-pack-runtime",
       "kind": "host_path",
       "target": "fixed-claude-power-pack-runtime",
@@ -7888,7 +7888,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 389,
+      "line": 393,
       "token": "fixed-claude-power-pack-runtime",
       "kind": "host_path",
       "target": "fixed-claude-power-pack-runtime",
@@ -7898,7 +7898,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 390,
+      "line": 394,
       "token": "fixed-claude-power-pack-runtime",
       "kind": "host_path",
       "target": "fixed-claude-power-pack-runtime",
@@ -7908,7 +7908,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 391,
+      "line": 395,
       "token": "fixed-claude-power-pack-runtime",
       "kind": "host_path",
       "target": "fixed-claude-power-pack-runtime",
@@ -7918,7 +7918,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 392,
+      "line": 396,
       "token": "fixed-claude-power-pack-runtime",
       "kind": "host_path",
       "target": "fixed-claude-power-pack-runtime",
@@ -7928,7 +7928,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 393,
+      "line": 397,
       "token": "fixed-claude-power-pack-runtime",
       "kind": "host_path",
       "target": "fixed-claude-power-pack-runtime",
@@ -7938,7 +7938,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 394,
+      "line": 398,
       "token": "fixed-claude-power-pack-runtime",
       "kind": "host_path",
       "target": "fixed-claude-power-pack-runtime",
@@ -7948,7 +7948,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 395,
+      "line": 399,
       "token": "fixed-claude-power-pack-runtime",
       "kind": "host_path",
       "target": "fixed-claude-power-pack-runtime",
@@ -7958,7 +7958,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 396,
+      "line": 400,
       "token": "$cxpp-init",
       "kind": "skill",
       "target": "cxpp-init",
@@ -7968,7 +7968,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 396,
+      "line": 400,
       "token": "$cxpp-update",
       "kind": "skill",
       "target": "cxpp-update",
@@ -7978,7 +7978,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 397,
+      "line": 401,
       "token": "$cxpp-init",
       "kind": "skill",
       "target": "cxpp-init",
@@ -7988,7 +7988,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 397,
+      "line": 401,
       "token": "$cxpp-update",
       "kind": "skill",
       "target": "cxpp-update",
@@ -7998,7 +7998,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 397,
+      "line": 401,
       "token": "$flow-repair",
       "kind": "skill",
       "target": "flow-repair",
@@ -8008,7 +8008,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 398,
+      "line": 402,
       "token": "$flow-auto",
       "kind": "skill",
       "target": "flow-auto",
@@ -8018,7 +8018,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 398,
+      "line": 402,
       "token": "$flow-repair",
       "kind": "skill",
       "target": "flow-repair",
@@ -8028,7 +8028,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 398,
+      "line": 402,
       "token": "$flow-start",
       "kind": "skill",
       "target": "flow-start",
@@ -8038,7 +8038,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 399,
+      "line": 403,
       "token": "$flow-repair",
       "kind": "skill",
       "target": "flow-repair",
@@ -8048,7 +8048,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 401,
+      "line": 405,
       "token": "$cicd-init",
       "kind": "skill",
       "target": "cicd-init",
@@ -8058,7 +8058,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 402,
+      "line": 406,
       "token": "$cicd-check",
       "kind": "skill",
       "target": "cicd-check",
@@ -8068,7 +8068,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 402,
+      "line": 406,
       "token": "$cicd-init",
       "kind": "skill",
       "target": "cicd-init",
@@ -8078,7 +8078,7 @@
     {
       "source_skill": "flow-doctor",
       "path": "plugins/flow/skills/flow-doctor/reference.md",
-      "line": 403,
+      "line": 407,
       "token": "$cicd-pipeline",
       "kind": "skill",
       "target": "cicd-pipeline",
@@ -8097,38 +8097,38 @@
     },
     {
       "source_skill": "flow-eli5",
-      "path": "plugins/flow/skills/flow-eli5/SKILL.md",
-      "line": 11,
-      "token": "/plugin",
-      "kind": "host_command",
-      "target": "/plugin",
-      "classification": "adapted",
-      "id": "REF-0356"
-    },
-    {
-      "source_skill": "flow-eli5",
       "path": "plugins/flow/skills/flow-eli5/reference.md",
       "line": 1,
       "token": ".claude/",
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
+      "id": "REF-0356"
+    },
+    {
+      "source_skill": "flow-eli5",
+      "path": "plugins/flow/skills/flow-eli5/reference.md",
+      "line": 12,
+      "token": "$flow-eli5",
+      "kind": "skill",
+      "target": "flow-eli5",
+      "classification": "resolvable",
       "id": "REF-0357"
     },
     {
       "source_skill": "flow-eli5",
       "path": "plugins/flow/skills/flow-eli5/reference.md",
-      "line": 14,
-      "token": "/plugin",
-      "kind": "host_command",
-      "target": "/plugin",
-      "classification": "adapted",
+      "line": 213,
+      "token": "$flow-auto",
+      "kind": "skill",
+      "target": "flow-auto",
+      "classification": "resolvable",
       "id": "REF-0358"
     },
     {
       "source_skill": "flow-eli5",
       "path": "plugins/flow/skills/flow-eli5/reference.md",
-      "line": 191,
+      "line": 215,
       "token": "$flow-auto",
       "kind": "skill",
       "target": "flow-auto",
@@ -8138,27 +8138,27 @@
     {
       "source_skill": "flow-eli5",
       "path": "plugins/flow/skills/flow-eli5/reference.md",
-      "line": 193,
-      "token": "$flow-auto",
+      "line": 215,
+      "token": "$flow-eli5",
       "kind": "skill",
-      "target": "flow-auto",
+      "target": "flow-eli5",
       "classification": "resolvable",
       "id": "REF-0360"
     },
     {
       "source_skill": "flow-eli5",
       "path": "plugins/flow/skills/flow-eli5/reference.md",
-      "line": 193,
-      "token": "$flow-eli5",
+      "line": 217,
+      "token": "$flow-auto",
       "kind": "skill",
-      "target": "flow-eli5",
+      "target": "flow-auto",
       "classification": "resolvable",
       "id": "REF-0361"
     },
     {
       "source_skill": "flow-eli5",
       "path": "plugins/flow/skills/flow-eli5/reference.md",
-      "line": 195,
+      "line": 218,
       "token": "$flow-auto",
       "kind": "skill",
       "target": "flow-auto",
@@ -8168,7 +8168,7 @@
     {
       "source_skill": "flow-eli5",
       "path": "plugins/flow/skills/flow-eli5/reference.md",
-      "line": 196,
+      "line": 219,
       "token": "$flow-auto",
       "kind": "skill",
       "target": "flow-auto",
@@ -8178,7 +8178,7 @@
     {
       "source_skill": "flow-eli5",
       "path": "plugins/flow/skills/flow-eli5/reference.md",
-      "line": 203,
+      "line": 226,
       "token": "$flow-eli5",
       "kind": "skill",
       "target": "flow-eli5",
@@ -8188,7 +8188,7 @@
     {
       "source_skill": "flow-eli5",
       "path": "plugins/flow/skills/flow-eli5/reference.md",
-      "line": 203,
+      "line": 226,
       "token": "$flow-start",
       "kind": "skill",
       "target": "flow-start",
@@ -8238,7 +8238,7 @@
     {
       "source_skill": "flow-finish",
       "path": "plugins/flow/skills/flow-finish/reference.md",
-      "line": 60,
+      "line": 67,
       "token": "$flow-finish",
       "kind": "skill",
       "target": "flow-finish",
@@ -8248,152 +8248,92 @@
     {
       "source_skill": "flow-finish",
       "path": "plugins/flow/skills/flow-finish/reference.md",
-      "line": 66,
-      "token": "$flow-finish",
-      "kind": "skill",
-      "target": "flow-finish",
-      "classification": "resolvable",
+      "line": 75,
+      "token": ".claude/",
+      "kind": "host_path",
+      "target": ".claude/",
+      "classification": "adapted",
       "id": "REF-0371"
     },
     {
       "source_skill": "flow-finish",
       "path": "plugins/flow/skills/flow-finish/reference.md",
-      "line": 72,
-      "token": ".claude/",
-      "kind": "host_path",
-      "target": ".claude/",
-      "classification": "adapted",
+      "line": 81,
+      "token": "$flow-merge",
+      "kind": "skill",
+      "target": "flow-merge",
+      "classification": "resolvable",
       "id": "REF-0372"
     },
     {
       "source_skill": "flow-finish",
       "path": "plugins/flow/skills/flow-finish/reference.md",
-      "line": 75,
-      "token": "/skills",
-      "kind": "native_command",
-      "target": "/skills",
-      "classification": "native",
+      "line": 100,
+      "token": "CLAUDE_PLUGIN_ROOT",
+      "kind": "host_path",
+      "target": "CLAUDE_PLUGIN_ROOT",
+      "classification": "adapted",
       "id": "REF-0373"
     },
     {
       "source_skill": "flow-finish",
       "path": "plugins/flow/skills/flow-finish/reference.md",
-      "line": 76,
-      "token": ".claude/",
-      "kind": "host_path",
-      "target": ".claude/",
-      "classification": "adapted",
+      "line": 102,
+      "token": "$flow-repair",
+      "kind": "skill",
+      "target": "flow-repair",
+      "classification": "excluded",
       "id": "REF-0374"
     },
     {
       "source_skill": "flow-finish",
       "path": "plugins/flow/skills/flow-finish/reference.md",
-      "line": 79,
-      "token": ".claude/",
-      "kind": "host_path",
-      "target": ".claude/",
-      "classification": "adapted",
+      "line": 142,
+      "token": "$flow-finish",
+      "kind": "skill",
+      "target": "flow-finish",
+      "classification": "resolvable",
       "id": "REF-0375"
     },
     {
       "source_skill": "flow-finish",
       "path": "plugins/flow/skills/flow-finish/reference.md",
-      "line": 85,
-      "token": "$flow-merge",
+      "line": 144,
+      "token": "$flow-finish",
       "kind": "skill",
-      "target": "flow-merge",
+      "target": "flow-finish",
       "classification": "resolvable",
       "id": "REF-0376"
     },
     {
       "source_skill": "flow-finish",
       "path": "plugins/flow/skills/flow-finish/reference.md",
-      "line": 104,
-      "token": "CLAUDE_PLUGIN_ROOT",
-      "kind": "host_path",
-      "target": "CLAUDE_PLUGIN_ROOT",
-      "classification": "adapted",
+      "line": 173,
+      "token": "$documentation-c4",
+      "kind": "skill",
+      "target": "documentation-c4",
+      "classification": "resolvable",
       "id": "REF-0377"
     },
     {
       "source_skill": "flow-finish",
       "path": "plugins/flow/skills/flow-finish/reference.md",
-      "line": 106,
-      "token": "$flow-repair",
+      "line": 196,
+      "token": "$cicd-check",
       "kind": "skill",
-      "target": "flow-repair",
-      "classification": "excluded",
+      "target": "cicd-check",
+      "classification": "resolvable",
       "id": "REF-0378"
     },
     {
       "source_skill": "flow-finish",
       "path": "plugins/flow/skills/flow-finish/reference.md",
-      "line": 141,
-      "token": ".claude/",
-      "kind": "host_path",
-      "target": ".claude/",
-      "classification": "adapted",
-      "id": "REF-0379"
-    },
-    {
-      "source_skill": "flow-finish",
-      "path": "plugins/flow/skills/flow-finish/reference.md",
-      "line": 143,
-      "token": "$flow-finish",
-      "kind": "skill",
-      "target": "flow-finish",
-      "classification": "resolvable",
-      "id": "REF-0380"
-    },
-    {
-      "source_skill": "flow-finish",
-      "path": "plugins/flow/skills/flow-finish/reference.md",
-      "line": 145,
-      "token": "$flow-finish",
-      "kind": "skill",
-      "target": "flow-finish",
-      "classification": "resolvable",
-      "id": "REF-0381"
-    },
-    {
-      "source_skill": "flow-finish",
-      "path": "plugins/flow/skills/flow-finish/reference.md",
-      "line": 150,
-      "token": ".claude/",
-      "kind": "host_path",
-      "target": ".claude/",
-      "classification": "adapted",
-      "id": "REF-0382"
-    },
-    {
-      "source_skill": "flow-finish",
-      "path": "plugins/flow/skills/flow-finish/reference.md",
-      "line": 174,
-      "token": "$documentation-c4",
-      "kind": "skill",
-      "target": "documentation-c4",
-      "classification": "resolvable",
-      "id": "REF-0383"
-    },
-    {
-      "source_skill": "flow-finish",
-      "path": "plugins/flow/skills/flow-finish/reference.md",
-      "line": 195,
-      "token": "$cicd-check",
-      "kind": "skill",
-      "target": "cicd-check",
-      "classification": "resolvable",
-      "id": "REF-0384"
-    },
-    {
-      "source_skill": "flow-finish",
-      "path": "plugins/flow/skills/flow-finish/reference.md",
-      "line": 195,
+      "line": 196,
       "token": "$cicd-init",
       "kind": "skill",
       "target": "cicd-init",
       "classification": "resolvable",
-      "id": "REF-0385"
+      "id": "REF-0379"
     },
     {
       "source_skill": "flow-help",
@@ -8403,17 +8343,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0386"
-    },
-    {
-      "source_skill": "flow-help",
-      "path": "plugins/flow/skills/flow-help/SKILL.md",
-      "line": 11,
-      "token": "/plugin",
-      "kind": "host_command",
-      "target": "/plugin",
-      "classification": "adapted",
-      "id": "REF-0387"
+      "id": "REF-0380"
     },
     {
       "source_skill": "flow-help",
@@ -8423,7 +8353,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0388"
+      "id": "REF-0381"
     },
     {
       "source_skill": "flow-help",
@@ -8433,7 +8363,7 @@
       "kind": "skill",
       "target": "flow-start",
       "classification": "resolvable",
-      "id": "REF-0389"
+      "id": "REF-0382"
     },
     {
       "source_skill": "flow-help",
@@ -8443,7 +8373,7 @@
       "kind": "skill",
       "target": "flow-eli5",
       "classification": "resolvable",
-      "id": "REF-0390"
+      "id": "REF-0383"
     },
     {
       "source_skill": "flow-help",
@@ -8453,7 +8383,7 @@
       "kind": "skill",
       "target": "flow-status",
       "classification": "resolvable",
-      "id": "REF-0391"
+      "id": "REF-0384"
     },
     {
       "source_skill": "flow-help",
@@ -8463,7 +8393,7 @@
       "kind": "skill",
       "target": "flow-check",
       "classification": "resolvable",
-      "id": "REF-0392"
+      "id": "REF-0385"
     },
     {
       "source_skill": "flow-help",
@@ -8473,7 +8403,7 @@
       "kind": "skill",
       "target": "flow-finish",
       "classification": "resolvable",
-      "id": "REF-0393"
+      "id": "REF-0386"
     },
     {
       "source_skill": "flow-help",
@@ -8483,7 +8413,7 @@
       "kind": "skill",
       "target": "flow-merge",
       "classification": "resolvable",
-      "id": "REF-0394"
+      "id": "REF-0387"
     },
     {
       "source_skill": "flow-help",
@@ -8493,7 +8423,7 @@
       "kind": "skill",
       "target": "flow-deploy",
       "classification": "resolvable",
-      "id": "REF-0395"
+      "id": "REF-0388"
     },
     {
       "source_skill": "flow-help",
@@ -8503,7 +8433,7 @@
       "kind": "skill",
       "target": "flow-sync",
       "classification": "resolvable",
-      "id": "REF-0396"
+      "id": "REF-0389"
     },
     {
       "source_skill": "flow-help",
@@ -8513,7 +8443,7 @@
       "kind": "skill",
       "target": "flow-auto",
       "classification": "resolvable",
-      "id": "REF-0397"
+      "id": "REF-0390"
     },
     {
       "source_skill": "flow-help",
@@ -8523,7 +8453,7 @@
       "kind": "skill",
       "target": "claude-code-review",
       "classification": "resolvable",
-      "id": "REF-0398"
+      "id": "REF-0391"
     },
     {
       "source_skill": "flow-help",
@@ -8533,7 +8463,7 @@
       "kind": "skill",
       "target": "flow-auto",
       "classification": "resolvable",
-      "id": "REF-0399"
+      "id": "REF-0392"
     },
     {
       "source_skill": "flow-help",
@@ -8543,7 +8473,7 @@
       "kind": "skill",
       "target": "flow-auto_codex",
       "classification": "excluded",
-      "id": "REF-0400"
+      "id": "REF-0393"
     },
     {
       "source_skill": "flow-help",
@@ -8553,7 +8483,7 @@
       "kind": "skill",
       "target": "flow-cleanup",
       "classification": "resolvable",
-      "id": "REF-0401"
+      "id": "REF-0394"
     },
     {
       "source_skill": "flow-help",
@@ -8563,7 +8493,7 @@
       "kind": "skill",
       "target": "flow-doctor",
       "classification": "resolvable",
-      "id": "REF-0402"
+      "id": "REF-0395"
     },
     {
       "source_skill": "flow-help",
@@ -8573,7 +8503,7 @@
       "kind": "skill",
       "target": "flow-repair",
       "classification": "excluded",
-      "id": "REF-0403"
+      "id": "REF-0396"
     },
     {
       "source_skill": "flow-help",
@@ -8583,7 +8513,7 @@
       "kind": "skill",
       "target": "flow-help",
       "classification": "resolvable",
-      "id": "REF-0404"
+      "id": "REF-0397"
     },
     {
       "source_skill": "flow-help",
@@ -8593,7 +8523,7 @@
       "kind": "skill",
       "target": "flow-auto",
       "classification": "resolvable",
-      "id": "REF-0405"
+      "id": "REF-0398"
     },
     {
       "source_skill": "flow-help",
@@ -8603,7 +8533,7 @@
       "kind": "skill",
       "target": "flow-start",
       "classification": "resolvable",
-      "id": "REF-0406"
+      "id": "REF-0399"
     },
     {
       "source_skill": "flow-help",
@@ -8613,112 +8543,182 @@
       "kind": "skill",
       "target": "flow-merge",
       "classification": "resolvable",
-      "id": "REF-0407"
+      "id": "REF-0400"
     },
     {
       "source_skill": "flow-help",
       "path": "plugins/flow/skills/flow-help/reference.md",
       "line": 42,
-      "token": "/plugin",
-      "kind": "host_command",
-      "target": "/plugin",
-      "classification": "adapted",
-      "id": "REF-0408"
+      "token": "$cxpp-init",
+      "kind": "skill",
+      "target": "cxpp-init",
+      "classification": "resolvable",
+      "id": "REF-0401"
     },
     {
       "source_skill": "flow-help",
       "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 44,
-      "token": "$flow-repair",
+      "line": 42,
+      "token": "$cxpp-update",
       "kind": "skill",
-      "target": "flow-repair",
-      "classification": "excluded",
-      "id": "REF-0409"
+      "target": "cxpp-update",
+      "classification": "resolvable",
+      "id": "REF-0402"
+    },
+    {
+      "source_skill": "flow-help",
+      "path": "plugins/flow/skills/flow-help/reference.md",
+      "line": 43,
+      "token": "$cxpp-init",
+      "kind": "skill",
+      "target": "cxpp-init",
+      "classification": "resolvable",
+      "id": "REF-0403"
+    },
+    {
+      "source_skill": "flow-help",
+      "path": "plugins/flow/skills/flow-help/reference.md",
+      "line": 43,
+      "token": "$cxpp-update",
+      "kind": "skill",
+      "target": "cxpp-update",
+      "classification": "resolvable",
+      "id": "REF-0404"
     },
     {
       "source_skill": "flow-help",
       "path": "plugins/flow/skills/flow-help/reference.md",
       "line": 45,
+      "token": "$flow-repair",
+      "kind": "skill",
+      "target": "flow-repair",
+      "classification": "excluded",
+      "id": "REF-0405"
+    },
+    {
+      "source_skill": "flow-help",
+      "path": "plugins/flow/skills/flow-help/reference.md",
+      "line": 48,
       "token": "$flow-doctor",
       "kind": "skill",
       "target": "flow-doctor",
+      "classification": "resolvable",
+      "id": "REF-0406"
+    },
+    {
+      "source_skill": "flow-help",
+      "path": "plugins/flow/skills/flow-help/reference.md",
+      "line": 53,
+      "token": "$flow-auto",
+      "kind": "skill",
+      "target": "flow-auto",
+      "classification": "resolvable",
+      "id": "REF-0407"
+    },
+    {
+      "source_skill": "flow-help",
+      "path": "plugins/flow/skills/flow-help/reference.md",
+      "line": 62,
+      "token": "$flow-check",
+      "kind": "skill",
+      "target": "flow-check",
+      "classification": "resolvable",
+      "id": "REF-0408"
+    },
+    {
+      "source_skill": "flow-help",
+      "path": "plugins/flow/skills/flow-help/reference.md",
+      "line": 62,
+      "token": "$flow-deploy",
+      "kind": "skill",
+      "target": "flow-deploy",
+      "classification": "resolvable",
+      "id": "REF-0409"
+    },
+    {
+      "source_skill": "flow-help",
+      "path": "plugins/flow/skills/flow-help/reference.md",
+      "line": 62,
+      "token": "$flow-finish",
+      "kind": "skill",
+      "target": "flow-finish",
       "classification": "resolvable",
       "id": "REF-0410"
     },
     {
       "source_skill": "flow-help",
       "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 47,
-      "token": "$cxpp-init",
+      "line": 62,
+      "token": "$flow-merge",
       "kind": "skill",
-      "target": "cxpp-init",
+      "target": "flow-merge",
       "classification": "resolvable",
       "id": "REF-0411"
     },
     {
       "source_skill": "flow-help",
       "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 47,
-      "token": "$cxpp-update",
+      "line": 62,
+      "token": "$flow-start",
       "kind": "skill",
-      "target": "cxpp-update",
+      "target": "flow-start",
       "classification": "resolvable",
       "id": "REF-0412"
     },
     {
       "source_skill": "flow-help",
       "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 48,
-      "token": "$flow-repair",
+      "line": 67,
+      "token": "$flow-start",
       "kind": "skill",
-      "target": "flow-repair",
-      "classification": "excluded",
+      "target": "flow-start",
+      "classification": "resolvable",
       "id": "REF-0413"
     },
     {
       "source_skill": "flow-help",
       "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 51,
-      "token": "$flow-doctor",
+      "line": 67,
+      "token": "$flow-sync",
       "kind": "skill",
-      "target": "flow-doctor",
+      "target": "flow-sync",
       "classification": "resolvable",
       "id": "REF-0414"
     },
     {
       "source_skill": "flow-help",
       "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 56,
-      "token": "$flow-auto",
+      "line": 68,
+      "token": "$flow-start",
       "kind": "skill",
-      "target": "flow-auto",
+      "target": "flow-start",
       "classification": "resolvable",
       "id": "REF-0415"
     },
     {
       "source_skill": "flow-help",
       "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 61,
-      "token": "$flow-auto",
+      "line": 73,
+      "token": "$flow-deploy",
       "kind": "skill",
-      "target": "flow-auto",
+      "target": "flow-deploy",
       "classification": "resolvable",
       "id": "REF-0416"
     },
     {
       "source_skill": "flow-help",
       "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 65,
-      "token": "$flow-check",
+      "line": 73,
+      "token": "$flow-finish",
       "kind": "skill",
-      "target": "flow-check",
+      "target": "flow-finish",
       "classification": "resolvable",
       "id": "REF-0417"
     },
     {
       "source_skill": "flow-help",
       "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 65,
+      "line": 75,
       "token": "$flow-deploy",
       "kind": "skill",
       "target": "flow-deploy",
@@ -8728,7 +8728,7 @@
     {
       "source_skill": "flow-help",
       "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 65,
+      "line": 75,
       "token": "$flow-finish",
       "kind": "skill",
       "target": "flow-finish",
@@ -8738,27 +8738,27 @@
     {
       "source_skill": "flow-help",
       "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 65,
-      "token": "$flow-merge",
+      "line": 84,
+      "token": "$flow-deploy",
       "kind": "skill",
-      "target": "flow-merge",
+      "target": "flow-deploy",
       "classification": "resolvable",
       "id": "REF-0420"
     },
     {
       "source_skill": "flow-help",
       "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 65,
-      "token": "$flow-start",
+      "line": 84,
+      "token": "$flow-finish",
       "kind": "skill",
-      "target": "flow-start",
+      "target": "flow-finish",
       "classification": "resolvable",
       "id": "REF-0421"
     },
     {
       "source_skill": "flow-help",
       "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 70,
+      "line": 115,
       "token": "$flow-start",
       "kind": "skill",
       "target": "flow-start",
@@ -8768,202 +8768,72 @@
     {
       "source_skill": "flow-help",
       "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 70,
-      "token": "$flow-sync",
+      "line": 120,
+      "token": "$flow-status",
       "kind": "skill",
-      "target": "flow-sync",
+      "target": "flow-status",
       "classification": "resolvable",
       "id": "REF-0423"
     },
     {
       "source_skill": "flow-help",
       "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 71,
-      "token": "$flow-start",
+      "line": 124,
+      "token": "$flow-check",
       "kind": "skill",
-      "target": "flow-start",
+      "target": "flow-check",
       "classification": "resolvable",
       "id": "REF-0424"
     },
     {
       "source_skill": "flow-help",
       "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 76,
-      "token": "$flow-deploy",
+      "line": 128,
+      "token": "$flow-finish",
       "kind": "skill",
-      "target": "flow-deploy",
+      "target": "flow-finish",
       "classification": "resolvable",
       "id": "REF-0425"
     },
     {
       "source_skill": "flow-help",
       "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 76,
-      "token": "$flow-finish",
+      "line": 133,
+      "token": "$flow-merge",
       "kind": "skill",
-      "target": "flow-finish",
+      "target": "flow-merge",
       "classification": "resolvable",
       "id": "REF-0426"
     },
     {
       "source_skill": "flow-help",
       "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 76,
-      "token": ".claude/",
-      "kind": "host_path",
-      "target": ".claude/",
-      "classification": "adapted",
+      "line": 137,
+      "token": "$flow-deploy",
+      "kind": "skill",
+      "target": "flow-deploy",
+      "classification": "resolvable",
       "id": "REF-0427"
     },
     {
       "source_skill": "flow-help",
       "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 78,
-      "token": "$flow-deploy",
+      "line": 141,
+      "token": "$flow-sync",
       "kind": "skill",
-      "target": "flow-deploy",
+      "target": "flow-sync",
       "classification": "resolvable",
       "id": "REF-0428"
     },
     {
       "source_skill": "flow-help",
       "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 78,
-      "token": "$flow-finish",
-      "kind": "skill",
-      "target": "flow-finish",
-      "classification": "resolvable",
-      "id": "REF-0429"
-    },
-    {
-      "source_skill": "flow-help",
-      "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 87,
-      "token": "$flow-deploy",
-      "kind": "skill",
-      "target": "flow-deploy",
-      "classification": "resolvable",
-      "id": "REF-0430"
-    },
-    {
-      "source_skill": "flow-help",
-      "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 87,
-      "token": "$flow-finish",
-      "kind": "skill",
-      "target": "flow-finish",
-      "classification": "resolvable",
-      "id": "REF-0431"
-    },
-    {
-      "source_skill": "flow-help",
-      "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 88,
-      "token": ".claude/",
-      "kind": "host_path",
-      "target": ".claude/",
-      "classification": "adapted",
-      "id": "REF-0432"
-    },
-    {
-      "source_skill": "flow-help",
-      "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 90,
-      "token": ".claude/",
-      "kind": "host_path",
-      "target": ".claude/",
-      "classification": "adapted",
-      "id": "REF-0433"
-    },
-    {
-      "source_skill": "flow-help",
-      "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 105,
-      "token": ".claude/",
-      "kind": "host_path",
-      "target": ".claude/",
-      "classification": "adapted",
-      "id": "REF-0434"
-    },
-    {
-      "source_skill": "flow-help",
-      "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 118,
-      "token": "$flow-start",
-      "kind": "skill",
-      "target": "flow-start",
-      "classification": "resolvable",
-      "id": "REF-0435"
-    },
-    {
-      "source_skill": "flow-help",
-      "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 123,
-      "token": "$flow-status",
-      "kind": "skill",
-      "target": "flow-status",
-      "classification": "resolvable",
-      "id": "REF-0436"
-    },
-    {
-      "source_skill": "flow-help",
-      "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 127,
-      "token": "$flow-check",
-      "kind": "skill",
-      "target": "flow-check",
-      "classification": "resolvable",
-      "id": "REF-0437"
-    },
-    {
-      "source_skill": "flow-help",
-      "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 131,
-      "token": "$flow-finish",
-      "kind": "skill",
-      "target": "flow-finish",
-      "classification": "resolvable",
-      "id": "REF-0438"
-    },
-    {
-      "source_skill": "flow-help",
-      "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 136,
-      "token": "$flow-merge",
-      "kind": "skill",
-      "target": "flow-merge",
-      "classification": "resolvable",
-      "id": "REF-0439"
-    },
-    {
-      "source_skill": "flow-help",
-      "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 140,
-      "token": "$flow-deploy",
-      "kind": "skill",
-      "target": "flow-deploy",
-      "classification": "resolvable",
-      "id": "REF-0440"
-    },
-    {
-      "source_skill": "flow-help",
-      "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 144,
-      "token": "$flow-sync",
-      "kind": "skill",
-      "target": "flow-sync",
-      "classification": "resolvable",
-      "id": "REF-0441"
-    },
-    {
-      "source_skill": "flow-help",
-      "path": "plugins/flow/skills/flow-help/reference.md",
-      "line": 148,
+      "line": 145,
       "token": "$flow-auto",
       "kind": "skill",
       "target": "flow-auto",
       "classification": "resolvable",
-      "id": "REF-0442"
+      "id": "REF-0429"
     },
     {
       "source_skill": "flow-merge",
@@ -8973,7 +8843,27 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0443"
+      "id": "REF-0430"
+    },
+    {
+      "source_skill": "flow-merge",
+      "path": "plugins/flow/skills/flow-merge/SKILL.md",
+      "line": 11,
+      "token": "EnterWorktree",
+      "kind": "host_command",
+      "target": "EnterWorktree",
+      "classification": "adapted",
+      "id": "REF-0431"
+    },
+    {
+      "source_skill": "flow-merge",
+      "path": "plugins/flow/skills/flow-merge/SKILL.md",
+      "line": 11,
+      "token": "ExitWorktree",
+      "kind": "host_command",
+      "target": "ExitWorktree",
+      "classification": "adapted",
+      "id": "REF-0432"
     },
     {
       "source_skill": "flow-merge",
@@ -8983,7 +8873,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0444"
+      "id": "REF-0433"
     },
     {
       "source_skill": "flow-merge",
@@ -8993,7 +8883,7 @@
       "kind": "host_command",
       "target": "EnterWorktree",
       "classification": "adapted",
-      "id": "REF-0445"
+      "id": "REF-0434"
     },
     {
       "source_skill": "flow-merge",
@@ -9003,7 +8893,7 @@
       "kind": "host_command",
       "target": "ExitWorktree",
       "classification": "adapted",
-      "id": "REF-0446"
+      "id": "REF-0435"
     },
     {
       "source_skill": "flow-merge",
@@ -9013,7 +8903,7 @@
       "kind": "host_command",
       "target": "ExitWorktree",
       "classification": "adapted",
-      "id": "REF-0447"
+      "id": "REF-0436"
     },
     {
       "source_skill": "flow-merge",
@@ -9023,7 +8913,7 @@
       "kind": "skill",
       "target": "flow-merge",
       "classification": "resolvable",
-      "id": "REF-0448"
+      "id": "REF-0437"
     },
     {
       "source_skill": "flow-merge",
@@ -9033,7 +8923,7 @@
       "kind": "skill",
       "target": "flow-finish",
       "classification": "resolvable",
-      "id": "REF-0449"
+      "id": "REF-0438"
     },
     {
       "source_skill": "flow-merge",
@@ -9043,7 +8933,7 @@
       "kind": "skill",
       "target": "flow-auto",
       "classification": "resolvable",
-      "id": "REF-0450"
+      "id": "REF-0439"
     },
     {
       "source_skill": "flow-merge",
@@ -9053,7 +8943,7 @@
       "kind": "skill",
       "target": "flow-merge",
       "classification": "resolvable",
-      "id": "REF-0451"
+      "id": "REF-0440"
     },
     {
       "source_skill": "flow-merge",
@@ -9063,7 +8953,7 @@
       "kind": "skill",
       "target": "flow-finish",
       "classification": "resolvable",
-      "id": "REF-0452"
+      "id": "REF-0441"
     },
     {
       "source_skill": "flow-merge",
@@ -9073,87 +8963,127 @@
       "kind": "skill",
       "target": "flow-merge",
       "classification": "resolvable",
+      "id": "REF-0442"
+    },
+    {
+      "source_skill": "flow-merge",
+      "path": "plugins/flow/skills/flow-merge/reference.md",
+      "line": 149,
+      "token": "$flow-merge",
+      "kind": "skill",
+      "target": "flow-merge",
+      "classification": "resolvable",
+      "id": "REF-0443"
+    },
+    {
+      "source_skill": "flow-merge",
+      "path": "plugins/flow/skills/flow-merge/reference.md",
+      "line": 157,
+      "token": "$flow-merge",
+      "kind": "skill",
+      "target": "flow-merge",
+      "classification": "resolvable",
+      "id": "REF-0444"
+    },
+    {
+      "source_skill": "flow-merge",
+      "path": "plugins/flow/skills/flow-merge/reference.md",
+      "line": 164,
+      "token": "$flow-merge",
+      "kind": "skill",
+      "target": "flow-merge",
+      "classification": "resolvable",
+      "id": "REF-0445"
+    },
+    {
+      "source_skill": "flow-merge",
+      "path": "plugins/flow/skills/flow-merge/reference.md",
+      "line": 170,
+      "token": "$flow-merge",
+      "kind": "skill",
+      "target": "flow-merge",
+      "classification": "resolvable",
+      "id": "REF-0446"
+    },
+    {
+      "source_skill": "flow-merge",
+      "path": "plugins/flow/skills/flow-merge/reference.md",
+      "line": 200,
+      "token": "EnterWorktree",
+      "kind": "host_command",
+      "target": "EnterWorktree",
+      "classification": "adapted",
+      "id": "REF-0447"
+    },
+    {
+      "source_skill": "flow-merge",
+      "path": "plugins/flow/skills/flow-merge/reference.md",
+      "line": 200,
+      "token": "ExitWorktree",
+      "kind": "host_command",
+      "target": "ExitWorktree",
+      "classification": "adapted",
+      "id": "REF-0448"
+    },
+    {
+      "source_skill": "flow-merge",
+      "path": "plugins/flow/skills/flow-merge/reference.md",
+      "line": 242,
+      "token": "$flow-merge",
+      "kind": "skill",
+      "target": "flow-merge",
+      "classification": "resolvable",
+      "id": "REF-0449"
+    },
+    {
+      "source_skill": "flow-merge",
+      "path": "plugins/flow/skills/flow-merge/reference.md",
+      "line": 302,
+      "token": "$self-improvement-retro",
+      "kind": "skill",
+      "target": "self-improvement-retro",
+      "classification": "resolvable",
+      "id": "REF-0450"
+    },
+    {
+      "source_skill": "flow-merge",
+      "path": "plugins/flow/skills/flow-merge/reference.md",
+      "line": 308,
+      "token": "$flow-finish",
+      "kind": "skill",
+      "target": "flow-finish",
+      "classification": "resolvable",
+      "id": "REF-0451"
+    },
+    {
+      "source_skill": "flow-merge",
+      "path": "plugins/flow/skills/flow-merge/reference.md",
+      "line": 318,
+      "token": "ExitWorktree",
+      "kind": "host_command",
+      "target": "ExitWorktree",
+      "classification": "adapted",
+      "id": "REF-0452"
+    },
+    {
+      "source_skill": "flow-merge",
+      "path": "plugins/flow/skills/flow-merge/reference.md",
+      "line": 321,
+      "token": "$flow-cleanup",
+      "kind": "skill",
+      "target": "flow-cleanup",
+      "classification": "resolvable",
       "id": "REF-0453"
     },
     {
       "source_skill": "flow-merge",
       "path": "plugins/flow/skills/flow-merge/reference.md",
-      "line": 168,
-      "token": "EnterWorktree",
-      "kind": "host_command",
-      "target": "EnterWorktree",
-      "classification": "adapted",
+      "line": 322,
+      "token": "$self-improvement-retro",
+      "kind": "skill",
+      "target": "self-improvement-retro",
+      "classification": "resolvable",
       "id": "REF-0454"
-    },
-    {
-      "source_skill": "flow-merge",
-      "path": "plugins/flow/skills/flow-merge/reference.md",
-      "line": 168,
-      "token": "ExitWorktree",
-      "kind": "host_command",
-      "target": "ExitWorktree",
-      "classification": "adapted",
-      "id": "REF-0455"
-    },
-    {
-      "source_skill": "flow-merge",
-      "path": "plugins/flow/skills/flow-merge/reference.md",
-      "line": 210,
-      "token": "$flow-merge",
-      "kind": "skill",
-      "target": "flow-merge",
-      "classification": "resolvable",
-      "id": "REF-0456"
-    },
-    {
-      "source_skill": "flow-merge",
-      "path": "plugins/flow/skills/flow-merge/reference.md",
-      "line": 270,
-      "token": "$self-improvement-retro",
-      "kind": "skill",
-      "target": "self-improvement-retro",
-      "classification": "resolvable",
-      "id": "REF-0457"
-    },
-    {
-      "source_skill": "flow-merge",
-      "path": "plugins/flow/skills/flow-merge/reference.md",
-      "line": 276,
-      "token": "$flow-finish",
-      "kind": "skill",
-      "target": "flow-finish",
-      "classification": "resolvable",
-      "id": "REF-0458"
-    },
-    {
-      "source_skill": "flow-merge",
-      "path": "plugins/flow/skills/flow-merge/reference.md",
-      "line": 286,
-      "token": "ExitWorktree",
-      "kind": "host_command",
-      "target": "ExitWorktree",
-      "classification": "adapted",
-      "id": "REF-0459"
-    },
-    {
-      "source_skill": "flow-merge",
-      "path": "plugins/flow/skills/flow-merge/reference.md",
-      "line": 289,
-      "token": "$flow-cleanup",
-      "kind": "skill",
-      "target": "flow-cleanup",
-      "classification": "resolvable",
-      "id": "REF-0460"
-    },
-    {
-      "source_skill": "flow-merge",
-      "path": "plugins/flow/skills/flow-merge/reference.md",
-      "line": 290,
-      "token": "$self-improvement-retro",
-      "kind": "skill",
-      "target": "self-improvement-retro",
-      "classification": "resolvable",
-      "id": "REF-0461"
     },
     {
       "source_skill": "flow-start",
@@ -9163,17 +9093,27 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0462"
+      "id": "REF-0455"
     },
     {
       "source_skill": "flow-start",
       "path": "plugins/flow/skills/flow-start/SKILL.md",
-      "line": 12,
-      "token": "/plugin",
+      "line": 11,
+      "token": "EnterWorktree",
       "kind": "host_command",
-      "target": "/plugin",
+      "target": "EnterWorktree",
       "classification": "adapted",
-      "id": "REF-0463"
+      "id": "REF-0456"
+    },
+    {
+      "source_skill": "flow-start",
+      "path": "plugins/flow/skills/flow-start/SKILL.md",
+      "line": 11,
+      "token": "ExitWorktree",
+      "kind": "host_command",
+      "target": "ExitWorktree",
+      "classification": "adapted",
+      "id": "REF-0457"
     },
     {
       "source_skill": "flow-start",
@@ -9183,7 +9123,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0464"
+      "id": "REF-0458"
     },
     {
       "source_skill": "flow-start",
@@ -9193,7 +9133,7 @@
       "kind": "host_command",
       "target": "EnterWorktree",
       "classification": "adapted",
-      "id": "REF-0465"
+      "id": "REF-0459"
     },
     {
       "source_skill": "flow-start",
@@ -9203,7 +9143,7 @@
       "kind": "host_command",
       "target": "EnterWorktree",
       "classification": "adapted",
-      "id": "REF-0466"
+      "id": "REF-0460"
     },
     {
       "source_skill": "flow-start",
@@ -9213,7 +9153,7 @@
       "kind": "host_command",
       "target": "EnterWorktree",
       "classification": "adapted",
-      "id": "REF-0467"
+      "id": "REF-0461"
     },
     {
       "source_skill": "flow-start",
@@ -9223,7 +9163,7 @@
       "kind": "skill",
       "target": "flow-start",
       "classification": "resolvable",
-      "id": "REF-0468"
+      "id": "REF-0462"
     },
     {
       "source_skill": "flow-start",
@@ -9233,7 +9173,7 @@
       "kind": "skill",
       "target": "flow-start",
       "classification": "resolvable",
-      "id": "REF-0469"
+      "id": "REF-0463"
     },
     {
       "source_skill": "flow-start",
@@ -9243,27 +9183,17 @@
       "kind": "skill",
       "target": "flow-auto",
       "classification": "resolvable",
-      "id": "REF-0470"
+      "id": "REF-0464"
     },
     {
       "source_skill": "flow-start",
       "path": "plugins/flow/skills/flow-start/reference.md",
-      "line": 74,
-      "token": "CLAUDE_PLUGIN_ROOT",
-      "kind": "host_path",
-      "target": "CLAUDE_PLUGIN_ROOT",
-      "classification": "adapted",
-      "id": "REF-0471"
-    },
-    {
-      "source_skill": "flow-start",
-      "path": "plugins/flow/skills/flow-start/reference.md",
-      "line": 76,
-      "token": "CLAUDE_PLUGIN_ROOT",
-      "kind": "host_path",
-      "target": "CLAUDE_PLUGIN_ROOT",
-      "classification": "adapted",
-      "id": "REF-0472"
+      "line": 77,
+      "token": "$flow-repair",
+      "kind": "skill",
+      "target": "flow-repair",
+      "classification": "excluded",
+      "id": "REF-0465"
     },
     {
       "source_skill": "flow-start",
@@ -9273,47 +9203,37 @@
       "kind": "skill",
       "target": "flow-repair",
       "classification": "excluded",
-      "id": "REF-0473"
+      "id": "REF-0466"
     },
     {
       "source_skill": "flow-start",
       "path": "plugins/flow/skills/flow-start/reference.md",
-      "line": 83,
-      "token": "$flow-repair",
-      "kind": "skill",
-      "target": "flow-repair",
-      "classification": "excluded",
-      "id": "REF-0474"
-    },
-    {
-      "source_skill": "flow-start",
-      "path": "plugins/flow/skills/flow-start/reference.md",
-      "line": 83,
-      "token": "/plugin",
-      "kind": "host_command",
-      "target": "/plugin",
-      "classification": "adapted",
-      "id": "REF-0475"
-    },
-    {
-      "source_skill": "flow-start",
-      "path": "plugins/flow/skills/flow-start/reference.md",
-      "line": 91,
+      "line": 88,
       "token": "EnterWorktree",
       "kind": "host_command",
       "target": "EnterWorktree",
       "classification": "adapted",
-      "id": "REF-0476"
+      "id": "REF-0467"
     },
     {
       "source_skill": "flow-start",
       "path": "plugins/flow/skills/flow-start/reference.md",
-      "line": 99,
+      "line": 98,
       "token": "$flow-auto",
       "kind": "skill",
       "target": "flow-auto",
       "classification": "resolvable",
-      "id": "REF-0477"
+      "id": "REF-0468"
+    },
+    {
+      "source_skill": "flow-start",
+      "path": "plugins/flow/skills/flow-start/reference.md",
+      "line": 112,
+      "token": "EnterWorktree",
+      "kind": "host_command",
+      "target": "EnterWorktree",
+      "classification": "adapted",
+      "id": "REF-0469"
     },
     {
       "source_skill": "flow-start",
@@ -9323,117 +9243,107 @@
       "kind": "host_command",
       "target": "EnterWorktree",
       "classification": "adapted",
-      "id": "REF-0478"
+      "id": "REF-0470"
     },
     {
       "source_skill": "flow-start",
       "path": "plugins/flow/skills/flow-start/reference.md",
-      "line": 114,
-      "token": "EnterWorktree",
-      "kind": "host_command",
-      "target": "EnterWorktree",
-      "classification": "adapted",
-      "id": "REF-0479"
+      "line": 115,
+      "token": "$flow-merge",
+      "kind": "skill",
+      "target": "flow-merge",
+      "classification": "resolvable",
+      "id": "REF-0471"
     },
     {
       "source_skill": "flow-start",
       "path": "plugins/flow/skills/flow-start/reference.md",
       "line": 116,
-      "token": "$flow-merge",
-      "kind": "skill",
-      "target": "flow-merge",
-      "classification": "resolvable",
-      "id": "REF-0480"
-    },
-    {
-      "source_skill": "flow-start",
-      "path": "plugins/flow/skills/flow-start/reference.md",
-      "line": 117,
       "token": "$flow-cleanup",
       "kind": "skill",
       "target": "flow-cleanup",
       "classification": "resolvable",
-      "id": "REF-0481"
+      "id": "REF-0472"
     },
     {
       "source_skill": "flow-start",
       "path": "plugins/flow/skills/flow-start/reference.md",
-      "line": 123,
+      "line": 122,
       "token": "EnterWorktree",
       "kind": "host_command",
       "target": "EnterWorktree",
       "classification": "adapted",
-      "id": "REF-0482"
+      "id": "REF-0473"
     },
     {
       "source_skill": "flow-start",
       "path": "plugins/flow/skills/flow-start/reference.md",
-      "line": 134,
+      "line": 133,
       "token": "EnterWorktree",
       "kind": "host_command",
       "target": "EnterWorktree",
       "classification": "adapted",
-      "id": "REF-0483"
+      "id": "REF-0474"
     },
     {
       "source_skill": "flow-start",
       "path": "plugins/flow/skills/flow-start/reference.md",
-      "line": 154,
+      "line": 167,
       "token": "$flow-cleanup",
       "kind": "skill",
       "target": "flow-cleanup",
       "classification": "resolvable",
-      "id": "REF-0484"
+      "id": "REF-0475"
     },
     {
       "source_skill": "flow-start",
       "path": "plugins/flow/skills/flow-start/reference.md",
-      "line": 154,
+      "line": 167,
       "token": "$flow-merge",
       "kind": "skill",
       "target": "flow-merge",
       "classification": "resolvable",
-      "id": "REF-0485"
+      "id": "REF-0476"
     },
     {
       "source_skill": "flow-start",
       "path": "plugins/flow/skills/flow-start/reference.md",
-      "line": 154,
+      "line": 167,
       "token": "$flow-status",
       "kind": "skill",
       "target": "flow-status",
       "classification": "resolvable",
-      "id": "REF-0486"
+      "id": "REF-0477"
     },
     {
       "source_skill": "flow-start",
       "path": "plugins/flow/skills/flow-start/reference.md",
-      "line": 163,
+      "line": 176,
       "token": "$flow-auto",
       "kind": "skill",
       "target": "flow-auto",
       "classification": "resolvable",
-      "id": "REF-0487"
+      "id": "REF-0478"
     },
     {
       "source_skill": "flow-start",
       "path": "plugins/flow/skills/flow-start/reference.md",
-      "line": 183,
+      "line": 196,
       "token": "$flow-auto",
       "kind": "skill",
       "target": "flow-auto",
       "classification": "resolvable",
-      "id": "REF-0488"
+      "id": "REF-0479"
     },
     {
       "source_skill": "flow-start",
       "path": "plugins/flow/skills/flow-start/reference.md",
-      "line": 187,
+      "line": 200,
       "token": "$flow-start",
       "kind": "skill",
       "target": "flow-start",
       "classification": "resolvable",
-      "id": "REF-0489"
+      "id": "REF-0480"
     },
     {
       "source_skill": "flow-status",
@@ -9443,7 +9353,27 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0490"
+      "id": "REF-0481"
+    },
+    {
+      "source_skill": "flow-status",
+      "path": "plugins/flow/skills/flow-status/SKILL.md",
+      "line": 11,
+      "token": "EnterWorktree",
+      "kind": "host_command",
+      "target": "EnterWorktree",
+      "classification": "adapted",
+      "id": "REF-0482"
+    },
+    {
+      "source_skill": "flow-status",
+      "path": "plugins/flow/skills/flow-status/SKILL.md",
+      "line": 11,
+      "token": "ExitWorktree",
+      "kind": "host_command",
+      "target": "ExitWorktree",
+      "classification": "adapted",
+      "id": "REF-0483"
     },
     {
       "source_skill": "flow-status",
@@ -9453,7 +9383,7 @@
       "kind": "skill",
       "target": "flow-status",
       "classification": "resolvable",
-      "id": "REF-0491"
+      "id": "REF-0484"
     },
     {
       "source_skill": "flow-status",
@@ -9463,7 +9393,7 @@
       "kind": "skill",
       "target": "flow-merge",
       "classification": "resolvable",
-      "id": "REF-0492"
+      "id": "REF-0485"
     },
     {
       "source_skill": "flow-status",
@@ -9473,7 +9403,7 @@
       "kind": "skill",
       "target": "flow-cleanup",
       "classification": "resolvable",
-      "id": "REF-0493"
+      "id": "REF-0486"
     },
     {
       "source_skill": "flow-status",
@@ -9483,7 +9413,7 @@
       "kind": "skill",
       "target": "flow-start",
       "classification": "resolvable",
-      "id": "REF-0494"
+      "id": "REF-0487"
     },
     {
       "source_skill": "flow-sync",
@@ -9493,7 +9423,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0495"
+      "id": "REF-0488"
     },
     {
       "source_skill": "flow-sync",
@@ -9503,7 +9433,7 @@
       "kind": "skill",
       "target": "flow-sync",
       "classification": "resolvable",
-      "id": "REF-0496"
+      "id": "REF-0489"
     },
     {
       "source_skill": "flow-sync",
@@ -9513,7 +9443,7 @@
       "kind": "skill",
       "target": "flow-start",
       "classification": "resolvable",
-      "id": "REF-0497"
+      "id": "REF-0490"
     },
     {
       "source_skill": "flow-sync",
@@ -9523,7 +9453,7 @@
       "kind": "skill",
       "target": "flow-sync",
       "classification": "resolvable",
-      "id": "REF-0498"
+      "id": "REF-0491"
     },
     {
       "source_skill": "flow-sync",
@@ -9533,7 +9463,7 @@
       "kind": "skill",
       "target": "flow-start",
       "classification": "resolvable",
-      "id": "REF-0499"
+      "id": "REF-0492"
     },
     {
       "source_skill": "flow-sync",
@@ -9543,7 +9473,7 @@
       "kind": "skill",
       "target": "flow-start",
       "classification": "resolvable",
-      "id": "REF-0500"
+      "id": "REF-0493"
     },
     {
       "source_skill": "flow-sync",
@@ -9553,7 +9483,7 @@
       "kind": "skill",
       "target": "flow-start",
       "classification": "resolvable",
-      "id": "REF-0501"
+      "id": "REF-0494"
     },
     {
       "source_skill": "flow-sync",
@@ -9563,7 +9493,7 @@
       "kind": "skill",
       "target": "flow-merge",
       "classification": "resolvable",
-      "id": "REF-0502"
+      "id": "REF-0495"
     },
     {
       "source_skill": "github-help",
@@ -9573,7 +9503,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0503"
+      "id": "REF-0496"
     },
     {
       "source_skill": "github-help",
@@ -9583,7 +9513,7 @@
       "kind": "skill",
       "target": "github-issue-create",
       "classification": "resolvable",
-      "id": "REF-0504"
+      "id": "REF-0497"
     },
     {
       "source_skill": "github-help",
@@ -9593,7 +9523,7 @@
       "kind": "skill",
       "target": "github-issue-list",
       "classification": "resolvable",
-      "id": "REF-0505"
+      "id": "REF-0498"
     },
     {
       "source_skill": "github-help",
@@ -9603,7 +9533,7 @@
       "kind": "skill",
       "target": "github-issue-view",
       "classification": "resolvable",
-      "id": "REF-0506"
+      "id": "REF-0499"
     },
     {
       "source_skill": "github-help",
@@ -9613,7 +9543,7 @@
       "kind": "skill",
       "target": "github-issue-update",
       "classification": "resolvable",
-      "id": "REF-0507"
+      "id": "REF-0500"
     },
     {
       "source_skill": "github-help",
@@ -9623,7 +9553,7 @@
       "kind": "skill",
       "target": "github-issue-close",
       "classification": "resolvable",
-      "id": "REF-0508"
+      "id": "REF-0501"
     },
     {
       "source_skill": "github-help",
@@ -9633,7 +9563,7 @@
       "kind": "skill",
       "target": "github-issue-create",
       "classification": "resolvable",
-      "id": "REF-0509"
+      "id": "REF-0502"
     },
     {
       "source_skill": "github-help",
@@ -9643,7 +9573,7 @@
       "kind": "skill",
       "target": "github-issue-list",
       "classification": "resolvable",
-      "id": "REF-0510"
+      "id": "REF-0503"
     },
     {
       "source_skill": "github-help",
@@ -9653,7 +9583,7 @@
       "kind": "skill",
       "target": "github-issue-view",
       "classification": "resolvable",
-      "id": "REF-0511"
+      "id": "REF-0504"
     },
     {
       "source_skill": "github-help",
@@ -9663,7 +9593,7 @@
       "kind": "skill",
       "target": "github-issue-close",
       "classification": "resolvable",
-      "id": "REF-0512"
+      "id": "REF-0505"
     },
     {
       "source_skill": "github-issue-close",
@@ -9673,7 +9603,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0513"
+      "id": "REF-0506"
     },
     {
       "source_skill": "github-issue-close",
@@ -9683,7 +9613,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0514"
+      "id": "REF-0507"
     },
     {
       "source_skill": "github-issue-close",
@@ -9693,7 +9623,7 @@
       "kind": "skill",
       "target": "github-issue-close",
       "classification": "resolvable",
-      "id": "REF-0515"
+      "id": "REF-0508"
     },
     {
       "source_skill": "github-issue-close",
@@ -9703,7 +9633,7 @@
       "kind": "skill",
       "target": "github-issue-close",
       "classification": "resolvable",
-      "id": "REF-0516"
+      "id": "REF-0509"
     },
     {
       "source_skill": "github-issue-close",
@@ -9713,7 +9643,7 @@
       "kind": "skill",
       "target": "github-issue-close",
       "classification": "resolvable",
-      "id": "REF-0517"
+      "id": "REF-0510"
     },
     {
       "source_skill": "github-issue-create",
@@ -9723,7 +9653,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0518"
+      "id": "REF-0511"
     },
     {
       "source_skill": "github-issue-create",
@@ -9733,7 +9663,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0519"
+      "id": "REF-0512"
     },
     {
       "source_skill": "github-issue-create",
@@ -9743,7 +9673,7 @@
       "kind": "native_command",
       "target": "/skills",
       "classification": "native",
-      "id": "REF-0520"
+      "id": "REF-0513"
     },
     {
       "source_skill": "github-issue-create",
@@ -9753,7 +9683,7 @@
       "kind": "skill",
       "target": "github-issue-create",
       "classification": "resolvable",
-      "id": "REF-0521"
+      "id": "REF-0514"
     },
     {
       "source_skill": "github-issue-list",
@@ -9763,7 +9693,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0522"
+      "id": "REF-0515"
     },
     {
       "source_skill": "github-issue-list",
@@ -9773,7 +9703,7 @@
       "kind": "skill",
       "target": "github-issue-list",
       "classification": "resolvable",
-      "id": "REF-0523"
+      "id": "REF-0516"
     },
     {
       "source_skill": "github-issue-list",
@@ -9783,7 +9713,7 @@
       "kind": "skill",
       "target": "github-issue-view",
       "classification": "resolvable",
-      "id": "REF-0524"
+      "id": "REF-0517"
     },
     {
       "source_skill": "github-issue-list",
@@ -9793,7 +9723,7 @@
       "kind": "skill",
       "target": "github-issue-create",
       "classification": "resolvable",
-      "id": "REF-0525"
+      "id": "REF-0518"
     },
     {
       "source_skill": "github-issue-update",
@@ -9803,7 +9733,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0526"
+      "id": "REF-0519"
     },
     {
       "source_skill": "github-issue-update",
@@ -9813,7 +9743,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0527"
+      "id": "REF-0520"
     },
     {
       "source_skill": "github-issue-update",
@@ -9823,7 +9753,7 @@
       "kind": "skill",
       "target": "github-issue-update",
       "classification": "resolvable",
-      "id": "REF-0528"
+      "id": "REF-0521"
     },
     {
       "source_skill": "github-issue-view",
@@ -9833,7 +9763,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0529"
+      "id": "REF-0522"
     },
     {
       "source_skill": "github-issue-view",
@@ -9843,7 +9773,7 @@
       "kind": "skill",
       "target": "github-issue-update",
       "classification": "resolvable",
-      "id": "REF-0530"
+      "id": "REF-0523"
     },
     {
       "source_skill": "github-issue-view",
@@ -9853,7 +9783,7 @@
       "kind": "skill",
       "target": "github-issue-close",
       "classification": "resolvable",
-      "id": "REF-0531"
+      "id": "REF-0524"
     },
     {
       "source_skill": "github-issue-view",
@@ -9863,7 +9793,7 @@
       "kind": "skill",
       "target": "github-issue-update",
       "classification": "resolvable",
-      "id": "REF-0532"
+      "id": "REF-0525"
     },
     {
       "source_skill": "github-issue-view",
@@ -9873,7 +9803,7 @@
       "kind": "skill",
       "target": "github-issue-view",
       "classification": "resolvable",
-      "id": "REF-0533"
+      "id": "REF-0526"
     },
     {
       "source_skill": "project-help",
@@ -9883,7 +9813,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0534"
+      "id": "REF-0527"
     },
     {
       "source_skill": "project-help",
@@ -9893,7 +9823,7 @@
       "kind": "skill",
       "target": "skill-name",
       "classification": "example",
-      "id": "REF-0535"
+      "id": "REF-0528"
     },
     {
       "source_skill": "project-help",
@@ -9903,7 +9833,7 @@
       "kind": "native_command",
       "target": "/skills",
       "classification": "native",
-      "id": "REF-0536"
+      "id": "REF-0529"
     },
     {
       "source_skill": "project-help",
@@ -9913,7 +9843,7 @@
       "kind": "skill",
       "target": "project-init",
       "classification": "resolvable",
-      "id": "REF-0537"
+      "id": "REF-0530"
     },
     {
       "source_skill": "project-help",
@@ -9923,7 +9853,7 @@
       "kind": "skill",
       "target": "project-lite",
       "classification": "resolvable",
-      "id": "REF-0538"
+      "id": "REF-0531"
     },
     {
       "source_skill": "project-help",
@@ -9933,7 +9863,7 @@
       "kind": "skill",
       "target": "project-next",
       "classification": "resolvable",
-      "id": "REF-0539"
+      "id": "REF-0532"
     },
     {
       "source_skill": "project-help",
@@ -9943,7 +9873,7 @@
       "kind": "skill",
       "target": "project-init",
       "classification": "resolvable",
-      "id": "REF-0540"
+      "id": "REF-0533"
     },
     {
       "source_skill": "project-help",
@@ -9953,7 +9883,7 @@
       "kind": "skill",
       "target": "spec-adopt",
       "classification": "resolvable",
-      "id": "REF-0541"
+      "id": "REF-0534"
     },
     {
       "source_skill": "project-help",
@@ -9963,7 +9893,7 @@
       "kind": "skill",
       "target": "spec-sync",
       "classification": "resolvable",
-      "id": "REF-0542"
+      "id": "REF-0535"
     },
     {
       "source_skill": "project-help",
@@ -9973,7 +9903,7 @@
       "kind": "skill",
       "target": "cxpp-init",
       "classification": "resolvable",
-      "id": "REF-0543"
+      "id": "REF-0536"
     },
     {
       "source_skill": "project-help",
@@ -9983,7 +9913,7 @@
       "kind": "skill",
       "target": "project-init",
       "classification": "resolvable",
-      "id": "REF-0544"
+      "id": "REF-0537"
     },
     {
       "source_skill": "project-init",
@@ -9993,7 +9923,7 @@
       "kind": "skill",
       "target": "project-init",
       "classification": "resolvable",
-      "id": "REF-0545"
+      "id": "REF-0538"
     },
     {
       "source_skill": "project-init",
@@ -10003,7 +9933,7 @@
       "kind": "skill",
       "target": "project-lite",
       "classification": "resolvable",
-      "id": "REF-0546"
+      "id": "REF-0539"
     },
     {
       "source_skill": "project-init",
@@ -10013,7 +9943,7 @@
       "kind": "skill",
       "target": "project-next",
       "classification": "resolvable",
-      "id": "REF-0547"
+      "id": "REF-0540"
     },
     {
       "source_skill": "project-init",
@@ -10023,7 +9953,7 @@
       "kind": "skill",
       "target": "spec-adopt",
       "classification": "resolvable",
-      "id": "REF-0548"
+      "id": "REF-0541"
     },
     {
       "source_skill": "project-init",
@@ -10033,7 +9963,7 @@
       "kind": "skill",
       "target": "spec-sync",
       "classification": "resolvable",
-      "id": "REF-0549"
+      "id": "REF-0542"
     },
     {
       "source_skill": "project-init",
@@ -10043,7 +9973,7 @@
       "kind": "skill",
       "target": "cxpp-init",
       "classification": "resolvable",
-      "id": "REF-0550"
+      "id": "REF-0543"
     },
     {
       "source_skill": "project-init",
@@ -10053,7 +9983,7 @@
       "kind": "skill",
       "target": "cxpp-init",
       "classification": "resolvable",
-      "id": "REF-0551"
+      "id": "REF-0544"
     },
     {
       "source_skill": "project-init",
@@ -10063,7 +9993,7 @@
       "kind": "skill",
       "target": "spec-adopt",
       "classification": "resolvable",
-      "id": "REF-0552"
+      "id": "REF-0545"
     },
     {
       "source_skill": "project-init",
@@ -10073,7 +10003,7 @@
       "kind": "skill",
       "target": "spec-sync",
       "classification": "resolvable",
-      "id": "REF-0553"
+      "id": "REF-0546"
     },
     {
       "source_skill": "project-next",
@@ -10083,7 +10013,7 @@
       "kind": "skill",
       "target": "flow-auto",
       "classification": "resolvable",
-      "id": "REF-0554"
+      "id": "REF-0547"
     },
     {
       "source_skill": "qa-help",
@@ -10093,7 +10023,7 @@
       "kind": "skill",
       "target": "qa-test",
       "classification": "resolvable",
-      "id": "REF-0555"
+      "id": "REF-0548"
     },
     {
       "source_skill": "qa-help",
@@ -10103,7 +10033,7 @@
       "kind": "skill",
       "target": "qa-test",
       "classification": "resolvable",
-      "id": "REF-0556"
+      "id": "REF-0549"
     },
     {
       "source_skill": "qa-help",
@@ -10113,7 +10043,7 @@
       "kind": "skill",
       "target": "github-issue-create",
       "classification": "resolvable",
-      "id": "REF-0557"
+      "id": "REF-0550"
     },
     {
       "source_skill": "qa-help",
@@ -10123,7 +10053,7 @@
       "kind": "skill",
       "target": "cxpp-init",
       "classification": "resolvable",
-      "id": "REF-0558"
+      "id": "REF-0551"
     },
     {
       "source_skill": "qa-test",
@@ -10133,7 +10063,7 @@
       "kind": "skill",
       "target": "github-issue-create",
       "classification": "resolvable",
-      "id": "REF-0559"
+      "id": "REF-0552"
     },
     {
       "source_skill": "second-opinion-help",
@@ -10143,7 +10073,7 @@
       "kind": "skill",
       "target": "second-opinion-start",
       "classification": "resolvable",
-      "id": "REF-0560"
+      "id": "REF-0553"
     },
     {
       "source_skill": "second-opinion-help",
@@ -10153,7 +10083,7 @@
       "kind": "skill",
       "target": "second-opinion-models",
       "classification": "resolvable",
-      "id": "REF-0561"
+      "id": "REF-0554"
     },
     {
       "source_skill": "second-opinion-help",
@@ -10163,7 +10093,7 @@
       "kind": "skill",
       "target": "evaluate-issue",
       "classification": "resolvable",
-      "id": "REF-0562"
+      "id": "REF-0555"
     },
     {
       "source_skill": "second-opinion-help",
@@ -10173,7 +10103,7 @@
       "kind": "skill",
       "target": "cxpp-init",
       "classification": "resolvable",
-      "id": "REF-0563"
+      "id": "REF-0556"
     },
     {
       "source_skill": "second-opinion-models",
@@ -10183,7 +10113,7 @@
       "kind": "skill",
       "target": "second-opinion-start",
       "classification": "resolvable",
-      "id": "REF-0564"
+      "id": "REF-0557"
     },
     {
       "source_skill": "second-opinion-models",
@@ -10193,7 +10123,7 @@
       "kind": "skill",
       "target": "evaluate-issue",
       "classification": "resolvable",
-      "id": "REF-0565"
+      "id": "REF-0558"
     },
     {
       "source_skill": "second-opinion-start",
@@ -10203,7 +10133,7 @@
       "kind": "skill",
       "target": "second-opinion-help",
       "classification": "resolvable",
-      "id": "REF-0566"
+      "id": "REF-0559"
     },
     {
       "source_skill": "secrets-delete",
@@ -10213,7 +10143,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0567"
+      "id": "REF-0560"
     },
     {
       "source_skill": "secrets-delete",
@@ -10223,7 +10153,7 @@
       "kind": "skill",
       "target": "secrets-delete",
       "classification": "resolvable",
-      "id": "REF-0568"
+      "id": "REF-0561"
     },
     {
       "source_skill": "secrets-get",
@@ -10233,7 +10163,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0569"
+      "id": "REF-0562"
     },
     {
       "source_skill": "secrets-get",
@@ -10243,7 +10173,7 @@
       "kind": "skill",
       "target": "secrets-get",
       "classification": "resolvable",
-      "id": "REF-0570"
+      "id": "REF-0563"
     },
     {
       "source_skill": "secrets-help",
@@ -10253,7 +10183,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0571"
+      "id": "REF-0564"
     },
     {
       "source_skill": "secrets-help",
@@ -10263,7 +10193,7 @@
       "kind": "skill",
       "target": "secrets-get",
       "classification": "resolvable",
-      "id": "REF-0572"
+      "id": "REF-0565"
     },
     {
       "source_skill": "secrets-help",
@@ -10273,7 +10203,7 @@
       "kind": "skill",
       "target": "secrets-set",
       "classification": "resolvable",
-      "id": "REF-0573"
+      "id": "REF-0566"
     },
     {
       "source_skill": "secrets-help",
@@ -10283,7 +10213,7 @@
       "kind": "skill",
       "target": "secrets-delete",
       "classification": "resolvable",
-      "id": "REF-0574"
+      "id": "REF-0567"
     },
     {
       "source_skill": "secrets-help",
@@ -10293,7 +10223,7 @@
       "kind": "skill",
       "target": "secrets-list",
       "classification": "resolvable",
-      "id": "REF-0575"
+      "id": "REF-0568"
     },
     {
       "source_skill": "secrets-help",
@@ -10303,7 +10233,7 @@
       "kind": "skill",
       "target": "secrets-run",
       "classification": "resolvable",
-      "id": "REF-0576"
+      "id": "REF-0569"
     },
     {
       "source_skill": "secrets-help",
@@ -10313,7 +10243,7 @@
       "kind": "skill",
       "target": "secrets-validate",
       "classification": "resolvable",
-      "id": "REF-0577"
+      "id": "REF-0570"
     },
     {
       "source_skill": "secrets-help",
@@ -10323,7 +10253,7 @@
       "kind": "skill",
       "target": "secrets-ui",
       "classification": "resolvable",
-      "id": "REF-0578"
+      "id": "REF-0571"
     },
     {
       "source_skill": "secrets-help",
@@ -10333,7 +10263,7 @@
       "kind": "skill",
       "target": "secrets-rotate",
       "classification": "resolvable",
-      "id": "REF-0579"
+      "id": "REF-0572"
     },
     {
       "source_skill": "secrets-help",
@@ -10343,7 +10273,7 @@
       "kind": "skill",
       "target": "secrets-help",
       "classification": "resolvable",
-      "id": "REF-0580"
+      "id": "REF-0573"
     },
     {
       "source_skill": "secrets-list",
@@ -10353,7 +10283,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0581"
+      "id": "REF-0574"
     },
     {
       "source_skill": "secrets-list",
@@ -10363,7 +10293,7 @@
       "kind": "skill",
       "target": "secrets-list",
       "classification": "resolvable",
-      "id": "REF-0582"
+      "id": "REF-0575"
     },
     {
       "source_skill": "secrets-rotate",
@@ -10373,7 +10303,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0583"
+      "id": "REF-0576"
     },
     {
       "source_skill": "secrets-rotate",
@@ -10383,7 +10313,7 @@
       "kind": "skill",
       "target": "secrets-rotate",
       "classification": "resolvable",
-      "id": "REF-0584"
+      "id": "REF-0577"
     },
     {
       "source_skill": "secrets-run",
@@ -10393,7 +10323,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0585"
+      "id": "REF-0578"
     },
     {
       "source_skill": "secrets-run",
@@ -10403,7 +10333,7 @@
       "kind": "skill",
       "target": "secrets-run",
       "classification": "resolvable",
-      "id": "REF-0586"
+      "id": "REF-0579"
     },
     {
       "source_skill": "secrets-set",
@@ -10413,7 +10343,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0587"
+      "id": "REF-0580"
     },
     {
       "source_skill": "secrets-set",
@@ -10423,7 +10353,7 @@
       "kind": "skill",
       "target": "secrets-set",
       "classification": "resolvable",
-      "id": "REF-0588"
+      "id": "REF-0581"
     },
     {
       "source_skill": "secrets-ui",
@@ -10433,7 +10363,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0589"
+      "id": "REF-0582"
     },
     {
       "source_skill": "secrets-ui",
@@ -10443,7 +10373,7 @@
       "kind": "skill",
       "target": "secrets-ui",
       "classification": "resolvable",
-      "id": "REF-0590"
+      "id": "REF-0583"
     },
     {
       "source_skill": "secrets-validate",
@@ -10453,7 +10383,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0591"
+      "id": "REF-0584"
     },
     {
       "source_skill": "secrets-validate",
@@ -10463,7 +10393,7 @@
       "kind": "skill",
       "target": "secrets-validate",
       "classification": "resolvable",
-      "id": "REF-0592"
+      "id": "REF-0585"
     },
     {
       "source_skill": "security-explain",
@@ -10473,7 +10403,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0593"
+      "id": "REF-0586"
     },
     {
       "source_skill": "security-explain",
@@ -10483,7 +10413,7 @@
       "kind": "skill",
       "target": "security-explain",
       "classification": "resolvable",
-      "id": "REF-0594"
+      "id": "REF-0587"
     },
     {
       "source_skill": "security-help",
@@ -10493,7 +10423,7 @@
       "kind": "skill",
       "target": "security-quick",
       "classification": "resolvable",
-      "id": "REF-0595"
+      "id": "REF-0588"
     },
     {
       "source_skill": "security-help",
@@ -10503,7 +10433,7 @@
       "kind": "skill",
       "target": "security-scan",
       "classification": "resolvable",
-      "id": "REF-0596"
+      "id": "REF-0589"
     },
     {
       "source_skill": "security-help",
@@ -10513,7 +10443,7 @@
       "kind": "skill",
       "target": "security-deep",
       "classification": "resolvable",
-      "id": "REF-0597"
+      "id": "REF-0590"
     },
     {
       "source_skill": "security-permissions",
@@ -10523,7 +10453,7 @@
       "kind": "native_command",
       "target": "/fewer-permission-prompts",
       "classification": "native",
-      "id": "REF-0598"
+      "id": "REF-0591"
     },
     {
       "source_skill": "security-permissions",
@@ -10533,7 +10463,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0599"
+      "id": "REF-0592"
     },
     {
       "source_skill": "security-permissions",
@@ -10543,7 +10473,7 @@
       "kind": "native_command",
       "target": "/permissions",
       "classification": "native",
-      "id": "REF-0600"
+      "id": "REF-0593"
     },
     {
       "source_skill": "security-permissions",
@@ -10553,7 +10483,7 @@
       "kind": "native_command",
       "target": "/fewer-permission-prompts",
       "classification": "native",
-      "id": "REF-0601"
+      "id": "REF-0594"
     },
     {
       "source_skill": "security-permissions",
@@ -10563,7 +10493,7 @@
       "kind": "native_command",
       "target": "/fewer-permission-prompts",
       "classification": "native",
-      "id": "REF-0602"
+      "id": "REF-0595"
     },
     {
       "source_skill": "security-permissions",
@@ -10573,7 +10503,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "adapted",
-      "id": "REF-0603"
+      "id": "REF-0596"
     },
     {
       "source_skill": "security-permissions",
@@ -10583,7 +10513,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "adapted",
-      "id": "REF-0604"
+      "id": "REF-0597"
     },
     {
       "source_skill": "security-permissions",
@@ -10593,7 +10523,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "adapted",
-      "id": "REF-0605"
+      "id": "REF-0598"
     },
     {
       "source_skill": "security-permissions",
@@ -10603,7 +10533,7 @@
       "kind": "native_command",
       "target": "/fewer-permission-prompts",
       "classification": "native",
-      "id": "REF-0606"
+      "id": "REF-0599"
     },
     {
       "source_skill": "security-permissions",
@@ -10613,7 +10543,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "adapted",
-      "id": "REF-0607"
+      "id": "REF-0600"
     },
     {
       "source_skill": "security-scan",
@@ -10623,7 +10553,7 @@
       "kind": "skill",
       "target": "security-quick",
       "classification": "resolvable",
-      "id": "REF-0608"
+      "id": "REF-0601"
     },
     {
       "source_skill": "self-improvement-deployment",
@@ -10633,7 +10563,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0609"
+      "id": "REF-0602"
     },
     {
       "source_skill": "self-improvement-deployment",
@@ -10643,7 +10573,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0610"
+      "id": "REF-0603"
     },
     {
       "source_skill": "self-improvement-deployment",
@@ -10653,7 +10583,7 @@
       "kind": "skill",
       "target": "self-improvement-deployment",
       "classification": "resolvable",
-      "id": "REF-0611"
+      "id": "REF-0604"
     },
     {
       "source_skill": "self-improvement-deployment",
@@ -10663,7 +10593,7 @@
       "kind": "native_command",
       "target": "/skills",
       "classification": "native",
-      "id": "REF-0612"
+      "id": "REF-0605"
     },
     {
       "source_skill": "self-improvement-deployment",
@@ -10673,7 +10603,7 @@
       "kind": "skill",
       "target": "flow-finish",
       "classification": "resolvable",
-      "id": "REF-0613"
+      "id": "REF-0606"
     },
     {
       "source_skill": "self-improvement-deployment",
@@ -10683,7 +10613,7 @@
       "kind": "skill",
       "target": "flow-finish",
       "classification": "resolvable",
-      "id": "REF-0614"
+      "id": "REF-0607"
     },
     {
       "source_skill": "self-improvement-deployment",
@@ -10693,7 +10623,7 @@
       "kind": "skill",
       "target": "flow-finish",
       "classification": "resolvable",
-      "id": "REF-0615"
+      "id": "REF-0608"
     },
     {
       "source_skill": "self-improvement-deployment",
@@ -10703,7 +10633,7 @@
       "kind": "skill",
       "target": "flow-deploy",
       "classification": "resolvable",
-      "id": "REF-0616"
+      "id": "REF-0609"
     },
     {
       "source_skill": "self-improvement-deployment",
@@ -10713,7 +10643,7 @@
       "kind": "skill",
       "target": "flow-deploy",
       "classification": "resolvable",
-      "id": "REF-0617"
+      "id": "REF-0610"
     },
     {
       "source_skill": "self-improvement-deployment",
@@ -10723,7 +10653,7 @@
       "kind": "skill",
       "target": "flow-doctor",
       "classification": "resolvable",
-      "id": "REF-0618"
+      "id": "REF-0611"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10733,7 +10663,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0619"
+      "id": "REF-0612"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10743,7 +10673,7 @@
       "kind": "skill",
       "target": "self-improvement-retro",
       "classification": "resolvable",
-      "id": "REF-0620"
+      "id": "REF-0613"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10753,7 +10683,7 @@
       "kind": "skill",
       "target": "self-improvement-deployment",
       "classification": "resolvable",
-      "id": "REF-0621"
+      "id": "REF-0614"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10763,7 +10693,7 @@
       "kind": "skill",
       "target": "self-improvement-help",
       "classification": "resolvable",
-      "id": "REF-0622"
+      "id": "REF-0615"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10773,7 +10703,7 @@
       "kind": "skill",
       "target": "self-improvement-retro",
       "classification": "resolvable",
-      "id": "REF-0623"
+      "id": "REF-0616"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10783,7 +10713,7 @@
       "kind": "skill",
       "target": "flow-auto",
       "classification": "resolvable",
-      "id": "REF-0624"
+      "id": "REF-0617"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10793,7 +10723,7 @@
       "kind": "skill",
       "target": "flow-merge",
       "classification": "resolvable",
-      "id": "REF-0625"
+      "id": "REF-0618"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10803,7 +10733,7 @@
       "kind": "skill",
       "target": "self-improvement-retro",
       "classification": "resolvable",
-      "id": "REF-0626"
+      "id": "REF-0619"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10813,7 +10743,7 @@
       "kind": "skill",
       "target": "self-improvement-deployment",
       "classification": "resolvable",
-      "id": "REF-0627"
+      "id": "REF-0620"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10823,7 +10753,7 @@
       "kind": "skill",
       "target": "flow-auto",
       "classification": "resolvable",
-      "id": "REF-0628"
+      "id": "REF-0621"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10833,7 +10763,7 @@
       "kind": "skill",
       "target": "self-improvement-retro",
       "classification": "resolvable",
-      "id": "REF-0629"
+      "id": "REF-0622"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10843,7 +10773,7 @@
       "kind": "skill",
       "target": "flow-deploy",
       "classification": "resolvable",
-      "id": "REF-0630"
+      "id": "REF-0623"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10853,7 +10783,7 @@
       "kind": "skill",
       "target": "self-improvement-deployment",
       "classification": "resolvable",
-      "id": "REF-0631"
+      "id": "REF-0624"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10863,7 +10793,7 @@
       "kind": "skill",
       "target": "self-improvement-retro",
       "classification": "resolvable",
-      "id": "REF-0632"
+      "id": "REF-0625"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10873,7 +10803,7 @@
       "kind": "skill",
       "target": "cicd-check",
       "classification": "resolvable",
-      "id": "REF-0633"
+      "id": "REF-0626"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10883,7 +10813,7 @@
       "kind": "skill",
       "target": "cicd-init",
       "classification": "resolvable",
-      "id": "REF-0634"
+      "id": "REF-0627"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10893,7 +10823,7 @@
       "kind": "skill",
       "target": "flow-doctor",
       "classification": "resolvable",
-      "id": "REF-0635"
+      "id": "REF-0628"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10903,7 +10833,7 @@
       "kind": "skill",
       "target": "flow-deploy",
       "classification": "resolvable",
-      "id": "REF-0636"
+      "id": "REF-0629"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10913,7 +10843,7 @@
       "kind": "skill",
       "target": "flow-finish",
       "classification": "resolvable",
-      "id": "REF-0637"
+      "id": "REF-0630"
     },
     {
       "source_skill": "self-improvement-help",
@@ -10923,7 +10853,7 @@
       "kind": "skill",
       "target": "security-scan",
       "classification": "resolvable",
-      "id": "REF-0638"
+      "id": "REF-0631"
     },
     {
       "source_skill": "self-improvement-retro",
@@ -10933,7 +10863,7 @@
       "kind": "host_path",
       "target": ".claude/",
       "classification": "source_context",
-      "id": "REF-0639"
+      "id": "REF-0632"
     },
     {
       "source_skill": "spec-adopt",
@@ -10943,7 +10873,7 @@
       "kind": "skill",
       "target": "spec-sync",
       "classification": "resolvable",
-      "id": "REF-0640"
+      "id": "REF-0633"
     },
     {
       "source_skill": "spec-adopt",
@@ -10953,7 +10883,7 @@
       "kind": "skill",
       "target": "spec-sync",
       "classification": "resolvable",
-      "id": "REF-0641"
+      "id": "REF-0634"
     },
     {
       "source_skill": "spec-adopt",
@@ -10963,7 +10893,7 @@
       "kind": "skill",
       "target": "flow-auto",
       "classification": "resolvable",
-      "id": "REF-0642"
+      "id": "REF-0635"
     },
     {
       "source_skill": "spec-sync",
@@ -10973,7 +10903,7 @@
       "kind": "skill",
       "target": "flow-auto",
       "classification": "resolvable",
-      "id": "REF-0643"
+      "id": "REF-0636"
     },
     {
       "source_skill": "woodpecker-help",
@@ -10983,7 +10913,7 @@
       "kind": "skill",
       "target": "woodpecker-status",
       "classification": "resolvable",
-      "id": "REF-0644"
+      "id": "REF-0637"
     },
     {
       "source_skill": "woodpecker-help",
@@ -10993,7 +10923,7 @@
       "kind": "skill",
       "target": "woodpecker-logs",
       "classification": "resolvable",
-      "id": "REF-0645"
+      "id": "REF-0638"
     },
     {
       "source_skill": "woodpecker-help",
@@ -11003,7 +10933,7 @@
       "kind": "skill",
       "target": "woodpecker-restart",
       "classification": "resolvable",
-      "id": "REF-0646"
+      "id": "REF-0639"
     },
     {
       "source_skill": "woodpecker-help",
@@ -11013,7 +10943,7 @@
       "kind": "skill",
       "target": "secrets-run",
       "classification": "resolvable",
-      "id": "REF-0647"
+      "id": "REF-0640"
     },
     {
       "source_skill": "woodpecker-logs",
@@ -11023,7 +10953,7 @@
       "kind": "skill",
       "target": "woodpecker-status",
       "classification": "resolvable",
-      "id": "REF-0648"
+      "id": "REF-0641"
     },
     {
       "source_skill": "woodpecker-logs",
@@ -11033,7 +10963,7 @@
       "kind": "skill",
       "target": "secrets-run",
       "classification": "resolvable",
-      "id": "REF-0649"
+      "id": "REF-0642"
     },
     {
       "source_skill": "woodpecker-logs",
@@ -11043,7 +10973,7 @@
       "kind": "skill",
       "target": "secrets-run",
       "classification": "resolvable",
-      "id": "REF-0650"
+      "id": "REF-0643"
     },
     {
       "source_skill": "woodpecker-restart",
@@ -11053,7 +10983,7 @@
       "kind": "skill",
       "target": "woodpecker-logs",
       "classification": "resolvable",
-      "id": "REF-0651"
+      "id": "REF-0644"
     },
     {
       "source_skill": "woodpecker-restart",
@@ -11063,7 +10993,7 @@
       "kind": "skill",
       "target": "woodpecker-status",
       "classification": "resolvable",
-      "id": "REF-0652"
+      "id": "REF-0645"
     },
     {
       "source_skill": "woodpecker-restart",
@@ -11073,7 +11003,7 @@
       "kind": "skill",
       "target": "secrets-run",
       "classification": "resolvable",
-      "id": "REF-0653"
+      "id": "REF-0646"
     },
     {
       "source_skill": "woodpecker-restart",
@@ -11083,7 +11013,7 @@
       "kind": "skill",
       "target": "secrets-run",
       "classification": "resolvable",
-      "id": "REF-0654"
+      "id": "REF-0647"
     },
     {
       "source_skill": "woodpecker-status",
@@ -11093,7 +11023,7 @@
       "kind": "skill",
       "target": "secrets-run",
       "classification": "resolvable",
-      "id": "REF-0655"
+      "id": "REF-0648"
     },
     {
       "source_skill": "woodpecker-status",
@@ -11103,7 +11033,7 @@
       "kind": "skill",
       "target": "secrets-run",
       "classification": "resolvable",
-      "id": "REF-0656"
+      "id": "REF-0649"
     }
   ],
   "gaps": [

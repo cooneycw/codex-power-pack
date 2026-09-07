@@ -9,12 +9,7 @@
 
 The post-analysis, pre-implementation communication and approval gate. Restates an issue's intent in plain language, checks whether the issue is still worth doing given code merged since it was filed, and presents the proposed changes for reviewer approval before any code is written.
 
-This gate also ships standalone as **eli5-gate**
-(https://github.com/cooneycw/eli5-gate): installable by any Claude Code user via
-`/plugin marketplace add cooneycw/eli5-gate` then `/plugin install
-eli5-gate@eli5-gate`, or into ~40 other harnesses via `npx skills add
-cooneycw/eli5-gate`. That repo is canonical for the gate's core; improvement
-issues for the gate itself belong there, not in CPP.
+This gate also ships standalone as **eli5-gate** (https://github.com/cooneycw/eli5-gate). Claude users should follow that project's installation guidance; CxPP supplies the native `$flow-eli5` package. That repository remains canonical for the gate core, and improvement issues for the core belong there.
 
 ## Arguments
 
@@ -221,7 +216,7 @@ however terse the surrounding style. Reports below this density fail the gate.
 
 - Verdict **No longer needed** -> `$flow-auto` stops and surfaces the close-issue recommendation instead of implementing.
 - Verdicts **Still needed / Partially addressed / Needs reframing** -> `$flow-auto` pauses for approval - unconditionally - then proceeds to Implement using the approved plan.
-- `$flow-auto` has no bypass for that pause, and neither does `$flow-auto_codex`. `--yes` / `--auto-approve` are recognized only to report that the gate is not skippable; an `eli5: auto-approve` trailer in the issue body or HEAD commit message is not read at all (issue #775). The Step 3 report line therefore has no `auto-granted` value - `granted` or `close recommended` are the only outcomes.
+- `$flow-auto` has no bypass for that pause, and neither does any separately reviewed wrapper. `--yes` / `--auto-approve` are recognized only to report that the gate is not skippable; an `eli5: auto-approve` trailer in the issue body or HEAD commit message is not read at all (issue #775). The Step 3 report line therefore has no `auto-granted` value - `granted` or `close recommended` are the only outcomes.
 
 ## Notes
 

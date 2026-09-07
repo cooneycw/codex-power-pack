@@ -39,9 +39,7 @@ The flow commands call a family of helper scripts by name -
 alongside. They are invoked at the stable path `<SKILL_DIR>/scripts/<helper>`,
 which is what the shipped permission allowlist rules match (issue #581).
 
-- **Using a retired CPP plugin cache** (#662): run `/plugin uninstall
-  flow@cpp`, then migrate to the checkout-backed symlink surface restored by
-  #663. `$flow-repair` remains compatible with the cache during migration.
+- **Migrating from a retired CPP plugin cache** (#662): remove the old Claude installation through its own plugin manager, then use `$cxpp-init` or `$cxpp-update` to install the native CxPP bundle.
 - **Installed from a CPP clone** (`$cxpp-init` Tier 2 or later `$cxpp-update`):
   nothing to do - the installer already links every executable helper in
   `scripts/` (issue #669). `$flow-repair` is harmless and idempotent if you run
@@ -72,7 +70,7 @@ Machine B: $flow-start 42  →  picks up remote branch  →  continue working
 
 ## Security Gates
 
-`$flow-finish` and `$flow-deploy` run automatic security scans as quality gates. Gate behavior is controlled by `.claude/security.yml`:
+`$flow-finish` and `$flow-deploy` run automatic security scans as quality gates. Gate behavior is controlled by `.codex/security.yml`:
 
 | Severity | `$flow-finish` (default) | `$flow-deploy` (default) |
 |----------|--------------------------|--------------------------|
@@ -84,9 +82,9 @@ Machine B: $flow-start 42  →  picks up remote branch  →  continue working
 **What happens when blocked:**
 - The flow stops and displays all blocking findings with remediation hints
 - You fix the issue, then re-run `$flow-finish` or `$flow-deploy`
-- To suppress known false positives, add entries to `.claude/security.yml` `suppressions:`
+- To suppress known false positives, add entries to `.codex/security.yml` `suppressions:`
 
-**Configuration** (`.claude/security.yml`):
+**Configuration** (`.codex/security.yml`):
 ```yaml
 gates:
   flow_finish:
@@ -101,7 +99,7 @@ suppressions:
     reason: "Test fixtures with fake credentials"
 ```
 
-If no `.claude/security.yml` exists, the defaults above are used. If `lib/security` is not available, the gate is skipped with a warning.
+If no `.codex/security.yml` exists, the defaults above are used. If `lib/security` is not available, the gate is skipped with a warning.
 
 ## Conventions
 

@@ -198,4 +198,4 @@ Based on results:
   runner plans carry the same three (issue #617). Keep the sets aligned: a step
   CI runs but the check omits turns this report into a false green
 - Use it to validate changes before committing or as a pre-flight check
-- The security gate uses the same `.claude/security.yml` configuration as `$flow-finish`
+- The security gate uses the same `.codex/security.yml` configuration as `$flow-finish`
