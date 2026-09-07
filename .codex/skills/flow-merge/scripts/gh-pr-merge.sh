@@ -27,12 +27,10 @@
 #   MERGED-state check below stays the final backstop.
 #
 # Base moved at squash time (issue #502):
-#   The pre-merge poll structurally cannot catch a sibling PR that merges in the
-#   poll->merge race window: the squash then fails with "Base branch was
-#   modified. Review and try the merge again." even though a refetch + re-attempt
-#   succeeds moments later (observed live on the flow:auto #485 run itself). On
-#   that specific error - and no other - refetch, re-poll mergeability, and
-#   re-attempt the squash a bounded number of times before reporting failure.
+#   A sibling merge can advance the base in the poll-to-merge race window. Native
+#   CxPP treats that rejection as a clean stop instead of retrying after only a
+#   refetch and mergeability poll. Re-run the helper to repeat the complete
+#   head/base/status/review clearance before another exact-head attempt.
 #
 # Branch protection blocks an owner merge (issue #517):
 #   With main branch-protected (PR + review + CI required, the #449 posture), a
@@ -279,8 +277,7 @@
 #   GH_PR_MERGE_GIT            override the `git` binary (default: git)
 #   GH_PR_MERGE_POLL_ATTEMPTS  mergeability poll attempts (default: 5)
 #   GH_PR_MERGE_POLL_DELAY     seconds between poll attempts (default: 2)
-#   GH_PR_MERGE_BASE_RETRY_ATTEMPTS  squash retries on "Base branch was modified" (default: 2)
-#   GH_PR_MERGE_BASE_RETRY_DELAY     seconds before each such retry (default: 2)
+#   A base-move rejection is not retried automatically; re-run after regating.
 #   GH_PR_MERGE_CHECK_ATTEMPTS       required-check poll attempts (default: 60)
 #   GH_PR_MERGE_CHECK_DELAY          seconds between check polls (default: 10)
 #   GH_PR_MERGE_CURL                 override the `curl` binary (default: curl)
@@ -625,24 +622,28 @@ wait_for_required_checks() {
     return 1
 }
 
-# Neither mechanism could be read (issue #610), so nothing is KNOWN to be
-# required. Hard-stopping here is what cost 25 runs ~4h of waiting, so trust what
-# the PR itself reports instead - the same rollup the declared path polls:
-#   * no checks at all, or all of them terminal and green -> merge immediately
-#   * any check genuinely RED                             -> hard stop; a red
-#     check is authoritative on its own, whoever declared it
-#   * still pending -> poll, then FAIL OPEN once the budget is spent. GitHub
-#     enforces any ruleset/protection posture server-side at squash time, so the
-#     squash itself is the real gate; a client-side guess must never be the thing
-#     that blocks a PR whose posture it cannot even see.
+# Neither required-context mechanism could be read (issue #610). Native CxPP
+# may use the PR rollup as evidence, but unreadable or empty evidence is UNKNOWN
+# and therefore a clean stop. A red state or a state that remains pending is also
+# a hard stop; the merge request is never used as a substitute status-check gate.
 wait_for_observed_checks() {
     local attempts="${GH_PR_MERGE_CHECK_ATTEMPTS:-60}"
     local delay="${GH_PR_MERGE_CHECK_DELAY:-10}"
-    local i line name state pending failed announced=0
+    local i line name state pending failed observed announced=0
 
     for ((i = 1; i <= attempts; i++)); do
         pending=""
         failed=""
+        if ! observed=$(check_states); then
+            echo "error: required contexts and the PR status rollup are unreadable for" \
+                 "PR #$PR_NUMBER; refusing to merge with unknown CI state." >&2
+            return 1
+        fi
+        if [[ -z "$observed" ]]; then
+            echo "error: required contexts are unreadable and PR #$PR_NUMBER reports no" \
+                 "status checks; refusing to treat missing CI evidence as green." >&2
+            return 1
+        fi
         while IFS= read -r line; do
             [[ -z "$line" ]] && continue
             name="${line%%|*}"
@@ -657,7 +658,7 @@ wait_for_observed_checks() {
                     pending+="${name} (${state}) "
                     ;;
             esac
-        done < <(check_states)
+        done <<<"$observed"
 
         if [[ -n "$failed" ]]; then
             echo "error: status check(s) are RED on PR #$PR_NUMBER: ${failed}" >&2
@@ -672,20 +673,18 @@ wait_for_observed_checks() {
         if (( i < attempts )); then
             if (( announced == 0 )); then
                 echo "note: required status-check contexts are not enumerable for PR" \
-                     "#$PR_NUMBER (no classic branch protection and no readable ruleset)" \
-                     "- waiting on the check(s) the PR itself reports: ${pending}" >&2
+                     "#$PR_NUMBER - waiting on the check(s) the PR itself reports:" \
+                     "${pending}" >&2
                 announced=1
             fi
             sleep "$delay"
         fi
     done
 
-    echo "note: check(s) still pending on PR #$PR_NUMBER after $attempts check(s):" \
-         "${pending}" >&2
-    echo "      Not treating that as a required-check violation - the posture was never" \
-         "enumerable, and GitHub enforces it server-side at squash time. Attempting the" \
-         "merge (issue #610)." >&2
-    return 0
+    echo "error: status check(s) are still pending or unknown on PR #$PR_NUMBER" \
+         "after $attempts check(s): ${pending}" >&2
+    echo "       Not merging without terminal green CI evidence." >&2
+    return 1
 }
 
 # Resolve the Woodpecker repo id once (issue #717). Sets WOODPECKER_REPO_ID /
@@ -757,6 +756,26 @@ fi
 # Resolve the PR base once for every feature that needs it. A failed or empty
 # metadata read remains fail-open at each caller; GitHub is the final arbiter.
 PR_BASE_BRANCH=$("$GH_BIN" pr view "$PR_NUMBER" --json baseRefName --jq '.baseRefName' 2>/dev/null)
+
+# Bind every pre-merge decision to the exact PR head checked out locally. Capture
+# once before the status/review gates, verify it again immediately before merge,
+# and pass GitHub's atomic expected-head predicate to close the final race.
+EXPECTED_HEAD_SHA=$("$GH_BIN" pr view "$PR_NUMBER" --json headRefOid --jq '.headRefOid' 2>/dev/null)
+LOCAL_HEAD_SHA=$("$GIT_BIN" rev-parse HEAD 2>/dev/null)
+if [[ ! "$EXPECTED_HEAD_SHA" =~ ^[0-9a-f]{40}$ || "$LOCAL_HEAD_SHA" != "$EXPECTED_HEAD_SHA" ]]; then
+    echo "error: cannot bind PR #$PR_NUMBER to the checked-out head; expected a" \
+         "matching 40-character headRefOid, got PR='${EXPECTED_HEAD_SHA:-unreadable}'" \
+         "local='${LOCAL_HEAD_SHA:-unreadable}'." >&2
+    exit 1
+fi
+
+verify_expected_head() {
+    local current_pr_head current_local_head
+    current_pr_head=$("$GH_BIN" pr view "$PR_NUMBER" --json headRefOid --jq '.headRefOid' 2>/dev/null) || return 1
+    current_local_head=$("$GIT_BIN" rev-parse HEAD 2>/dev/null) || return 1
+    [[ "$current_pr_head" =~ ^[0-9a-f]{40}$ ]] || return 1
+    [[ "$current_pr_head" == "$EXPECTED_HEAD_SHA" && "$current_local_head" == "$EXPECTED_HEAD_SHA" ]]
+}
 
 # Pre-squash deletion surfacing (issue #657): print every path this PR deletes
 # vs its base BEFORE the squash - and before the (possibly long) required-check
@@ -1119,39 +1138,31 @@ if (( ADMIN_OPT_IN == 0 )); then
     review_gate
 fi
 
-# Attempt the squash, retrying (bounded) only when the base moved under us at
-# squash time (issue #502). Sets the global merge_exit; any error other than
-# "Base branch was modified" is NOT retried, and the post-merge MERGED-state
-# verification below remains the final arbiter either way.
+# Attempt one exact-head squash. A base-move rejection is a clean stop: a fresh
+# helper run must repeat the full head/base/status/review clearance before trying
+# again, so a partial automatic retry can never merge a differently gated tree.
 run_squash() {
     # $@: extra gh flags (--delete-branch in the primary repo)
-    local retries="${GH_PR_MERGE_BASE_RETRY_ATTEMPTS:-2}"
-    local delay="${GH_PR_MERGE_BASE_RETRY_DELAY:-2}"
-    local errfile attempt
+    local errfile
     errfile=$(mktemp)
-    for ((attempt = 0; attempt <= retries; attempt++)); do
-        if (( attempt > 0 )); then
-            echo "note: base branch moved under PR #$PR_NUMBER at squash time" \
-                 "(sibling merge race, issue #502) - refetching and retrying" \
-                 "(${attempt}/${retries})." >&2
-            "$GIT_BIN" fetch origin >/dev/null 2>&1 || true
-            sleep "$delay"
-            # The sibling merge may have made the PR genuinely CONFLICTING -
-            # re-poll so that stops us with the clear conflict message instead
-            # of a retry that can never succeed.
-            if ! poll_mergeable; then
-                merge_exit=1
-                break
-            fi
-        fi
-        "$GH_BIN" pr merge "$PR_NUMBER" --squash "$@" 2>"$errfile"
-        merge_exit=$?
-        cat "$errfile" >&2
-        LAST_MERGE_ERR=$(cat "$errfile")
-        if [[ $merge_exit -eq 0 ]] || ! grep -q "Base branch was modified" "$errfile"; then
-            break
-        fi
-    done
+    if ! verify_expected_head; then
+        echo "error: PR #$PR_NUMBER or the local checkout changed after pre-merge" \
+             "validation; refusing to merge a different head." >&2
+        merge_exit=1
+        LAST_MERGE_ERR="PR head changed after pre-merge validation"
+        rm -f "$errfile"
+        return
+    fi
+
+    "$GH_BIN" pr merge "$PR_NUMBER" --squash \
+        --match-head-commit "$EXPECTED_HEAD_SHA" "$@" 2>"$errfile"
+    merge_exit=$?
+    cat "$errfile" >&2
+    LAST_MERGE_ERR=$(cat "$errfile")
+    if [[ $merge_exit -ne 0 ]] && grep -q "Base branch was modified" "$errfile"; then
+        echo "error: base branch moved at squash time; refusing an automatic retry" \
+             "without repeating the full merge clearance." >&2
+    fi
     rm -f "$errfile"
 }
 
