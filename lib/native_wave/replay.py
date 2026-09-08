@@ -269,17 +269,26 @@ def verified_events(tx: SQLiteTransaction, wave_id: WaveId) -> tuple[DurableEven
 
 
 def _verify_digest_table(tx: SQLiteTransaction, table: str, blob_column: str, digest_column: str) -> None:
-    allowed = {
-        ("capabilities", "record_json", "record_digest"),
-        ("owners", "record_json", "record_digest"),
-        ("assignments", "record_json", "record_digest"),
-        ("claims", "record_json", "record_digest"),
-        ("projections", "record_json", "record_digest"),
-        ("reconciliations", "record_json", "record_json_digest"),
+    queries = {
+        ("capabilities", "record_json", "record_digest"): (
+            "SELECT record_json, record_digest FROM capabilities"
+        ),
+        ("owners", "record_json", "record_digest"): "SELECT record_json, record_digest FROM owners",
+        ("assignments", "record_json", "record_digest"): (
+            "SELECT record_json, record_digest FROM assignments"
+        ),
+        ("claims", "record_json", "record_digest"): "SELECT record_json, record_digest FROM claims",
+        ("projections", "record_json", "record_digest"): (
+            "SELECT record_json, record_digest FROM projections"
+        ),
+        ("reconciliations", "record_json", "record_json_digest"): (
+            "SELECT record_json, record_json_digest FROM reconciliations"
+        ),
     }
-    if (table, blob_column, digest_column) not in allowed:
+    query = queries.get((table, blob_column, digest_column))
+    if query is None:
         raise ValueError("unapproved integrity table")
-    for row in tx._connection.execute(f"SELECT {blob_column}, {digest_column} FROM {table}").fetchall():
+    for row in tx._connection.execute(query).fetchall():
         encoded = bytes(row[0])
         if digest_bytes(encoded) != row[1]:
             raise CorruptStore(f"{table} record digest mismatch")
@@ -409,19 +418,19 @@ def _verify_authority_tables(
         raise CorruptStore("runtime wave authority differs from verified journal")
 
     def record_rows(table: str, key_column: str) -> dict[str, bytes]:
-        allowed = {
-            ("owners", "role_id"),
-            ("claims", "claim_id"),
-            ("reconciliations", "record_id"),
+        queries = {
+            ("owners", "role_id"): "SELECT role_id,record_json FROM owners WHERE wave_id=?",
+            ("claims", "claim_id"): "SELECT claim_id,record_json FROM claims WHERE wave_id=?",
+            ("reconciliations", "record_id"): (
+                "SELECT record_id,record_json FROM reconciliations WHERE wave_id=?"
+            ),
         }
-        if (table, key_column) not in allowed:
+        query = queries.get((table, key_column))
+        if query is None:
             raise ValueError("unsupported authority record table")
         return {
             str(row[0]): bytes(row[1])
-            for row in tx._connection.execute(
-                f"SELECT {key_column},record_json FROM {table} WHERE wave_id=?",
-                (str(wave_id),),
-            ).fetchall()
+            for row in tx._connection.execute(query, (str(wave_id),)).fetchall()
         }
 
     if record_rows("owners", "role_id") != {
@@ -524,8 +533,16 @@ def _replace_authority_tables(
     """Replace one wave's runtime authority only after its complete journal verifies."""
 
     wave_text = str(wave_id)
-    for table in ("claims", "assignments", "owners", "grants", "reconciliations", "participants"):
-        tx._connection.execute(f"DELETE FROM {table} WHERE wave_id=?", (wave_text,))
+    delete_queries = (
+        "DELETE FROM claims WHERE wave_id=?",
+        "DELETE FROM assignments WHERE wave_id=?",
+        "DELETE FROM owners WHERE wave_id=?",
+        "DELETE FROM grants WHERE wave_id=?",
+        "DELETE FROM reconciliations WHERE wave_id=?",
+        "DELETE FROM participants WHERE wave_id=?",
+    )
+    for query in delete_queries:
+        tx._connection.execute(query, (wave_text,))
     tx._connection.execute("DELETE FROM waves WHERE wave_id=?", (wave_text,))
     tx._connection.execute(
         "INSERT INTO waves(wave_id,repository_json,policy_revision,allowed_roles_json,bootstrap_event_id,"
