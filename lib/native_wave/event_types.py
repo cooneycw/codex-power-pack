@@ -41,17 +41,28 @@ class EventValidationError(ValueError):
     """Raised before persistence when a command is not canonical or well formed."""
 
 
+def _require_int(value: object, *, field: str, minimum: int) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < minimum:
+        qualifier = "positive" if minimum == 1 else f">= {minimum}"
+        raise EventValidationError(f"{field} must be an integer {qualifier}")
+    return value
+
+
 @dataclass(frozen=True, slots=True)
 class EventId:
     value: UUID
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.value, UUID):
+            raise EventValidationError("event_id must be a UUID")
 
     @classmethod
     def parse(cls, value: str) -> EventId:
         try:
             parsed = UUID(value)
-        except ValueError as exc:
+        except (AttributeError, TypeError, ValueError) as exc:
             raise EventValidationError("event_id must be a canonical UUID") from exc
-        if str(parsed) != value.lower():
+        if str(parsed) != value:
             raise EventValidationError("event_id must use canonical lowercase UUID spelling")
         return cls(parsed)
 
@@ -145,6 +156,68 @@ def _require_git_sha(value: str | None, *, field: str) -> None:
         raise EventValidationError(f"{field} must be a full lowercase Git SHA")
 
 
+def _require_uuid_text(value: object, *, field: str) -> None:
+    if not isinstance(value, str):
+        raise EventValidationError(f"{field} must be a canonical UUID string")
+    try:
+        parsed = UUID(value)
+    except (AttributeError, TypeError, ValueError) as exc:
+        raise EventValidationError(f"{field} must be a canonical UUID string") from exc
+    if str(parsed) != value:
+        raise EventValidationError(f"{field} must be a canonical UUID string")
+
+
+def _require_nonempty_text(value: object, *, field: str) -> None:
+    if not isinstance(value, str) or not value.strip():
+        raise EventValidationError(f"{field} must be a non-empty string")
+    _require_nfc(value, field=field)
+
+
+def _validate_payload_values(payload: EventPayload) -> None:
+    values = payload.as_mapping()
+    for name in ("claim_id", "grant_id"):
+        if name in values:
+            _require_uuid_text(values[name], field=f"payload.{name}")
+    for name in ("file_lane_digest", "reconciliation_ref", "worktree_evidence_digest"):
+        if name in values:
+            value = values[name]
+            if not isinstance(value, str):
+                raise EventValidationError(f"payload.{name} must be a digest string")
+            _require_digest(value, field=f"payload.{name}")
+    if "merge_commit" in values:
+        value = values["merge_commit"]
+        if not isinstance(value, str):
+            raise EventValidationError("payload.merge_commit must be a Git SHA string")
+        _require_git_sha(value, field="payload.merge_commit")
+    for name in ("gate_id", "operator_reason", "reason", "text", "transport", "verdict"):
+        if name in values:
+            _require_nonempty_text(values[name], field=f"payload.{name}")
+    for name in ("previous_state", "resume_state"):
+        if name in values:
+            value = values[name]
+            if not isinstance(value, str) or value not in {state.value for state in AssignmentState}:
+                raise EventValidationError(f"payload.{name} must be an assignment state")
+    if "conditions" in values:
+        conditions = values["conditions"]
+        if not isinstance(conditions, tuple):
+            raise EventValidationError("payload.conditions must be an array of strings")
+        for condition in conditions:
+            _require_nonempty_text(condition, field="payload.conditions[]")
+    if "cursor_highest_contiguous" in values:
+        _require_int(
+            values["cursor_highest_contiguous"],
+            field="payload.cursor_highest_contiguous",
+            minimum=0,
+        )
+    if "cursor_sparse" in values:
+        sparse = values["cursor_sparse"]
+        if not isinstance(sparse, tuple):
+            raise EventValidationError("payload.cursor_sparse must be an array of sequences")
+        sequences = tuple(_require_int(sequence, field="payload.cursor_sparse[]", minimum=1) for sequence in sparse)
+        if sequences != tuple(sorted(set(sequences))):
+            raise EventValidationError("payload.cursor_sparse must be sorted and unique")
+
+
 @dataclass(frozen=True, slots=True)
 class ProvenanceEvidence:
     classification: ProvenanceClass
@@ -163,6 +236,15 @@ class ActorBinding:
     role_id: RoleId
     thread_id: ThreadId
     generation_id: GenerationId
+
+    def __post_init__(self) -> None:
+        if self.role_id == RoleId("coordinator"):
+            if not isinstance(self.generation_id, CoordinatorGenerationId):
+                raise EventValidationError("coordinator actor requires a coordinator generation")
+        elif not isinstance(self.generation_id, OwnerGenerationId) or isinstance(
+            self.generation_id, CoordinatorGenerationId
+        ):
+            raise EventValidationError("worker actor requires an owner generation")
 
 
 @dataclass(frozen=True, slots=True)
@@ -198,10 +280,8 @@ class AssignmentBinding:
     pr_head: str | None = None
 
     def __post_init__(self) -> None:
-        if self.issue <= 0:
-            raise EventValidationError("assignment issue must be positive")
-        if self.policy_revision <= 0:
-            raise EventValidationError("policy_revision must be positive")
+        _require_int(self.issue, field="assignment issue", minimum=1)
+        _require_int(self.policy_revision, field="policy_revision", minimum=1)
         if self.required_evidence != tuple(sorted(self.required_evidence, key=lambda item: str(item.record_id))):
             raise EventValidationError("assignment required_evidence must be canonical")
         _require_digest(self.plan_digest, field="plan_digest")
@@ -482,6 +562,8 @@ class NativeCommand:
     schema_version: int = SCHEMA_VERSION
 
     def __post_init__(self) -> None:
+        if isinstance(self.schema_version, bool) or not isinstance(self.schema_version, int):
+            raise EventValidationError("command schema version must be an integer")
         if self.schema_version != SCHEMA_VERSION:
             raise EventValidationError(f"unsupported command schema version: {self.schema_version}")
         if self.kind in _ASSIGNMENT_KINDS and self.assignment is None:
@@ -491,9 +573,7 @@ class NativeCommand:
         if self.kind in _PLAN_KINDS and (self.assignment is None or self.assignment.plan_digest is None):
             raise EventValidationError(f"{self.kind.value} requires plan_digest")
         if self.kind in _PR_KINDS and (
-            self.assignment is None
-            or self.assignment.pr_base is None
-            or self.assignment.pr_head is None
+            self.assignment is None or self.assignment.pr_base is None or self.assignment.pr_head is None
         ):
             raise EventValidationError(f"{self.kind.value} requires pr_base and pr_head")
         if self.kind in _CORRELATED_KINDS and self.correlation_id is None:
@@ -519,6 +599,7 @@ class NativeCommand:
             raise EventValidationError(
                 f"{self.kind.value} has unexpected payload field(s): {', '.join(sorted(unexpected_payload))}"
             )
+        _validate_payload_values(self.payload)
         expected_effect = _KIND_EFFECT_FIELDS.get(self.kind, frozenset())
         supplied_effect = {name for name, _ in self.effect.items}
         if supplied_effect != expected_effect:
@@ -554,8 +635,8 @@ class AppendReceipt:
     def __post_init__(self) -> None:
         _require_digest(self.command_digest, field="command_digest")
         _require_digest(self.event_digest, field="event_digest")
-        if self.sequence is not None and self.sequence <= 0:
-            raise EventValidationError("receipt sequence must be positive")
+        if self.sequence is not None:
+            _require_int(self.sequence, field="receipt sequence", minimum=1)
         if self.committed_at is not None:
             _canonical_datetime(self.committed_at, field="committed_at")
 
@@ -572,8 +653,7 @@ class DurableEvent:
     validation_facts: CanonicalRecord = CanonicalRecord()
 
     def __post_init__(self) -> None:
-        if self.sequence <= 0:
-            raise EventValidationError("event sequence must be positive")
+        _require_int(self.sequence, field="event sequence", minimum=1)
         _canonical_datetime(self.committed_at, field="committed_at")
         _require_digest(self.previous_event_digest, field="previous_event_digest")
         _require_digest(self.event_digest, field="event_digest")
@@ -590,9 +670,12 @@ class CursorState:
     gaps: tuple[int, ...] = ()
 
     def __post_init__(self) -> None:
-        if self.highest_contiguous < 0:
-            raise EventValidationError("cursor highest_contiguous must be non-negative")
+        _require_int(self.highest_contiguous, field="cursor highest_contiguous", minimum=0)
         for label, values in (("sparse_sequences", self.sparse_sequences), ("gaps", self.gaps)):
+            if not isinstance(values, tuple) or any(
+                isinstance(value, bool) or not isinstance(value, int) for value in values
+            ):
+                raise EventValidationError(f"cursor {label} must be an immutable integer tuple")
             if tuple(sorted(set(values))) != values or any(value <= self.highest_contiguous for value in values):
                 raise EventValidationError(f"cursor {label} must be sorted unique values above the contiguous point")
         if set(self.sparse_sequences) & set(self.gaps):
@@ -604,6 +687,13 @@ class EventPage:
     events: tuple[DurableEvent, ...]
     scanned_through: int
     cursor: CursorState
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.events, tuple):
+            raise EventValidationError("event page events must be immutable")
+        _require_int(self.scanned_through, field="event page scanned_through", minimum=0)
+        if self.scanned_through < self.cursor.highest_contiguous:
+            raise EventValidationError("event page cannot end before its cursor")
 
 
 def _canonical_datetime(value: datetime, *, field: str) -> str:
@@ -648,8 +738,7 @@ def _canonicalize(value: Any, *, field: str = "value") -> Any:
         return _canonicalize(value.value, field=field)
     if is_dataclass(value) and not isinstance(value, type):
         return {
-            item.name: _canonicalize(getattr(value, item.name), field=f"{field}.{item.name}")
-            for item in fields(value)
+            item.name: _canonicalize(getattr(value, item.name), field=f"{field}.{item.name}") for item in fields(value)
         }
     if isinstance(value, Mapping):
         canonical: dict[str, Any] = {}

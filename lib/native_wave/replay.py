@@ -19,7 +19,7 @@ from .event_types import (
     receipt_from_bytes,
 )
 from .storage import SQLiteTransaction, SQLiteWaveStore, _parse_datetime
-from .types import CorruptStore, WaveId
+from .types import CorruptStore, StoredAssignment, WaveId
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,6 +43,23 @@ class ProjectionSnapshot:
 
 
 @dataclass(frozen=True, slots=True)
+class _AuthoritySnapshot:
+    wave: dict[str, Any]
+    bootstrap_event_id: str
+    created_store_revision: int
+    allowed_roles: tuple[str, ...]
+    capabilities: dict[str, dict[str, Any]]
+    owners: dict[str, dict[str, Any]]
+    grants: dict[str, dict[str, Any]]
+    grant_consumption: dict[str, tuple[str, str]]
+    assignments: dict[tuple[str, int], dict[str, Any]]
+    reconciliations: dict[str, dict[str, Any]]
+    reconciliation_consumption: dict[str, str]
+    claims: dict[str, dict[str, Any]]
+    participants: dict[tuple[str, str], tuple[str, int]]
+
+
+@dataclass(frozen=True, slots=True)
 class ReplayReport:
     wave_id: WaveId
     event_count: int
@@ -57,6 +74,118 @@ def _corrupt(message: str, *, last_verified: int, cause: Exception | None = None
     if cause is not None:
         error.__cause__ = cause
     return error
+
+
+def _plain(value: Any) -> Any:
+    return json.loads(canonical_json_bytes(value))
+
+
+def _authority_snapshot(
+    wave_id: WaveId,
+    events: tuple[DurableEvent, ...],
+    projections: ProjectionSnapshot,
+) -> _AuthoritySnapshot:
+    projection_values = {(row.kind, row.key): row.value for row in projections.projections}
+    wave = projection_values.get(("wave", str(wave_id)))
+    if wave is None:
+        raise CorruptStore("verified journal has no applied wave bootstrap")
+
+    bootstrap_event: DurableEvent | None = None
+    assignments: dict[tuple[str, int], dict[str, Any]] = {}
+    participants: dict[tuple[str, str], tuple[str, int]] = {}
+    grant_consumption: dict[str, tuple[str, str]] = {}
+    reconciliation_consumption: dict[str, str] = {}
+    for event in events:
+        if event.disposition == EventDisposition.REJECTED:
+            continue
+        command = event.command
+        facts = event.validation_facts.as_mapping()
+        if command.kind.value == "wave.bootstrapped":
+            if bootstrap_event is not None:
+                raise CorruptStore("verified journal applies wave bootstrap more than once")
+            bootstrap_event = event
+        if command.kind.value in {
+            "owner.registered",
+            "owner.replaced",
+            "owner.capability_updated",
+            "owner.rebriefed",
+        }:
+            owner = _plain(facts["owner"])
+            participant_key = (str(owner["thread_id"]), str(owner["role_id"]))
+            participants.setdefault(
+                participant_key,
+                (str(owner["generation_id"]), event.sequence),
+            )
+            consumed_grant_id = facts.get("consumed_grant_id")
+            if consumed_grant_id is not None:
+                grant_consumption[str(consumed_grant_id)] = (
+                    str(command.event_id),
+                    command.payload_digest(),
+                )
+        if command.kind.value in {"assignment.queued", "assignment.rebound"}:
+            binding = command.assignment
+            if binding is None:  # pragma: no cover - command validation already enforces this
+                raise CorruptStore("assignment event lacks its binding")
+            stored = StoredAssignment(
+                assignment=binding.ref,
+                wave_id=command.wave_id,
+                role_id=binding.worker_role,
+                owner_generation_id=binding.worker_generation,
+                capability_snapshot_id=binding.capability_snapshot_id,
+                capability_requirements=binding.capability_requirements,
+                required_evidence=binding.required_evidence,
+                policy_revision=binding.policy_revision,
+                acknowledged=False,
+            )
+            assignments[(str(binding.ref.assignment_id), binding.ref.revision)] = _plain(stored)
+        elif command.kind.value == "assignment.accepted":
+            binding = command.assignment
+            assert binding is not None
+            key = (str(binding.ref.assignment_id), binding.ref.revision)
+            current = assignments.get(key)
+            if current is None:
+                raise CorruptStore("accepted assignment is absent from verified journal")
+            current = dict(current)
+            current["acknowledged"] = True
+            assignments[key] = current
+        elif command.kind.value == "claim.rebound":
+            reconciliation = facts.get("reconciliation")
+            if reconciliation is not None:
+                record_id = str(_plain(reconciliation)["record_id"])
+                reconciliation_consumption[record_id] = str(command.event_id)
+
+    if bootstrap_event is None:
+        raise CorruptStore("verified journal has no applied bootstrap event")
+    bootstrap_facts = bootstrap_event.validation_facts.as_mapping()
+    request = _plain(bootstrap_facts["request"])
+    created_store_revision = bootstrap_facts.get("created_store_revision")
+    if isinstance(created_store_revision, bool) or not isinstance(created_store_revision, int):
+        raise CorruptStore("bootstrap event lacks a valid created store revision")
+    allowed_roles = tuple(sorted({str(grant["role_id"]) for grant in request["grants"]}))
+
+    return _AuthoritySnapshot(
+        wave=dict(wave),
+        bootstrap_event_id=str(bootstrap_event.command.event_id),
+        created_store_revision=created_store_revision,
+        allowed_roles=allowed_roles,
+        capabilities={
+            key: value
+            for (kind, key), value in projection_values.items()
+            if kind == "capability"
+        },
+        owners={key: value for (kind, key), value in projection_values.items() if kind == "owner"},
+        grants={key: value for (kind, key), value in projection_values.items() if kind == "grant"},
+        grant_consumption=grant_consumption,
+        assignments=assignments,
+        reconciliations={
+            key: value
+            for (kind, key), value in projection_values.items()
+            if kind == "reconciliation"
+        },
+        reconciliation_consumption=reconciliation_consumption,
+        claims={key: value for (kind, key), value in projection_values.items() if kind == "claim"},
+        participants=participants,
+    )
 
 
 def verified_events(tx: SQLiteTransaction, wave_id: WaveId) -> tuple[DurableEvent, ...]:
@@ -253,6 +382,254 @@ def _verify_rebuilt_snapshot(
         raise CorruptStore("materialized cursors differ from verified journal replay")
 
 
+def _verify_authority_tables(
+    tx: SQLiteTransaction,
+    wave_id: WaveId,
+    expected: _AuthoritySnapshot,
+) -> None:
+    wave_row = tx._connection.execute(
+        "SELECT repository_json,policy_revision,allowed_roles_json,bootstrap_event_id,created_store_revision "
+        "FROM waves WHERE wave_id=?",
+        (str(wave_id),),
+    ).fetchone()
+    expected_wave = (
+        canonical_json_bytes(expected.wave["repository"]),
+        int(expected.wave["policy_revision"]),
+        canonical_json_bytes(expected.allowed_roles),
+        expected.bootstrap_event_id,
+        expected.created_store_revision,
+    )
+    if wave_row is None or (
+        bytes(wave_row[0]),
+        int(wave_row[1]),
+        bytes(wave_row[2]),
+        str(wave_row[3]),
+        int(wave_row[4]),
+    ) != expected_wave:
+        raise CorruptStore("runtime wave authority differs from verified journal")
+
+    def record_rows(table: str, key_column: str) -> dict[str, bytes]:
+        allowed = {
+            ("owners", "role_id"),
+            ("claims", "claim_id"),
+            ("reconciliations", "record_id"),
+        }
+        if (table, key_column) not in allowed:
+            raise ValueError("unsupported authority record table")
+        return {
+            str(row[0]): bytes(row[1])
+            for row in tx._connection.execute(
+                f"SELECT {key_column},record_json FROM {table} WHERE wave_id=?",
+                (str(wave_id),),
+            ).fetchall()
+        }
+
+    if record_rows("owners", "role_id") != {
+        key: canonical_json_bytes(value) for key, value in expected.owners.items()
+    }:
+        raise CorruptStore("runtime owner authority differs from verified journal")
+    if record_rows("claims", "claim_id") != {
+        key: canonical_json_bytes(value) for key, value in expected.claims.items()
+    }:
+        raise CorruptStore("runtime claim authority differs from verified journal")
+    if record_rows("reconciliations", "record_id") != {
+        key: canonical_json_bytes(value) for key, value in expected.reconciliations.items()
+    }:
+        raise CorruptStore("runtime reconciliation authority differs from verified journal")
+
+    actual_capabilities: dict[str, bytes] = {}
+    for snapshot_id in expected.capabilities:
+        row = tx._connection.execute(
+            "SELECT record_json FROM capabilities WHERE snapshot_id=?",
+            (snapshot_id,),
+        ).fetchone()
+        if row is not None:
+            actual_capabilities[snapshot_id] = bytes(row[0])
+    if actual_capabilities != {
+        key: canonical_json_bytes(value) for key, value in expected.capabilities.items()
+    }:
+        raise CorruptStore("runtime capability authority differs from verified journal")
+
+    actual_assignments = {
+        (str(row[0]), int(row[1])): bytes(row[2])
+        for row in tx._connection.execute(
+            "SELECT assignment_id,assignment_revision,record_json FROM assignments WHERE wave_id=?",
+            (str(wave_id),),
+        ).fetchall()
+    }
+    if actual_assignments != {
+        key: canonical_json_bytes(value) for key, value in expected.assignments.items()
+    }:
+        raise CorruptStore("runtime assignment authority differs from verified journal")
+
+    actual_participants = {
+        (str(row[0]), str(row[1])): (str(row[2]), int(row[3]))
+        for row in tx._connection.execute(
+            "SELECT thread_id,role_id,first_generation_id,first_sequence "
+            "FROM participants WHERE wave_id=?",
+            (str(wave_id),),
+        ).fetchall()
+    }
+    if actual_participants != expected.participants:
+        raise CorruptStore("runtime participant authority differs from verified journal")
+
+    actual_grants: dict[str, dict[str, Any]] = {}
+    actual_consumption: dict[str, tuple[str, str]] = {}
+    for row in tx._connection.execute("SELECT * FROM grants WHERE wave_id=?", (str(wave_id),)).fetchall():
+        grant_id = str(row["grant_id"])
+        actual_grants[grant_id] = {
+            "authorized_by": row["authorized_by"],
+            "consumed": row["consumed_record_id"] is not None,
+            "created_store_revision": int(row["created_store_revision"]),
+            "expires_at": row["expires_at"],
+            "grant_id": grant_id,
+            "not_before": row["not_before"],
+            "policy_revision": int(row["policy_revision"]),
+            "purpose": row["purpose"],
+            "role_id": row["role_id"],
+            "target_owner_generation": row["target_owner_generation"],
+            "target_owner_version": (
+                int(row["target_owner_version"])
+                if row["target_owner_version"] is not None
+                else None
+            ),
+            "thread_id": row["thread_id"],
+            "wave_id": row["wave_id"],
+        }
+        if row["consumed_record_id"] is not None:
+            actual_consumption[grant_id] = (
+                str(row["consumed_record_id"]),
+                str(row["consumed_record_digest"]),
+            )
+    if actual_grants != expected.grants or actual_consumption != expected.grant_consumption:
+        raise CorruptStore("runtime grant authority differs from verified journal")
+
+    actual_reconciliation_consumption = {
+        str(row[0]): str(row[1])
+        for row in tx._connection.execute(
+            "SELECT record_id,consumed_by_event_id FROM reconciliations "
+            "WHERE wave_id=? AND consumed_by_event_id IS NOT NULL",
+            (str(wave_id),),
+        ).fetchall()
+    }
+    if actual_reconciliation_consumption != expected.reconciliation_consumption:
+        raise CorruptStore("runtime reconciliation consumption differs from verified journal")
+
+
+def _replace_authority_tables(
+    tx: SQLiteTransaction,
+    wave_id: WaveId,
+    expected: _AuthoritySnapshot,
+) -> None:
+    """Replace one wave's runtime authority only after its complete journal verifies."""
+
+    wave_text = str(wave_id)
+    for table in ("claims", "assignments", "owners", "grants", "reconciliations", "participants"):
+        tx._connection.execute(f"DELETE FROM {table} WHERE wave_id=?", (wave_text,))
+    tx._connection.execute("DELETE FROM waves WHERE wave_id=?", (wave_text,))
+    tx._connection.execute(
+        "INSERT INTO waves(wave_id,repository_json,policy_revision,allowed_roles_json,bootstrap_event_id,"
+        "created_store_revision) VALUES (?,?,?,?,?,?)",
+        (
+            wave_text,
+            canonical_json_bytes(expected.wave["repository"]),
+            int(expected.wave["policy_revision"]),
+            canonical_json_bytes(expected.allowed_roles),
+            expected.bootstrap_event_id,
+            expected.created_store_revision,
+        ),
+    )
+
+    for snapshot_id, value in expected.capabilities.items():
+        encoded = canonical_json_bytes(value)
+        existing = tx._connection.execute(
+            "SELECT record_json FROM capabilities WHERE snapshot_id=?",
+            (snapshot_id,),
+        ).fetchone()
+        if existing is not None and bytes(existing[0]) != encoded:
+            raise CorruptStore("capability ID has conflicting bytes during replay")
+        tx._connection.execute(
+            "INSERT OR IGNORE INTO capabilities(snapshot_id,record_json,record_digest) VALUES (?,?,?)",
+            (snapshot_id, encoded, digest_bytes(encoded)),
+        )
+
+    for grant_id, value in expected.grants.items():
+        consumed = expected.grant_consumption.get(grant_id)
+        tx._connection.execute(
+            "INSERT INTO grants(grant_id,wave_id,role_id,thread_id,purpose,policy_revision,"
+            "target_owner_generation,target_owner_version,created_store_revision,not_before,expires_at,"
+            "authorized_by,consumed_record_id,consumed_record_digest) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                grant_id,
+                wave_text,
+                value["role_id"],
+                value["thread_id"],
+                value["purpose"],
+                int(value["policy_revision"]),
+                value["target_owner_generation"],
+                value["target_owner_version"],
+                int(value["created_store_revision"]),
+                value["not_before"],
+                value["expires_at"],
+                value["authorized_by"],
+                consumed[0] if consumed else None,
+                consumed[1] if consumed else None,
+            ),
+        )
+
+    for role_id, value in expected.owners.items():
+        encoded = canonical_json_bytes(value)
+        tx._connection.execute(
+            "INSERT INTO owners(wave_id,role_id,version,record_json,record_digest) VALUES (?,?,?,?,?)",
+            (wave_text, role_id, int(value["record_version"]), encoded, digest_bytes(encoded)),
+        )
+    for (thread_id, role_id), (generation_id, sequence) in expected.participants.items():
+        tx._connection.execute(
+            "INSERT INTO participants(wave_id,thread_id,role_id,first_generation_id,first_sequence) "
+            "VALUES (?,?,?,?,?)",
+            (wave_text, thread_id, role_id, generation_id, sequence),
+        )
+    for (assignment_id, revision), value in expected.assignments.items():
+        encoded = canonical_json_bytes(value)
+        tx._connection.execute(
+            "INSERT INTO assignments(wave_id,assignment_id,assignment_revision,record_json,record_digest) "
+            "VALUES (?,?,?,?,?)",
+            (wave_text, assignment_id, revision, encoded, digest_bytes(encoded)),
+        )
+    for record_id, value in expected.reconciliations.items():
+        encoded = canonical_json_bytes(value)
+        tx._connection.execute(
+            "INSERT INTO reconciliations(record_id,record_digest,wave_id,record_json,record_json_digest,"
+            "consumed_by_event_id) VALUES (?,?,?,?,?,?)",
+            (
+                record_id,
+                value["record"]["digest"],
+                wave_text,
+                encoded,
+                digest_bytes(encoded),
+                expected.reconciliation_consumption.get(record_id),
+            ),
+        )
+    for claim_id, value in expected.claims.items():
+        encoded = canonical_json_bytes(value)
+        tx._connection.execute(
+            "INSERT INTO claims(claim_id,version,state,physical_host_id,physical_path,repository_host_id,"
+            "repository_common_dir,wave_id,record_json,record_digest) VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (
+                claim_id,
+                int(value["record_version"]),
+                value["state"],
+                value["target"]["host_instance_id"],
+                value["target"]["canonical_path"],
+                value["repository"]["host_instance_id"],
+                value["repository"]["canonical_common_dir"],
+                wave_text,
+                encoded,
+                digest_bytes(encoded),
+            ),
+        )
+
+
 def verify_wave(store: SQLiteWaveStore, wave_id: WaveId) -> ReplayReport:
     store.full_integrity_check()
     with store.transaction() as tx:
@@ -261,7 +638,9 @@ def verify_wave(store: SQLiteWaveStore, wave_id: WaveId) -> ReplayReport:
         from .events import build_projection_snapshot
 
         snapshot = build_projection_snapshot(events)
+        authority = _authority_snapshot(wave_id, events, snapshot)
         _verify_rebuilt_snapshot(tx, wave_id, snapshot)
+        _verify_authority_tables(tx, wave_id, authority)
     return ReplayReport(
         wave_id=wave_id,
         event_count=len(events),
@@ -281,6 +660,8 @@ def rebuild_projections(store: SQLiteWaveStore, wave_id: WaveId) -> ReplayReport
         from .events import build_projection_snapshot
 
         snapshot: ProjectionSnapshot = build_projection_snapshot(events)
+        authority = _authority_snapshot(wave_id, events, snapshot)
+        _replace_authority_tables(tx, wave_id, authority)
         tx._connection.execute("DELETE FROM projections WHERE wave_id = ?", (str(wave_id),))
         tx._connection.execute("DELETE FROM cursors WHERE wave_id = ?", (str(wave_id),))
         for projection in snapshot.projections:
@@ -293,6 +674,8 @@ def rebuild_projections(store: SQLiteWaveStore, wave_id: WaveId) -> ReplayReport
             )
         for cursor in snapshot.cursors:
             tx.put_cursor(cursor.cursor, cursor.source_sequence)
+        _verify_authority_tables(tx, wave_id, authority)
+        _verify_rebuilt_snapshot(tx, wave_id, snapshot)
         tx.commit()
     return ReplayReport(
         wave_id=wave_id,

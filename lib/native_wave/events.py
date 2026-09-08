@@ -6,6 +6,7 @@ import hmac
 import json
 from dataclasses import dataclass
 from typing import Any
+from uuid import UUID
 
 from .claims import prepare_claim_change, prepare_claim_reconciliation
 from .cursors import advance_cursor
@@ -18,6 +19,7 @@ from .event_types import (
     EventDisposition,
     EventId,
     EventKind,
+    EventPage,
     EventValidationError,
     NativeCommand,
     PolicyRevisionChange,
@@ -66,6 +68,7 @@ from .types import (
     StoredAssignment,
     StoredGrant,
     StoredReconciliation,
+    ThreadId,
     UpdateCapability,
     WaveId,
     WorktreeEvidence,
@@ -251,10 +254,7 @@ def _binding_matches_projection(command: NativeCommand, current: dict[str, Any])
         and current["required_evidence"] == [str(item.record_id) for item in binding.required_evidence]
         and (
             command.kind == EventKind.ASSIGNMENT_PR_OPEN
-            or (
-                current.get("pr_base") == binding.pr_base
-                and current.get("pr_head") == binding.pr_head
-            )
+            or (current.get("pr_base") == binding.pr_base and current.get("pr_head") == binding.pr_head)
         )
     )
 
@@ -275,6 +275,7 @@ def _project_command(command: NativeCommand, current: dict[str, Any] | None) -> 
                 return ProjectionDecision(False, "assignment_revision_not_monotonic", current)
         replacement = _projection_from_binding(command)
         if kind == EventKind.ASSIGNMENT_REBOUND:
+            assert current is not None
             replacement["state"] = AssignmentState.HELD.value
             replacement["held_from"] = current["held_from"]
             replacement["held_release_conditions"] = current.get("held_release_conditions")
@@ -365,7 +366,11 @@ def _project_command(command: NativeCommand, current: dict[str, Any] | None) -> 
         prior = command.payload.get("previous_state")
         if prior != current.get("held_from"):
             return ProjectionDecision(False, "release_state_mismatch", current)
-        if command.payload.get("conditions") != current.get("held_release_conditions"):
+        release_conditions = command.payload.get("conditions")
+        stored_conditions = current.get("held_release_conditions")
+        if not isinstance(release_conditions, tuple) or not isinstance(stored_conditions, (tuple, list)):
+            return ProjectionDecision(False, "release_conditions_mismatch", current)
+        if release_conditions != tuple(stored_conditions):
             return ProjectionDecision(False, "release_conditions_mismatch", current)
         if current.get("rebound_requires_gate"):
             return ProjectionDecision(False, "release_requires_fresh_gate", current)
@@ -457,9 +462,7 @@ def _correlation_reason(tx: SQLiteTransaction, command: NativeCommand) -> str | 
         return "correlation_kind_mismatch"
     correlated_receipt = receipt_from_bytes(correlated.receipt_bytes)
     expected_disposition = (
-        EventDisposition.RECONCILED
-        if command.kind == EventKind.ASSIGNMENT_COMPLETED
-        else EventDisposition.APPLIED
+        EventDisposition.RECONCILED if command.kind == EventKind.ASSIGNMENT_COMPLETED else EventDisposition.APPLIED
     )
     if correlated_receipt.disposition != expected_disposition:
         return "correlation_event_not_successful"
@@ -568,7 +571,10 @@ class EventService:
             assignment=None,
         )
         result = check_owner(tx, evidence, expected)
-        return None if result.allowed else result.refusal.code.value
+        if result.allowed:
+            return None
+        assert result.refusal is not None
+        return result.refusal.code.value
 
     def _assignment_refusal(self, tx: SQLiteTransaction, command: NativeCommand) -> str | None:
         binding = command.assignment
@@ -579,7 +585,32 @@ class EventService:
         coordinator = tx.read_owner(command.wave_id, RoleId("coordinator"))
         if coordinator is None or not _same_generation(coordinator.generation_id, binding.coordinator_generation):
             return "stale_coordinator_generation"
+        worker = tx.read_owner(command.wave_id, binding.worker_role)
+        if (
+            worker is None
+            or worker.thread_id != binding.worker_thread
+            or worker.generation_id != binding.worker_generation
+        ):
+            return "stale_worker_generation"
         if command.kind in {EventKind.ASSIGNMENT_QUEUED, EventKind.ASSIGNMENT_REBOUND}:
+            if worker.capability_snapshot_id != binding.capability_snapshot_id:
+                return "stale_capability"
+            snapshot = tx.read_capability(worker.capability_snapshot_id)
+            if snapshot is None:
+                return "capability_missing"
+            proposed = StoredAssignment(
+                assignment=binding.ref,
+                wave_id=command.wave_id,
+                role_id=binding.worker_role,
+                owner_generation_id=binding.worker_generation,
+                capability_snapshot_id=binding.capability_snapshot_id,
+                capability_requirements=binding.capability_requirements,
+                required_evidence=binding.required_evidence,
+                policy_revision=binding.policy_revision,
+                acknowledged=False,
+            )
+            if not evaluate_assignment_capabilities(snapshot, proposed).satisfied:
+                return "capability_requirements_unsatisfied"
             return None
         stored = tx.read_assignment(binding.ref)
         if stored is None:
@@ -594,9 +625,8 @@ class EventService:
             or stored.policy_revision != binding.policy_revision
         ):
             return "assignment_binding_mismatch"
-        worker = tx.read_owner(command.wave_id, binding.worker_role)
-        if worker is None or worker.generation_id != binding.worker_generation:
-            return "stale_worker_generation"
+        if command.kind in {EventKind.ASSIGNMENT_HELD, EventKind.ASSIGNMENT_CANCELLED}:
+            return None
         snapshot = tx.read_capability(worker.capability_snapshot_id)
         if snapshot is None:
             return "capability_missing"
@@ -645,9 +675,7 @@ class EventService:
 
     def append(self, command: NativeCommand, context: LocalIdentityContext) -> AppendReceipt:
         if command.kind in _TYPED_MUTATION_KINDS:
-            raise EventValidationError(
-                f"{command.kind.value} requires its typed atomic mutation entrypoint"
-            )
+            raise EventValidationError(f"{command.kind.value} requires its typed atomic mutation entrypoint")
         candidate = observe_self(context, self.process_probe)
         if isinstance(candidate, ProcessObservationUnavailable):
             raise EventAuthorizationError(candidate.detail)
@@ -668,9 +696,7 @@ class EventService:
             if command.assignment is not None:
                 current = tx.get_projection(command.wave_id, "assignment", _assignment_key(command.assignment.ref))
             decision = (
-                _project_command(command, current)
-                if reason is None
-                else ProjectionDecision(False, reason, current)
+                _project_command(command, current) if reason is None else ProjectionDecision(False, reason, current)
             )
             if not decision.accepted:
                 receipt = tx.append_event(
@@ -773,6 +799,74 @@ class EventService:
             )
             tx.put_cursor(cursor, receipt.sequence)
 
+    def scan_and_advance(
+        self,
+        command: NativeCommand,
+        context: LocalIdentityContext,
+    ) -> tuple[AppendReceipt, EventPage]:
+        """Read one bounded journal page and durably advance only this generation's cursor."""
+
+        if command.kind != EventKind.CURSOR_ADVANCED:
+            raise EventValidationError("cursor scan requires cursor.advanced command")
+        candidate = observe_self(context, self.process_probe)
+        if isinstance(candidate, ProcessObservationUnavailable):
+            raise EventAuthorizationError(candidate.detail)
+        with self.store.transaction() as tx:
+            evidence = accept_process_evidence(tx, candidate, self.process_probe)
+            if isinstance(evidence, ProcessObservationUnavailable):
+                raise EventAuthorizationError(evidence.detail)
+            generation = OwnerGenerationId(_uuid_value(command.actor.generation_id))
+            current = tx.read_cursor(
+                command.wave_id,
+                command.actor.role_id,
+                command.actor.thread_id,
+                generation,
+            ) or CursorState(
+                command.wave_id,
+                command.actor.role_id,
+                command.actor.thread_id,
+                generation,
+            )
+            existing = self._existing_receipt(tx, command, evidence)
+            if existing is not None:
+                return existing, EventPage((), current.highest_contiguous, current)
+            reason = self._owner_refusal(tx, command, evidence)
+            if reason is not None:
+                receipt = self._append_rejected_reason(tx, command, reason)
+                return receipt, EventPage((), current.highest_contiguous, current)
+            target = command.payload.get("cursor_highest_contiguous")
+            if isinstance(target, bool) or not isinstance(target, int):
+                raise EventValidationError("cursor target must be an integer")
+            span = target - current.highest_contiguous
+            if span <= 0:
+                raise EventValidationError("cursor scan target must advance")
+            page = tx.read_event_page(
+                command.wave_id,
+                after_sequence=current.highest_contiguous,
+                limit=span,
+            )
+            if len(page) != span or page[-1].sequence != target:
+                raise EventValidationError("cursor scan target exceeds the committed journal")
+            next_cursor = advance_cursor(
+                current,
+                observed_sequences=(event.sequence for event in page),
+                scanned_through=target,
+            )
+            supplied_sparse = command.payload.get("cursor_sparse")
+            if supplied_sparse != next_cursor.sparse_sequences:
+                raise EventValidationError("cursor command sparse set differs from scanned journal")
+            receipt = tx.append_event(
+                command,
+                disposition=EventDisposition.APPLIED,
+                reason=None,
+                validation_facts=canonical_record(cursor=next_cursor),
+                committed_at=self.clock.now_utc(),
+            )
+            assert receipt.sequence is not None
+            tx.put_cursor(next_cursor, receipt.sequence)
+            tx.commit()
+            return receipt, EventPage(page, target, next_cursor)
+
     def bootstrap(self, command: NativeCommand, request: BootstrapRequest) -> AppendReceipt:
         if command.kind != EventKind.WAVE_BOOTSTRAPPED or command.wave_id != request.wave_id:
             raise ValueError("bootstrap command/request mismatch")
@@ -794,7 +888,7 @@ class EventService:
                     thread_id=spec.thread_id,
                     purpose=spec.purpose,
                     policy_revision=request.policy_revision,
-                    created_store_revision=tx.base_store_revision,
+                    created_store_revision=tx.base_store_revision + 1,
                     not_before=request.created_at,
                     expires_at=spec.expires_at,
                     consumed=False,
@@ -891,6 +985,10 @@ class EventService:
             command.kind != EventKind.RECONCILIATION_RECORDED
             or command.wave_id != reconciliation.wave_id
             or str(command.actor.role_id) != "coordinator"
+            or not _same_generation(
+                command.actor.generation_id,
+                reconciliation.coordinator_generation,
+            )
         ):
             raise EventValidationError("reconciliation requires a matching coordinator command")
         candidate = observe_self(context, self.process_probe)
@@ -928,22 +1026,34 @@ class EventService:
             tx.commit()
             return receipt
 
-    def delegate_recovery(self, command: NativeCommand, request: RecoveryDelegationRequest) -> AppendReceipt:
+    def delegate_recovery(
+        self,
+        command: NativeCommand,
+        context: LocalIdentityContext,
+        request: RecoveryDelegationRequest,
+    ) -> AppendReceipt:
         if command.kind != EventKind.RECOVERY_DELEGATED or command.wave_id != request.wave_id:
             raise ValueError("recovery command/request mismatch")
         if str(command.actor.role_id) != "coordinator" or not _same_generation(
             command.actor.generation_id, request.expected_coordinator_generation
         ):
             raise EventValidationError("recovery command actor does not match the expected coordinator")
+        candidate = observe_self(context, self.process_probe)
+        if isinstance(candidate, ProcessObservationUnavailable):
+            raise EventAuthorizationError(candidate.detail)
         with self.store.transaction(administrative_entry="recovery") as tx:
-            existing = tx.lookup_event(command.wave_id, command.event_id)
+            evidence = accept_process_evidence(tx, candidate, self.process_probe)
+            if isinstance(evidence, ProcessObservationUnavailable):
+                raise EventAuthorizationError(evidence.detail)
+            existing = self._existing_receipt(tx, command, evidence)
             if existing is not None:
-                if not hmac.compare_digest(existing.command_bytes, command.canonical_bytes()):
-                    return self._conflict_receipt(command)
-                return receipt_from_bytes(existing.receipt_bytes)
+                return existing
             _require_effect(command, request=request)
             if str(command.payload.get("grant_id")) != str(request.grant_id):
                 raise EventValidationError("recovery command grant differs from its request")
+            reason = self._owner_refusal(tx, command, evidence)
+            if reason is not None:
+                return self._append_rejected_reason(tx, command, reason)
             prepared = provision_recovery_delegation(tx, request)
             if isinstance(prepared, OwnershipRefusal):
                 raise EventAuthorizationError(prepared.detail)
@@ -956,7 +1066,7 @@ class EventService:
                 thread_id=request.successor_thread_id,
                 purpose=GrantPurpose.COORDINATOR_RECOVERY,
                 policy_revision=tx.read_policy_revision(request.wave_id),
-                created_store_revision=tx.base_store_revision,
+                created_store_revision=tx.base_store_revision + 1,
                 not_before=request.created_at,
                 expires_at=request.expires_at,
                 consumed=False,
@@ -1120,9 +1230,7 @@ class EventService:
                 raise EventValidationError("claim command kind does not match its intent")
             _require_effect(command, intent=intent, worktree=worktree)
             supplied_worktree_digest = command.payload.get("worktree_evidence_digest")
-            expected_worktree_digest = (
-                digest_bytes(canonical_json_bytes(worktree)) if worktree is not None else None
-            )
+            expected_worktree_digest = digest_bytes(canonical_json_bytes(worktree)) if worktree is not None else None
             if supplied_worktree_digest is not None and supplied_worktree_digest != expected_worktree_digest:
                 raise EventValidationError("claim command worktree digest differs from its evidence")
             if isinstance(intent, RebindClaimIntent):
@@ -1145,6 +1253,18 @@ class EventService:
                     or not _same_generation(command.actor.generation_id, intent.expected.generation_id)
                 ):
                     raise EventValidationError("claim command actor/wave does not match expected owner bindings")
+                authority_assignment = intent.expected.assignment
+                if authority_assignment is None:
+                    return self._append_rejected_reason(tx, command, "stale_assignment")
+                if isinstance(intent, ReserveClaim) and intent.assignment != authority_assignment:
+                    raise EventValidationError("claim reservation assignment differs from expected bindings")
+                current_assignment = tx.read_current_assignment(command.wave_id, authority_assignment)
+                if (
+                    current_assignment is None
+                    or current_assignment.assignment != authority_assignment
+                    or not current_assignment.acknowledged
+                ):
+                    return self._append_rejected_reason(tx, command, "stale_assignment")
                 prepared = prepare_claim_change(tx, evidence, intent, worktree, self.ids, self.clock)
             if isinstance(prepared, OwnershipRefusal):
                 return self._append_refusal(tx, command, prepared)
@@ -1251,8 +1371,56 @@ def build_projection_snapshot(events: tuple[DurableEvent, ...]) -> ProjectionSna
                 reconciliation,
                 event.sequence,
             )
+        elif command.kind == EventKind.CURSOR_ADVANCED:
+            cursor_value = _plain_record(facts["cursor"])
+            cursor = CursorState(
+                wave_id=WaveId(cursor_value["wave_id"]),
+                role_id=RoleId(cursor_value["role_id"]),
+                thread_id=ThreadId(UUID(cursor_value["thread_id"])),
+                generation_id=OwnerGenerationId(UUID(cursor_value["generation_id"])),
+                highest_contiguous=int(cursor_value["highest_contiguous"]),
+                sparse_sequences=tuple(cursor_value["sparse_sequences"]),
+                gaps=tuple(cursor_value["gaps"]),
+            )
+            cursor_key = (
+                str(cursor.wave_id),
+                str(cursor.role_id),
+                str(cursor.thread_id),
+                str(cursor.generation_id),
+            )
+            cursors[cursor_key] = (cursor, event.sequence)
         if command.assignment is None:
             continue
+        if command.kind in {
+            EventKind.ASSIGNMENT_READ,
+            EventKind.ASSIGNMENT_ACCEPTED,
+            EventKind.ASSIGNMENT_IMPLEMENTING,
+            EventKind.ASSIGNMENT_COMPLETED,
+        }:
+            assert command.correlation_id is not None
+            correlated = by_id.get((str(command.wave_id), str(command.correlation_id)))
+            if correlated is None or correlated.sequence >= event.sequence:
+                raise ValueError("committed acknowledgement has no prior correlated event")
+            expected_kinds = {
+                EventKind.ASSIGNMENT_READ: {EventKind.ASSIGNMENT_QUEUED, EventKind.ASSIGNMENT_REBOUND},
+                EventKind.ASSIGNMENT_ACCEPTED: {
+                    EventKind.ASSIGNMENT_QUEUED,
+                    EventKind.ASSIGNMENT_REBOUND,
+                },
+                EventKind.ASSIGNMENT_IMPLEMENTING: {EventKind.GATE_APPROVED},
+                EventKind.ASSIGNMENT_COMPLETED: {EventKind.EXTERNAL_MERGE_OBSERVED},
+            }[command.kind]
+            expected_disposition = (
+                EventDisposition.RECONCILED
+                if command.kind == EventKind.ASSIGNMENT_COMPLETED
+                else EventDisposition.APPLIED
+            )
+            if (
+                correlated.command.kind not in expected_kinds
+                or correlated.disposition != expected_disposition
+                or correlated.command.assignment != command.assignment
+            ):
+                raise ValueError("committed acknowledgement has invalid correlation evidence")
         key = _assignment_key(command.assignment.ref)
         projection_key = ("assignment", key)
         current_entry = projections.get(projection_key)
@@ -1292,8 +1460,7 @@ def build_projection_snapshot(events: tuple[DurableEvent, ...]) -> ProjectionSna
             cursors[cursor_key] = (cursor, event.sequence)
     return ProjectionSnapshot(
         projections=tuple(
-            ProjectionRow(kind, key, value, sequence)
-            for (kind, key), (value, sequence) in sorted(projections.items())
+            ProjectionRow(kind, key, value, sequence) for (kind, key), (value, sequence) in sorted(projections.items())
         ),
         cursors=tuple(CursorRow(cursor, sequence) for _, (cursor, sequence) in sorted(cursors.items())),
     )

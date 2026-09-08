@@ -24,13 +24,18 @@ def advance_cursor(
     read evidence: it cannot produce assignment acceptance.
     """
 
+    if isinstance(scanned_through, bool) or not isinstance(scanned_through, int):
+        raise EventValidationError("cursor scan endpoint must be an integer")
     if scanned_through < current.highest_contiguous:
         raise EventValidationError("cursor scan cannot move backwards")
     if scanned_through - current.highest_contiguous > MAX_CURSOR_SPAN:
         raise EventValidationError("cursor scan span exceeds the bounded page size")
 
     observed = set(observed_sequences)
-    if any(sequence <= 0 or sequence > scanned_through for sequence in observed):
+    if any(
+        isinstance(sequence, bool) or not isinstance(sequence, int) or sequence <= 0 or sequence > scanned_through
+        for sequence in observed
+    ):
         raise EventValidationError("observed cursor sequence is outside the scanned range")
 
     sparse = set(current.sparse_sequences)

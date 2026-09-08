@@ -17,13 +17,17 @@ from .event_types import (
     AppendReceipt,
     CanonicalRecord,
     CursorState,
+    DurableEvent,
     EventDisposition,
     EventId,
+    EventValidationError,
     NativeCommand,
     canonical_json_bytes,
+    command_from_bytes,
     digest_bytes,
     event_record_digest,
     receipt_bytes,
+    receipt_from_bytes,
 )
 from .types import (
     AssignmentRef,
@@ -384,9 +388,7 @@ def _decode_grant(row: sqlite3.Row) -> StoredGrant:
             if row["target_owner_generation"] is not None
             else None
         ),
-        target_owner_version=(
-            int(row["target_owner_version"]) if row["target_owner_version"] is not None else None
-        ),
+        target_owner_version=(int(row["target_owner_version"]) if row["target_owner_version"] is not None else None),
     )
 
 
@@ -548,9 +550,7 @@ class SQLiteWaveStore:
             connection = sqlite3.connect(config.path.as_uri() + "?mode=rw", isolation_level=None, uri=True)
             connection.row_factory = sqlite3.Row
             version_row = connection.execute("PRAGMA user_version").fetchone()
-            meta = connection.execute(
-                "SELECT schema_version, store_id FROM store_meta WHERE singleton = 1"
-            ).fetchone()
+            meta = connection.execute("SELECT schema_version, store_id FROM store_meta WHERE singleton = 1").fetchone()
             mode_row = connection.execute("PRAGMA journal_mode").fetchone()
             quick_row = connection.execute("PRAGMA quick_check").fetchone()
         except sqlite3.DatabaseError as exc:
@@ -582,6 +582,7 @@ class SQLiteWaveStore:
         before = self.config.path.stat()
         if (before.st_dev, before.st_ino) != self._file_identity:
             raise StoreUnavailable("native-wave store file identity changed")
+        connection: sqlite3.Connection | None = None
         try:
             connection = sqlite3.connect(
                 self.config.path.as_uri() + "?mode=rw",
@@ -594,14 +595,18 @@ class SQLiteWaveStore:
             connection.execute("PRAGMA foreign_keys = ON")
             connection.execute("PRAGMA synchronous = FULL")
             version_row = connection.execute("PRAGMA user_version").fetchone()
-            meta = connection.execute(
-                "SELECT schema_version, store_id FROM store_meta WHERE singleton = 1"
-            ).fetchone()
+            meta = connection.execute("SELECT schema_version, store_id FROM store_meta WHERE singleton = 1").fetchone()
             mode_row = connection.execute("PRAGMA journal_mode").fetchone()
             quick_row = connection.execute("PRAGMA quick_check").fetchone()
         except sqlite3.DatabaseError as exc:
+            if connection is not None:
+                connection.close()
             raise StoreUnavailable("cannot open native-wave store") from exc
-        after = self.config.path.stat()
+        try:
+            after = self.config.path.stat()
+        except OSError as exc:
+            connection.close()
+            raise StoreUnavailable("native-wave store disappeared while opening") from exc
         if (
             (after.st_dev, after.st_ino) != self._file_identity
             or version_row is None
@@ -730,15 +735,11 @@ class SQLiteTransaction:
     def commit(self) -> None:
         self._ensure_active()
         try:
-            self._connection.execute(
-                "UPDATE store_meta SET store_revision = store_revision + 1 WHERE singleton = 1"
-            )
+            self._connection.execute("UPDATE store_meta SET store_revision = store_revision + 1 WHERE singleton = 1")
             self._connection.commit()
         except sqlite3.DatabaseError as exc:
             self._active = False
-            raise DurabilityFailure(
-                "SQLite commit failed; outcome is unknown until same-event recovery"
-            ) from exc
+            raise DurabilityFailure("SQLite commit failed; outcome is unknown until same-event recovery") from exc
         self._active = False
 
     def rollback(self) -> None:
@@ -811,8 +812,7 @@ class SQLiteTransaction:
     def read_assignment(self, assignment: AssignmentRef) -> StoredAssignment | None:
         self._ensure_active()
         row = self._connection.execute(
-            "SELECT record_json,record_digest FROM assignments "
-            "WHERE assignment_id=? AND assignment_revision=?",
+            "SELECT record_json,record_digest FROM assignments WHERE assignment_id=? AND assignment_revision=?",
             (str(assignment.assignment_id), assignment.revision),
         ).fetchone()
         if row is None:
@@ -822,6 +822,25 @@ class SQLiteTransaction:
             raise CorruptStore("assignment record digest mismatch")
         stored = _decode_assignment(encoded)
         return stored if stored.assignment == assignment else None
+
+    def read_current_assignment(self, wave_id: WaveId, assignment: AssignmentRef) -> StoredAssignment | None:
+        """Return the latest durable revision for an assignment ID within one wave."""
+
+        self._ensure_active()
+        row = self._connection.execute(
+            "SELECT record_json,record_digest FROM assignments "
+            "WHERE wave_id=? AND assignment_id=? ORDER BY assignment_revision DESC LIMIT 1",
+            (_id_text(wave_id), str(assignment.assignment_id)),
+        ).fetchone()
+        if row is None:
+            return None
+        encoded = bytes(row[0])
+        if digest_bytes(encoded) != row[1]:
+            raise CorruptStore("current assignment record digest mismatch")
+        stored = _decode_assignment(encoded)
+        if stored.wave_id != wave_id or stored.assignment.assignment_id != assignment.assignment_id:
+            raise CorruptStore("current assignment index differs from stored record")
+        return stored
 
     def read_reconciliation(self, record: DurableRecordRef) -> StoredReconciliation | None:
         self._ensure_active()
@@ -923,7 +942,7 @@ class SQLiteTransaction:
         if change.consumed_grant_id is not None:
             result = self._connection.execute(
                 "UPDATE grants SET consumed_record_id=?,consumed_record_digest=? "
-                "WHERE grant_id=? AND consumed_record_id IS NULL AND created_store_revision < ?",
+                "WHERE grant_id=? AND consumed_record_id IS NULL AND created_store_revision <= ?",
                 (event_id, command_digest, _id_text(change.consumed_grant_id), self.base_store_revision),
             )
             if result.rowcount != 1:
@@ -1108,7 +1127,7 @@ class SQLiteTransaction:
                     request.policy_revision,
                     None,
                     None,
-                    self.base_store_revision,
+                    self.base_store_revision + 1,
                     _datetime_text(request.created_at),
                     _datetime_text(grant.expires_at),
                     None,
@@ -1139,7 +1158,7 @@ class SQLiteTransaction:
                 self.read_policy_revision(request.wave_id),
                 _id_text(coordinator.generation_id),
                 coordinator.record_version,
-                self.base_store_revision,
+                self.base_store_revision + 1,
                 _datetime_text(request.created_at),
                 _datetime_text(request.expires_at),
                 _id_text(request.expected_coordinator_generation),
@@ -1248,7 +1267,15 @@ class SQLiteTransaction:
 
     def read_event_rows(self, wave_id: WaveId, *, after_sequence: int = 0, limit: int = 1000) -> list[sqlite3.Row]:
         self._ensure_active()
-        if after_sequence < 0 or limit <= 0 or limit > 10_000:
+        if (
+            isinstance(after_sequence, bool)
+            or not isinstance(after_sequence, int)
+            or isinstance(limit, bool)
+            or not isinstance(limit, int)
+            or after_sequence < 0
+            or limit <= 0
+            or limit > 10_000
+        ):
             raise ValueError("invalid event page bounds")
         return list(
             self._connection.execute(
@@ -1256,6 +1283,91 @@ class SQLiteTransaction:
                 (_id_text(wave_id), after_sequence, limit),
             ).fetchall()
         )
+
+    def read_event_page(
+        self,
+        wave_id: WaveId,
+        *,
+        after_sequence: int = 0,
+        limit: int = 1000,
+    ) -> tuple[DurableEvent, ...]:
+        """Materialize and verify one bounded contiguous journal page."""
+
+        rows = self.read_event_rows(wave_id, after_sequence=after_sequence, limit=limit)
+        if after_sequence == 0:
+            previous_digest = None
+        else:
+            prior = self._connection.execute(
+                "SELECT event_digest FROM events WHERE wave_id=? AND sequence=?",
+                (_id_text(wave_id), after_sequence),
+            ).fetchone()
+            if prior is None:
+                raise CorruptStore("event page predecessor is missing")
+            previous_digest = str(prior[0])
+        events: list[DurableEvent] = []
+        expected_sequence = after_sequence + 1
+        for row in rows:
+            try:
+                sequence = int(row["sequence"])
+                if sequence != expected_sequence or row["previous_event_digest"] != previous_digest:
+                    raise EventValidationError("event page sequence/hash linkage is not contiguous")
+                command_bytes = bytes(row["command_bytes"])
+                if digest_bytes(command_bytes) != row["command_digest"]:
+                    raise EventValidationError("event page command digest mismatch")
+                command = command_from_bytes(command_bytes)
+                if command.wave_id != wave_id or str(command.event_id) != row["event_id"]:
+                    raise EventValidationError("event page command key mismatch")
+                raw_facts = bytes(row["validation_facts_json"])
+                facts_payload = json.loads(raw_facts)
+                if not isinstance(facts_payload, dict):
+                    raise EventValidationError("event validation facts must be an object")
+                facts = CanonicalRecord.from_mapping(facts_payload)
+                if canonical_json_bytes(facts) != raw_facts:
+                    raise EventValidationError("event validation facts are not canonical")
+                disposition = EventDisposition(row["disposition"])
+                committed_at = _parse_datetime(row["committed_at"])
+                computed = event_record_digest(
+                    command_bytes=command_bytes,
+                    sequence=sequence,
+                    disposition=disposition,
+                    reason=row["reason"],
+                    committed_at=committed_at,
+                    previous_event_digest=previous_digest,
+                    validation_facts=facts,
+                )
+                if computed != row["event_digest"]:
+                    raise EventValidationError("event page record digest mismatch")
+                existing = self.lookup_event(wave_id, command.event_id)
+                if existing is None:
+                    raise EventValidationError("event page receipt is missing")
+                receipt = receipt_from_bytes(existing.receipt_bytes)
+                if (
+                    receipt.wave_id != wave_id
+                    or receipt.event_id != command.event_id
+                    or receipt.command_digest != row["command_digest"]
+                    or receipt.disposition != disposition
+                    or receipt.reason != row["reason"]
+                    or receipt.sequence != sequence
+                    or receipt.event_digest != computed
+                    or receipt.committed_at != committed_at
+                ):
+                    raise EventValidationError("event page receipt differs from event")
+            except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+                raise CorruptStore(f"event page verification failed at sequence {expected_sequence - 1}") from exc
+            event = DurableEvent(
+                command=command,
+                sequence=sequence,
+                disposition=disposition,
+                reason=row["reason"],
+                committed_at=committed_at,
+                previous_event_digest=previous_digest,
+                event_digest=computed,
+                validation_facts=facts,
+            )
+            events.append(event)
+            previous_digest = computed
+            expected_sequence += 1
+        return tuple(events)
 
     def get_projection(self, wave_id: WaveId, kind: str, key: str) -> dict[str, Any] | None:
         self._ensure_active()
