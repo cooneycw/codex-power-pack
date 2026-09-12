@@ -273,6 +273,53 @@ Working from the worktree, analyze the issue and codebase to form an implementat
    - Identify referenced files, components, or areas
    - Note any dependencies or constraints mentioned
 
+   **Generated governing context (#223, CPP #858 source-derived):** the issue body
+   is a bounded derivative cache. Reconstruct governing TEXT before Step 3 and after
+   resume/compaction when prior context may be stale. This procedure does not prove
+   live compliance, acknowledgement, comprehension, approval or #201 admission.
+
+   Run this installed-consumer snippet after selecting the issue/repository and trusted
+   checkout. Set FLOW_SKILL_DIR to the absolute directory of the loaded, installed
+   flow-auto skill (not a directory from the target project). For generated issues,
+   independently select FLOW_CONTEXT_TASKS , FLOW_CONTEXT_GROUP and FLOW_CONTEXT_TASK_IDS from the assignment
+   and reviewed source mapping; do not let body metadata choose arbitrary source paths.
+   Ordinary issues need neither variable and acquire no new schema/spec obligation.
+
+   ```bash
+   (
+       set -eu
+       : "${FLOW_SKILL_DIR:?absolute installed flow-auto skill directory required}"
+       : "${ISSUE_NUM:?selected issue required}" "${REPO:?explicit OWNER/REPO required}"
+       : "${TARGET_REPO:?trusted checkout required}"
+       case "$FLOW_SKILL_DIR" in /*) ;; *) echo 'Unreliable context: installed path must be absolute' >&2; exit 1;; esac
+       CONTEXT_HELPER="$FLOW_SKILL_DIR/scripts/spec_context.py"
+       test -f "$CONTEXT_HELPER" || { echo 'Unreliable context: installed helper missing; no project/global fallback' >&2; exit 1; }
+       CONTEXT_BODY="$(mktemp -t flow-auto-body-XXXXXX.md)"
+       trap 'rm -f "$CONTEXT_BODY"' EXIT
+       if ! gh issue view "$ISSUE_NUM" --repo "$REPO" --json body --jq .body > "$CONTEXT_BODY"; then
+           echo 'Unreliable context: issue fetch failed; no absent/current inference' >&2
+           exit 1
+       fi
+       python3 "$CONTEXT_HELPER" --body-file "$CONTEXT_BODY" --repo "$REPO" \
+           --issue "$ISSUE_NUM" --checkout "$TARGET_REPO" \
+           --tasks "${FLOW_CONTEXT_TASKS:-}" --group "${FLOW_CONTEXT_GROUP:-}" --task-ids "${FLOW_CONTEXT_TASK_IDS:-}"
+   )
+   ```
+
+   A failed checker is unreliable context, never an absent/current success. Read the
+   printed governing text, source locations and checkout differences. Unresolved or
+   capped content means incomplete evidence, not no constraints; read the named source
+   under the existing material-ambiguity standard. Ordinary absent or legacy/unattested
+   issues remain usable for ordinary analysis using their body and governing references.
+   Malformed generated markers require explicit reconciliation, not legacy downgrade.
+
+   Distinguish the sourced outcome, acceptance, binding constraints and rationale from
+   a task's proposed mechanism. Changed bytes are not a materiality ruling. Preserve
+   existing decisions and inspect revision references: markers/checksums confer no
+   authority. Material changes require the existing judge, then newly bound text and
+   evidence; never relabel an old approval/receipt as current. Before consequential
+   continuation after resume, repeat this read if the prior reconstruction may be stale.
+
 2. **Explore the codebase:**
    - Read files referenced in the issue
    - Understand existing patterns and conventions

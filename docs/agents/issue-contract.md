@@ -67,11 +67,12 @@ Choose `$spec-adopt` explicitly when the fuller official Spec Kit workflow is
 wanted. Its installation, force and optional-extension boundaries remain intact.
 After adoption, use official constitution/specify/clarify/plan/tasks/analysis
 steps. `$spec-sync` compiles that deliberately selected full-spec route and still
-requires the artifacts, clean-analysis assertion, reviewed commit/path existence,
+requires the artifacts, clean-analysis assertion, reviewed immutable source objects,
 exact paths, valid dependencies/checkpoints and preview/approval. Choosing an
 issue-first route does not mean making incomplete full-spec input pass the
-compiler. Existing immutable links are not broader artifact-content attestation;
-that separate producer/handoff limitation remains tracked by #223.
+compiler. Frozen raw object hashes and working-byte checks now bind generated
+context; only a validated task-ledger successor may differ locally. Derivative
+context does not prove official analysis, approval or native-wave admission.
 
 ## Worked examples
 
@@ -156,3 +157,14 @@ The #196 adoption policy and retained deferrals remain unchanged. A future pin
 containing the exact new source avoids double application; changed upstream
 wording requires review and retirement/update of the bounded recipe, not a silent
 fallback or a general source-policy bypass.
+
+## Bounded generated context
+
+A generated Spec Sync issue may cache a focused extract of its authoritative source
+so a receiving worker can reconstruct governing outcomes, acceptance and constraints.
+This narrow cache exception does not require ordinary issues to acquire spec structure.
+Read named omitted/capped source before planning when material; missing mappings mean
+incomplete evidence, not no constraints. Checksums and revision references establish
+neither approval nor a new authority. Material changes return to the existing judge,
+then update actual text and evidence while preserving old decisions/receipts.
+See [the native governing-context contract](../spec-sync-governing-context.md).

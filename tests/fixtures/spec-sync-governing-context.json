@@ -1,0 +1,4 @@
+{
+  "spec": "# Feature\n## US1: Responsive progress\nUsers see progress rather than a frozen screen.\n### Acceptance\nProgress appears within one second.\n## US2: Delete history\nUnrelated deletion removes all history.\n## Global constraints\nNFR-001: Stay in the single container because deployment has no queue service.\n## Functional requirements\n| ID | Requirement | User Story |\n|---|---|---|\n| FR-001 | Show progress | US1 |\n| FR-002 | Delete everything | US2 |\n| FR-003 | Ownership unclear | |\n",
+  "plan": "# Plan\n## Accepted decisions\nReuse PostgreSQL; an external queue is only a proposal.\n"
+}

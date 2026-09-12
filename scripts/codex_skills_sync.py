@@ -1604,6 +1604,267 @@ def _backport_github_issue_contract(skill_dir: Path, rel: str, content: bytes) -
     return adapted
 
 
+# CPP #858 bounded raw-reference adoption. Retire after reviewed source convergence.
+_FLOW_CONTEXT_BEFORE = (
+    "d4b0e860ad51a0ac428f89bfbfa797f5317b6c2c",
+    "a98d6f05d37220a9fee3051c80d4262959ca029fb3e2c9d8b9c1dbd16ba57708",
+    65144,
+)
+_FLOW_CONTEXT_AFTER = (
+    "6ab2e7379284c906d16b722ec977c15a1aebb5e9",
+    "3e76614b58563813bdb3e8a204538ff25632117386223c3e1654ef57a9c4c799",
+    69029,
+)
+_FLOW_CONTEXT_DELTA = [
+    (
+        1209,
+        1209,
+        (
+            b' |\n'
+            b'| **Container** | **yes** - the Bash tool reaches docker/kub'
+            b'ectl/terraform directly, no sandbox denial (issue #835)'
+        ),
+    ),
+    (
+        15864,
+        15864,
+        (
+            b'\n'
+            b'\n'
+            b'   **If the body carries a `speckit-context` block** (issue '
+            b'#858), it is a generated\n'
+            b"   issue and the block is a bounded CACHE of the task's decl"
+            b'ared context - not the\n'
+            b'   authority. Fetch the body to a UNIQUE file, check that th'
+            b'e fetch succeeded, and\n'
+            b'   only then run the checker: a failed `gh` leaves an empty '
+            b'body, and an empty body\n'
+            b'   reports `absent`, which reads exactly like a healthy issu'
+            b'e that simply has no\n'
+            b'   block. A fixed `/tmp` name also collides between concurre'
+            b'nt wave workers.\n'
+            b'\n'
+            b'   ```bash\n'
+            b'   BODY_FILE="$(mktemp -t flow-auto-body-XXXXXX.md)"\n'
+            b'   if ! gh issue view "$ISSUE_NUM" --json body --jq .body > '
+            b'"$BODY_FILE"; then\n'
+            b'       echo "STOP: could not fetch issue #$ISSUE_NUM; not ch'
+            b'ecking context against an empty body."\n'
+            b'       exit 1\n'
+            b'   fi\n'
+            b'   ~/.claude/scripts/speckit-context.py check --body-file "$'
+            b'BODY_FILE" --root .\n'
+            b'   ```\n'
+            b'\n'
+            b'   Helper resolution: `~/.claude/scripts/speckit-context.py`'
+            b' is the stable path\n'
+            b'   (`/flow-repair` installs it). On exit 127 fall back to\n'
+            b'   `${CLAUDE_PLUGIN_ROOT}/scripts/speckit-context.py`, else '
+            b'the CPP-checkout copy.\n'
+            b'   Running inside a generated Codex skill, use the copy bund'
+            b"led in that skill's own\n"
+            b'   `scripts/` directory - never a `scripts/` directory in th'
+            b'e target project, which\n'
+            b'   has no reason to contain CPP tooling.\n'
+            b'\n'
+            b'   Act on `SPECKIT_CONTEXT_STATE`:\n'
+            b'   - `current` - the cache matches its source. Read the **Re'
+            b'ference source** named in\n'
+            b'     the block, including the cross-cutting sections it list'
+            b's, then plan.\n'
+            b'   - `changed-in-scope` / `changed-outside-scope` - source b'
+            b'ytes changed since the\n'
+            b'     issue was written. That is a byte difference, NOT a rul'
+            b'ing that acceptance\n'
+            b'     changed. Read the source, decide whether it matters und'
+            b'er the existing authority\n'
+            b'     model, and say so in the Step 3 report. Newer bytes do '
+            b'not by themselves override\n'
+            b'     a constraint or plan already accepted on the issue; a r'
+            b'ecorded\n'
+            b'     `Acceptance-revision:` line is reported with the versio'
+            b'n it names, and whether it\n'
+            b'     predates the change is part of what you must resolve.\n'
+            b'   - `changed-task` - the task line itself changed: its word'
+            b'ing, or the `[USn]` tag\n'
+            b'     that decides which requirements apply. The cached mappi'
+            b'ng no longer matches the\n'
+            b'     plan, so re-read the task line and its story before pla'
+            b'nning, and treat the\n'
+            b"     block's requirement list as provisional.\n"
+            b'   - `tasks-missing` - the tasks file the block was built fr'
+            b'om is not present under\n'
+            b'     this root. Plan from the issue body and the source if o'
+            b'ne resolves, and report\n'
+            b'     that the task-side mapping could not be re-checked.\n'
+            b'   - `block-edited` / `block-damaged` - someone edited insid'
+            b'e the block, or its\n'
+            b'     boundaries are broken. Treat the block as unreliable, r'
+            b'ead the source directly,\n'
+            b'     and do not refresh it as a side effect of this run.\n'
+            b'   - `source-missing` / `source-unresolved` - no governing s'
+            b'ource could be read. Plan\n'
+            b'     from the issue body, which is the contract in that case'
+            b', and surface any\n'
+            b'     ambiguity that is material to the work rather than tryi'
+            b'ng to resolve everything\n'
+            b'     first.\n'
+            b'   - `absent` - an ordinary issue. Its body IS the contract '
+            b'(see\n'
+            b'     [the issue contract](../../../docs/agents/issue-contrac'
+            b't.md)); no spec, story tag\n'
+            b'     or digest is required and none is owed.\n'
+            b'\n'
+            b"   The block's **Task wording** line is the task's own sente"
+            b'nce, not a ruling: resolve\n'
+            b'   whether it proposes an approach you may replace or restat'
+            b'es a binding constraint\n'
+            b'   against the sections the block names. An **Unresolved** o'
+            b'r **Capped** note means the\n'
+            b'   context is incomplete - never that the task has no constr'
+            b'aints. Apply the same\n'
+            b'   material-ambiguity standard as everywhere else: resolve w'
+            b'hat would change the work,\n'
+            b'   surface the rest in the Step 3 report, and plan from what'
+            b' you have. Missing optional\n'
+            b'   structure is not a gate.'
+        ),
+    ),
+]
+_NATIVE_CONTEXT_REL = ".codex/skills/spec-sync/scripts/spec_context.py"
+_NATIVE_CONTEXT_SHA256 = "935da913c7cea0d727390369ae1484fab2fde0b330e4a289112f12ab674985e3"
+_NATIVE_CONTEXT_MODE = 0o644
+_FLOW_CONTEXT_CONSUMER = (
+    '   **Generated governing context (#223, CPP #858 source-deri'
+    'ved):** the issue body\n'
+    '   is a bounded derivative cache. Reconstruct governing TEXT'
+    ' before Step 3 and after\n'
+    '   resume/compaction when prior context may be stale. This p'
+    'rocedure does not prove\n'
+    '   live compliance, acknowledgement, comprehension, approval'
+    ' or #201 admission.\n'
+    '\n'
+    '   Run this installed-consumer snippet after selecting the i'
+    'ssue/repository and trusted\n'
+    '   checkout. Set FLOW_SKILL_DIR to the absolute directory of'
+    ' the loaded, installed\n'
+    '   flow-auto skill (not a directory from the target project)'
+    '. For generated issues,\n'
+    '   independently select FLOW_CONTEXT_TASKS , FLOW_CONTEXT_GR'
+    'OUP and FLOW_CONTEXT_TASK_IDS from the assignment\n'
+    '   and reviewed source mapping; do not let body metadata cho'
+    'ose arbitrary source paths.\n'
+    '   Ordinary issues need neither variable and acquire no new '
+    'schema/spec obligation.\n'
+    '\n'
+    '   ```bash\n'
+    '   (\n'
+    '       set -eu\n'
+    '       : "${FLOW_SKILL_DIR:?absolute installed flow-auto ski'
+    'll directory required}"\n'
+    '       : "${ISSUE_NUM:?selected issue required}" "${REPO:?ex'
+    'plicit OWNER/REPO required}"\n'
+    '       : "${TARGET_REPO:?trusted checkout required}"\n'
+    '       case "$FLOW_SKILL_DIR" in /*) ;; *) echo \'Unreliable '
+    "context: installed path must be absolute' >&2; exit 1;; esac"
+    '\n'
+    '       CONTEXT_HELPER="$FLOW_SKILL_DIR/scripts/spec_context.'
+    'py"\n'
+    '       test -f "$CONTEXT_HELPER" || { echo \'Unreliable conte'
+    "xt: installed helper missing; no project/global fallback' >&"
+    '2; exit 1; }\n'
+    '       CONTEXT_BODY="$(mktemp -t flow-auto-body-XXXXXX.md)"\n'
+    '       trap \'rm -f "$CONTEXT_BODY"\' EXIT\n'
+    '       if ! gh issue view "$ISSUE_NUM" --repo "$REPO" --json'
+    ' body --jq .body > "$CONTEXT_BODY"; then\n'
+    "           echo 'Unreliable context: issue fetch failed; no "
+    "absent/current inference' >&2\n"
+    '           exit 1\n'
+    '       fi\n'
+    '       python3 "$CONTEXT_HELPER" --body-file "$CONTEXT_BODY"'
+    ' --repo "$REPO" \\\n'
+    '           --issue "$ISSUE_NUM" --checkout "$TARGET_REPO" \\\n'
+    '           --tasks "${FLOW_CONTEXT_TASKS:-}" --group "${FLOW'
+    '_CONTEXT_GROUP:-}" --task-ids "${FLOW_CONTEXT_TASK_IDS:-}"\n'
+    '   )\n'
+    '   ```\n'
+    '\n'
+    '   A failed checker is unreliable context, never an absent/c'
+    'urrent success. Read the\n'
+    '   printed governing text, source locations and checkout dif'
+    'ferences. Unresolved or\n'
+    '   capped content means incomplete evidence, not no constrai'
+    'nts; read the named source\n'
+    '   under the existing material-ambiguity standard. Ordinary '
+    'absent or legacy/unattested\n'
+    '   issues remain usable for ordinary analysis using their bo'
+    'dy and governing references.\n'
+    '   Malformed generated markers require explicit reconciliati'
+    'on, not legacy downgrade.\n'
+    '\n'
+    '   Distinguish the sourced outcome, acceptance, binding cons'
+    'traints and rationale from\n'
+    "   a task's proposed mechanism. Changed bytes are not a mate"
+    'riality ruling. Preserve\n'
+    '   existing decisions and inspect revision references: marke'
+    'rs/checksums confer no\n'
+    '   authority. Material changes require the existing judge, t'
+    'hen newly bound text and\n'
+    '   evidence; never relabel an old approval/receipt as curren'
+    't. Before consequential\n'
+    '   continuation after resume, repeat this read if the prior '
+    'reconstruction may be stale.\n'
+    '\n'
+)
+
+
+def _backport_flow_context(skill_dir: Path, rel: str, content: bytes) -> bytes:
+    if skill_dir.name != "flow-auto" or rel != "reference.md":
+        return content
+    identity = _github_contract_source_identity(content)
+    if identity == _FLOW_CONTEXT_AFTER:
+        return content
+    if identity != _FLOW_CONTEXT_BEFORE:
+        raise IntegrityError(
+            (
+                'flow-auto/reference.md: unreviewed raw source for CPP #858; '
+                'review/update or retire recipe before publication'
+            )
+        )
+    result = content
+    for start, end, replacement in reversed(_FLOW_CONTEXT_DELTA):
+        result = result[:start] + replacement + result[end:]
+    if _github_contract_source_identity(result) != _FLOW_CONTEXT_AFTER:
+        raise IntegrityError("CPP #858 recipe did not reproduce exact reviewed source")
+    return result
+
+
+def _native_context_payload(head: str | None = None) -> PreparedPayload:
+    path = REPO_ROOT / _NATIVE_CONTEXT_REL
+    _assert_publication_file_safe(path, label="native context source dependency")
+    if not path.is_file():
+        raise IntegrityError("native context source dependency missing")
+    content = path.read_bytes()
+    # Git records executable/non-executable mode, not checkout umask rw bits.
+    mode = 0o755 if path.stat().st_mode & 0o111 else 0o644
+    if hashlib.sha256(content).hexdigest() != _NATIVE_CONTEXT_SHA256 or mode != _NATIVE_CONTEXT_MODE:
+        raise IntegrityError("native context source dependency hash/mode differs from reviewed overlay binding")
+    if head is not None:
+        committed = _tracked_file_bytes(head, path, label="native context source dependency")
+        committed_mode = _tracked_file_mode(head, _NATIVE_CONTEXT_REL, label="native context source dependency")
+        if committed != content or committed_mode != mode:
+            raise IntegrityError("native context source dependency differs from committed CxPP HEAD bytes/mode")
+    return PreparedPayload(content, mode)
+
+
+def _adapt_flow_context(skill_dir: Path, rel: str, text: str) -> str:
+    if skill_dir.name == "flow-auto" and rel == "reference.md":
+        start = text.index("   **If the body carries a `speckit-context` block**")
+        end = text.index("2. **Explore the codebase:**", start)
+        text = text[:start] + _FLOW_CONTEXT_CONSUMER + text[end:]
+    return text
+
+
 def _adapt_github_text(skill_dir: Path, source_file: Path, text: str) -> str:
     """Keep shared GitHub skills repository-neutral on the CxPP surface."""
     if not skill_dir.name.startswith("github-"):
@@ -1743,9 +2004,7 @@ def _adapted_source_payloads(
     files: dict[str, PreparedPayload] = {}
     if immutable_payloads is None:
         source_payloads = {
-            path.relative_to(skill_dir).as_posix(): PreparedPayload(
-                path.read_bytes(), path.stat().st_mode & 0o777
-            )
+            path.relative_to(skill_dir).as_posix(): PreparedPayload(path.read_bytes(), path.stat().st_mode & 0o777)
             for path in skill_dir.rglob("*")
             if path.is_file() and not _is_python_cache(path)
         }
@@ -1757,6 +2016,7 @@ def _adapted_source_payloads(
         if skill_dir.name == "evaluate-help" and rel == "scripts/speckit-tasks-to-issues.sh":
             continue
         raw_content = _backport_github_issue_contract(skill_dir, rel, source_payload.content)
+        raw_content = _backport_flow_context(skill_dir, rel, raw_content)
         try:
             text = raw_content.decode()
         except UnicodeDecodeError:
@@ -1764,6 +2024,7 @@ def _adapted_source_payloads(
             continue
         if rel == "scripts/flow-start-resolve.sh":
             text = _adapt_flow_resolver(text)
+        text = _adapt_flow_context(skill_dir, rel, text)
         text = _adapt_flow_text(skill_dir, source_file, text)
         text = _adapt_flow_cicd_helper(skill_dir, source_file, text)
         text = _adapt_flow_cicd_runtime(skill_dir, source_file, text)
@@ -1775,6 +2036,8 @@ def _adapted_source_payloads(
         text = _adapt_invocation_text(skill_dir, source_file, text)
         text = _adapt_deferred_native_boundaries(skill_dir, source_file, text)
         files[rel] = PreparedPayload(text.encode(), source_payload.mode)
+    if skill_dir.name == "flow-auto":
+        files["scripts/spec_context.py"] = _native_context_payload()
     return files
 
 
@@ -2396,10 +2659,9 @@ def _validate_reporting_baseline() -> tuple[
     _assert_publication_file_safe(OVERLAY_PATH, label="report overlay input")
 
     overlay = _tracked_file_bytes(head, OVERLAY_PATH, label="report overlay input")
+    _native_context_payload(head)
     _tracked_file_bytes(head, PIN_PATH, label="report PIN input")
-    manifest_bytes = _tracked_file_bytes(
-        head, MANIFEST_PATH, label="report manifest input"
-    )
+    manifest_bytes = _tracked_file_bytes(head, MANIFEST_PATH, label="report manifest input")
     _tracked_file_bytes(head, contract_path, label="report package inventory input")
 
     pin = read_pin()
@@ -2409,26 +2671,18 @@ def _validate_reporting_baseline() -> tuple[
         raise IntegrityError("report baseline manifest is empty")
     actual = _current_generated_payloads()
     drift = _manifest_drift(manifest, actual)
-    drift.extend(
-        f"generated marker violation: {item}" for item in _marker_violations()
-    )
+    drift.extend(f"generated marker violation: {item}" for item in _marker_violations())
     prepared_actual: dict[str, PreparedPayload] = {}
     for rel in sorted(actual):
         tracked_rel = f"{PIN_PULL_DESTINATION}{rel}"
         committed = _git_bytes(REPO_ROOT, "show", f"{head}:{tracked_rel}")
         if actual[rel] != committed:
-            raise IntegrityError(
-                f"report baseline payload differs from CxPP commit: {rel}"
-            )
+            raise IntegrityError(f"report baseline payload differs from CxPP commit: {rel}")
         path = SKILLS_ROOT / rel
         checked_mode = 0o755 if path.stat().st_mode & 0o111 else 0o644
-        committed_mode = _tracked_file_mode(
-            head, tracked_rel, label=f"report baseline payload {rel}"
-        )
+        committed_mode = _tracked_file_mode(head, tracked_rel, label=f"report baseline payload {rel}")
         if checked_mode != committed_mode:
-            raise IntegrityError(
-                f"report baseline payload mode differs from CxPP commit: {rel}"
-            )
+            raise IntegrityError(f"report baseline payload mode differs from CxPP commit: {rel}")
         prepared_actual[rel] = PreparedPayload(actual[rel], checked_mode)
 
     plugin_drift, _ = _plugin_payload_drift(prepared_actual)

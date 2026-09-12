@@ -78,7 +78,7 @@ def test_selective_adoption_pin_and_inventory_are_exact() -> None:
     policy = sync._load_adoption_policy()
     assert policy is not None
     assert policy.source_commit == sync.ADOPTION_TARGET_COMMIT
-    assert len(sync.read_manifest()) == 122
+    assert len(sync.read_manifest()) == 123
     for omitted in (
         "flow-auto/scripts/flow-driver-capability.sh",
         "flow-finish/scripts/knowledge-graduation-check.py",

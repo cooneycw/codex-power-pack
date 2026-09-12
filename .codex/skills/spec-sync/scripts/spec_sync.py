@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -14,6 +15,11 @@ import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Iterable
+
+_context_spec = importlib.util.spec_from_file_location("spec_context", Path(__file__).with_name("spec_context.py"))
+assert _context_spec is not None and _context_spec.loader is not None
+context = importlib.util.module_from_spec(_context_spec)
+_context_spec.loader.exec_module(context)
 
 TASK = re.compile(r"^-\s*\[(?P<done>[ xX])\]\s+(?:\*\*)?(?P<id>T\d{3})(?:\*\*)?\s+(?P<body>.+)$")
 TASK_LIKE = re.compile(r"^-\s*\[[^]]*\].*\bT\d+\b", re.IGNORECASE)
@@ -29,14 +35,13 @@ LEDGER_END = "<!-- spec-sync-ledger:end -->"
 IDENTITY_PREFIX = "spec-sync:v1"
 DEPENDENCIES_END = "<!-- spec-sync-dependencies:end -->"
 MANAGED_DEPENDENCIES = re.compile(
-    r"<!-- spec-sync-dependencies:start sha256=([0-9a-f]{64}) -->\n(.*?)\n<!-- spec-sync-dependencies:end -->", re.S
+    ("<!-- spec-sync-dependencies:start sha256=([0-9a-f]{64}) -->\\n(.*?)\\n<!-- spec-sync-dependencies:end -->"), re.S
 )
 IDENTITY_MARKER = re.compile(r"<!--\s*(spec-sync:v1:[^>\r\n]+?)\s*-->")
 ISSUE_LIMIT = 1000
 
 
-class ReadinessError(ValueError):
-    """Artifacts do not satisfy the issue-compilation contract."""
+ReadinessError = context.ContextError
 
 
 Runner = Callable[[list[str], Path], str]
@@ -90,8 +95,8 @@ def _strip_tags(text: str) -> str:
     return re.sub(r"\[(?:P|US\d+)\]", "", text, flags=re.I).strip()
 
 
-def parse_tasks(path: Path) -> tuple[list[Task], dict[str, str]]:
-    lines = path.read_text(encoding="utf-8").splitlines()
+def parse_tasks(path: Path, source: str | None = None) -> tuple[list[Task], dict[str, str]]:
+    lines = (path.read_bytes().decode("utf-8") if source is None else source).splitlines()
     if not any(line.strip() for line in lines):
         raise ReadinessError(f"{path}: task file is empty")
 
@@ -364,48 +369,39 @@ def render_issue_body(
     commit: str,
     mappings: dict[str, Mapping],
     all_groups: list[Group],
+    view: dict[str, Any],
 ) -> str:
     identity = stable_identity(repository, tasks_relative, group.group_id)
     task_to_group = {task.task_id: item.group_id for item in all_groups for task in item.tasks}
     issue_dependencies, unresolved = _issue_dependencies(group, task_to_group, mappings)
-    base = f"https://github.com/{repository}/blob/{commit}/{Path(tasks_relative).parent.as_posix()}"
-    task_lines = "\n".join(f"- [ ] **{task.task_id}** {task.description}" for task in group.tasks)
-    story_ids = sorted({story for task in group.tasks for story in task.story_ids})
+    metadata, visible = context.make_context(view, repository, context_group(group))
     return "\n".join(
         [
-            "## Outcome",
-            f"Deliver the independently mergeable **{group.title}** group from the approved Spec Kit artifacts.",
-            "",
-            "## Tasks",
-            task_lines,
-            "",
-            "## User-story traceability",
-            ", ".join(f"`{item.upper()}`" for item in story_ids)
-            if story_ids
-            else "No user-story tag is declared; stage traceability applies.",
-            "",
-            "## Acceptance checkpoint",
-            group.checkpoint,
+            context.pack(metadata, visible),
             "",
             "## Dependencies",
             managed_dependencies(dependency_text(issue_dependencies, unresolved)),
             "",
-            "## Constraints and non-goals",
-            "Preserve the approved artifact boundary. Do not absorb tasks from another synchronization group.",
-            "",
             "## Quality commands",
             "- `make verify`",
-            "",
-            "## Immutable artifacts",
-            f"- [spec.md]({base}/spec.md)",
-            f"- [plan.md]({base}/plan.md)",
-            f"- [tasks.md]({base}/tasks.md)",
             "",
             "## Mapping write-back",
             f"After synchronization, update the Issue Sync ledger in `{tasks_relative}` for `{group.group_id}`.",
             "",
             f"<!-- {identity} -->",
         ]
+    )
+
+
+def context_group(group: Group) -> dict[str, Any]:
+    return dict(
+        id=group.group_id,
+        granularity=group.granularity,
+        task_ids=list(group.task_ids),
+        stories=sorted({story for task in group.tasks for story in task.story_ids}),
+        task_text="\n".join(f"- [ ] **{task.task_id}** {task.description}" for task in group.tasks),
+        checkpoint=group.checkpoint,
+        source_lines=[task.line for task in group.tasks],
     )
 
 
@@ -429,7 +425,7 @@ def parse_issue_inventory(output: str) -> list[Issue]:
     payload = json.loads(output)
     if not isinstance(payload, list) or len(payload) >= ISSUE_LIMIT:
         raise ReadinessError(
-            "GitHub issue inventory must be a complete list below the lookup limit; narrow/reconcile the inventory"
+            ("GitHub issue inventory must be a complete list below the lookup limit; narrow/reconcile the inventory")
         )
     issues: list[Issue] = []
     numbers: set[int] = set()
@@ -505,7 +501,8 @@ def dependency_span(issue: Issue, proposed: str, unresolved: list[str]) -> Depen
         if issue.body[start:end].strip() == proposed and not unresolved:
             return None
         raise ReadinessError(
-            f"#{issue.number} ({issue.state}) {issue.url}: unmarked legacy dependency section needs explicit resolution; "
+            f"#{issue.number} ({issue.state}) {issue.url}: unmarked legacy dependency section "
+            "needs explicit resolution; "
             f"current={issue.body[start:end].strip()!r}; desired={proposed!r}; "
             "review these edges, preserve human edges outside any managed span, and explicitly reconcile the body "
             "(see spec-sync SKILL.md, Legacy resolution). Then re-run --dry-run and --approve; no edges were changed."
@@ -546,22 +543,15 @@ def validate_ledger(text: str) -> None:
         raise ReadinessError("incomplete, duplicate or reversed Issue Sync ledger markers")
 
 
-def update_ledger(path: Path, mappings: Iterable[Mapping], expected_text: str | None = None) -> None:
-    text = path.read_text(encoding="utf-8")
-    if expected_text is not None and text != expected_text:
+def update_ledger(path: Path, mappings: Iterable[Mapping], expected_text: str | bytes | None = None) -> None:
+    raw = path.read_bytes()
+    expected = expected_text.encode("utf-8") if isinstance(expected_text, str) else expected_text
+    if expected is not None and raw != expected:
         raise ReadinessError(f"{path}: task file changed during synchronization; reconcile and re-preview")
-    validate_ledger(text)
-    ledger = render_ledger(mappings)
-    if LEDGER_START in text:
-        start = text.index(LEDGER_START)
-        end = text.index(LEDGER_END) + len(LEDGER_END)
-        updated = text[:start] + ledger + text[end:]
-    else:
-        updated = text.rstrip() + "\n\n## Issue Sync Ledger\n\n" + ledger + "\n"
-    if updated == text:
+    updated = context.ledger_write(raw, render_ledger(mappings).encode("utf-8"))
+    if updated == raw:
         return
-    # Replace only after a complete local write; a failed write leaves the old ledger recoverable.
-    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent, delete=False) as stream:
+    with tempfile.NamedTemporaryFile(mode="wb", dir=path.parent, delete=False) as stream:
         temporary = Path(stream.name)
         try:
             stream.write(updated)
@@ -583,19 +573,29 @@ class SynchronizationError(RuntimeError):
 def synchronize(args: argparse.Namespace, runner: Runner = subprocess_runner) -> dict[str, Any]:
     if not args.dry_run and not args.approve:
         raise ReadinessError("GitHub and ledger writes require --approve after reviewing the dry-run")
-    tasks_path = Path(args.tasks).resolve()
-    original_tasks = tasks_path.read_text(encoding="utf-8")
-    validate_ledger(original_tasks)
-    tasks, checkpoints = parse_tasks(tasks_path)
-    groups = group_tasks(tasks, checkpoints, args.granularity)
+    tasks_path = Path(args.tasks).absolute()
     spec_path, _, commit = validate_artifacts(tasks_path, args.artifact_commit, args.analysis_clean, runner)
-    validate_groups(tasks, groups)
-    ordered = dependency_order(groups)
     root = Path(runner(["git", "rev-parse", "--show-toplevel"], spec_path.parent)).resolve()
     tasks_relative = tasks_path.relative_to(root).as_posix()
-    repository = (
-        args.repo or json.loads(runner(["gh", "repo", "view", "--json", "nameWithOwner"], root))["nameWithOwner"]
-    )
+    view = context.snapshot(root, commit, tasks_relative)
+    comparison = context.require_matching(view)
+    original_tasks = view["local"]["tasks"]
+    tasks, checkpoints = parse_tasks(tasks_path, view["raw"]["tasks"].decode("utf-8"))
+    groups = group_tasks(tasks, checkpoints, args.granularity)
+    validate_groups(tasks, groups)
+    ordered = dependency_order(groups)
+    source_repository = context.source_repository(root)
+    repository = args.repo or source_repository
+    if repository != source_repository:
+        raise ReadinessError(
+            (
+                "cross-repository attestation is unsupported: --repo must mat"
+                "ch the trusted source checkout repository; no writes perform"
+                "ed"
+            )
+        )
+    refresh = getattr(args, "refresh_context", False)
+    revision = getattr(args, "revision_reference", None)
     inventory = parse_issue_inventory(
         runner(
             [
@@ -630,9 +630,82 @@ def synchronize(args: argparse.Namespace, runner: Runner = subprocess_runner) ->
                 f"{identity}: ambiguous unscoped legacy mapping; resolve explicitly: "
                 + ", ".join(issue.url for issue in candidates)
             )
+    for source in (view["raw"]["tasks"], original_tasks):
+        rows = context.ledger_rows(source)
+        verified = []
+        for row in rows:
+            issue = by_identity.get(row["identity"])
+            ledger_groups = group_tasks(tasks, checkpoints, row["granularity"])
+            owner = next((item for item in ledger_groups if item.group_id == row["group"]), None)
+            expected_identity = stable_identity(repository, tasks_relative, row["group"])
+            matching_tasks = owner is not None and row["tasks"] == list(owner.task_ids)
+            if issue and owner and not matching_tasks:
+                # A real source revision can leave a verified historical mapping in
+                # the reviewed ledger. Validate its old objects; never guess new ownership.
+                old_record = context.unpack(issue.body)
+                if old_record and old_record[0]["identity"] == expected_identity:
+                    old_data = old_record[0]
+                    old_view = context.snapshot(root, old_data["artifact_commit"], tasks_relative)
+                    old_metadata, old_text = context.make_context(
+                        old_view,
+                        repository,
+                        old_data["group"],
+                        old_data["previous_snapshot"],
+                        old_data["observed_revision"],
+                        old_data["previous_artifact_commit"],
+                    )
+                    old_tasks, old_checkpoints = parse_tasks(tasks_path, old_view["raw"]["tasks"].decode("utf-8"))
+                    old_groups = group_tasks(old_tasks, old_checkpoints, row["granularity"])
+                    old_owner = next((item for item in old_groups if item.group_id == row["group"]), None)
+                    matching_tasks = (
+                        old_metadata == old_data
+                        and old_text == old_record[1]
+                        and old_owner is not None
+                        and row["tasks"] == list(old_owner.task_ids)
+                    )
+            if issue and owner and not matching_tasks:
+                predecessor = context.unpack(issue.body)
+                predecessor_commit = predecessor[0]["previous_artifact_commit"] if predecessor else None
+                if predecessor_commit:
+                    predecessor_view = context.snapshot(root, predecessor_commit, tasks_relative)
+                    predecessor_tasks, predecessor_checkpoints = parse_tasks(
+                        tasks_path, predecessor_view["raw"]["tasks"].decode("utf-8")
+                    )
+                    predecessor_groups = group_tasks(predecessor_tasks, predecessor_checkpoints, row["granularity"])
+                    predecessor_owner = next(
+                        (item for item in predecessor_groups if item.group_id == row["group"]), None
+                    )
+                    matching_tasks = predecessor_owner is not None and row["tasks"] == list(predecessor_owner.task_ids)
+            if (
+                not issue
+                or not owner
+                or row["identity"] != expected_identity
+                or not matching_tasks
+                or row["number"] != issue.number
+                or row["url"] != issue.url
+            ):
+                raise ReadinessError(
+                    "invalid ledger mapping claim; reconcile against complete issue inventory and selected groups"
+                )
+            verified.append(
+                Mapping(
+                    row["identity"],
+                    row["granularity"],
+                    row["group"],
+                    row["number"],
+                    row["url"],
+                    row["state"],
+                    tuple(row["tasks"]),
+                )
+            )
+        if rows and context.ledger_parts(source)[1] != render_ledger(verified).encode("utf-8"):
+            raise ReadinessError("ledger does not match deterministic verified mapping output")
+    if comparison["comparison"] == "candidate-ledger-successor":
+        comparison["comparison"] = "verified-ledger-successor"
     task_to_group = {task.task_id: group.group_id for group in groups for task in group.tasks}
     spans: dict[str, DependencySpan | None] = {}
     preview: list[dict[str, Any]] = []
+    contexts: dict[str, str | None] = {}
     # Validate the ENTIRE plan before its first create/edit, including late existing sections.
     for group in ordered:
         identity = stable_identity(repository, tasks_relative, group.group_id)
@@ -642,6 +715,71 @@ def synchronize(args: argparse.Namespace, runner: Runner = subprocess_runner) ->
         span = dependency_span(current, proposed, unresolved) if current else None
         spans[group.group_id] = span
         changed = span is not None and (span.old != proposed or bool(unresolved))
+        metadata, visible = context.make_context(view, repository, context_group(group))
+        desired = context.pack(metadata, visible)
+        contexts[group.group_id] = None
+        old_context = context.unpack(current.body) if current else None
+        if current:
+            if old_context:
+                previous = old_context[0]
+                if (
+                    previous["identity"] != identity
+                    or previous["source_repository"] != repository
+                    or previous["target_repository"] != repository
+                    or previous["tasks_path"] != tasks_relative
+                ):
+                    raise ReadinessError(f"{current.url}: context/issue identity mismatch; reconcile ownership")
+                old_view = context.snapshot(root, previous["artifact_commit"], tasks_relative)
+                verified_old, verified_text = context.make_context(
+                    old_view,
+                    repository,
+                    previous["group"],
+                    previous["previous_snapshot"],
+                    previous["observed_revision"],
+                    previous["previous_artifact_commit"],
+                )
+                if verified_old != previous or verified_text != old_context[1]:
+                    raise ReadinessError(
+                        f"{current.url}: prior context differs from immutable source; reconcile ownership"
+                    )
+                # Preserve existing revision chain on same-snapshot retries.
+                same_metadata, same_visible = context.make_context(
+                    view,
+                    repository,
+                    context_group(group),
+                    previous["previous_snapshot"],
+                    previous["observed_revision"],
+                    previous["previous_artifact_commit"],
+                )
+                drift = previous != same_metadata or old_context[1] != same_visible
+                if drift:
+                    if not refresh:
+                        raise ReadinessError(
+                            f"{current.url}: governing snapshot changed; unresolved synchronization; "
+                            "review --refresh-context --dry-run before any dependency/create/ledger mutation"
+                        )
+                    metadata, visible = context.make_context(
+                        view,
+                        repository,
+                        context_group(group),
+                        previous["snapshot"],
+                        revision,
+                        previous["artifact_commit"],
+                    )
+                    desired = context.pack(metadata, visible)
+                    contexts[group.group_id] = desired
+                    changed = True
+            elif refresh or changed:
+                raise ReadinessError(
+                    f"{current.url}: legacy/unattested governing ownership; explicitly reconcile complete body "
+                    f"and preserve human decisions before refresh. Proposed replacement:\n{desired}"
+                )
+            else:
+                # Legacy analysis is usable, but cannot be claimed synchronized to this commit.
+                raise ReadinessError(
+                    f"{current.url}: legacy/unattested governing view cannot establish synchronized source; "
+                    "ordinary analysis remains available; explicitly reconcile ownership before compiler refresh"
+                )
         preview.append(
             {
                 "action": "would-edit" if changed else "skip" if current else "would-create",
@@ -653,6 +791,8 @@ def synchronize(args: argparse.Namespace, runner: Runner = subprocess_runner) ->
                 "old_dependencies": span.old if span else proposed if current else None,
                 "proposed_dependencies": proposed,
                 "unresolved_new_groups": unresolved,
+                "proposed_context": desired,
+                "old_context": old_context[0]["snapshot"] if old_context else None,
             }
         )
     result: dict[str, Any] = {
@@ -664,6 +804,8 @@ def synchronize(args: argparse.Namespace, runner: Runner = subprocess_runner) ->
         "actions": [],
         "preview": preview,
         "ledger_updated": False,
+        "source_repository": source_repository,
+        "ledger_evidence": comparison,
     }
     if args.dry_run:
         # Keep the historical skip shape; full identity and dependency detail lives in preview.
@@ -676,14 +818,17 @@ def synchronize(args: argparse.Namespace, runner: Runner = subprocess_runner) ->
         return result
     operation: dict[str, Any] = {}
     try:
+        context.recheck(view)
         for group in ordered:
+            context.recheck(view)
             identity = stable_identity(repository, tasks_relative, group.group_id)
             current = selected.get(group.group_id)
             if current:
                 span = spans[group.group_id]
                 numbers, unresolved = _issue_dependencies(group, task_to_group, mappings)
                 proposed = dependency_text(numbers, unresolved)
-                if span is not None and span.old != proposed:
+                replacement = contexts[group.group_id]
+                if replacement is not None or (span is not None and span.old != proposed):
                     operation = {
                         "action": "check-before-edit",
                         "group": group.group_id,
@@ -714,6 +859,12 @@ def synchronize(args: argparse.Namespace, runner: Runner = subprocess_runner) ->
                         or latest.state != current.state
                     ):
                         raise ReadinessError(f"{current.url}: issue changed before edit; reconcile and re-preview")
+                    final_body = current.body
+                    if span is not None:
+                        final_body = span.replace(proposed)
+                    if replacement is not None:
+                        final_body = context.replace_context(final_body, replacement)
+                    context.recheck(view)
                     operation = {**operation, "action": "edit", "outcome": "uncertain"}
                     runner(
                         [
@@ -724,7 +875,7 @@ def synchronize(args: argparse.Namespace, runner: Runner = subprocess_runner) ->
                             "--repo",
                             repository,
                             "--body",
-                            span.replace(proposed),
+                            final_body,
                         ],
                         root,
                     )
@@ -734,7 +885,7 @@ def synchronize(args: argparse.Namespace, runner: Runner = subprocess_runner) ->
                             "group": group.group_id,
                             "issue": current.number,
                             "identity": identity,
-                            "old_dependencies": span.old,
+                            "old_dependencies": span.old if span else None,
                             "dependencies": proposed,
                         }
                     )
@@ -743,7 +894,7 @@ def synchronize(args: argparse.Namespace, runner: Runner = subprocess_runner) ->
                         {"action": "skip", "group": group.group_id, "issue": current.number, "state": current.state}
                     )
                 continue
-            body = render_issue_body(group, repository, tasks_relative, commit, mappings, groups)
+            body = render_issue_body(group, repository, tasks_relative, commit, mappings, groups, view)
             operation = {"action": "create", "group": group.group_id, "identity": identity, "outcome": "uncertain"}
             url = runner(
                 [
@@ -782,7 +933,16 @@ def synchronize(args: argparse.Namespace, runner: Runner = subprocess_runner) ->
                 }
             )
         operation = {"action": "ledger", "outcome": "uncertain"}
+        context.recheck(view)
+        successor = context.ledger_write(
+            original_tasks, render_ledger([mappings[group.group_id] for group in groups]).encode("utf-8")
+        )
         update_ledger(tasks_path, [mappings[group.group_id] for group in groups], original_tasks)
+        result["ledger_evidence"].update(
+            writer_before_sha256=context.sha(original_tasks),
+            writer_after_sha256=context.sha(successor),
+            deterministic_successor=True,
+        )
         result["ledger_updated"] = True
     except (OSError, ValueError, RuntimeError, KeyError) as exc:
         result["failed_operation"] = {**operation, "error": str(exc)}
@@ -800,6 +960,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--analysis-clean", action="store_true", help="confirm official consistency analysis is clean")
     parser.add_argument("--dry-run", action="store_true", help="preview groups without GitHub or ledger writes")
     parser.add_argument("--approve", action="store_true", help="approve GitHub writes after reviewing dry-run")
+    parser.add_argument(
+        "--refresh-context",
+        action="store_true",
+        help="preview/refresh the whole managed governing view under existing approval",
+    )
+    parser.add_argument("--revision-reference", help="observed existing decision reference; never an approval token")
     parser.add_argument("--json", action="store_true", help="emit machine-readable output")
     return parser
 

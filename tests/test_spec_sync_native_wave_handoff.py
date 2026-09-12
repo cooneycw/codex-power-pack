@@ -462,3 +462,26 @@ def test_docs_align_reason_codes_consumer_boundary_and_old_spec_exclusion() -> N
     assert excluded["witness"]["excluded_artifact"]["selected"] is False
     assert excluded["witness"]["excluded_artifact"]["synchronized"] is False
     assert corpus["excluded_inputs"] == [excluded["witness"]["excluded_artifact"]]
+
+
+def test_actual_context_producer_preserves_historical_contracts_and_raw_successor(tmp_path: Path) -> None:
+    from tests.test_spec_sync_context import consumer_issue, fixture
+
+    expected = {
+        CONTRACT_PATH: "6c62f382975875c27c37bb20953024afaa09f988325a5c5cd2a2084306403560",
+        SCENARIOS_PATH: "570ce2a1ae96bd96bfa44fe25003f878abc76eaa3d07cc6bcbd883882d7aa9a1",
+        NATIVE_CONTRACT_PATH: NATIVE_CONTRACT_SHA256,
+    }
+    for path, digest in expected.items():
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == digest
+    tasks, github = fixture(tmp_path)
+    reviewed = tasks.read_bytes()
+    result = github.run(tasks)
+    data = spec_sync.context.unpack(consumer_issue(github)["body"])[0]
+    assert data["artifacts"]["tasks"]["sha256"] == hashlib.sha256(reviewed).hexdigest()
+    assert result["ledger_evidence"]["writer_before_sha256"] == hashlib.sha256(reviewed).hexdigest()
+    assert result["ledger_evidence"]["writer_after_sha256"] == hashlib.sha256(tasks.read_bytes()).hexdigest()
+    assert result["ledger_evidence"]["deterministic_successor"] is True
+    assert data["schema"] == "spec-sync-context/v1"
+    assert "assignment_input" not in data and "approval" not in data
+    assert github.run(tasks)["ledger_evidence"]["comparison"] == "verified-ledger-successor"
