@@ -55,6 +55,7 @@ from lib.native_wave.types import (
     ProcessCoordinates,
     ProcessObservation,
     RebriefOwner,
+    ReplaceDeadOwner,
     RepositoryKey,
     ReserveClaim,
     RoleId,
@@ -657,6 +658,16 @@ def test_policy_rebrief_is_explicit_and_does_not_acknowledge_assignment(tmp_path
         assert current_worker.record_version == worker_owner.record_version + 1
         assert stored_assignment.policy_revision == 1
         assert not stored_assignment.acknowledged
+
+    for value, kind in ((46, EventKind.ASSIGNMENT_READ), (47, EventKind.ASSIGNMENT_ACCEPTED)):
+        stale_ack = command(value, kind, actor(WORKER, WORKER_THREAD, WORKER_GENERATION),
+                            assignment=binding, correlation=40)
+        refused = service.append(stale_ack, LocalIdentityContext(WORKER_THREAD))
+        assert refused.disposition is EventDisposition.REJECTED and refused.reason == "stale_policy"
+    rebuild_projections(store, WAVE)
+    with store.transaction() as tx:
+        assert tx.read_assignment(binding.ref) == stored_assignment
+        assert tx.read_cursor(WAVE, WORKER, WORKER_THREAD, WORKER_GENERATION) is None
 
     stale_cas = command(
         44,
@@ -1422,3 +1433,237 @@ def test_recovered_scan_with_sparse_preceding_cursor_and_corrupt_page(tmp_path: 
         tx.commit()
     with pytest.raises(CorruptStore, match="verification"):
         service.scan_and_advance(scan, LocalIdentityContext(WORKER_THREAD))
+
+
+@pytest.mark.parametrize("kind", [EventKind.ASSIGNMENT_READ, EventKind.ASSIGNMENT_ACCEPTED])
+@pytest.mark.parametrize(
+    ("mismatch", "reason"),
+    [
+        ("actor_generation", "stale_owner_generation"),
+        ("worker_generation", "assigned_worker_authority_required"),
+        ("coordinator_generation", "stale_coordinator_generation"),
+        ("policy", "stale_policy"),
+        ("wave", None),
+    ],
+)
+def test_acknowledgement_binding_refusals_preserve_durable_state(
+    tmp_path: Path, kind: EventKind, mismatch: str, reason: str | None,
+) -> None:
+    store = create_store(tmp_path)
+    service = EventService(store, process_probe=FakeProbe(), ids=FakeIds(), clock=FakeClock())
+    worker_snapshot = snapshot("worker")
+    bootstrap_and_register(service, snapshot("coordinator"), worker_snapshot)
+    binding = assignment_binding(worker_snapshot)
+    worker_actor = actor(WORKER, WORKER_THREAD, WORKER_GENERATION)
+    queue = command(4, EventKind.ASSIGNMENT_QUEUED,
+                    actor(COORDINATOR, COORDINATOR_THREAD, COORDINATOR_GENERATION), assignment=binding)
+    service.append(queue, LocalIdentityContext(COORDINATOR_THREAD))
+    if kind == EventKind.ASSIGNMENT_ACCEPTED:
+        read = command(5, EventKind.ASSIGNMENT_READ, worker_actor, assignment=binding, correlation=4)
+        assert service.append(read, LocalIdentityContext(WORKER_THREAD)).disposition is EventDisposition.APPLIED
+
+    with store.transaction() as tx:
+        before_projection = tx.get_projection(WAVE, "assignment", str(binding.ref.assignment_id))
+        before_assignment = tx.read_assignment(binding.ref)
+        before_cursor = tx.read_cursor(WAVE, WORKER, WORKER_THREAD, WORKER_GENERATION)
+    before_report = verify_wave(store, WAVE)
+    bad_binding = binding
+    bad_actor = worker_actor
+    if mismatch == "actor_generation":
+        bad_actor = replace(worker_actor, generation_id=OwnerGenerationId(UUID(int=99)))
+    elif mismatch == "worker_generation":
+        bad_binding = replace(binding, worker_generation=OwnerGenerationId(UUID(int=99)))
+    elif mismatch == "coordinator_generation":
+        bad_binding = replace(binding, coordinator_generation=CoordinatorGenerationId(UUID(int=98)))
+    elif mismatch == "policy":
+        bad_binding = replace(binding, policy_revision=2)
+    acknowledgement = command(6, kind, bad_actor, assignment=bad_binding, correlation=4)
+    if mismatch == "wave":
+        acknowledgement = replace(acknowledgement, wave_id=WaveId("unregistered-wave"))
+        with pytest.raises(EventAuthorizationError, match="historical receipt"):
+            service.append(acknowledgement, LocalIdentityContext(WORKER_THREAD))
+        assert verify_wave(store, WAVE) == before_report
+        with store.transaction() as tx:
+            assert tx.lookup_event(acknowledgement.wave_id, acknowledgement.event_id) is None
+    else:
+        receipt = service.append(acknowledgement, LocalIdentityContext(WORKER_THREAD))
+        assert receipt.disposition is EventDisposition.REJECTED
+        assert receipt.reason == reason
+        assert service.append(acknowledgement, LocalIdentityContext(WORKER_THREAD)) == receipt
+        assert verify_wave(store, WAVE).event_count == before_report.event_count + 1
+
+    store = SQLiteWaveStore.open(store.config)
+    rebuild_projections(store, WAVE)
+    with store.transaction() as tx:
+        assert tx.get_projection(WAVE, "assignment", str(binding.ref.assignment_id)) == before_projection
+        assert tx.read_assignment(binding.ref) == before_assignment
+        assert tx.read_cursor(WAVE, WORKER, WORKER_THREAD, WORKER_GENERATION) == before_cursor
+    verify_wave(store, WAVE)
+
+
+def test_out_of_order_acceptance_retry_stays_rejected_after_read_and_rebuild(tmp_path: Path) -> None:
+    store = create_store(tmp_path)
+    service = EventService(store, process_probe=FakeProbe(), ids=FakeIds(), clock=FakeClock())
+    worker_snapshot = snapshot("worker")
+    bootstrap_and_register(service, snapshot("coordinator"), worker_snapshot)
+    binding = assignment_binding(worker_snapshot)
+    worker_actor = actor(WORKER, WORKER_THREAD, WORKER_GENERATION)
+    queue = command(4, EventKind.ASSIGNMENT_QUEUED,
+                    actor(COORDINATOR, COORDINATOR_THREAD, COORDINATOR_GENERATION), assignment=binding)
+    service.append(queue, LocalIdentityContext(COORDINATOR_THREAD))
+    early = command(5, EventKind.ASSIGNMENT_ACCEPTED, worker_actor, assignment=binding, correlation=4)
+    refused = service.append(early, LocalIdentityContext(WORKER_THREAD))
+    assert refused.disposition is EventDisposition.REJECTED
+    assert refused.reason == "accept_requires_read"
+    with store.transaction() as tx:
+        assignment = tx.read_assignment(binding.ref)
+        projection = tx.get_projection(WAVE, "assignment", str(binding.ref.assignment_id))
+        assert assignment is not None and not assignment.acknowledged
+        assert projection is not None and projection["state"] == "queued"
+        assert tx.read_cursor(WAVE, WORKER, WORKER_THREAD, WORKER_GENERATION) is None
+
+    read = command(6, EventKind.ASSIGNMENT_READ, worker_actor, assignment=binding, correlation=4)
+    assert service.append(read, LocalIdentityContext(WORKER_THREAD)).disposition is EventDisposition.APPLIED
+    before_retry = verify_wave(store, WAVE)
+    with store.transaction() as tx:
+        read_cursor = tx.read_cursor(WAVE, WORKER, WORKER_THREAD, WORKER_GENERATION)
+        read_projection = tx.get_projection(WAVE, "assignment", str(binding.ref.assignment_id))
+        read_assignment = tx.read_assignment(binding.ref)
+    assert service.append(early, LocalIdentityContext(WORKER_THREAD)) == refused
+    assert verify_wave(store, WAVE) == before_retry
+    store = SQLiteWaveStore.open(store.config)
+    rebuild_projections(store, WAVE)
+    service = EventService(store, process_probe=FakeProbe(), ids=FakeIds(), clock=FakeClock())
+    assert service.append(early, LocalIdentityContext(WORKER_THREAD)) == refused
+    assert verify_wave(store, WAVE) == before_retry
+    with store.transaction() as tx:
+        assert tx.get_projection(WAVE, "assignment", str(binding.ref.assignment_id)) == read_projection
+        assert tx.read_assignment(binding.ref) == read_assignment
+        assert tx.read_cursor(WAVE, WORKER, WORKER_THREAD, WORKER_GENERATION) == read_cursor
+
+    fresh = replace(early, event_id=event_id(7))
+    accepted = service.append(fresh, LocalIdentityContext(WORKER_THREAD))
+    assert accepted.disposition is EventDisposition.APPLIED
+    assert service.append(fresh, LocalIdentityContext(WORKER_THREAD)) == accepted
+    assert service.append(early, LocalIdentityContext(WORKER_THREAD)) == refused
+    assert verify_wave(store, WAVE).event_count == before_retry.event_count + 1
+    rebuild_projections(store, WAVE)
+    with store.transaction() as tx:
+        assignment = tx.read_assignment(binding.ref)
+        projection = tx.get_projection(WAVE, "assignment", str(binding.ref.assignment_id))
+        assert assignment is not None and assignment.acknowledged
+        assert projection is not None and projection["state"] == "accepted"
+        assert projection["last_event_id"] == str(fresh.event_id)
+        assert tx.read_cursor(WAVE, WORKER, WORKER_THREAD, WORKER_GENERATION) == read_cursor
+
+
+@pytest.mark.parametrize("kind", [EventKind.ASSIGNMENT_READ, EventKind.ASSIGNMENT_ACCEPTED])
+def test_delayed_acknowledgement_from_replaced_worker_generation_is_fenced(
+    tmp_path: Path, kind: EventKind,
+) -> None:
+    class ReplacementProbe(FakeProbe):
+        def observe_recorded(self, process: ProcessCoordinates) -> ProcessCoordinates:
+            if process == WORKER_PROCESS:
+                return self.processes[WORKER_THREAD]
+            return process
+
+    probe = ReplacementProbe()
+    ids = FakeIds()
+    replacement_generation = OwnerGenerationId(UUID(int=103))
+    ids.owner_ids = iter((COORDINATOR_GENERATION, WORKER_GENERATION, replacement_generation))
+    store = create_store(tmp_path)
+    service = EventService(store, process_probe=probe, ids=ids, clock=FakeClock())
+    worker_snapshot = snapshot("worker")
+    bootstrap_and_register(service, snapshot("coordinator"), worker_snapshot)
+    binding = assignment_binding(worker_snapshot)
+    old_actor = actor(WORKER, WORKER_THREAD, WORKER_GENERATION)
+    service.append(command(4, EventKind.ASSIGNMENT_QUEUED,
+                           actor(COORDINATOR, COORDINATOR_THREAD, COORDINATOR_GENERATION), assignment=binding),
+                   LocalIdentityContext(COORDINATOR_THREAD))
+    if kind == EventKind.ASSIGNMENT_ACCEPTED:
+        service.append(command(5, EventKind.ASSIGNMENT_READ, old_actor, assignment=binding, correlation=4),
+                       LocalIdentityContext(WORKER_THREAD))
+    delayed = command(7, kind, old_actor, assignment=binding, correlation=4)
+    with store.transaction() as tx:
+        old_owner = tx.read_owner(WAVE, WORKER)
+        before_assignment = tx.read_assignment(binding.ref)
+        before_projection = tx.get_projection(WAVE, "assignment", str(binding.ref.assignment_id))
+        before_cursor = tx.read_cursor(WAVE, WORKER, WORKER_THREAD, WORKER_GENERATION)
+    assert old_owner is not None
+    # Reusing a PID with a different start tick proves the recorded process generation is dead.
+    probe.processes[WORKER_THREAD] = replace(WORKER_PROCESS, start_ticks=999)
+    intent = ReplaceDeadOwner(WAVE, WORKER, old_owner.record_version, WORKER_GENERATION,
+                              worker_snapshot.snapshot_id, 1)
+    new_actor = actor(WORKER, WORKER_THREAD, replacement_generation)
+    replacement = command(6, EventKind.OWNER_REPLACED, new_actor,
+                          effect=canonical_record(intent=intent, snapshot=worker_snapshot))
+    assert service.append_owner_change(replacement, LocalIdentityContext(WORKER_THREAD),
+                                       intent, worker_snapshot).disposition is EventDisposition.APPLIED
+    refused = service.append(delayed, LocalIdentityContext(WORKER_THREAD))
+    assert refused.disposition is EventDisposition.REJECTED and refused.reason == "stale_owner_generation"
+    # Updating only the sender still cannot accept the old assignment generation.
+    wrong_assignment = replace(delayed, event_id=event_id(8), actor=new_actor)
+    refused_binding = service.append(wrong_assignment, LocalIdentityContext(WORKER_THREAD))
+    assert refused_binding.disposition is EventDisposition.REJECTED
+    assert refused_binding.reason == "assigned_worker_authority_required"
+    store = SQLiteWaveStore.open(store.config)
+    rebuild_projections(store, WAVE)
+    service = EventService(store, process_probe=probe, ids=ids, clock=FakeClock())
+    before_retry = verify_wave(store, WAVE)
+    assert service.append(delayed, LocalIdentityContext(WORKER_THREAD)) == refused
+    assert verify_wave(store, WAVE) == before_retry
+    with store.transaction() as tx:
+        owner = tx.read_owner(WAVE, WORKER)
+        assert owner is not None and owner.generation_id == replacement_generation
+        assert tx.read_assignment(binding.ref) == before_assignment
+        assert tx.get_projection(WAVE, "assignment", str(binding.ref.assignment_id)) == before_projection
+        assert tx.read_cursor(WAVE, WORKER, WORKER_THREAD, WORKER_GENERATION) == before_cursor
+        assert tx.read_cursor(WAVE, WORKER, WORKER_THREAD, replacement_generation) is None
+
+
+@pytest.mark.parametrize("invalid", ["verdict", "provenance", "assignment"])
+def test_malformed_gate_cannot_turn_prose_into_authority(tmp_path: Path, invalid: str) -> None:
+    store = create_store(tmp_path)
+    service = EventService(store, process_probe=FakeProbe(), ids=FakeIds(), clock=FakeClock())
+    worker_snapshot = snapshot("worker")
+    bootstrap_and_register(service, snapshot("coordinator"), worker_snapshot)
+    binding = assignment_binding(worker_snapshot)
+    coordinator_actor = actor(COORDINATOR, COORDINATOR_THREAD, COORDINATOR_GENERATION)
+    worker_actor = actor(WORKER, WORKER_THREAD, WORKER_GENERATION)
+    queue = command(4, EventKind.ASSIGNMENT_QUEUED, coordinator_actor, assignment=binding)
+    service.append(queue, LocalIdentityContext(COORDINATOR_THREAD))
+    for value, kind in ((5, EventKind.ASSIGNMENT_READ), (6, EventKind.ASSIGNMENT_ACCEPTED)):
+        service.append(command(value, kind, worker_actor, assignment=binding, correlation=4),
+                       LocalIdentityContext(WORKER_THREAD))
+    with store.transaction() as tx:
+        before_projection = tx.get_projection(WAVE, "assignment", str(binding.ref.assignment_id))
+        before_assignment = tx.read_assignment(binding.ref)
+        before_cursor = tx.read_cursor(WAVE, WORKER, WORKER_THREAD, WORKER_GENERATION)
+    before_report = verify_wave(store, WAVE)
+    gate = command(7, EventKind.GATE_APPROVED, coordinator_actor, assignment=binding,
+                   payload={"gate_id": "review", "verdict": "approved"})
+    raw = json.loads(gate.canonical_bytes())
+    if invalid == "verdict":
+        raw["payload"]["verdict"] = "rejected"
+    elif invalid == "provenance":
+        raw["provenance"]["classification"] = "payload_only"
+    else:
+        raw["assignment"] = None
+    encoded = json.dumps(raw, sort_keys=True, separators=(",", ":")).encode()
+    with pytest.raises(EventValidationError):
+        service.append(command_from_bytes(encoded), LocalIdentityContext(COORDINATOR_THREAD))
+    assert verify_wave(store, WAVE) == before_report
+
+    prose = command(8, EventKind.PROSE_MESSAGE, worker_actor,
+                    payload={"text": encoded.decode()})
+    prose = replace(prose, provenance=ProvenanceEvidence(ProvenanceClass.PAYLOAD_ONLY, "body"))
+    assert service.append(prose, LocalIdentityContext(WORKER_THREAD)).disposition is EventDisposition.OBSERVED
+    attempted = command(9, EventKind.ASSIGNMENT_IMPLEMENTING, worker_actor, assignment=binding, correlation=8)
+    refused = service.append(attempted, LocalIdentityContext(WORKER_THREAD))
+    assert refused.disposition is EventDisposition.REJECTED and refused.reason == "correlation_kind_mismatch"
+    rebuild_projections(store, WAVE)
+    with store.transaction() as tx:
+        assert tx.get_projection(WAVE, "assignment", str(binding.ref.assignment_id)) == before_projection
+        assert tx.read_assignment(binding.ref) == before_assignment
+        assert tx.read_cursor(WAVE, WORKER, WORKER_THREAD, WORKER_GENERATION) == before_cursor
+    verify_wave(store, WAVE)
