@@ -29,11 +29,19 @@ This contract consumes, and does not replace, three accepted boundaries:
    exact accepted file is bound by SHA-256
    `779c2aa4f1470ef66c5eb87b0b3bdb1e22386408a633bf5a31a99ff2c307ded5`.
 2. The sole `spec-sync` compiler. Its implementation is distributed through the
-   generated `.codex/skills/spec-sync/scripts/spec_sync.py` and packaged
+   CxPP-owned native `.codex/skills/spec-sync/scripts/spec_sync.py` and packaged
    `plugins/spec/skills/spec-sync/scripts/spec_sync.py` surfaces; those are one
    compiler contract, not two independently evolving compilers.
 3. The read-only `project-next` behavioral contract version `1.3`, including
    its classification and deterministic ranking entry points.
+
+Compiler compatibility repair (#222) keeps these stable identity bytes and this
+handoff schema/version unchanged. Exact repository/tasks-path mappings govern
+reruns and dependencies; explicitly managed issue-body spans can be reconciled
+through the compiler's preview/approval workflow. This is not native-wave
+admission or artifact-content attestation. The existing artifact working-byte
+versus reviewed-commit limitation remains with #223
+([recorded finding](https://github.com/cooneycw/codex-power-pack/issues/227#issuecomment-5647088978)).
 
 The partial dependency-grammar convergence recorded by #184 remains unchanged.
 Both existing grammars require declaration-position references, strip fenced
