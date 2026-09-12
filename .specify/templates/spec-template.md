@@ -4,6 +4,12 @@
 > **Created:** {DATE}
 > **Status:** Draft | In Review | Approved
 
+This is the fuller-spec route when uncertainty or coordination warrants it.
+Use the [canonical issue contract](https://github.com/cooneycw/codex-power-pack/blob/main/docs/agents/issue-contract.md); smaller
+work can stay in a short issue. Issues reference governing spec sections rather
+than copying this document. Distinguish outcomes and binding constraints from
+revisable approaches and assumptions.
+
 ---
 
 ## Overview

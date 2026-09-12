@@ -5,14 +5,16 @@ body:
   - type: markdown
     attributes:
       value: |
-        Have an idea for a new feature? We'd love to hear it!
+        Describe the outcome you want and why it matters. A short issue is enough
+        for small work; for larger work, link the governing spec sections.
+        [Issue contract](https://github.com/cooneycw/codex-power-pack/blob/main/docs/agents/issue-contract.md)
 
   - type: dropdown
     id: type
     attributes:
       label: Feature type
       options:
-        - New slash command
+        - New Codex skill or command
         - New skill
         - MCP server enhancement
         - Hook/automation
@@ -27,15 +29,15 @@ body:
     attributes:
       label: Feature name
       description: A short name for this feature
-      placeholder: "e.g., /spec:sync command"
+      placeholder: "e.g., $spec-sync preview"
     validations:
       required: true
 
   - type: textarea
     id: problem
     attributes:
-      label: Problem/Use case
-      description: What problem does this solve? What's the use case?
+      label: Intended outcome and motivation
+      description: What should become possible, why does it matter, and what would show it works?
       placeholder: |
         As a [type of user], I want to [do something]
         so that [benefit/outcome].
@@ -45,15 +47,18 @@ body:
   - type: textarea
     id: solution
     attributes:
-      label: Proposed solution
-      description: How should this feature work?
-      placeholder: |
-        Describe the feature:
-        - What would the user do?
-        - What would happen?
-        - What output would they see?
+      label: Proposed approach (optional, revisable)
+      description: If you have an approach in mind, describe it as a suggestion that can change within the outcome and constraints.
     validations:
-      required: true
+      required: false
+
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints and rationale (optional)
+      description: Record any binding boundaries and why they exist. Missing rationale does not make an existing constraint optional.
+    validations:
+      required: false
 
   - type: textarea
     id: alternatives

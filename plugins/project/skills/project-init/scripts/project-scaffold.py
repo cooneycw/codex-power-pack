@@ -49,6 +49,9 @@ python_version = "3.11"
 - Use Makefile targets as the canonical interface for lint, test, typecheck, and verify.
 - Keep host-managed services and credentials outside this repository.
 - Reproduce failures with the relevant Make target, fix the root cause, and run `make verify` after repairs.
+- Use the [canonical CxPP issue contract](https://github.com/cooneycw/codex-power-pack/blob/main/docs/agents/issue-contract.md) for proportional issue-first or full-spec work.
+- Small fixes need no mandatory spec/plan/tasks. Preserve outcomes, binding constraints and existing project/user authority.
+- If the reference is unavailable, report it and continue otherwise authorized work without inventing policy.
 ''',
         "Makefile": '''.PHONY: lint test typecheck verify
 

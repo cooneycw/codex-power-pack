@@ -1529,11 +1529,96 @@ def _adapt_flow_resolver(text: str) -> str:
     return text
 
 
+# CPP #856 / PR #862 bounded raw-source backport at the unchanged #196 PIN.
+# These are reviewed immutable source identities, not a general fallback policy.
+_GITHUB_CONTRACT_BEFORE = (
+    "32f7905e61b78ec6a6c8b001d2539ac59a691a47",
+    "77abab65998d61802f16f33d9935d7f8203b4e1e9a1824aac295489155c0d59a",
+    2667,
+)
+_GITHUB_CONTRACT_AFTER = (
+    "2c850e3c88f0674c912482f6dce773e184dfc276",
+    "d4bc6b921f0b5e4a909d4e284bf95ae9e5be90ead3f406152cc9c210dcf28382",
+    3902,
+)
+_GITHUB_CONTRACT_ADDITION = """## What the Body Must Make Legible
+
+Whatever the type, the body an agent later implements from is a contract. Write it so
+a reader can tell these apart: the intended **outcome** and why it matters, the
+**constraints** that bound it and the rationale behind each, the **acceptance** that
+shows the outcome was reached, any **proposed approach** (a revisable hypothesis, not
+an order), and **assumptions** worth checking.
+
+These are distinctions, not required headings. A routine bug report that says what
+broke, what should happen instead, and how to reproduce it has already satisfied the
+contract; do not pad it with an invented proposed solution or assumptions nobody
+holds. Keep a suggested fix phrased as a suggestion, so an implementer who finds a
+better one is free to use it and report the substitution.
+
+The canonical definition, the outcome-versus-proposal test, and worked examples are
+in [the issue contract](../../../docs/agents/issue-contract.md). For work large
+enough to warrant a specification, reference the spec and the sections that govern
+the issue rather than copying them.
+
+"""
+_ISSUE_CONTRACT_URL = (
+    "https://github.com/cooneycw/codex-power-pack/blob/main/docs/agents/issue-contract.md"
+)
+
+
+def _github_contract_source_identity(content: bytes) -> tuple[str, str, int]:
+    header = b"blob " + str(len(content)).encode() + b"\0"
+    return (
+        hashlib.sha1(header + content).hexdigest(),
+        hashlib.sha256(content).hexdigest(),
+        len(content),
+    )
+
+
+def _backport_github_issue_contract(skill_dir: Path, rel: str, content: bytes) -> bytes:
+    """Verify raw CPP bytes before any CxPP transformations; never load test evidence."""
+    if skill_dir.name != "github-issue-create" or rel != "reference.md":
+        return content
+    identity = _github_contract_source_identity(content)
+    if identity == _GITHUB_CONTRACT_AFTER:
+        return content
+    if identity != _GITHUB_CONTRACT_BEFORE:
+        raise IntegrityError(
+            "github-issue-create/reference.md: unreviewed raw source for the #856 "
+            "backport; expected CPP f64a654 or #862 8ebef00 witnesses. "
+            "Review and update/retire the bounded recipe before publication."
+        )
+    adapted = content.replace(
+        b"## Issue Creation Flow\n",
+        _GITHUB_CONTRACT_ADDITION.encode() + b"## Issue Creation Flow\n",
+        1,
+    ).replace(
+        b"- Problem/use case\n- Proposed solution\n",
+        b"- Problem/use case (the outcome wanted, and why it matters)\n"
+        b"- Proposed approach (optional, and recorded as revisable)\n"
+        b"- Constraints, each with the rationale behind it (optional)\n",
+        1,
+    )
+    if _github_contract_source_identity(adapted) != _GITHUB_CONTRACT_AFTER:
+        raise IntegrityError("#856 backport recipe did not reproduce the reviewed CPP #862 blob")
+    return adapted
+
+
 def _adapt_github_text(skill_dir: Path, source_file: Path, text: str) -> str:
     """Keep shared GitHub skills repository-neutral on the CxPP surface."""
     if not skill_dir.name.startswith("github-"):
         return text
     text = text.replace("cooneycw/claude-power-pack", '"$REPO"')
+    if skill_dir.name == "github-issue-create" and source_file.name == "reference.md":
+        text = text.replace("../../../docs/agents/issue-contract.md", _ISSUE_CONTRACT_URL)
+        text = text.replace(
+            "## Issue Creation Flow\n",
+            "If the canonical reference is unavailable, report it and continue otherwise\n"
+            "authorized routine work using known project/user constraints and authority.\n"
+            "Do not invent missing policy or treat a proposal as permission to cross those bounds.\n\n"
+            "## Issue Creation Flow\n",
+            1,
+        )
     if source_file.name == "SKILL.md" and _GITHUB_REPO_PREAMBLE not in text:
         marker_end = text.find("\n\n")
         if marker_end != -1:
@@ -1671,8 +1756,9 @@ def _adapted_source_payloads(
         _safe_relative_path(rel, label=f"source skill {skill_dir.name}")
         if skill_dir.name == "evaluate-help" and rel == "scripts/speckit-tasks-to-issues.sh":
             continue
+        raw_content = _backport_github_issue_contract(skill_dir, rel, source_payload.content)
         try:
-            text = source_payload.content.decode()
+            text = raw_content.decode()
         except UnicodeDecodeError:
             files[rel] = source_payload
             continue

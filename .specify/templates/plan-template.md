@@ -26,11 +26,16 @@
 
 ## Constitution Check
 
+This plan belongs to the chosen full-spec route in the
+[canonical issue contract](https://github.com/cooneycw/codex-power-pack/blob/main/docs/agents/issue-contract.md). Routine issue-first
+work does not need this file. Proposed approaches remain revisable within the
+agreed outcome, constraints and authority.
+
 Before proceeding, verify alignment with constitution:
 
 - [ ] **P1 Context Efficiency:** Does this add minimal context overhead?
 - [ ] **P2 Issue-Driven:** Is there a GitHub issue for this work?
-- [ ] **P3 Spec-First:** Is the spec complete and approved?
+- [ ] **P3 Proportional Contract:** For this chosen full-spec route, is the governing spec complete and approved?
 - [ ] **P4 Test-Driven:** Are test scenarios defined?
 - [ ] **P5 Cross-Platform:** Will this work on Linux/Mac/Windows?
 

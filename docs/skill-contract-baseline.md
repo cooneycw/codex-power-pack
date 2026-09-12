@@ -12,7 +12,7 @@
 | Unpackaged source skills | 10 |
 | Marketplace plugins | 16 |
 | Implicitly eligible packaged skills | 2 |
-| Extracted packaged-Markdown references | 647 |
+| Extracted packaged-Markdown references | 652 |
 | Unexplained reference occurrences | 0 |
 
 The machine-readable source of truth is [`.agents/skill-contracts.json`](../.agents/skill-contracts.json).
@@ -54,8 +54,8 @@ The post-release evidence and decision record is [`wave-7-exclusion-review.md`](
 
 | Classification | Occurrences | Meaning |
 |---|---:|---|
-| Resolvable | 418 | Explicit `$skill-name` resolves to a packaged skill. |
-| Native | 16 | Supported Codex host command. |
+| Resolvable | 420 | Explicit `$skill-name` resolves to a packaged skill. |
+| Native | 19 | Supported Codex host command. |
 | Adapted | 123 | The packaged skill carries an explicit Codex harness adaptation. |
 | Excluded | 23 | Target has a reviewed, owned, time-bound exclusion. |
 | Source context | 66 | Non-operational provenance or migration text. |

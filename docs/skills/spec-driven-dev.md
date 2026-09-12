@@ -1,128 +1,64 @@
-# Spec-Driven Development
+# Proportional Issue and Spec-Driven Development
 
-*From Codex Best Practices - r/ClaudeCode community wisdom*
+Use the [canonical issue contract](../agents/issue-contract.md). Start with the
+outcome, motivation, binding constraints and observable acceptance. A proposed
+approach is a revisable hypothesis inside those boundaries; constraints without
+written rationale remain binding while their purpose is investigated.
 
-## Why Spec-Driven Development? (107 upvotes)
+## Choose the route that fits the work
 
-**From "Why we shifted to Spec-Driven Development":**
+A routine fix can stay in a short GitHub issue. It does not need spec.md, plan.md
+or tasks.md, and older issues need no migration. A feature can also start with an
+issue; add a fuller spec when uncertainty or coordination warrants it. Architectural
+boundaries and multi-issue efforts benefit from an authoritative specification,
+with each issue linking its governing sections rather than copying them.
 
-**Problem:** As features multiply, consistency and quality suffer
+Use `$evaluate-issue` when a consequential uncertainty merits evaluation. Its
+models advise; repository evidence and user/project decisions govern. Choose an
+issue-ready or spec-ready recommendation according to the work. Replacing a
+proposal inside agreed outcomes and constraints needs an explanation, not another
+permission round. Changing a promised behavior or constraint needs the agreement
+required by the existing authority model before acting.
 
-**Solution:** Spec-Driven Development (SDD)
+`$project-init` is an explicitly selected local Python scaffold, with destination,
+Git/commit and publication consent kept separate. Its result remains valid when
+Spec Kit adoption is declined. Use `$github-issue-create` for lightweight issue
+authoring and `$flow-auto` for delivery with its existing judged Step-3 plan.
 
-## The SDD Approach
+## The fuller official Spec Kit route
 
-1. **Write Detailed Specs First**
-   - Before any code
-   - Include edge cases
-   - Define success criteria
+Install the `spec` family plugin and explicitly select `$spec-adopt` when the
+project needs official Spec Kit authoring. It presents the pinned `v0.16.0`
+installation for approval, records the reviewed release/commit, and initializes
+with `specify init --here --integration codex`. Force initialization requires the
+exact affected paths and explicit approval. An already authorized action does not
+need the same consent requested again.
 
-2. **Review Specs, Not Just Code**
-   - Easier to fix design issues before coding
-   - Specs are cheaper to iterate than code
-   - Gets team alignment early
+The packaged `cxpp-issue-sync` official extension is a separate optional handoff.
+Declining it leaves official authoring unchanged. Its optional `after_tasks` hook
+previews readiness and groups; it does not grant issue-write authority.
 
-3. **Use Specs as Reference**
-   - Claude can check code against spec
-   - Automated verification possible
-   - Clear acceptance criteria
+Use official constitution, specify, clarify, plan, tasks and analysis steps.
+`$spec-sync` then previews label-free stage/story issues using the reviewed
+artifact SHA, artifacts, clean-analysis assertion, exact paths, checkpoints and
+valid dependencies. Task granularity remains explicit. The compiler's existing
+preview/approval, full-identity, body-ownership and recovery rules remain in force;
+small work belongs on the separate issue-first route, not through relaxed compiler
+checks. No GitHub MCP or label adapter is required.
 
-4. **Iterate on Specs**
-   - Specs are living documents
-   - Update based on learnings
-   - Version control specs like code
+Rich issues carry immutable artifact links, scoped tasks, dependencies, acceptance
+and quality commands. Exact open/closed mappings are reused and successful writes
+update the task ledger. Commit/path existence is not working-byte content
+attestation; the existing #223 limitation remains separately tracked.
 
-## Spec-First → Sandbox → Production
+## Review the contract and evidence
 
-**From 685 upvote post + community:**
+Review the routine bug, export/responsiveness, architecture and binding-constraint
+examples in the canonical contract. Test observable outcomes and failure modes;
+use experiments when assumptions need evidence. Preserve substantive requirements
+while improving a proposed design. Record agreed revisions in the existing plan,
+PR or completion evidence rather than maintaining a second specification store.
 
-1. **Write Spec**
-   - Detailed requirements
-   - Edge cases
-   - Success criteria
-
-2. **Sandbox Testing** (use Sonnet)
-   - Separate directory for experiments
-   - Verify key parts work
-   - Try uncertain approaches
-
-3. **Implementation** (Opus for complex, Sonnet for standard)
-   - Cut-and-dry based on verified plan
-   - Minimal decisions needed
-   - Fast execution
-
-4. **Review & Refine**
-   - Test against spec
-   - Iterate if needed
-   - Git commit
-
-## Tools
-
-- **GitHub Spec Kit** - MIT licensed spec framework
-  - https://github.com/github/spec-kit
-  - https://github.blog/ai-and-ml/generative-ai/spec-driven-development-with-ai-get-started-with-a-new-open-source-toolkit/
-- Custom spec frameworks
-- Markdown-based specs in repo
-
-## Community Debate
-
-**When SDD works best:**
-- Complex, multi-person projects
-- Features with many edge cases
-- When team alignment is critical
-
-**When SDD may be overkill:**
-- Solo developers on small features
-- Rapid prototyping phase
-- Well-understood changes
-
-## Spec Template
-
-```markdown
-# Feature: [Name]
-
-## Summary
-One-sentence description
-
-## Requirements
-- [ ] Requirement 1
-- [ ] Requirement 2
-
-## Edge Cases
-- Edge case 1: Expected behavior
-- Edge case 2: Expected behavior
-
-## Success Criteria
-- [ ] Criterion 1
-- [ ] Criterion 2
-
-## Out of Scope
-- Thing we're not doing
-```
-
-## Integration with Codex
-
-Install the `spec` family plugin, then use `$spec-adopt` in the target project.
-It presents the pinned official `v0.16.0` installation for approval, records
-the reviewed release and commit, and initializes with `specify init --here
---integration codex`. It will not use `--force` until the exact affected paths
-have been shown and explicitly approved.
-
-After adoption, `$spec-adopt` can separately offer the packaged
-`cxpp-issue-sync` official extension. Its optional `after_tasks` hook previews
-readiness and issue groups; declining it leaves official authoring unchanged.
-
-Use the official workflow to produce and analyze a feature's `spec.md`,
-`plan.md`, and `tasks.md`. Then run `$spec-sync` with the reviewed artifact SHA
-to validate readiness and preview label-free stage/story issues. Task
-granularity is opt-in. Confirm the dry-run before GitHub or ledger writes. The
-sync deliberately requires no GitHub MCP server and adds no labels or adapter.
-
-Each rich issue carries immutable artifact links, dependencies, acceptance,
-quality commands, and a hidden stable identity suitable for `$flow-auto
-<issue-number>`. Open and closed issues are idempotent, and successful writes
-update the task ledger consumed by `project-next`.
-
----
-
-*Triggers: spec driven, specification, SDD, planning, requirements*
+Routing and form checks establish structural consistency, not live model
+compliance. Use reviewer judgment for the distinction between a proposal and an
+explicitly constrained mechanism.

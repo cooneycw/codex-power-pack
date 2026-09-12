@@ -55,7 +55,9 @@
 
 ## Issue Sync
 
-> Use `/spec:sync` to create GitHub issues from these tasks.
+> For deliberately selected full-spec work, preview `$spec-sync` using the reviewed artifact commit.
+> Follow the [canonical issue contract](https://github.com/cooneycw/codex-power-pack/blob/main/docs/agents/issue-contract.md);
+> short issue-first work does not need this task file.
 
 | Task | Issue | Status |
 |------|-------|--------|

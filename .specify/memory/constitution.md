@@ -25,20 +25,24 @@ Every implementation starts with a GitHub issue and follows IDD workflow.
 - Branch naming: `issue-{N}-{description}`
 - Commits reference issues: `type(scope): Description (Closes #N)`
 
-### P3: Spec-First Implementation
+### P3: Proportional Issue Contracts
 
-No code without specification. Specifications become the source of truth.
+Use the [canonical issue contract](../../docs/agents/issue-contract.md).
+A small change can use a short issue body; spec.md, plan.md and tasks.md are not
+mandatory for every implementation. Use fuller specifications when uncertainty,
+architectural boundaries or coordination warrant them.
 
-- Write spec.md before any implementation
-- Create plan.md after spec review
-- Generate tasks.md from plan
-- Sync tasks to GitHub issues before coding
+- Preserve outcomes, observable acceptance and binding constraints with rationale.
+- Investigate assumptions; revise proposed approaches within existing authority.
+- Keep older issues usable and investigate material ambiguity without migration.
+- For chosen full-spec work, review the spec/plan/tasks and reference governing
+  sections from issues instead of copying the specification.
 
 ### P4: Test-Driven Quality
 
-Tests validate specifications, not just implementations.
+Tests validate observable acceptance from the issue contract or governing specification.
 
-- Write tests from acceptance criteria in spec
+- Write tests from the applicable acceptance examples and meaningful failure modes
 - Tests must pass independently per feature
 - Use pytest with descriptive test names
 - No merge without passing tests
@@ -56,29 +60,23 @@ Use Python for all scripting that needs to work across platforms.
 
 ## Development Workflow
 
-### Specification Phase
-1. Create feature spec using `/spec:create`
-2. Define user stories with acceptance criteria
-3. Review spec for completeness
-4. Clarify any ambiguities
+### Issue-first route
+1. State the intended outcome, motivation and observable acceptance in a short issue.
+2. Preserve explicit constraints; clarify material uncertainty and record proposals
+   as revisable rather than inventing a design requirement.
+3. Use `$flow-auto` and its judged plan before implementation. Routine choices
+   within that agreement need no repeated approval; changed boundaries do.
+4. Implement, validate and report delivered outcomes and any agreed revisions.
 
-### Planning Phase
-1. Create technical plan from spec
-2. Define architecture and dependencies
-3. Identify risks and mitigations
-4. Get plan approval
-
-### Task Breakdown
-1. Generate tasks from plan
-2. Organize by wave/phase
-3. Mark dependencies and parallel tasks
-4. Sync to GitHub issues with `/spec:sync`
-
-### Implementation Phase
-1. Create worktree for issue
-2. Implement following TDD
-3. Submit PR with tests
-4. Reference spec in PR description
+### Deliberately selected full-spec route
+1. Use `$spec-adopt` when official Spec Kit authoring is wanted, preserving its
+   separate installation and workspace-change consent.
+2. Produce and review the governing spec, clarify, plan, tasks and analysis using
+   the official workflow. Keep the specification authoritative.
+3. Preview `$spec-sync` with the reviewed artifact commit; its readiness and
+   approval checks remain required for this route.
+4. Deliver the resulting scoped issue through `$flow-auto`; reference governing
+   spec sections and acceptance evidence in the PR.
 
 ---
 
@@ -92,7 +90,8 @@ Use Python for all scripting that needs to work across platforms.
 ### Amendments
 - Constitution changes require discussion
 - Document the change and rationale
-- Update all affected specifications
+- Update affected active guidance and governing specifications where needed;
+  do not impose a blanket migration on historical issues.
 
 ---
 
@@ -104,4 +103,4 @@ Adapted for Codex workflows with Issue-Driven Development integration.
 
 ---
 
-*Last updated: 2025-12-24*
+*Last updated: 2026-09-12*

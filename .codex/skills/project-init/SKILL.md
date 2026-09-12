@@ -45,6 +45,16 @@ python3 <project-init-skill-dir>/scripts/project-scaffold.py <project-name> \
 5. Offer `$spec-adopt`, `$spec-sync`, or `$cxpp-init` only as separate,
    reviewable handoffs. Declining any handoff leaves the local scaffold valid.
 
+## Proportional follow-on work
+
+Use the [canonical CxPP issue contract](https://github.com/cooneycw/codex-power-pack/blob/main/docs/agents/issue-contract.md)
+for subsequent work: a small fix can stay in a short issue without spec/plan/tasks;
+choose fuller specifications when uncertainty or coordination warrants them.
+A missing remote reference should be reported, not used to block otherwise
+authorized routine work or invent policy. Existing project instructions and
+user authority remain binding. The local scaffold stays valid when all optional
+handoffs are declined; this guidance does not authorize publication or installs.
+
 ## Output Contract
 
 The helper produces a Python package, tests, `AGENTS.md`, Makefile,

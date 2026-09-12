@@ -10,6 +10,18 @@ story issues. Per-task issues are an explicit compatibility mode. This is the
 sole CxPP issue compiler: `gh` CLI only, no GitHub MCP server and no label
 adapter.
 
+## Route selection
+
+Use the [canonical CxPP issue contract](https://github.com/cooneycw/codex-power-pack/blob/main/docs/agents/issue-contract.md)
+to distinguish a short issue-first change from deliberately selected full-spec
+compilation. `$github-issue-create` can author small work without spec/plan/tasks;
+this compiler continues to require its full-spec artifacts and every readiness,
+analysis, reviewed-commit/path, dependency, approval and recovery check. Link the
+governing spec sections instead of copying an entire specification into issues.
+Preserve project/user constraints and existing authority. A missing remote
+reference should be reported without blocking otherwise authorized routine work
+or inventing policy; it does not permit bypassing this compiler's checks.
+
 ## Safety Contract
 
 - This skill never reads, prints, or persists credentials.
