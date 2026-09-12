@@ -48,8 +48,9 @@ checks. No GitHub MCP or label adapter is required.
 
 Rich issues carry immutable artifact links, scoped tasks, dependencies, acceptance
 and quality commands. Exact open/closed mappings are reused and successful writes
-update the task ledger. Commit/path existence is not working-byte content
-attestation; the existing #223 limitation remains separately tracked.
+update the task ledger. Frozen raw Git objects bind the source; working bytes must
+match except for a verified deterministic task-ledger successor. The clean-analysis
+flag remains a caller assertion, and native-wave admission remains separate.
 
 ## Review the contract and evidence
 

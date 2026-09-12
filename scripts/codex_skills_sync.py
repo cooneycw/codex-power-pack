@@ -1732,7 +1732,7 @@ _FLOW_CONTEXT_DELTA = [
     ),
 ]
 _NATIVE_CONTEXT_REL = ".codex/skills/spec-sync/scripts/spec_context.py"
-_NATIVE_CONTEXT_SHA256 = "fc1dfdc5b1ff5ff496240229916f4c2c5b82ae275c13eeab55b32978ba180856"
+_NATIVE_CONTEXT_SHA256 = "935da913c7cea0d727390369ae1484fab2fde0b330e4a289112f12ab674985e3"
 _NATIVE_CONTEXT_MODE = 0o644
 _FLOW_CONTEXT_CONSUMER = (
     '   **Generated governing context (#223, CPP #858 source-deri'
@@ -1845,7 +1845,8 @@ def _native_context_payload(head: str | None = None) -> PreparedPayload:
     if not path.is_file():
         raise IntegrityError("native context source dependency missing")
     content = path.read_bytes()
-    mode = path.stat().st_mode & 0o777
+    # Git records executable/non-executable mode, not checkout umask rw bits.
+    mode = 0o755 if path.stat().st_mode & 0o111 else 0o644
     if hashlib.sha256(content).hexdigest() != _NATIVE_CONTEXT_SHA256 or mode != _NATIVE_CONTEXT_MODE:
         raise IntegrityError("native context source dependency hash/mode differs from reviewed overlay binding")
     if head is not None:

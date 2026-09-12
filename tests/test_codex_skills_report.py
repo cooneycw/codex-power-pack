@@ -480,3 +480,11 @@ def test_report_requires_committed_native_dependency_even_with_matching_binding(
     before = _tree_bytes(root)
     assert sync.run_source_report(source, target, generated_at=FIXED_TIMESTAMP) == 2
     assert _tree_bytes(root) == before
+
+
+def test_immutable_report_accepts_nonexecutable_checkout_umask(
+    report_fixture: tuple[Path, Path, str, str]
+) -> None:
+    root, source, _, target = report_fixture
+    (root / sync._NATIVE_CONTEXT_REL).chmod(0o664)
+    assert sync.run_source_report(source, target, generated_at=FIXED_TIMESTAMP) == 0

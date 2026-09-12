@@ -849,3 +849,16 @@ def test_context_dependency_and_source_refuse_before_publication(
     before = _tree_bytes(root)
     assert sync.run_refresh(source, commit) == 2
     assert _tree_bytes(root) == before
+
+
+@pytest.mark.parametrize("mode", [0o600, 0o644, 0o664, 0o666])
+def test_native_context_binding_uses_git_mode_not_checkout_umask(
+    provenance_fixture: tuple[Path, Path, str], mode: int
+) -> None:
+    root, _, _ = provenance_fixture
+    native = root / sync._NATIVE_CONTEXT_REL
+    native.chmod(mode)
+    assert sync._native_context_payload().mode == 0o644
+    native.chmod(mode | 0o010)
+    with pytest.raises(sync.IntegrityError, match="hash/mode"):
+        sync._native_context_payload()

@@ -128,6 +128,9 @@ choose arbitrary source paths or substitute another selected group/task set.
 
 The checker reports actual retrieved paths/raw hashes, reconstructed governing **text**,
 checkout byte differences, old/current snapshot bindings and observed revision references.
+It also prints all bounded issue text outside the generated context, so human decisions
+and old receipt bindings remain visible after restart. Ordinary/legacy reports print
+the full issue body; redirecting the fetch to a temporary file must not hide the contract.
 It verifies task wording against the cited immutable source lines and requires the
 expected selection; it does not certify the compiler's complete grouping/analysis.
 Failed fetch/checker execution is unreliable context, never an absent/current result.
@@ -157,10 +160,12 @@ raw guard, #196 policy/audits and all 26 deferred/retained payloads are preserve
 Retire/update this narrow recipe only after reviewing upstream convergence; this is
 not a claim of whole-tree source-PIN equivalence or a general adoption mechanism.
 
-The single native helper source is hash/mode-bound in the overlay and normally mirrored
+The single native helper source is hash/Git-mode-bound (100644/100755) in the overlay
+and normally mirrored
 into spec and generated flow packages. Publication prevalidates it before writes.
 Immutable reports additionally compare bytes/mode to committed CxPP HEAD, rejecting
-untracked or dirty dependencies even if an edited hash constant matches them.
+untracked or dirty dependencies even if an edited hash constant matches them. Checkout
+umask read/write bits are not Git mode; any executable-bit change remains a mismatch.
 
 The accepted #197/#199 contracts and original 22-case corpus are unchanged. This
 producer/ordinary-flow repair supplies derivative retrieval evidence, not the complete

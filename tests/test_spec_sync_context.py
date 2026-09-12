@@ -294,7 +294,8 @@ def test_focused_budget_discloses_missing_sources_and_ordinary_absence(tmp_path)
     github.run(path)
     body = consumer_issue(github)["body"]
     assert "EXTRACT CAPPED" in body and "completeness is not established" in body
-    assert context.check("A small ordinary bug.", tmp_path, "example/repo", 1, None, None)["state"] == "absent"
+    ordinary = context.check("A small ordinary bug.", tmp_path, "example/repo", 1, None, None)
+    assert ordinary["state"] == "absent" and ordinary["issue_body"] == "A small ordinary bug."
     with pytest.raises(context.ContextError, match="malformed"):
         context.check(context.START, tmp_path, "example/repo", 1, None, None)
 
@@ -303,7 +304,11 @@ def test_focused_budget_discloses_missing_sources_and_ordinary_absence(tmp_path)
 def test_refresh_response_loss_retains_successes_and_reconstructs_after_restart(tmp_path, response_loss):
     path, github = fixture(tmp_path)
     github.run(path)
-    old = consumer_issue(github)["body"]
+    old_issue = consumer_issue(github)
+    old_snapshot = context.unpack(old_issue["body"])[0]["snapshot"]
+    human_receipt = f"\nAcceptance-revision: existing approval binds {old_snapshot}; no new approval.\n"
+    old_issue["body"] += human_receipt
+    old = old_issue["body"]
     path.with_name("spec.md").write_text(SOURCE.replace("one second", "two seconds"))
     commit(tmp_path)
     github.fail = ("edit", 2, response_loss)
@@ -344,6 +349,8 @@ def test_refresh_response_loss_retains_successes_and_reconstructs_after_restart(
     assert "two seconds" in report["governing_text"] and report["previous_snapshot"]
     assert "never reinterpret approval" in report["authority"]
     assert "old decision reference" in report["observed_revision"]
+    assert human_receipt in report["issue_text_outside_context"]
+    assert old_snapshot in report["issue_text_outside_context"]
 
 
 @pytest.mark.parametrize("field,value", [("stories", ["us-2"]), ("checkpoint", "Provider passes.")])

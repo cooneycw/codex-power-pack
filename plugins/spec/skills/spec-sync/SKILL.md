@@ -140,9 +140,9 @@ the preview using the current inventory; stable identities recover successful
 creates, current managed bodies recover edits, and ledger write-back follows
 only after every selected group succeeds. A converged rerun makes no issue edit.
 
-The artifact check establishes that the reviewed commit and artifact paths
-exist. It does not attest that working artifact bytes equal that commit; the
-separate #223 handoff work owns that recorded limitation.
+The compiler reads frozen raw artifact objects and checks working bytes before
+writes, permitting only a verified deterministic task-ledger successor. The
+clean-analysis flag remains a caller assertion, not bound official-analysis proof.
 
 ## Governing context and coherent refresh (#223)
 

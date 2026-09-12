@@ -557,6 +557,7 @@ def check(
         return dict(
             state="legacy/unattested" if "spec-sync:v1:" in body else "absent",
             evidence="ordinary analysis remains available; no generated source receipt",
+            issue_body=body,
         )
     data, _, _, _ = current
     if not tasks or not group or not task_ids or issue <= 0 or not REPO.fullmatch(repository):
@@ -602,6 +603,7 @@ def check(
         retrieved=data["artifacts"],
         checkout_differences=differences,
         governing_text=text,
+        issue_text_outside_context=body[:current[2]] + body[current[3]:],
         previous_snapshot=data["previous_snapshot"],
         previous_artifact_commit=data["previous_artifact_commit"],
         observed_revision=data["observed_revision"],
