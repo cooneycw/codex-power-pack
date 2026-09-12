@@ -1271,3 +1271,154 @@ def test_correlations_and_hold_rebind_require_fresh_coordinator_release(tmp_path
         assert final_projection is not None
         assert final_projection["state"] == AssignmentState.COMPLETED.value
     verify_wave(store, WAVE)
+
+
+@pytest.mark.parametrize("restart", [False, True])
+def test_scan_response_loss_recovers_original_page_without_ack_or_cursor_regression(
+    tmp_path: Path,
+    restart: bool,
+) -> None:
+    store = create_store(tmp_path)
+    probe = FakeProbe()
+    service = EventService(store, process_probe=probe, ids=FakeIds(), clock=FakeClock())
+    worker_snapshot = snapshot("worker")
+    bootstrap_and_register(service, snapshot("coordinator"), worker_snapshot)
+    binding = assignment_binding(worker_snapshot)
+    queued = command(
+        4,
+        EventKind.ASSIGNMENT_QUEUED,
+        actor(COORDINATOR, COORDINATOR_THREAD, COORDINATOR_GENERATION),
+        assignment=binding,
+    )
+    service.append(queued, LocalIdentityContext(COORDINATOR_THREAD))
+    worker_actor = actor(WORKER, WORKER_THREAD, WORKER_GENERATION)
+    scan = command(
+        5, EventKind.CURSOR_ADVANCED, worker_actor, payload={"cursor_highest_contiguous": 4, "cursor_sparse": ()}
+    )
+    original = service.scan_and_advance(scan, LocalIdentityContext(WORKER_THREAD))
+    # Simulate discarding the response. A later scan must not change the retry's page.
+    later = command(
+        6, EventKind.CURSOR_ADVANCED, worker_actor, payload={"cursor_highest_contiguous": 5, "cursor_sparse": ()}
+    )
+    service.scan_and_advance(later, LocalIdentityContext(WORKER_THREAD))
+    if restart:
+        store = SQLiteWaveStore.open(StoreConfig(tmp_path / "wave.sqlite3", busy_timeout_ms=100))
+        rebuild_projections(store, WAVE)
+        service = EventService(store, process_probe=probe, ids=FakeIds(), clock=FakeClock())
+    before = verify_wave(store, WAVE)
+    assert service.scan_and_advance(scan, LocalIdentityContext(WORKER_THREAD)) == original
+    assert service.scan_and_advance(scan, LocalIdentityContext(WORKER_THREAD)) == original
+    assert verify_wave(store, WAVE) == before
+    with store.transaction() as tx:
+        cursor = tx.read_cursor(WAVE, WORKER, WORKER_THREAD, WORKER_GENERATION)
+        assert cursor is not None and cursor.highest_contiguous == 5
+        assignment = tx.read_assignment(binding.ref)
+        assert assignment is not None and not assignment.acknowledged
+        projection = tx.get_projection(WAVE, "assignment", str(binding.ref.assignment_id))
+        assert projection is not None and projection["state"] == "queued"
+
+
+def test_scan_retry_preserves_historical_access_but_not_new_write_authority(tmp_path: Path) -> None:
+    store = create_store(tmp_path)
+    probe = FakeProbe()
+    service = EventService(store, process_probe=probe, ids=FakeIds(), clock=FakeClock())
+    bootstrap_and_register(service, snapshot("coordinator"), snapshot("worker"))
+    scan = command(
+        4,
+        EventKind.CURSOR_ADVANCED,
+        actor(WORKER, WORKER_THREAD, WORKER_GENERATION),
+        payload={"cursor_highest_contiguous": 3, "cursor_sparse": ()},
+    )
+    original = service.scan_and_advance(scan, LocalIdentityContext(WORKER_THREAD))
+    # The same registered thread is now a different process: history is readable,
+    # but it cannot write using the old process generation.
+    probe.processes[WORKER_THREAD] = replace(WORKER_PROCESS, start_ticks=999)
+    assert service.scan_and_advance(scan, LocalIdentityContext(WORKER_THREAD)) == original
+    fresh = replace(
+        scan,
+        event_id=event_id(5),
+        payload=EventPayload.from_mapping({"cursor_highest_contiguous": 4, "cursor_sparse": ()}),
+    )
+    refused, page = service.scan_and_advance(fresh, LocalIdentityContext(WORKER_THREAD))
+    assert refused.disposition == EventDisposition.REJECTED
+    assert not page.events
+    assert service.scan_and_advance(fresh, LocalIdentityContext(WORKER_THREAD))[0] == refused
+    conflict = replace(scan, payload=fresh.payload)
+    refused, page = service.scan_and_advance(conflict, LocalIdentityContext(WORKER_THREAD))
+    assert refused.reason == "event_id_payload_conflict" and not page.events
+    outsider = ThreadId(UUID(int=999))
+    probe.processes[outsider] = replace(WORKER_PROCESS, pid=4999)
+    with pytest.raises(EventAuthorizationError, match="historical receipt"):
+        service.scan_and_advance(scan, LocalIdentityContext(outsider))
+    with store.transaction() as tx:
+        cursor = tx.read_cursor(WAVE, WORKER, WORKER_THREAD, WORKER_GENERATION)
+        assert cursor is not None and cursor.highest_contiguous == 3
+
+
+@pytest.mark.parametrize("start", [None, 0, 1, True, "0"])
+def test_scan_recovery_validates_metadata_and_supports_legacy_journals(tmp_path: Path, start: object) -> None:
+    store = create_store(tmp_path)
+    service = EventService(store, process_probe=FakeProbe(), ids=FakeIds(), clock=FakeClock())
+    bootstrap_and_register(service, snapshot("coordinator"), snapshot("worker"))
+    scan = command(
+        4,
+        EventKind.CURSOR_ADVANCED,
+        actor(WORKER, WORKER_THREAD, WORKER_GENERATION),
+        payload={"cursor_highest_contiguous": 3, "cursor_sparse": ()},
+    )
+    cursor = CursorState(WAVE, WORKER, WORKER_THREAD, WORKER_GENERATION, highest_contiguous=3)
+    facts: dict[str, object] = {"cursor": cursor}
+    if start is not None:
+        facts["scan_after_sequence"] = start
+    # Construct old-format or semantically invalid, correctly hashed journal records.
+    with store.transaction() as tx:
+        original_events = tx.read_event_page(WAVE)
+        receipt = tx.append_event(
+            scan,
+            disposition=EventDisposition.APPLIED,
+            reason=None,
+            validation_facts=canonical_record(**facts),
+            committed_at=NOW,
+        )
+        assert receipt.sequence is not None
+        tx.put_cursor(cursor, receipt.sequence)
+        tx.commit()
+    if start is None or (type(start) is int and start == 0):
+        recovered_receipt, page = service.scan_and_advance(scan, LocalIdentityContext(WORKER_THREAD))
+        assert recovered_receipt == receipt and page.events == original_events and page.cursor == cursor
+        rebuild_projections(store, WAVE)
+        assert verify_wave(store, WAVE).event_count == 4
+    else:
+        with pytest.raises(CorruptStore, match="scan recovery"):
+            service.scan_and_advance(scan, LocalIdentityContext(WORKER_THREAD))
+        with pytest.raises(CorruptStore):
+            rebuild_projections(store, WAVE)
+
+
+def test_recovered_scan_with_sparse_preceding_cursor_and_corrupt_page(tmp_path: Path) -> None:
+    store = create_store(tmp_path)
+    service = EventService(store, process_probe=FakeProbe(), ids=FakeIds(), clock=FakeClock())
+    worker_snapshot = snapshot("worker")
+    bootstrap_and_register(service, snapshot("coordinator"), worker_snapshot)
+    binding = assignment_binding(worker_snapshot)
+    queued = command(4, EventKind.ASSIGNMENT_QUEUED,
+                     actor(COORDINATOR, COORDINATOR_THREAD, COORDINATOR_GENERATION), assignment=binding)
+    service.append(queued, LocalIdentityContext(COORDINATOR_THREAD))
+    worker_actor = actor(WORKER, WORKER_THREAD, WORKER_GENERATION)
+    read = command(5, EventKind.ASSIGNMENT_READ, worker_actor, assignment=binding, correlation=4)
+    service.append(read, LocalIdentityContext(WORKER_THREAD))
+    # Closing gaps 1..3 also advances through the already-read sequences 4 and 5.
+    scan = command(6, EventKind.CURSOR_ADVANCED, worker_actor,
+                   payload={"cursor_highest_contiguous": 3, "cursor_sparse": ()})
+    original = service.scan_and_advance(scan, LocalIdentityContext(WORKER_THREAD))
+    assert original[1].cursor.highest_contiguous == 5
+    assert len(original[1].events) == 3
+    rebuild_projections(store, WAVE)
+    assert service.scan_and_advance(scan, LocalIdentityContext(WORKER_THREAD)) == original
+    # A correct cached receipt must not hide corruption in the original page.
+    with store.transaction() as tx:
+        tx._connection.execute("UPDATE events SET command_bytes=? WHERE wave_id=? AND sequence=2",
+                               (b"{}", str(WAVE)))
+        tx.commit()
+    with pytest.raises(CorruptStore, match="verification"):
+        service.scan_and_advance(scan, LocalIdentityContext(WORKER_THREAD))

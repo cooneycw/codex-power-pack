@@ -6,7 +6,6 @@ import hmac
 import json
 from dataclasses import dataclass
 from typing import Any
-from uuid import UUID
 
 from .claims import prepare_claim_change, prepare_claim_reconciliation
 from .cursors import advance_cursor
@@ -38,7 +37,7 @@ from .registry import (
     provision_recovery_delegation,
     provision_wave_bootstrap,
 )
-from .replay import CursorRow, ProjectionRow, ProjectionSnapshot
+from .replay import CursorRow, ProjectionRow, ProjectionSnapshot, recover_scan_page, replay_scan_cursor
 from .storage import SQLiteTransaction, SQLiteWaveStore
 from .types import (
     AssignmentRef,
@@ -68,7 +67,6 @@ from .types import (
     StoredAssignment,
     StoredGrant,
     StoredReconciliation,
-    ThreadId,
     UpdateCapability,
     WaveId,
     WorktreeEvidence,
@@ -804,7 +802,7 @@ class EventService:
         command: NativeCommand,
         context: LocalIdentityContext,
     ) -> tuple[AppendReceipt, EventPage]:
-        """Read one bounded journal page and durably advance only this generation's cursor."""
+        """Commit one scan, or recover its original response without advancing again."""
 
         if command.kind != EventKind.CURSOR_ADVANCED:
             raise EventValidationError("cursor scan requires cursor.advanced command")
@@ -829,6 +827,8 @@ class EventService:
             )
             existing = self._existing_receipt(tx, command, evidence)
             if existing is not None:
+                if existing.disposition == EventDisposition.APPLIED:
+                    return existing, recover_scan_page(tx, command.wave_id, command.event_id)
                 return existing, EventPage((), current.highest_contiguous, current)
             reason = self._owner_refusal(tx, command, evidence)
             if reason is not None:
@@ -859,7 +859,7 @@ class EventService:
                 command,
                 disposition=EventDisposition.APPLIED,
                 reason=None,
-                validation_facts=canonical_record(cursor=next_cursor),
+                validation_facts=canonical_record(cursor=next_cursor, scan_after_sequence=current.highest_contiguous),
                 committed_at=self.clock.now_utc(),
             )
             assert receipt.sequence is not None
@@ -1372,15 +1372,11 @@ def build_projection_snapshot(events: tuple[DurableEvent, ...]) -> ProjectionSna
                 event.sequence,
             )
         elif command.kind == EventKind.CURSOR_ADVANCED:
-            cursor_value = _plain_record(facts["cursor"])
             cursor = CursorState(
-                wave_id=WaveId(cursor_value["wave_id"]),
-                role_id=RoleId(cursor_value["role_id"]),
-                thread_id=ThreadId(UUID(cursor_value["thread_id"])),
-                generation_id=OwnerGenerationId(UUID(cursor_value["generation_id"])),
-                highest_contiguous=int(cursor_value["highest_contiguous"]),
-                sparse_sequences=tuple(cursor_value["sparse_sequences"]),
-                gaps=tuple(cursor_value["gaps"]),
+                command.wave_id,
+                command.actor.role_id,
+                command.actor.thread_id,
+                OwnerGenerationId(_uuid_value(command.actor.generation_id)),
             )
             cursor_key = (
                 str(cursor.wave_id),
@@ -1388,6 +1384,8 @@ def build_projection_snapshot(events: tuple[DurableEvent, ...]) -> ProjectionSna
                 str(cursor.thread_id),
                 str(cursor.generation_id),
             )
+            preceding = cursors.get(cursor_key)
+            cursor = replay_scan_cursor(event, preceding[0] if preceding is not None else cursor)
             cursors[cursor_key] = (cursor, event.sequence)
         if command.assignment is None:
             continue
