@@ -4,10 +4,13 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Iterable
@@ -15,6 +18,7 @@ from typing import Any, Callable, Iterable
 TASK = re.compile(r"^-\s*\[(?P<done>[ xX])\]\s+(?:\*\*)?(?P<id>T\d{3})(?:\*\*)?\s+(?P<body>.+)$")
 TASK_LIKE = re.compile(r"^-\s*\[[^]]*\].*\bT\d+\b", re.IGNORECASE)
 STAGE = re.compile(r"^#{2,}\s+(?P<kind>Stage|Wave|Phase)\s+(?P<id>\d+)(?:\s*:\s*(?P<title>.+))?$", re.I)
+STORY_HEADING = re.compile(r"^(?P<level>#{2,})\s+(?:US|User\s+Story\s+)(?P<id>\d+)(?:\s*[:\-].*|\s*)$", re.I)
 STORY = re.compile(r"\[US(?P<id>\d+)\]", re.I)
 DEPENDENCY = re.compile(r"\b(?:depends\s+on|blocked\s+by|requires|after)\s+(?P<id>T\d{3})\b", re.I)
 CHECKPOINT = re.compile(r"^\*\*Checkpoint:\*\*\s*(?P<body>.+)$", re.I)
@@ -23,6 +27,12 @@ PLACEHOLDER = re.compile(r"\[NEEDS CLARIFICATION[^]]*\]|\b(?:TODO|TBD)\b|<placeh
 LEDGER_START = "<!-- spec-sync-ledger:start -->"
 LEDGER_END = "<!-- spec-sync-ledger:end -->"
 IDENTITY_PREFIX = "spec-sync:v1"
+DEPENDENCIES_END = "<!-- spec-sync-dependencies:end -->"
+MANAGED_DEPENDENCIES = re.compile(
+    r"<!-- spec-sync-dependencies:start sha256=([0-9a-f]{64}) -->\n(.*?)\n<!-- spec-sync-dependencies:end -->", re.S
+)
+IDENTITY_MARKER = re.compile(r"<!--\s*(spec-sync:v1:[^>\r\n]+?)\s*-->")
+ISSUE_LIMIT = 1000
 
 
 class ReadinessError(ValueError):
@@ -88,16 +98,43 @@ def parse_tasks(path: Path) -> tuple[list[Task], dict[str, str]]:
     tasks: list[Task] = []
     checkpoints: dict[str, str] = {}
     current_stage: tuple[str, str] | None = None
+    current_story: str | None = None
+    stage_level = story_level = 0
+    seen_headings: set[str] = set()
+    story_heading_tasks: dict[str, set[str]] = {}
     for number, raw in enumerate(lines, start=1):
         line = raw.strip()
+        heading = re.match(r"^(#{1,6})\s", line)
+        if heading:
+            level = len(heading.group(1))
+            if level <= story_level:
+                current_story, story_level = None, 0
+            if level <= stage_level:
+                current_stage, stage_level = None, 0
         stage = STAGE.match(line)
-        if stage:
-            stage_id = f"{stage.group('kind').casefold()}-{stage.group('id')}"
-            current_stage = (stage_id, (stage.group("title") or stage_id.replace("-", " ").title()).strip())
+        story = STORY_HEADING.match(line)
+        if stage or story:
+            key = f"{stage.group('kind').casefold()}-{stage.group('id')}" if stage else f"us-{story.group('id')}"
+            if key in seen_headings:
+                raise ReadinessError(f"{path}:{number}: repeated checkpoint owner {key}")
+            seen_headings.add(key)
+            if stage:
+                current_stage = (key, (stage.group("title") or key.replace("-", " ").title()).strip())
+                stage_level = len(heading.group(1))
+                current_story, story_level = None, 0
+            else:
+                current_story, story_level = key, len(story.group("level"))
+                story_heading_tasks[key] = set()
             continue
         checkpoint = CHECKPOINT.match(line)
-        if checkpoint and current_stage:
-            checkpoints[current_stage[0]] = checkpoint.group("body").strip()
+        if checkpoint:
+            owner = current_story or (current_stage[0] if current_stage else None)
+            if not owner:
+                raise ReadinessError(f"{path}:{number}: checkpoint has no stage/story owner")
+            value = checkpoint.group("body").strip()
+            if owner in checkpoints and checkpoints[owner] != value:
+                raise ReadinessError(f"{path}:{number}: conflicting checkpoints for {owner}")
+            checkpoints[owner] = value
             continue
         match = TASK.match(line)
         if not match:
@@ -107,6 +144,12 @@ def parse_tasks(path: Path) -> tuple[list[Task], dict[str, str]]:
         description = _strip_tags(match.group("body"))
         if not description:
             raise ReadinessError(f"{path}:{number}: {match.group('id')} has no description")
+        story_ids = tuple(sorted({f"us-{item.group('id')}" for item in STORY.finditer(match.group("body"))}))
+        if current_story:
+            if story_ids and story_ids != (current_story,):
+                raise ReadinessError(f"{path}:{number}: story tags conflict with heading {current_story}")
+            story_ids = (current_story,)
+            story_heading_tasks[current_story].add(match.group("id"))
         tasks.append(
             Task(
                 task_id=match.group("id"),
@@ -114,11 +157,28 @@ def parse_tasks(path: Path) -> tuple[list[Task], dict[str, str]]:
                 line=number,
                 stage_id=current_stage[0] if current_stage else None,
                 stage_title=current_stage[1] if current_stage else None,
-                story_ids=tuple(sorted({f"us-{item.group('id')}" for item in STORY.finditer(match.group("body"))})),
+                story_ids=story_ids,
                 dependencies=tuple(sorted({item.group("id").upper() for item in DEPENDENCY.finditer(description)})),
                 paths=tuple(item.group("path") for item in PATH_TOKEN.finditer(description)),
             )
         )
+    for story_id, owned_tasks in story_heading_tasks.items():
+        selected_ids = {task.task_id for task in tasks if story_id in task.story_ids}
+        if story_id in checkpoints and selected_ids != owned_tasks:
+            raise ReadinessError(f"{path}: checkpoint for {story_id} does not cover its complete task set")
+    # A stage checkpoint covers a story only when both own the same complete task set.
+    for story_id in {story for task in tasks for story in task.story_ids}:
+        selected = [task for task in tasks if story_id in task.story_ids]
+        stages = {task.stage_id for task in selected}
+        if story_id not in checkpoints and len(stages) == 1:
+            stage_id = next(iter(stages))
+            stage_tasks = [task for task in tasks if task.stage_id == stage_id]
+            if (
+                stage_id in checkpoints
+                and selected == stage_tasks
+                and all(task.story_ids == (story_id,) for task in selected)
+            ):
+                checkpoints[story_id] = checkpoints[stage_id]
     if not tasks:
         raise ReadinessError(f"{path}: non-empty task file yielded zero canonical TNNN tasks")
     ids = [task.task_id for task in tasks]
@@ -156,9 +216,17 @@ def _cycle_nodes(tasks: Iterable[Task]) -> set[str]:
 
 def group_tasks(tasks: list[Task], checkpoints: dict[str, str], granularity: str = "auto") -> list[Group]:
     if granularity == "auto":
-        granularity = "stage" if all(task.stage_id for task in tasks) else "story" if all(task.story_ids for task in tasks) else ""
+        granularity = (
+            "stage"
+            if all(task.stage_id for task in tasks)
+            else "story"
+            if all(task.story_ids for task in tasks)
+            else ""
+        )
         if not granularity:
-            raise ReadinessError("automatic grouping is ambiguous; add stage/story boundaries or request task granularity")
+            raise ReadinessError(
+                "automatic grouping is ambiguous; add stage/story boundaries or request task granularity"
+            )
 
     groups: dict[str, Group] = {}
     for task in tasks:
@@ -187,7 +255,9 @@ def group_tasks(tasks: list[Task], checkpoints: dict[str, str], granularity: str
     return list(groups.values())
 
 
-def validate_artifacts(tasks_path: Path, artifact_commit: str, analysis_clean: bool, runner: Runner) -> tuple[Path, Path, str]:
+def validate_artifacts(
+    tasks_path: Path, artifact_commit: str, analysis_clean: bool, runner: Runner
+) -> tuple[Path, Path, str]:
     feature_dir = tasks_path.parent
     spec_path = feature_dir / "spec.md"
     plan_path = feature_dir / "plan.md"
@@ -220,16 +290,58 @@ def validate_groups(tasks: list[Task], groups: list[Group]) -> None:
     if cycles:
         raise ReadinessError(f"cyclic task dependencies: {', '.join(sorted(cycles))}")
     for group in groups:
-        missing_paths = [task.task_id for task in group.tasks if not task.paths and "path discovery" not in task.description.casefold()]
+        missing_paths = [
+            task.task_id
+            for task in group.tasks
+            if not task.paths and "path discovery" not in task.description.casefold()
+        ]
         if missing_paths:
             raise ReadinessError(f"{group.group_id}: tasks lack exact paths: {', '.join(missing_paths)}")
+
+
+def dependency_order(groups: list[Group]) -> list[Group]:
+    task_to_group = {task.task_id: group.group_id for group in groups for task in group.tasks}
+    graph = {
+        group.group_id: {task_to_group[dep] for task in group.tasks for dep in task.dependencies} - {group.group_id}
+        for group in groups
+    }
+    ordered: list[Group] = []
+    remaining = list(groups)
+    while remaining:
+        ready = next((group for group in remaining if not graph[group.group_id]), None)
+        if ready is None:
+            raise ReadinessError(f"cyclic group dependencies: {', '.join(group.group_id for group in remaining)}")
+        ordered.append(ready)
+        remaining.remove(ready)
+        for edges in graph.values():
+            edges.discard(ready.group_id)
+    return ordered
+
+
+def dependency_text(numbers: list[int], unresolved: list[str]) -> str:
+    return (
+        "\n".join(
+            [
+                *(f"- Blocked by #{number}" for number in numbers),
+                *(f"- Pending group `{group}`" for group in unresolved),
+            ]
+        )
+        or "No cross-group prerequisites."
+    )
+
+
+def managed_dependencies(content: str) -> str:
+    digest = hashlib.sha256(content.encode("utf-8")).hexdigest()
+    return f"<!-- spec-sync-dependencies:start sha256={digest} -->\n{content}\n{DEPENDENCIES_END}"
 
 
 def stable_identity(repository: str, tasks_path: str, group_id: str) -> str:
     return f"{IDENTITY_PREFIX}:{repository}:{tasks_path}:{group_id}"
 
 
-def _issue_dependencies(group: Group, task_to_group: dict[str, str], mappings: dict[str, Mapping]) -> tuple[list[int], list[str]]:
+def _issue_dependencies(
+    group: Group, task_to_group: dict[str, str], mappings: dict[str, Mapping]
+) -> tuple[list[int], list[str]]:
     issue_numbers: set[int] = set()
     unresolved: set[str] = set()
     for task in group.tasks:
@@ -259,7 +371,6 @@ def render_issue_body(
     base = f"https://github.com/{repository}/blob/{commit}/{Path(tasks_relative).parent.as_posix()}"
     task_lines = "\n".join(f"- [ ] **{task.task_id}** {task.description}" for task in group.tasks)
     story_ids = sorted({story for task in group.tasks for story in task.story_ids})
-    dependency_lines = [*(f"- Blocked by #{number}" for number in issue_dependencies), *(f"- Pending group `{item}`" for item in unresolved)]
     return "\n".join(
         [
             "## Outcome",
@@ -269,13 +380,15 @@ def render_issue_body(
             task_lines,
             "",
             "## User-story traceability",
-            ", ".join(f"`{item.upper()}`" for item in story_ids) if story_ids else "No user-story tag is declared; stage traceability applies.",
+            ", ".join(f"`{item.upper()}`" for item in story_ids)
+            if story_ids
+            else "No user-story tag is declared; stage traceability applies.",
             "",
             "## Acceptance checkpoint",
             group.checkpoint,
             "",
             "## Dependencies",
-            "\n".join(dependency_lines) if dependency_lines else "No cross-group prerequisites.",
+            managed_dependencies(dependency_text(issue_dependencies, unresolved)),
             "",
             "## Constraints and non-goals",
             "Preserve the approved artifact boundary. Do not absorb tasks from another synchronization group.",
@@ -296,26 +409,120 @@ def render_issue_body(
     )
 
 
-def parse_existing_issues(output: str) -> dict[str, Mapping]:
-    payload = json.loads(output or "[]")
-    mappings: dict[str, Mapping] = {}
-    for item in payload:
-        body = str(item.get("body") or "")
-        match = re.search(r"<!--\s*(spec-sync:v1:[^>]+)\s*-->", body)
-        if not match:
-            continue
-        identity = match.group(1).strip()
-        group_id = identity.rsplit(":", 1)[-1]
-        mappings[group_id] = Mapping(
-            identity=identity,
-            granularity="unknown",
-            group_id=group_id,
-            issue_number=int(item["number"]),
-            url=str(item.get("url") or ""),
-            state=str(item.get("state") or "UNKNOWN").upper(),
-            task_ids=(),
+@dataclass(frozen=True)
+class Issue:
+    number: int
+    title: str
+    body: str
+    state: str
+    url: str
+    identity: str | None
+
+    def mapping(self) -> Mapping:
+        assert self.identity is not None
+        return Mapping(self.identity, "unknown", self.identity.rsplit(":", 1)[-1], self.number, self.url, self.state)
+
+
+def parse_issue_inventory(output: str) -> list[Issue]:
+    if not output.strip():
+        raise ReadinessError("blank GitHub issue inventory; cannot establish absence of mappings")
+    payload = json.loads(output)
+    if not isinstance(payload, list) or len(payload) >= ISSUE_LIMIT:
+        raise ReadinessError(
+            "GitHub issue inventory must be a complete list below the lookup limit; narrow/reconcile the inventory"
         )
-    return mappings
+    issues: list[Issue] = []
+    numbers: set[int] = set()
+    identities: set[str] = set()
+    for item in payload:
+        if (
+            not isinstance(item, dict)
+            or type(item.get("number")) is not int
+            or item["number"] <= 0
+            or any(not isinstance(item.get(key), str) for key in ("title", "body", "state", "url"))
+            or item["state"] not in ("OPEN", "CLOSED")
+            or not item["url"]
+        ):
+            raise ReadinessError("malformed GitHub issue inventory entry")
+        markers = IDENTITY_MARKER.findall(item["body"])
+        if len(markers) > 1 or len(markers) != len(re.findall(r"<!--\s*spec-sync:v1", item["body"])):
+            raise ReadinessError(f"{item['url']}: conflicting or malformed stable identity markers")
+        identity = markers[0] if markers else None
+        if identity and not re.fullmatch(r"spec-sync:v1:[^:/\s]+/[^:\s]+:[^\r\n]+:[^:\s]+", identity):
+            raise ReadinessError(f"{item['url']}: malformed stable identity {identity}")
+        if item["number"] in numbers or (identity and identity in identities):
+            raise ReadinessError(f"{item['url']}: duplicate issue/identity claim {identity or item['number']}")
+        numbers.add(item["number"])
+        if identity:
+            identities.add(identity)
+        issues.append(Issue(item["number"], item["title"], item["body"], item["state"], item["url"], identity))
+    return issues
+
+
+def parse_existing_issues(output: str) -> dict[str, Mapping]:
+    return {issue.identity: issue.mapping() for issue in parse_issue_inventory(output) if issue.identity}
+
+
+def legacy_candidates(group: Group, issues: list[Issue]) -> list[Issue]:
+    candidates = []
+    for issue in issues:
+        if issue.identity:
+            continue
+        ids = {match.group("id") for line in issue.body.splitlines() if (match := TASK.match(line.strip()))}
+        title = re.match(r"^(?:\*\*|\[)?(T\d{3})(?:\*\*|\])?(?:\s|:|$)", issue.title)
+        if title:
+            ids.add(title.group(1))
+        if ids.intersection(group.task_ids):
+            candidates.append(issue)
+    return candidates
+
+
+@dataclass(frozen=True)
+class DependencySpan:
+    prefix: str
+    suffix: str
+    old: str
+
+    def replace(self, content: str) -> str:
+        return self.prefix + managed_dependencies(content) + self.suffix
+
+
+def dependency_span(issue: Issue, proposed: str, unresolved: list[str]) -> DependencySpan | None:
+    """Only marked, unmodified compiler content is eligible for automatic repair."""
+    headings = list(re.finditer(r"^## Dependencies[ \t]*$", issue.body, re.M))
+    spans = list(MANAGED_DEPENDENCIES.finditer(issue.body))
+    marker_count = issue.body.count("<!-- spec-sync-dependencies:")
+    if len(headings) > 1 or (marker_count and (marker_count != 2 or len(spans) != 1)):
+        raise ReadinessError(f"{issue.url}: ambiguous/custom dependency span; reconcile and re-preview")
+    if not headings:
+        if not marker_count and proposed == "No cross-group prerequisites." and not unresolved:
+            return None
+        raise ReadinessError(f"{issue.url}: dependency section missing; reconcile and re-preview")
+    start = headings[0].end()
+    following = re.search(r"^#{1,2} ", issue.body[start:], re.M)
+    end = start + following.start() if following else len(issue.body)
+    if not spans:
+        if issue.body[start:end].strip() == proposed and not unresolved:
+            return None
+        raise ReadinessError(
+            f"#{issue.number} ({issue.state}) {issue.url}: unmarked legacy dependency section needs explicit resolution; "
+            f"current={issue.body[start:end].strip()!r}; desired={proposed!r}; "
+            "review these edges, preserve human edges outside any managed span, and explicitly reconcile the body "
+            "(see spec-sync SKILL.md, Legacy resolution). Then re-run --dry-run and --approve; no edges were changed."
+        )
+    span = spans[0]
+    if not (start <= span.start() < span.end() <= end):
+        raise ReadinessError(f"{issue.url}: managed dependencies outside their section")
+    old = span.group(2)
+    if hashlib.sha256(old.encode("utf-8")).hexdigest() != span.group(1):
+        raise ReadinessError(f"{issue.url}: custom/changed managed dependency span; reconcile and re-preview")
+    # The checksum detects edits, not authorship. Only this explicit managed span is replaced.
+    if old != "No cross-group prerequisites." and not re.fullmatch(
+        r"- (?:Blocked by #[1-9]\d*|Pending group `[^`\n]+`)(?:\n- (?:Blocked by #[1-9]\d*|Pending group `[^`\n]+`))*",
+        old,
+    ):
+        raise ReadinessError(f"{issue.url}: noncanonical managed dependencies; reconcile and re-preview")
+    return DependencySpan(issue.body[: span.start()], issue.body[span.end() :], old)
 
 
 def render_ledger(mappings: Iterable[Mapping]) -> str:
@@ -333,86 +540,255 @@ def render_ledger(mappings: Iterable[Mapping]) -> str:
     return "\n".join(rows)
 
 
-def update_ledger(path: Path, mappings: Iterable[Mapping]) -> None:
+def validate_ledger(text: str) -> None:
+    starts, ends = text.count(LEDGER_START), text.count(LEDGER_END)
+    if (starts, ends) != (0, 0) and ((starts, ends) != (1, 1) or text.index(LEDGER_START) >= text.index(LEDGER_END)):
+        raise ReadinessError("incomplete, duplicate or reversed Issue Sync ledger markers")
+
+
+def update_ledger(path: Path, mappings: Iterable[Mapping], expected_text: str | None = None) -> None:
     text = path.read_text(encoding="utf-8")
+    if expected_text is not None and text != expected_text:
+        raise ReadinessError(f"{path}: task file changed during synchronization; reconcile and re-preview")
+    validate_ledger(text)
     ledger = render_ledger(mappings)
-    if LEDGER_START in text or LEDGER_END in text:
-        if LEDGER_START not in text or LEDGER_END not in text:
-            raise ReadinessError(f"{path}: incomplete Issue Sync ledger markers")
+    if LEDGER_START in text:
         start = text.index(LEDGER_START)
         end = text.index(LEDGER_END) + len(LEDGER_END)
-        text = text[:start] + ledger + text[end:]
+        updated = text[:start] + ledger + text[end:]
     else:
-        text = text.rstrip() + "\n\n## Issue Sync Ledger\n\n" + ledger + "\n"
-    path.write_text(text, encoding="utf-8")
+        updated = text.rstrip() + "\n\n## Issue Sync Ledger\n\n" + ledger + "\n"
+    if updated == text:
+        return
+    # Replace only after a complete local write; a failed write leaves the old ledger recoverable.
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent, delete=False) as stream:
+        temporary = Path(stream.name)
+        try:
+            stream.write(updated)
+            stream.flush()
+            os.chmod(temporary, path.stat().st_mode)
+            temporary.replace(path)
+        finally:
+            temporary.unlink(missing_ok=True)
+
+
+class SynchronizationError(RuntimeError):
+    """Carries successful operations and a failed/uncertain step for reconciliation."""
+
+    def __init__(self, result: dict[str, Any]):
+        self.result = result
+        super().__init__(json.dumps(result, sort_keys=True))
 
 
 def synchronize(args: argparse.Namespace, runner: Runner = subprocess_runner) -> dict[str, Any]:
+    if not args.dry_run and not args.approve:
+        raise ReadinessError("GitHub and ledger writes require --approve after reviewing the dry-run")
     tasks_path = Path(args.tasks).resolve()
+    original_tasks = tasks_path.read_text(encoding="utf-8")
+    validate_ledger(original_tasks)
     tasks, checkpoints = parse_tasks(tasks_path)
     groups = group_tasks(tasks, checkpoints, args.granularity)
     spec_path, _, commit = validate_artifacts(tasks_path, args.artifact_commit, args.analysis_clean, runner)
     validate_groups(tasks, groups)
+    ordered = dependency_order(groups)
     root = Path(runner(["git", "rev-parse", "--show-toplevel"], spec_path.parent)).resolve()
     tasks_relative = tasks_path.relative_to(root).as_posix()
-    repository = args.repo or json.loads(runner(["gh", "repo", "view", "--json", "nameWithOwner"], root))["nameWithOwner"]
-    existing = parse_existing_issues(
+    repository = (
+        args.repo or json.loads(runner(["gh", "repo", "view", "--json", "nameWithOwner"], root))["nameWithOwner"]
+    )
+    inventory = parse_issue_inventory(
         runner(
-            ["gh", "issue", "list", "--repo", repository, "--state", "all", "--limit", "1000", "--json", "number,title,body,state,url"],
+            [
+                "gh",
+                "issue",
+                "list",
+                "--repo",
+                repository,
+                "--state",
+                "all",
+                "--limit",
+                str(ISSUE_LIMIT),
+                "--json",
+                "number,title,body,state,url",
+            ],
             root,
         )
     )
-    actions: list[dict[str, Any]] = []
-    mappings = dict(existing)
+    by_identity = {issue.identity: issue for issue in inventory if issue.identity}
+    selected: dict[str, Issue] = {}
+    mappings: dict[str, Mapping] = {}
     for group in groups:
         identity = stable_identity(repository, tasks_relative, group.group_id)
-        current = mappings.get(group.group_id)
-        if current and current.identity == identity:
+        current = by_identity.get(identity)
+        if current:
+            selected[group.group_id] = current
             mappings[group.group_id] = Mapping(
-                identity,
-                group.granularity,
-                group.group_id,
-                current.issue_number,
-                current.url,
-                current.state,
-                group.task_ids,
+                identity, group.granularity, group.group_id, current.number, current.url, current.state, group.task_ids
             )
-            actions.append({"action": "skip", "group": group.group_id, "issue": current.issue_number, "state": current.state})
-            continue
-        body = render_issue_body(group, repository, tasks_relative, commit, mappings, groups)
-        title = f"{group.title}: {group.tasks[0].description}"
-        if args.dry_run:
-            actions.append({"action": "would-create", "group": group.group_id, "title": title, "identity": identity})
-            continue
-        if not args.approve:
-            raise ReadinessError("GitHub writes require --approve after reviewing the dry-run")
-        url = runner(["gh", "issue", "create", "--repo", repository, "--title", title, "--body", body], root)
-        number_match = re.search(r"/(\d+)(?:\s*)$", url)
-        if not number_match:
-            raise RuntimeError(f"cannot determine issue number from gh output: {url}")
-        mapping = Mapping(
-            identity,
-            group.granularity,
-            group.group_id,
-            int(number_match.group(1)),
-            url,
-            "OPEN",
-            group.task_ids,
+        elif candidates := legacy_candidates(group, inventory):
+            raise ReadinessError(
+                f"{identity}: ambiguous unscoped legacy mapping; resolve explicitly: "
+                + ", ".join(issue.url for issue in candidates)
+            )
+    task_to_group = {task.task_id: group.group_id for group in groups for task in group.tasks}
+    spans: dict[str, DependencySpan | None] = {}
+    preview: list[dict[str, Any]] = []
+    # Validate the ENTIRE plan before its first create/edit, including late existing sections.
+    for group in ordered:
+        identity = stable_identity(repository, tasks_relative, group.group_id)
+        numbers, unresolved = _issue_dependencies(group, task_to_group, mappings)
+        proposed = dependency_text(numbers, unresolved)
+        current = selected.get(group.group_id)
+        span = dependency_span(current, proposed, unresolved) if current else None
+        spans[group.group_id] = span
+        changed = span is not None and (span.old != proposed or bool(unresolved))
+        preview.append(
+            {
+                "action": "would-edit" if changed else "skip" if current else "would-create",
+                "group": group.group_id,
+                "identity": identity,
+                "issue": current.number if current else None,
+                "state": current.state if current else "NEW",
+                "title": current.title if current else f"{group.title}: {group.tasks[0].description}",
+                "old_dependencies": span.old if span else proposed if current else None,
+                "proposed_dependencies": proposed,
+                "unresolved_new_groups": unresolved,
+            }
         )
-        mappings[group.group_id] = mapping
-        actions.append({"action": "created", "group": group.group_id, "issue": mapping.issue_number, "url": url})
-    if not args.dry_run:
-        selected = [mappings[group.group_id] for group in groups if group.group_id in mappings]
-        update_ledger(tasks_path, selected)
-    return {
+    result: dict[str, Any] = {
         "tasks": tasks_relative,
         "repository": repository,
         "artifact_commit": commit,
         "granularity": groups[0].granularity,
         "groups": len(groups),
-        "actions": actions,
-        "ledger_updated": not args.dry_run,
+        "actions": [],
+        "preview": preview,
+        "ledger_updated": False,
     }
+    if args.dry_run:
+        # Keep the historical skip shape; full identity and dependency detail lives in preview.
+        result["actions"] = [
+            {"action": "skip", "group": item["group"], "issue": item["issue"], "state": item["state"]}
+            if item["action"] == "skip"
+            else item
+            for item in preview
+        ]
+        return result
+    operation: dict[str, Any] = {}
+    try:
+        for group in ordered:
+            identity = stable_identity(repository, tasks_relative, group.group_id)
+            current = selected.get(group.group_id)
+            if current:
+                span = spans[group.group_id]
+                numbers, unresolved = _issue_dependencies(group, task_to_group, mappings)
+                proposed = dependency_text(numbers, unresolved)
+                if span is not None and span.old != proposed:
+                    operation = {
+                        "action": "check-before-edit",
+                        "group": group.group_id,
+                        "issue": current.number,
+                        "identity": identity,
+                        "outcome": "not-written",
+                    }
+                    observed = json.loads(
+                        runner(
+                            [
+                                "gh",
+                                "issue",
+                                "view",
+                                str(current.number),
+                                "--repo",
+                                repository,
+                                "--json",
+                                "number,title,body,state,url",
+                            ],
+                            root,
+                        )
+                    )
+                    latest = parse_issue_inventory(json.dumps([observed]))[0]
+                    if (
+                        latest.number != current.number
+                        or latest.body != current.body
+                        or latest.identity != identity
+                        or latest.state != current.state
+                    ):
+                        raise ReadinessError(f"{current.url}: issue changed before edit; reconcile and re-preview")
+                    operation = {**operation, "action": "edit", "outcome": "uncertain"}
+                    runner(
+                        [
+                            "gh",
+                            "issue",
+                            "edit",
+                            str(current.number),
+                            "--repo",
+                            repository,
+                            "--body",
+                            span.replace(proposed),
+                        ],
+                        root,
+                    )
+                    result["actions"].append(
+                        {
+                            "action": "edited",
+                            "group": group.group_id,
+                            "issue": current.number,
+                            "identity": identity,
+                            "old_dependencies": span.old,
+                            "dependencies": proposed,
+                        }
+                    )
+                else:
+                    result["actions"].append(
+                        {"action": "skip", "group": group.group_id, "issue": current.number, "state": current.state}
+                    )
+                continue
+            body = render_issue_body(group, repository, tasks_relative, commit, mappings, groups)
+            operation = {"action": "create", "group": group.group_id, "identity": identity, "outcome": "uncertain"}
+            url = runner(
+                [
+                    "gh",
+                    "issue",
+                    "create",
+                    "--repo",
+                    repository,
+                    "--title",
+                    f"{group.title}: {group.tasks[0].description}",
+                    "--body",
+                    body,
+                ],
+                root,
+            )
+            number_match = re.fullmatch(rf"https://github\.com/{re.escape(repository)}/issues/([1-9]\d*)", url.strip())
+            if not number_match:
+                raise RuntimeError("cannot determine created issue number; reconcile stable identity before retry")
+            mapping = Mapping(
+                identity,
+                group.granularity,
+                group.group_id,
+                int(number_match.group(1)),
+                url.strip(),
+                "OPEN",
+                group.task_ids,
+            )
+            mappings[group.group_id] = mapping
+            result["actions"].append(
+                {
+                    "action": "created",
+                    "group": group.group_id,
+                    "issue": mapping.issue_number,
+                    "url": mapping.url,
+                    "identity": identity,
+                }
+            )
+        operation = {"action": "ledger", "outcome": "uncertain"}
+        update_ledger(tasks_path, [mappings[group.group_id] for group in groups], original_tasks)
+        result["ledger_updated"] = True
+    except (OSError, ValueError, RuntimeError, KeyError) as exc:
+        result["failed_operation"] = {**operation, "error": str(exc)}
+        result["status"] = "incomplete"
+        raise SynchronizationError(result) from exc
+    return result
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -444,7 +820,7 @@ def main() -> int:
         print(f"Tasks file: {result['tasks']}")
         print(f"Repository: {result['repository']}")
         print(f"Granularity: {result['granularity']} ({result['groups']} group(s))")
-        for action in result["actions"]:
+        for action in result["preview"] if args.dry_run else result["actions"]:
             print(json.dumps(action, sort_keys=True))
         print(f"Ledger updated: {'yes' if result['ledger_updated'] else 'no (dry-run)'}")
     return 0

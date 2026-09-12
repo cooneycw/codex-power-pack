@@ -10878,7 +10878,7 @@
     {
       "source_skill": "spec-sync",
       "path": "plugins/spec/skills/spec-sync/SKILL.md",
-      "line": 50,
+      "line": 58,
       "token": "$flow-auto",
       "kind": "skill",
       "target": "flow-auto",
