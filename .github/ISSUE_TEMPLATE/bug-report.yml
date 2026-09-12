@@ -5,7 +5,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        Found a bug? Please provide as much detail as possible.
+        What happened, what should happen, and how to reproduce it can be enough.
+        No spec files or proposed fix are required.
+        [Issue contract](https://github.com/cooneycw/codex-power-pack/blob/main/docs/agents/issue-contract.md)
 
   - type: dropdown
     id: component
@@ -14,7 +16,7 @@ body:
       description: Which part of codex-power-pack is affected?
       options:
         - MCP Second Opinion server
-        - Slash command
+        - Codex skill or command
         - Skill
         - Hook
         - Documentation
@@ -27,7 +29,7 @@ body:
     attributes:
       label: Specific item
       description: Which command, skill, or tool?
-      placeholder: "e.g., /github:issue-create, best-practices skill, get_second_opinion tool"
+      placeholder: "e.g., $github-issue-create, best-practices skill, get_second_opinion tool"
     validations:
       required: false
 

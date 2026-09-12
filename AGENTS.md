@@ -8,6 +8,12 @@
 - Read topic-specific docs from `docs/skills/` only when they are relevant.
 - After code changes, run `make verify` unless the environment blocks it.
 
+## Issue and specification guidance
+
+Use the [canonical issue contract](docs/agents/issue-contract.md) for proportional
+issue-first or full-spec work. Preserve outcomes, binding constraints and existing
+delegated authority; treat proposed approaches as revisable within those bounds.
+
 ## Project Map
 
 - `AGENTS.md` - canonical Codex instructions

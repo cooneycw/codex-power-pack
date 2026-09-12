@@ -8,6 +8,17 @@ description: Install the official GitHub spec-kit workflow for Codex in the curr
 Adopt the official [github/spec-kit](https://github.com/github/spec-kit) workflow
 in the current repository without replacing an existing specification workspace.
 
+## Route selection
+
+This is the explicitly selected fuller-spec route in the
+[canonical CxPP issue contract](https://github.com/cooneycw/codex-power-pack/blob/main/docs/agents/issue-contract.md).
+Routine small work can use a short issue through `$github-issue-create` and does
+not need adoption or spec/plan/tasks. Use fuller specs when uncertainty,
+architecture or coordination warrants them, and link governing spec sections
+from issues. Preserve destination-project instructions and user authority. If
+the reference is unavailable, report it and continue otherwise authorized work
+without inventing policy. These routes do not relax any adoption boundaries below.
+
 ## Safety Contract
 
 - This skill never reads, prints, or persists credentials.

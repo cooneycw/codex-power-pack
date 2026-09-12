@@ -13,6 +13,29 @@ gh auth status
 
 If not authenticated, the user needs to run `gh auth login`.
 
+## What the Body Must Make Legible
+
+Whatever the type, the body an agent later implements from is a contract. Write it so
+a reader can tell these apart: the intended **outcome** and why it matters, the
+**constraints** that bound it and the rationale behind each, the **acceptance** that
+shows the outcome was reached, any **proposed approach** (a revisable hypothesis, not
+an order), and **assumptions** worth checking.
+
+These are distinctions, not required headings. A routine bug report that says what
+broke, what should happen instead, and how to reproduce it has already satisfied the
+contract; do not pad it with an invented proposed solution or assumptions nobody
+holds. Keep a suggested fix phrased as a suggestion, so an implementer who finds a
+better one is free to use it and report the substitution.
+
+The canonical definition, the outcome-versus-proposal test, and worked examples are
+in [the issue contract](https://github.com/cooneycw/codex-power-pack/blob/main/docs/agents/issue-contract.md). For work large
+enough to warrant a specification, reference the spec and the sections that govern
+the issue rather than copying them.
+
+If the canonical reference is unavailable, report it and continue otherwise
+authorized routine work using known project/user constraints and authority.
+Do not invent missing policy or treat a proposal as permission to cross those bounds.
+
 ## Issue Creation Flow
 
 ### Step 1: Ask Issue Type
@@ -45,8 +68,9 @@ Based on the issue type, gather the required information:
 **For Feature Request:**
 - Feature type (command, skill, MCP, etc.)
 - Feature name
-- Problem/use case
-- Proposed solution
+- Problem/use case (the outcome wanted, and why it matters)
+- Proposed approach (optional, and recorded as revisable)
+- Constraints, each with the rationale behind it (optional)
 
 **For Bug Report:**
 - Component affected
