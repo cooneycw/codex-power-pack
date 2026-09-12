@@ -6,11 +6,15 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
+from .cursors import MAX_CURSOR_SPAN, advance_cursor
 from .event_types import (
     CanonicalRecord,
     CursorState,
     DurableEvent,
     EventDisposition,
+    EventId,
+    EventKind,
+    EventPage,
     EventValidationError,
     canonical_json_bytes,
     command_from_bytes,
@@ -266,6 +270,75 @@ def verified_events(tx: SQLiteTransaction, wave_id: WaveId) -> tuple[DurableEven
         if len(rows) < page_size:
             break
     return tuple(events)
+
+
+def replay_scan_cursor(event: DurableEvent, current: CursorState) -> CursorState:
+    """Validate a committed scan against its preceding reader state, including old journals."""
+
+    target = event.command.payload.get("cursor_highest_contiguous")
+    if (
+        isinstance(target, bool)
+        or not isinstance(target, int)
+        or not current.highest_contiguous < target < event.sequence
+        or target - current.highest_contiguous > MAX_CURSOR_SPAN
+    ):
+        raise CorruptStore("committed cursor scan has invalid bounds")
+    facts = event.validation_facts.as_mapping()
+    # Older journals lack the explicit start; their preceding cursor is authoritative.
+    start = facts.get("scan_after_sequence", current.highest_contiguous)
+    if isinstance(start, bool) or not isinstance(start, int) or start != current.highest_contiguous:
+        raise CorruptStore("committed cursor scan start differs from preceding cursor")
+    cursor = advance_cursor(
+        current,
+        observed_sequences=range(start + 1, target + 1),
+        scanned_through=target,
+    )
+    if (
+        event.disposition != EventDisposition.APPLIED
+        or event.command.payload.get("cursor_sparse") != cursor.sparse_sequences
+        or canonical_json_bytes(facts.get("cursor")) != canonical_json_bytes(cursor)
+    ):
+        raise CorruptStore("committed cursor scan differs from replayed cursor")
+    return cursor
+
+
+def recover_scan_page(tx: SQLiteTransaction, wave_id: WaveId, event_id: EventId) -> EventPage:
+    """Recover an immutable scan response; caller must authorize historical access first.
+
+    Recovery verifies the journal and reconstructs the preceding cursor rather than
+    trusting the live cursor. This also supports scans written before explicit start
+    metadata existed. It performs no writes and returns at most MAX_CURSOR_SPAN rows.
+    """
+
+    from .events import build_projection_snapshot
+    from .types import OwnerGenerationId
+
+    events = verified_events(tx, wave_id)
+    for index, event in enumerate(events):
+        if event.command.event_id != event_id:
+            continue
+        if event.command.kind != EventKind.CURSOR_ADVANCED:
+            raise CorruptStore("scan recovery references a non-scan event")
+        actor = event.command.actor
+        current = CursorState(wave_id, actor.role_id, actor.thread_id, OwnerGenerationId(actor.generation_id.value))
+        try:
+            snapshot = build_projection_snapshot(events[:index])
+            current = next(
+                (
+                    row.cursor
+                    for row in snapshot.cursors
+                    if (row.cursor.wave_id, row.cursor.role_id, row.cursor.thread_id, row.cursor.generation_id)
+                    == (current.wave_id, current.role_id, current.thread_id, current.generation_id)
+                ),
+                current,
+            )
+            cursor = replay_scan_cursor(event, current)
+        except (ValueError, TypeError, KeyError, CorruptStore) as exc:
+            raise CorruptStore("scan recovery cannot reconstruct a verified cursor") from exc
+        target = event.command.payload.get("cursor_highest_contiguous")
+        assert isinstance(target, int)
+        return EventPage(events[current.highest_contiguous : target], target, cursor)
+    raise CorruptStore("committed scan is missing from the journal")
 
 
 def _verify_digest_table(tx: SQLiteTransaction, table: str, blob_column: str, digest_column: str) -> None:

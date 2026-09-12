@@ -692,8 +692,10 @@ class EventPage:
         if not isinstance(self.events, tuple):
             raise EventValidationError("event page events must be immutable")
         _require_int(self.scanned_through, field="event page scanned_through", minimum=0)
-        if self.scanned_through < self.cursor.highest_contiguous:
-            raise EventValidationError("event page cannot end before its cursor")
+        # Filling a gap may advance through previously observed sparse rows beyond
+        # this page. The cursor is cumulative; scanned_through describes this page.
+        if any(event.sequence > self.scanned_through for event in self.events):
+            raise EventValidationError("event page contains an event beyond its scan endpoint")
 
 
 def _canonical_datetime(value: datetime, *, field: str) -> str:
