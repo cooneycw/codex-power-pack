@@ -1569,7 +1569,7 @@ _ISSUE_CONTRACT_URL = (
 def _github_contract_source_identity(content: bytes) -> tuple[str, str, int]:
     header = b"blob " + str(len(content)).encode() + b"\0"
     return (
-        hashlib.sha1(header + content).hexdigest(),
+        hashlib.sha1(header + content, usedforsecurity=False).hexdigest(),
         hashlib.sha256(content).hexdigest(),
         len(content),
     )

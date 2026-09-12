@@ -733,7 +733,10 @@ def _contract_witnesses() -> dict[str, bytes]:
         assert tuple(record[key] for key in ("commit", "blob", "sha256", "size")) == identity
         assert len(content) == identity[3]
         assert hashlib.sha256(content).hexdigest() == identity[2]
-        assert hashlib.sha1(b"blob " + str(len(content)).encode() + b"\0" + content).hexdigest() == identity[1]
+        git_blob = hashlib.sha1(
+            b"blob " + str(len(content)).encode() + b"\0" + content, usedforsecurity=False
+        ).hexdigest()
+        assert git_blob == identity[1]
         result[state] = content
     return result
 
