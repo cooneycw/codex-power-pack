@@ -46,6 +46,7 @@ class Snapshot:
     recipient: RoleOwner
     capability: CapabilitySnapshot
     restriction: str | None
+    assignment_state: str | None
 
 
 def event_recipient(event: DurableEvent) -> str | None:
@@ -126,6 +127,7 @@ class DeliveryService:
                     raise DeliveryError("caller_role_not_on_route")
                 self._actor(tx, command.wave_id, RoleId(str(actor_role)), context)
             restriction = None
+            assignment_state = None
             binding = command.assignment
             if binding is not None:
                 worker = tx.read_owner(command.wave_id, binding.worker_role)
@@ -143,10 +145,16 @@ class DeliveryService:
                     raise DeliveryError("assignment_binding_stale")
                 if projection["state"] in {"held", "cancelled", "completed"}:
                     restriction = str(projection["state"])
+                assignment_state = str(projection["state"])
             capability = tx.read_capability(recipient.capability_snapshot_id)
             if capability is None:
                 raise DeliveryError("capability_missing")
-            return Snapshot(event, issuer, recipient, capability, restriction)
+            return Snapshot(event, issuer, recipient, capability, restriction, assignment_state)
+
+    def _check_processes(self, snapshot: Snapshot) -> None:
+        for owner in (snapshot.issuer, snapshot.recipient):
+            if self.probe.observe_recorded(owner.process) != owner.process:
+                raise DeliveryError("owner_process_changed_or_unknown")
 
     def _validate(self, permit: Permit, *, context: LocalIdentityContext | None = None,
                   recipient: bool = False) -> Snapshot:
@@ -230,9 +238,7 @@ class DeliveryService:
             snapshot = self._validate(permit)
             if snapshot.restriction:
                 raise DeliveryError("wave_" + snapshot.restriction)
-            for owner in (snapshot.issuer, snapshot.recipient):
-                if self.probe.observe_recorded(owner.process) != owner.process:
-                    raise DeliveryError("owner_process_changed_or_unknown")
+            self._check_processes(snapshot)
             observed = transport.inspect(permit.runtime, permit.recipient_thread, snapshot.capability)
             if observed.state not in {"idle", "busy"}:
                 raise DeliveryError(observed.state + ": " + observed.detail)
@@ -246,6 +252,7 @@ class DeliveryService:
                     current = self._validate(permit)
                     if current.restriction:
                         raise DeliveryError("wave_" + current.restriction)
+                    self._check_processes(current)
                     self.journal.check_lease(lease, self.now())
                 submission = transport.enqueue(permit.runtime, permit.recipient_thread, pointer, permit_id,
                                                 before_send=before_send)
@@ -290,22 +297,33 @@ class DeliveryService:
                    str(snapshot.recipient.generation_id))
             permit_id = str(uuid5(UUID("d74b320e-1781-46f8-bff6-f588b36346ac"), encode(key)))
             try:
-                _, delivery = self.journal.read(permit_id)
+                permit, delivery = self.journal.read(permit_id)
             except DeliveryError as exc:
                 if not str(exc).startswith("permit_missing:"):
                     raise
                 rows.append({"event_id": str(event.command.event_id), "state": "event_without_permit",
                              "restriction": snapshot.restriction})
-                continue
-            if delivery["receipt"] is None:
-                rows.append({"event_id": str(event.command.event_id), "permit_id": permit_id,
-                             "state": "receipt_outstanding", "restriction": snapshot.restriction})
+            else:
+                try:
+                    self._validate(permit)
+                except DeliveryError as exc:
+                    rows.append({"event_id": str(event.command.event_id), "permit_id": permit_id,
+                                 "state": "permit_binding_stale", "detail": str(exc), "receipt_confirmed": False,
+                                 "historical_receipt": bool(delivery["receipt"]), "restriction": snapshot.restriction})
+                else:
+                    if delivery["receipt"] is None:
+                        rows.append({"event_id": str(event.command.event_id), "permit_id": permit_id,
+                                     "state": "receipt_outstanding", "restriction": snapshot.restriction})
             if event.command.kind in {EventKind.ASSIGNMENT_QUEUED, EventKind.ASSIGNMENT_REBOUND}:
-                with self.authority.transaction() as tx:
+                if snapshot.assignment_state not in {None, "completed", "cancelled"}:
                     assert event.command.assignment is not None
-                    current = tx.read_assignment(event.command.assignment.ref)
-                if current is not None and not current.acknowledged and snapshot.restriction is None:
-                    rows.append({"event_id": str(event.command.event_id), "state": "assignment_unaccepted"})
+                    binding = event.command.assignment
+                    state = ("assignment_unaccepted" if snapshot.assignment_state in {"queued", "read"}
+                             else "assignment_unfinished")
+                    rows.append({"event_id": str(event.command.event_id), "state": state,
+                                 "assignment_state": snapshot.assignment_state, "restriction": snapshot.restriction,
+                                 "assignment_id": str(binding.ref.assignment_id), "revision": binding.ref.revision,
+                                 "issue": binding.issue})
         result = {"events": rows, "next_sequence": events[-1].sequence if events else after_sequence,
                   "more_possible": len(events) == limit, "cursor_advanced": False}
         if len(encode(result).encode()) > 65536:

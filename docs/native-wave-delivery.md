@@ -52,7 +52,10 @@ when no queue entry exists. Authoritative pending work remains recoverable.
 
 Leases fence stale notifier observations and coalesce competing attempts. Lease
 expiry cannot authorize another queue/add once external execution may have
-started. Reconciliation observes up to three queue pages and one history page;
+started. Immediately before dispatch, both actual owner processes are observed
+again alongside current authority and lease checks; unchanged registry rows do
+not excuse changed or unavailable process evidence. Reconciliation observes up
+to three queue pages and one history page;
 offset shifts, consumed entries, missing client IDs, incomplete history and
 not-found errors never become proof of absence. No `queue/start`, resume,
 interrupt, archive/delete, configuration mutation or fleet enumeration fallback
@@ -70,9 +73,22 @@ at sequence zero for a fresh reconciliation, page using the returned sequence,
 then restart from zero on a subsequent reconciliation. This is a bounded scan,
 not a high-water mark indicating that earlier work was accepted. It exposes both
 the recipient's work and the issuer's outstanding deliveries, including events
-whose permit creation was lost. Current unaccepted assignments stay visible even
-after a delivery receipt. Held/cancelled work is labeled restricted; stale
-revisions cannot become current work. A corrupt, missing, wrong-ID or replaced
+whose permit creation was lost. Current queued/read assignments appear as
+`assignment_unaccepted`; accepted/implementing/PR-open and held assignments appear
+as `assignment_unfinished` with their authoritative state, revision and restriction.
+They remain visible even after every notification has an explicit receipt.
+Completed/cancelled assignments produce no unfinished-work row; outstanding
+delivery observations retain their terminal restriction. Stale revisions cannot
+become current work.
+
+Pending reconciliation validates a stored permit before accepting its receipt.
+For example, a same-generation policy rebrief can make a previous result receipt
+historical: `permit_binding_stale` explicitly reports unconfirmed current receipt
+to both issuer and recipient. The original permit, deadline, attempts and receipt
+are preserved. Reissue cannot change that permit's bindings or reset its budget.
+The issuer must resolve the changed authoritative context explicitly; pending
+never turns this into an automatic fresh notification ID or transferred receipt.
+A corrupt, missing, wrong-ID or replaced
 journal fails closed even when the requested event page is empty. Opening never
 creates a replacement. Explicit journal recovery is operator-owned; loss of
 attempt history is never permission to retry existing events automatically.
@@ -147,6 +163,9 @@ evidence and local fake proxy subprocesses; they never call a model. Coverage
 includes append/permit/call/receipt crash windows, duplicate and concurrent
 attempts, stale leases, real policy/owner replacements, holds/cancellation,
 rejected controls, symmetric pending recovery and bounded malformed RPC handling.
+Regressions also cover stale receipts after real policy rebrief, process changes
+for either party during transport inspection, and all-receipted unfinished
+assignments reconstructed from accepted through PR-open/held states.
 
 `tests/fixtures/native_wave_delivery/live_check.py` is opt-in preflight tooling
 for a separately approved disposable experiment. It launches no participants,

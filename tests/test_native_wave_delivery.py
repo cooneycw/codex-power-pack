@@ -15,10 +15,19 @@ from lib.native_wave.delivery_store import DeliveryStore
 from lib.native_wave.delivery_types import DeliveryError, QueueEvidence, RuntimeBinding, RuntimeObservation
 from lib.native_wave.event_types import EventDisposition, EventKind, PolicyRevisionChange, canonical_record
 from lib.native_wave.events import EventService
-from lib.native_wave.types import LocalIdentityContext, OwnerGenerationId, ReplaceDeadOwner
+from lib.native_wave.types import (
+    ExpectedOwnerBindings,
+    LocalIdentityContext,
+    ObservationFailure,
+    OwnerGenerationId,
+    ProcessObservationUnavailable,
+    RebriefOwner,
+    ReplaceDeadOwner,
+)
 from tests.test_native_wave_events_replay import (
     COORDINATOR,
     COORDINATOR_GENERATION,
+    COORDINATOR_PROCESS,
     COORDINATOR_THREAD,
     WAVE,
     WORKER,
@@ -109,8 +118,9 @@ def test_queue_fetch_receipt_never_accept_assignment(setup, state):
 def test_event_without_permit_survives_append_crash_and_lost_scan_id(setup):
     service, _, assignment, _, _ = setup
     first = service.pending(str(WAVE), str(WORKER), RECIPIENT)
-    assert first["events"] == [{"event_id": str(assignment.event_id), "state": "event_without_permit",
-                                "restriction": None}]
+    assert first["events"][0] == {"event_id": str(assignment.event_id), "state": "event_without_permit",
+                                  "restriction": None}
+    assert first["events"][1]["state"] == "assignment_unaccepted"
     assert first["cursor_advanced"] is False
     assert service.pending(str(WAVE), str(WORKER), RECIPIENT) == first
     issue(setup)
@@ -410,3 +420,112 @@ def test_pending_budget_is_explicit(setup, limit):
     service, _, _, _, _ = setup
     with pytest.raises(DeliveryError, match="page limit"):
         service.pending(str(WAVE), str(WORKER), RECIPIENT, limit=limit)
+
+
+def test_policy_rebrief_keeps_stale_result_receipt_visible_without_resetting_attempts(setup):
+    service, events, _, runtime, now = setup
+    result = command(60, EventKind.PROSE_MESSAGE, actor(WORKER, WORKER_THREAD, WORKER_GENERATION),
+                     payload={"text": "review result"})
+    assert events.append(result, RECIPIENT).disposition == EventDisposition.OBSERVED
+    permit = service.issue(str(WAVE), str(result.event_id), str(WORKER), RECIPIENT, runtime, deadline=1120)
+    service.notify(permit.permit_id, Transport())
+    service.receipt(permit.permit_id, service.fetch(permit.permit_id, COORD)["fetch_token"], COORD)
+    before = service.journal.read(permit.permit_id)
+    change = PolicyRevisionChange(1, 2)
+    revised = command(61, EventKind.POLICY_REVISED,
+                      actor(COORDINATOR, COORDINATOR_THREAD, COORDINATOR_GENERATION),
+                      payload={"operator_reason": "rebrief"}, effect=canonical_record(change=change))
+    assert events.append_policy_revision(revised, COORD, change).disposition == EventDisposition.APPLIED
+    for n, role, thread, generation, context in [
+        (62, COORDINATOR, COORDINATOR_THREAD, COORDINATOR_GENERATION, COORD),
+        (63, WORKER, WORKER_THREAD, WORKER_GENERATION, RECIPIENT),
+    ]:
+        with service.authority.transaction() as tx:
+            owner = tx.read_owner(WAVE, role)
+        expected = ExpectedOwnerBindings(WAVE, role, thread, generation, owner.capability_snapshot_id,
+                                         1, owner.record_version)
+        intent = RebriefOwner(expected, 2)
+        event = command(n, EventKind.OWNER_REBRIEFED, actor(role, thread, generation),
+                        effect=canonical_record(intent=intent))
+        assert events.append_owner_change(event, context, intent).disposition == EventDisposition.APPLIED
+    assert not service.status(permit.permit_id)["receipt_confirmed"]
+    for role, context in [(COORDINATOR, COORD), (WORKER, RECIPIENT)]:
+        rows = service.pending(str(WAVE), str(role), context)["events"]
+        stale = next(row for row in rows if row["event_id"] == str(result.event_id))
+        assert stale["state"] == "permit_binding_stale" and stale["receipt_confirmed"] is False
+        assert stale["historical_receipt"] is True
+    now[0] += 3
+    with pytest.raises(DeliveryError, match="permit_id_payload_conflict"):
+        service.issue(str(WAVE), str(result.event_id), str(WORKER), RECIPIENT, runtime,
+                      deadline=1500, max_attempts=5)
+    assert service.journal.read(permit.permit_id) == before
+
+
+@pytest.mark.parametrize("party", [COORDINATOR_PROCESS, WORKER_PROCESS])
+@pytest.mark.parametrize("unavailable", [False, True])
+def test_process_change_during_inspection_fenced_before_queue_add(setup, party, unavailable):
+    service, _, _, _, _ = setup
+    permit = issue(setup)
+    class ChangedTransport(Transport):
+        def inspect(self, *args):
+            changed = (ProcessObservationUnavailable(ObservationFailure.PROBE_UNAVAILABLE, "fixture probe loss")
+                       if unavailable else replace(party, start_ticks=party.start_ticks + 1))
+            service.probe.observe_recorded = lambda process: changed if process == party else process
+            return super().inspect(*args)
+    transport = ChangedTransport()
+    result = service.notify(permit.permit_id, transport)
+    assert transport.added == []
+    assert result["phase"] == "unknown" and result["detail"] == "owner_process_changed_or_unknown"
+    assert service.journal.read(permit.permit_id)[1]["external_started"]  # Never reset uncertain-call history.
+
+
+@pytest.mark.parametrize("target", ["accepted", "implementing", "pr_open", "held", "completed", "cancelled"])
+def test_fresh_reconciliation_recovers_nonterminal_work_after_all_delivery_receipts(setup, target):
+    service, events, assignment, runtime, _ = setup
+    coordinator = actor(COORDINATOR, COORDINATOR_THREAD, COORDINATOR_GENERATION)
+    worker = actor(WORKER, WORKER_THREAD, WORKER_GENERATION)
+    binding = assignment.assignment
+    def confirm(event, context):
+        permit = service.issue(str(WAVE), str(event.event_id), str(event.actor.role_id), context,
+                               runtime, deadline=1120)
+        recipient = RECIPIENT if event.actor.role_id == COORDINATOR else COORD
+        service.receipt(permit.permit_id, service.fetch(permit.permit_id, recipient)["fetch_token"], recipient)
+    def append(event, context):
+        assert events.append(event, context).disposition == EventDisposition.APPLIED
+        confirm(event, context)
+    confirm(assignment, COORD)
+    append(command(70, EventKind.ASSIGNMENT_READ, worker, assignment=binding, correlation=4), RECIPIENT)
+    append(command(71, EventKind.ASSIGNMENT_ACCEPTED, worker, assignment=binding, correlation=4), RECIPIENT)
+    if target in {"implementing", "pr_open", "completed"}:
+        append(command(72, EventKind.GATE_APPROVED, coordinator, assignment=binding,
+                       payload={"gate_id": "implementation", "verdict": "approved"}), COORD)
+        append(command(73, EventKind.ASSIGNMENT_IMPLEMENTING, worker, assignment=binding, correlation=72), RECIPIENT)
+    if target in {"pr_open", "completed"}:
+        binding = replace(binding, pr_base="1" * 40, pr_head="2" * 40)
+        append(command(74, EventKind.ASSIGNMENT_PR_OPEN, worker, assignment=binding), RECIPIENT)
+    if target == "completed":
+        append(command(75, EventKind.MERGE_CLEARED, coordinator, assignment=binding), COORD)
+        observed = command(76, EventKind.EXTERNAL_MERGE_OBSERVED, coordinator, assignment=binding,
+                           payload={"merge_commit": "3" * 40})
+        assert events.append(observed, COORD).disposition == EventDisposition.RECONCILED
+        confirm(observed, COORD)
+        append(command(79, EventKind.ASSIGNMENT_COMPLETED, coordinator, assignment=binding, correlation=76,
+                       payload={"merge_commit": "3" * 40}), COORD)
+    if target == "held":
+        append(command(77, EventKind.ASSIGNMENT_HELD, coordinator, assignment=binding,
+                       payload={"reason": "review", "conditions": ["review"], "resume_state": "accepted"}), COORD)
+    if target == "cancelled":
+        append(command(78, EventKind.ASSIGNMENT_CANCELLED, coordinator, assignment=binding,
+                       payload={"reason": "cancel"}), COORD)
+    assert all(delivery["receipt"] for _, delivery in service.journal.page())
+    for role, context in [(WORKER, RECIPIENT), (COORDINATOR, COORD)]:
+        result = service.pending(str(WAVE), str(role), context, after_sequence=0)
+        if target in {"completed", "cancelled"}:
+            assert result["events"] == []
+        else:
+            assert len(result["events"]) == 1
+            row = result["events"][0]
+            assert row["state"] == "assignment_unfinished" and row["assignment_state"] == target
+            assert row["restriction"] == ("held" if target == "held" else None)
+            assert row["assignment_id"] == str(binding.ref.assignment_id) and row["revision"] == 1
+        assert not result["cursor_advanced"]
