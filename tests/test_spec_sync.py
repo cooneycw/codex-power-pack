@@ -103,6 +103,12 @@ def test_readiness_rejects_placeholders_missing_paths_and_cycles(tmp_path: Path)
 
 def test_rich_body_and_ledger_preserve_stable_identity(tmp_path: Path) -> None:
     path = write_artifacts(tmp_path, VALID_TASKS)
+    GitHubFixture(tmp_path)
+    view = spec_sync.context.snapshot(
+        tmp_path,
+        spec_sync.subprocess_runner(["git", "rev-parse", "HEAD"], tmp_path),
+        path.relative_to(tmp_path).as_posix(),
+    )
     tasks, checkpoints = spec_sync.parse_tasks(path)
     groups = spec_sync.group_tasks(tasks, checkpoints)
     body = spec_sync.render_issue_body(
@@ -112,6 +118,7 @@ def test_rich_body_and_ledger_preserve_stable_identity(tmp_path: Path) -> None:
         "a" * 40,
         {},
         groups,
+        view,
     )
 
     for heading in (
@@ -139,42 +146,10 @@ def test_rich_body_and_ledger_preserve_stable_identity(tmp_path: Path) -> None:
 def test_dry_run_is_read_only_and_existing_closed_identity_is_idempotent(tmp_path: Path) -> None:
     tasks_path = write_artifacts(tmp_path, VALID_TASKS)
     original = tasks_path.read_text()
-    commit = "b" * 40
-    identity = "spec-sync:v1:example/repo:.specify/specs/feature/tasks.md:stage-1"
-    existing = json.dumps(
-        [
-            {
-                "number": 99,
-                "title": "Old title",
-                "body": f"<!-- {identity} -->",
-                "state": "CLOSED",
-                "url": "https://github.com/example/repo/issues/99",
-            }
-        ]
-    )
-
-    def runner(command: list[str], cwd: Path) -> str:
-        if command[:3] == ["git", "rev-parse", "--show-toplevel"]:
-            return str(tmp_path)
-        if command[:2] == ["git", "rev-parse"]:
-            return commit
-        if command[:3] == ["git", "cat-file", "-e"]:
-            return ""
-        if command[:3] == ["gh", "issue", "list"]:
-            return existing
-        raise AssertionError(command)
-
-    args = argparse.Namespace(
-        tasks=str(tasks_path),
-        repo="example/repo",
-        artifact_commit="HEAD",
-        granularity="auto",
-        analysis_clean=True,
-        dry_run=True,
-        approve=False,
-        json=False,
-    )
-    result = spec_sync.synchronize(args, runner)
+    github = GitHubFixture(tmp_path)
+    identity = identity_marker(tasks_path, tmp_path, "stage-1")
+    github.seed(99, governing_fixture(tasks_path, tmp_path, "stage-1") + "\n" + identity, state="CLOSED")
+    result = github.run(tasks_path, dry_run=True, approve=False)
 
     assert result["actions"] == [{"action": "skip", "group": "stage-1", "issue": 99, "state": "CLOSED"}]
     assert tasks_path.read_text() == original
@@ -196,6 +171,7 @@ class GitHubFixture:
         self.counts: dict[str, int] = {}
         for command in (
             ["git", "init", "--quiet"],
+            ["git", "remote", "add", "origin", "https://github.com/example/repo.git"],
             ["git", "add", "."],
             [
                 "git",
@@ -215,6 +191,8 @@ class GitHubFixture:
         self.calls.append(command)
         if command[0] == "git":
             return spec_sync.subprocess_runner(command, cwd)
+        if command[:3] == ["gh", "repo", "view"]:
+            return json.dumps({"nameWithOwner": "example/repo"})
         assert command[:2] == ["gh", "issue"], command
         action = command[2]
         self.counts[action] = self.counts.get(action, 0) + 1
@@ -273,9 +251,19 @@ def identity_marker(path: Path, root: Path, group: str) -> str:
     return f"<!-- spec-sync:v1:example/repo:{path.relative_to(root).as_posix()}:{group} -->"
 
 
-def dependency_body(marker: str, dependencies: str, managed: bool = True) -> str:
+def governing_fixture(path: Path, root: Path, group_id: str) -> str:
+    commit = spec_sync.subprocess_runner(["git", "rev-parse", "HEAD"], root)
+    view = spec_sync.context.snapshot(root, commit, path.relative_to(root).as_posix())
+    tasks, checkpoints = spec_sync.parse_tasks(path, view["raw"]["tasks"].decode())
+    group = next(group for group in spec_sync.group_tasks(tasks, checkpoints) if group.group_id == group_id)
+    metadata, visible = spec_sync.context.make_context(view, "example/repo", spec_sync.context_group(group))
+    return spec_sync.context.pack(metadata, visible)
+
+
+def dependency_body(marker: str, dependencies: str, managed: bool = True, *, governing: str) -> str:
     content = spec_sync.managed_dependencies(dependencies) if managed else dependencies
-    return f"Human preface\n\n## Dependencies\n{content}\n\nHuman-owned tail.\n\n## Notes\nKeep me.\n{marker}"
+    return (f"{governing}\n\nHuman preface\n\n## Dependencies\n{content}\n\n"
+            f"Human-owned tail.\n\n## Notes\nKeep me.\n{marker}")
 
 
 FORWARD_TASKS = """# Tasks
@@ -325,7 +313,7 @@ def test_unscoped_legacy_task_candidates_require_resolution(tmp_path: Path, coun
     with pytest.raises(spec_sync.ReadinessError, match="ambiguous unscoped legacy.*issues/8"):
         github.run(path)
     assert github.mutations == []
-    github.seed(90, identity_marker(path, tmp_path, "stage-1"))
+    github.seed(90, governing_fixture(path, tmp_path, "stage-1") + "\n" + identity_marker(path, tmp_path, "stage-1"))
     assert github.run(path)["actions"][0]["issue"] == 90  # Exact scoped evidence outranks title guesses.
     assert github.mutations == []
 
@@ -412,7 +400,11 @@ def test_dependency_repair_previews_removals_preserves_human_text_and_converges(
     path = write_artifacts(tmp_path, FORWARD_TASKS)
     github = GitHubFixture(tmp_path)
     github.seed(8, "<!-- spec-sync:v1:example/repo:.specify/specs/foreign/tasks.md:stage-2 -->")
-    old = dependency_body(identity_marker(path, tmp_path, "stage-1"), "- Blocked by #8")
+    old = dependency_body(
+        identity_marker(path, tmp_path, "stage-1"),
+        "- Blocked by #8",
+        governing=governing_fixture(path, tmp_path, "stage-1"),
+    )
     old = old.replace("Human-owned tail.", "- Blocked by #777\nHuman-owned tail.\r\nPreserve spacing.  ")
     consumer = github.seed(20, old, state=state)
     original_tasks = path.read_bytes()
@@ -438,7 +430,9 @@ def test_late_group_unsafe_dependency_section_prevents_earlier_creates(tmp_path:
     path = write_artifacts(tmp_path, FORWARD_TASKS)
     github = GitHubFixture(tmp_path)
     marker = identity_marker(path, tmp_path, "stage-1")
-    body = dependency_body(marker, "- Blocked by #8", managed=section != "legacy")
+    body = dependency_body(
+        marker, "- Blocked by #8", managed=section != "legacy", governing=governing_fixture(path, tmp_path, "stage-1")
+    )
     if section == "custom":
         body = body.replace("- Blocked by #8", "- Blocked by #8\n- Blocked by #9")
     elif section == "duplicate":
@@ -484,6 +478,11 @@ def test_task_dag_can_collapse_to_a_group_cycle_but_intragroup_edges_are_valid(t
         github.run(path)
     assert github.mutations == []
     path.write_text(VALID_TASKS)  # T002 -> T001 is within one stage, not a group cycle.
+    spec_sync.subprocess_runner(["git", "add", "."], tmp_path)
+    spec_sync.subprocess_runner(
+        ["git", "-c", "user.name=Fixture", "-c", "user.email=f@example.test", "commit", "-m", "reviewed correction"],
+        tmp_path,
+    )
     github.run(path)
     assert len(github.mutations) == 1
 
@@ -493,7 +492,9 @@ def test_direct_synchronize_requires_approval_for_ledger_only_and_edit_only(tmp_
     path = write_artifacts(tmp_path, VALID_TASKS)
     github = GitHubFixture(tmp_path)
     body = dependency_body(
-        identity_marker(path, tmp_path, "stage-1"), "- Blocked by #8" if edit else "No cross-group prerequisites."
+        identity_marker(path, tmp_path, "stage-1"),
+        "- Blocked by #8" if edit else "No cross-group prerequisites.",
+        governing=governing_fixture(path, tmp_path, "stage-1"),
     )
     github.seed(20, body)
     original = path.read_bytes()
@@ -510,7 +511,14 @@ def test_direct_synchronize_requires_approval_for_ledger_only_and_edit_only(tmp_
 def test_changed_target_is_not_overwritten(tmp_path: Path, change: str) -> None:
     path = write_artifacts(tmp_path, VALID_TASKS)
     github = GitHubFixture(tmp_path)
-    issue = github.seed(20, dependency_body(identity_marker(path, tmp_path, "stage-1"), "- Blocked by #8"))
+    issue = github.seed(
+        20,
+        dependency_body(
+            identity_marker(path, tmp_path, "stage-1"),
+            "- Blocked by #8",
+            governing=governing_fixture(path, tmp_path, "stage-1"),
+        ),
+    )
 
     def before_view(item):
         if change == "state":
@@ -552,7 +560,14 @@ def test_partial_create_failure_records_evidence_and_rerun_recovers(tmp_path: Pa
 def test_partial_edit_failure_preserves_successes_and_recovers(tmp_path: Path, response_loss: bool) -> None:
     path = write_artifacts(tmp_path, FORWARD_TASKS)
     github = GitHubFixture(tmp_path)
-    consumer = github.seed(20, dependency_body(identity_marker(path, tmp_path, "stage-1"), "- Blocked by #8"))
+    consumer = github.seed(
+        20,
+        dependency_body(
+            identity_marker(path, tmp_path, "stage-1"),
+            "- Blocked by #8",
+            governing=governing_fixture(path, tmp_path, "stage-1"),
+        ),
+    )
     github.fail = ("edit", 1, response_loss)
     with pytest.raises(spec_sync.SynchronizationError) as error:
         github.run(path)
@@ -569,7 +584,14 @@ def test_later_edit_failure_reports_earlier_successful_edit(tmp_path: Path) -> N
     path = write_artifacts(tmp_path, FORWARD_TASKS)
     github = GitHubFixture(tmp_path)
     for number, group in ((20, "stage-1"), (21, "stage-2")):
-        github.seed(number, dependency_body(identity_marker(path, tmp_path, group), "- Blocked by #8"))
+        github.seed(
+            number,
+            dependency_body(
+                identity_marker(path, tmp_path, group),
+                "- Blocked by #8",
+                governing=governing_fixture(path, tmp_path, group),
+            ),
+        )
     github.fail = ("edit", 2, False)
     with pytest.raises(spec_sync.SynchronizationError) as error:
         github.run(path)
@@ -639,7 +661,12 @@ def test_exact_single_story_stage_checkpoint_fallback_and_task_mode(tmp_path: Pa
         VALID_TASKS.replace("**T002** [US1]", "**T002**"),
         VALID_TASKS + "\n## Stage 2: More\n- [ ] T003 [US1] Add `src/c.py`.\n**Checkpoint:** More passes.\n",
         "## US1: First\n- [ ] T001 [US2] Add `src/a.py`.\n**Checkpoint:** First passes.\n",
-        "## US1: First\n- [ ] T001 Add `src/a.py`.\n**Checkpoint:** First passes.\n**Checkpoint:** Different.\n",
+        (
+            '## US1: First\n'
+            '- [ ] T001 Add `src/a.py`.\n'
+            '**Checkpoint:** First passes.\n'
+            '**Checkpoint:** Different.\n'
+        ),
         "## US1: First\n- [ ] T001 Add `src/a.py`.\n**Checkpoint:** First passes.\n"
         "## US2: Second\n- [ ] T002 Add `src/b.py`.\n",
         "## US1: First\n- [ ] T001 Add `src/a.py`.\n**Checkpoint:** First passes.\n"
@@ -661,9 +688,15 @@ def test_legacy_resolution_then_rerun_converges_without_claiming_human_edges(
     path = write_artifacts(tmp_path, FORWARD_TASKS)
     github = GitHubFixture(tmp_path)
     marker = identity_marker(path, tmp_path, "stage-1")
-    consumer = github.seed(20, f"## Dependencies\n- Blocked by #8\n\n## Notes\n{marker}", state="CLOSED")
+    consumer = github.seed(
+        20,
+        governing_fixture(path, tmp_path, "stage-1") + f"\n## Dependencies\n- Blocked by #8\n\n## Notes\n{marker}",
+        state="CLOSED",
+    )
     if not managed_resolution:
-        github.seed(21, identity_marker(path, tmp_path, "stage-2"))
+        github.seed(
+            21, governing_fixture(path, tmp_path, "stage-2") + "\n" + identity_marker(path, tmp_path, "stage-2")
+        )
     with pytest.raises(spec_sync.ReadinessError) as error:
         github.run(path, dry_run=True, approve=False)
     message = str(error.value)
@@ -672,7 +705,9 @@ def test_legacy_resolution_then_rerun_converges_without_claiming_human_edges(
     assert github.mutations == []
     # Explicit maintainer reconciliation, not an automatic compiler adoption.
     if managed_resolution:
-        consumer["body"] = dependency_body(marker, "- Pending group `stage-2`")
+        consumer["body"] = dependency_body(
+            marker, "- Pending group `stage-2`", governing=governing_fixture(path, tmp_path, "stage-1")
+        )
         consumer["body"] = consumer["body"].replace("Human-owned tail.", "- Blocked by #8\nHuman-owned tail.")
     else:
         consumer["body"] = consumer["body"].replace("- Blocked by #8", "- Blocked by #21")
@@ -689,10 +724,17 @@ def test_legacy_resolution_then_rerun_converges_without_claiming_human_edges(
     assert github.mutations == mutations
 
 
-def test_changed_task_file_is_preserved_after_successful_external_edit(tmp_path: Path) -> None:
+def test_changed_task_file_is_preserved_before_external_edit(tmp_path: Path) -> None:
     path = write_artifacts(tmp_path, VALID_TASKS)
     github = GitHubFixture(tmp_path)
-    github.seed(20, dependency_body(identity_marker(path, tmp_path, "stage-1"), "- Blocked by #8"))
+    github.seed(
+        20,
+        dependency_body(
+            identity_marker(path, tmp_path, "stage-1"),
+            "- Blocked by #8",
+            governing=governing_fixture(path, tmp_path, "stage-1"),
+        ),
+    )
 
     def before_view(issue):
         path.write_text(path.read_text() + "\nLocal author change.\n")
@@ -700,14 +742,14 @@ def test_changed_task_file_is_preserved_after_successful_external_edit(tmp_path:
     github.before_view = before_view
     with pytest.raises(spec_sync.SynchronizationError) as error:
         github.run(path)
-    assert error.value.result["failed_operation"]["action"] == "ledger"
-    assert error.value.result["actions"][0]["action"] == "edited"
+    assert error.value.result["failed_operation"]["action"] == "check-before-edit"
+    assert error.value.result["actions"] == []
     assert "Local author change." in path.read_text()
     assert spec_sync.LEDGER_START not in path.read_text()
     github.before_view = None
-    github.run(path)
-    assert github.mutations == [("edit", 20)]
-    assert "Local author change." in path.read_text() and "| #20 |" in path.read_text()
+    with pytest.raises(spec_sync.ReadinessError, match="working tasks differ"):
+        github.run(path)
+    assert github.mutations == []
 
 
 def test_explicit_story_checkpoint_does_not_cover_tasks_outside_its_heading(tmp_path: Path) -> None:

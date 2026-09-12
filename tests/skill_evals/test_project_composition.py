@@ -47,11 +47,22 @@ def test_project_handoff_fixtures_keep_consent_boundaries_separate() -> None:
     assert handoffs["declined_adoption"]["allowed"] == ["local-files"]
 
 
+def golden_view() -> dict:
+    """Deterministic immutable object bytes consumed by the production renderer."""
+    fixture = json.loads((ROOT / "tests/fixtures/spec-sync-governing-context.json").read_text())
+    raw = {
+        "spec": fixture["spec"].encode(),
+        "plan": fixture["plan"].encode(),
+        "tasks": (FIXTURES / "canonical.md").read_bytes(),
+    }
+    return dict(commit="a" * 40, paths={name: f".specify/specs/demo/{name}.md" for name in raw}, raw=raw)
+
+
 def test_stage_story_task_golden_bodies_and_mapping_idempotency(tmp_path: Path) -> None:
     tasks, checkpoints = spec_sync.parse_tasks(FIXTURES / "canonical.md")
     commit = "a" * 40
     for granularity in ("stage", "story", "task"):
-        grouping_checkpoints = {**checkpoints, "us-1": "The user story passes independently."}
+        grouping_checkpoints = checkpoints
         groups = spec_sync.group_tasks(tasks, grouping_checkpoints, granularity)
         body = spec_sync.render_issue_body(
             groups[0],
@@ -60,6 +71,7 @@ def test_stage_story_task_golden_bodies_and_mapping_idempotency(tmp_path: Path) 
             commit,
             {},
             groups,
+            golden_view(),
         )
         assert body == SNAPSHOTS[granularity]
 
@@ -111,13 +123,19 @@ def test_scaffold_to_mapping_to_project_next_dry_run_is_local(tmp_path: Path) ->
     groups = spec_sync.group_tasks(tasks, checkpoints)
     before_preview = tasks_path.read_text(encoding="utf-8")
 
+    for command in (
+        ["git", "init", "-q"],
+        ["git", "remote", "add", "origin", "https://github.com/example/demo.git"],
+        ["git", "add", "-f", ".specify"],
+        ["git", "-c", "user.name=Fixture", "-c", "user.email=f@example.test", "commit", "-qm", "reviewed artifacts"],
+    ):
+        subprocess.run(command, cwd=project, capture_output=True, check=True)
+
     def preview_runner(command: list[str], cwd: Path) -> str:
-        if command[:3] == ["git", "rev-parse", "--show-toplevel"]:
-            return str(project)
-        if command[:2] == ["git", "rev-parse"]:
-            return "a" * 40
-        if command[:3] == ["git", "cat-file", "-e"]:
-            return ""
+        if command[0] == "git":
+            return spec_sync.subprocess_runner(command, cwd)
+        if command[:3] == ["gh", "repo", "view"]:
+            return json.dumps({"nameWithOwner": "example/demo"})
         if command[:3] == ["gh", "issue", "list"]:
             return "[]"
         raise AssertionError(command)

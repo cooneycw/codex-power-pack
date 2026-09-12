@@ -66,6 +66,10 @@ def _configure_destination(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> P
     vendor = root / "vendor" / "claude-power-pack"
     plugins = root / "plugins"
     skills.mkdir(parents=True)
+    native_context = root / sync._NATIVE_CONTEXT_REL
+    native_context.parent.mkdir(parents=True)
+    native_context.write_bytes((MODULE_PATH.parents[1] / sync._NATIVE_CONTEXT_REL).read_bytes())
+    native_context.chmod(0o644)
     vendor.mkdir(parents=True)
     plugins.mkdir(parents=True)
     contracts = root / ".agents" / "skill-contracts.json"
@@ -145,7 +149,7 @@ def test_exact_pin_accepts_clean_source_and_plugin_metadata_overlay(
     output = capsys.readouterr().out
     assert f"PIN_COMMIT={commit}" in output
     assert f"SOURCE_HEAD={commit}" in output
-    assert "PAYLOAD_FILES=2" in output
+    assert "PAYLOAD_FILES=3" in output
     assert "PACKAGED_SKILLS=1" in output
     assert "CODEX_PIN_CHECK: ok" in output
 
@@ -800,4 +804,48 @@ def test_issue_contract_unknown_source_fails_refresh_before_any_publication(
     before = _tree_bytes(root)
     assert sync.run_refresh(source, commit) != 0
     assert "unreviewed raw source" in capsys.readouterr().err
+    assert _tree_bytes(root) == before
+
+
+def test_flow_context_raw_witnesses_reproduce_once_before_adaptation(tmp_path: Path) -> None:
+    witness = json.loads((MODULE_PATH.parents[1] / "tests/fixtures/flow-context-source.json").read_text())
+    skill = tmp_path / "flow-auto"
+    skill.mkdir()
+    for state, expected in (("before", sync._FLOW_CONTEXT_BEFORE), ("after", sync._FLOW_CONTEXT_AFTER)):
+        raw = witness[state].encode()
+        assert sync._github_contract_source_identity(raw) == expected
+        assert sync._backport_flow_context(skill, "reference.md", raw) == witness["after"].encode()
+        adapted = sync._adapted_source_payloads(skill, {"reference.md": sync.PreparedPayload(raw, 0o644)})
+        assert adapted["reference.md"].content.count(b"**Generated governing context") == 1
+        assert b"speckit-context.py" not in adapted["reference.md"].content
+        assert b"| **Container**" not in adapted["reference.md"].content
+        assert adapted["scripts/spec_context.py"].content == (
+            MODULE_PATH.parents[1] / sync._NATIVE_CONTEXT_REL
+        ).read_bytes()
+        with pytest.raises(sync.IntegrityError, match="unreviewed raw source"):
+            sync._backport_flow_context(skill, "reference.md", raw.replace(b".claude/", b".codex/"))
+
+
+@pytest.mark.parametrize("damage", ["missing", "symlink", "bytes", "mode", "unknown-reference"])
+def test_context_dependency_and_source_refuse_before_publication(
+    provenance_fixture: tuple[Path, Path, str], damage: str
+) -> None:
+    root, source, commit = provenance_fixture
+    native = root / sync._NATIVE_CONTEXT_REL
+    if damage == "missing":
+        native.unlink()
+    elif damage == "symlink":
+        native.unlink()
+        native.symlink_to(MODULE_PATH.parents[1] / sync._NATIVE_CONTEXT_REL)
+    elif damage == "bytes":
+        native.write_bytes(native.read_bytes() + b"# unreviewed\n")
+    elif damage == "mode":
+        native.chmod(0o755)
+    else:
+        (source / "codex/skills/flow-auto/reference.md").write_text("unreviewed relevant source")
+        _git(source, "add", ".")
+        _git(source, "commit", "-qm", "unknown source")
+        commit = _git(source, "rev-parse", "HEAD")
+    before = _tree_bytes(root)
+    assert sync.run_refresh(source, commit) == 2
     assert _tree_bytes(root) == before

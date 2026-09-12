@@ -62,3 +62,20 @@ PR or completion evidence rather than maintaining a second specification store.
 Routing and form checks establish structural consistency, not live model
 compliance. Use reviewer judgment for the distinction between a proposal and an
 explicitly constrained mechanism.
+
+## Governing context across ordinary implementation handoffs
+
+Spec Sync now freezes raw reviewed spec/plan/tasks objects and emits scoped source
+context with full immutable hashes. It refuses local source mismatches, unsupported
+cross-repository attestation and mixed-snapshot synchronization. After existing review,
+`--refresh-context --dry-run` / `--refresh-context --approve` refresh the whole managed
+governing view and dependencies coherently while preserving human-owned text.
+`--revision-reference` is an observed existing decision reference, never authorization.
+
+Installed flow-auto executes its bundled standalone reader on the successfully fetched
+full issue body and trusted checkout before planning, and reconstructs again when
+resumed context may be stale. Printed governing text/hashes prove retrieval only.
+The [context contract](../spec-sync-governing-context.md) defines exact ownership,
+ledger-successor validation, focused extraction, legacy resolution and partial recovery.
+#199/#197 remain unchanged; #201 admission/rebinding and #203/#226 live acceptance
+remain outstanding. Do not infer #223 closure or live compaction acceptance from tests.

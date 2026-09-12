@@ -143,3 +143,35 @@ only after every selected group succeeds. A converged rerun makes no issue edit.
 The artifact check establishes that the reviewed commit and artifact paths
 exist. It does not attest that working artifact bytes equal that commit; the
 separate #223 handoff work owns that recorded limitation.
+
+## Governing context and coherent refresh (#223)
+
+The compiler freezes regular Git object bytes for spec/plan/tasks at the reviewed
+commit and checks local files before writes. `--repo` must match the trusted GitHub
+origin; cross-repository attestation is refused. Only a validated deterministic ledger
+successor may differ locally from reviewed tasks. Raw SHA256s never normalize newlines
+or whitespace. A caller's `--analysis-clean` is not bound official-analysis evidence.
+
+Generated issues carry `spec-sync-context/v1`: scoped source outcomes, acceptance,
+constraints/plan decisions, exact task identity and immutable raw hashes. Unmapped,
+unsupported or capped context is disclosed, never treated as complete/no constraints.
+The 8 KiB extract is a cache, not approval or a second requirement store.
+
+Changed governing source blocks the **whole** default synchronization before creates,
+dependency repairs or ledger updates. Review `--refresh-context --dry-run`, then use
+the existing `--approve` path. The complete owned governing view and separate owned
+dependencies update together; human text/decisions outside remain byte-preserved.
+Edited/damaged/overlapping regions refuse. Legacy unmarked bodies need explicit whole-
+body reconciliation, not automatic adoption or a competing appended view. Ordinary
+legacy analysis remains available. Preview provides a proposed replacement.
+
+An optional `--revision-reference` names an existing decision to inspect; it grants no
+authority. Material changes need the existing judge first, then actual newly bound text
+and evidence. Old approvals/receipts retain their old binding. Reconcile incomplete or
+uncertain writes from successful actions and actual issue state before retrying.
+
+The standalone installed checker reconstructs governing TEXT and raw hashes before
+flow planning and after stale/resumed context. This is retrieval evidence, not proof of
+acknowledgement, comprehension, live compaction recovery or #201 admission. See the
+[context contract](https://github.com/cooneycw/codex-power-pack/blob/main/docs/spec-sync-governing-context.md)
+for ownership, source/mapping budgets, ledger rules, recovery and remaining acceptance.
