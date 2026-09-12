@@ -243,7 +243,17 @@ def test_runtime_missing_socket_and_wrong_binding_fail_closed(tmp_path):
         replace(runtime(tmp_path), socket_path="relative.sock")
 
 
-def test_actual_unix_peer_and_process_digest_are_checked(tmp_path):
+def test_actual_unix_peer_and_process_digest_are_checked(tmp_path, monkeypatch):
+    # Container images need not contain a machine-id. Keep that input deterministic
+    # while exercising the actual Unix peer, /proc process and executable digest.
+    original_read = Path.read_text
+    def read_identity(path, *args, **kwargs):
+        if path == Path("/etc/machine-id"):
+            return "fixture-machine-id\n"
+        if path == Path("/proc/sys/kernel/random/boot_id"):
+            return str(UUID(int=3)) + "\n"
+        return original_read(path, *args, **kwargs)
+    monkeypatch.setattr(Path, "read_text", read_identity)
     path = tmp_path / "actual.sock"
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as listener:
         listener.bind(str(path))
@@ -262,6 +272,25 @@ def test_actual_unix_peer_and_process_digest_are_checked(tmp_path):
                                 (replace(binding, socket_inode=info.st_ino + 1), "socket_identity_changed")]:
             with pytest.raises(DeliveryError, match=reason):
                 verify_runtime(changed)
+
+
+@pytest.mark.parametrize("missing", ["/etc/machine-id", "/proc/sys/kernel/random/boot_id"])
+def test_production_refuses_missing_host_identity_evidence(tmp_path, monkeypatch, missing):
+    original_read = Path.read_text
+    def read_identity(path, *args, **kwargs):
+        if path == Path(missing):
+            raise FileNotFoundError(missing)
+        if path == Path("/etc/machine-id"):
+            return "test-host\n"
+        return original_read(path, *args, **kwargs)
+    monkeypatch.setattr(Path, "read_text", read_identity)
+    path = tmp_path / "app.sock"
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as listener:
+        listener.bind(str(path))
+        info = path.stat()
+        binding = replace(runtime(tmp_path), socket_device=info.st_dev, socket_inode=info.st_ino)
+        with pytest.raises(DeliveryError, match="runtime_evidence_unavailable"):
+            verify_runtime(binding)
 
 
 def test_final_dispatch_guard_runs_after_transport_inspection(tmp_path):
