@@ -42,7 +42,7 @@ the [glossary](docs/agents/glossary.md).
 - `templates/config.toml.example` - Codex MCP pointers for host-managed services
 - `docs/HOST_MANAGED.md` - host-owned MCP service inventory and health checks
 - `scripts/` - shell + Python helpers, incl. `codex_skills_sync.py` (pulls + drift-gates `.codex/skills/`), `skill_contract_baseline.py` (reconciles inventory), `skill_contract_lint.py` (blocks semantic incompatibility), and `cxpp-hook-transition.py` (retains reviewed hook roots across plugin upgrade and rollback)
-- `docs/decisions/` - architecture decision records. Numbers MIRROR claude-power-pack's, so `0008` names the same decision in both repos; the directory starts at 0008 and has gaps by design (ADR 0008)
+- `docs/decisions/` - architecture decision records. A decision ADOPTED from claude-power-pack mirrors CPP's number (0001-0999), so `0008` names the same decision in both repos and the directory starts at 0008 with gaps by design. A decision ORIGINAL to CxPP takes the local range 1001+, because a mirrored scheme has no slot for one; see ADR 0008's "ADR numbering" section for the trigger and why renumbering is the wrong repair
 - `docs/agents/glossary.md` - the defined terms `instrument`, `harness` and `counter-model`; read it before using those words in an issue or a review
 - `docs/skills/` - focused reference docs
 - `docs/skill-contract-baseline.md` - measured Wave 7 source, package, prompt, reference, and gap baseline

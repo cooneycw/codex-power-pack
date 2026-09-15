@@ -40,6 +40,12 @@ skill-eval-check:
 skill-eval-live:
 	@uv run --extra dev python scripts/skill-eval.py live --allow-live
 
+# Run every gate's registered negative control, and prove each control can fail
+# (issue #244, ADR 1002). --strict refuses a control nothing has anchored, so
+# forgetting to anchor one produces a red rather than a silence.
+negative-controls:
+	@python3 scripts/check-negative-controls.py --strict
+
 release-validate:
 	@test -n "$(CANDIDATE_REF)" || (echo "CANDIDATE_REF is required" >&2; exit 2)
 	@test -n "$(ROLLBACK_REF)" || (echo "ROLLBACK_REF is required" >&2; exit 2)
@@ -82,7 +88,7 @@ codex-skills-pin-check:
 
 ## Verification gate (runs all quality checks)
 
-verify: lint test typecheck codex-skills-check harness-lint skill-contract-lint project-next-check skill-eval-check
+verify: lint test typecheck codex-skills-check harness-lint skill-contract-lint project-next-check skill-eval-check negative-controls
 
 ## Documentation (used by /flow:auto and /flow:finish)
 
