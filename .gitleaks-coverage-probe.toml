@@ -1,0 +1,46 @@
+# COVERAGE PROBE CONFIG - used only by the `secret-scan` step in .woodpecker.yml.
+# It is never the config of a real scan.
+#
+# WHY THIS EXISTS (issue #246). The positive-control probe added by #263 proves
+# the scanner HAS RULES: it plants a known secret in /tmp and requires gitleaks
+# to report it. It cannot prove the scanner SEES THE REPOSITORY, and the two are
+# genuinely different failures. Measured against zricethezav/gitleaks:v8.18.4:
+#
+#   catch-all '.*' path exclusion  -> probe FAILS   (it also matches /tmp)
+#   targeted 'tests/.*' exclusion  -> probe PASSES  ("detected the known secret")
+#   real AWS key planted in tests/ under that config -> "no leaks found"
+#
+# The fixture has to live outside the repository so it does not leak, and that
+# is exactly what stops it testing repository coverage.
+#
+# THE SHAPE THAT BREAKS THE TENSION: do not commit a secret - commit a BENIGN
+# MARKER, and make it detectable with a rule that exists only here. Nothing
+# needing an allowlist entry is committed, so the circularity never arises: a
+# fixture that had to be allowlisted could not demonstrate that unallowlisted
+# paths are scanned.
+#
+# `[extend] path` INHERITS the extended config's rules, its own `[extend]`
+# chain, AND its allowlist - measured, not assumed, because the whole probe
+# turns on the last of those. The path is resolved relative to the WORKING
+# DIRECTORY, not to this file, so this must be invoked from the repository root.
+# A path that does not resolve is fatal (exit 1), never a silent empty config.
+[extend]
+path = ".gitleaks.toml"
+
+# regexTarget is NOT inherited through [extend], and the entries that depend on
+# it are. Measured: without this line the probe reports tests/test_plugin_hooks.py
+# under `generic-api-key`, because the production allowlist's value-scoped entry
+# is written with its surrounding quotes and only matches against the MATCH. The
+# inherited entries are the same list either way - declaring a local [allowlist]
+# does not replace them, also measured - but their semantics are not, and a probe
+# whose allowlist behaves differently from production is modelling something else.
+[allowlist]
+regexTarget = "match"
+
+# Deliberately NOT in .gitleaks.toml. A rule there would report every marker on
+# every real scan, and the only way to quieten that is an allowlist entry - the
+# exact move this probe exists to detect.
+[[rules]]
+id = "cxpp-secret-scan-coverage-marker"
+description = "benign in-repo marker proving the repository scan reaches this path"
+regex = '''CXPP-SECRET-SCAN-COVERAGE-MARKER-V1'''

@@ -1,0 +1,8 @@
+# NEGATIVE-CONTROL FIXTURE - the known-GOOD half.
+#
+# Without it a scanner wedged at "found something" would pass the known-bad case
+# on its own and score as discriminating. Deliberately credential-SHAPED prose
+# with no credential in it: region names, a profile, a bucket.
+region = "us-east-1"
+profile = "codex-power-pack"
+bucket = "cxpp-artifacts"

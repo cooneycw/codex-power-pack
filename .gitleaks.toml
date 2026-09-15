@@ -16,9 +16,29 @@ title = "codex-power-pack gitleaks config"
 [extend]
 useDefault = true
 
+#: NEGATIVE-CONTROL: secret-scan-rules
+#:
+#: This file is HALF A GATE. gitleaks is the other half, and it was working
+#: correctly all the way through #263 - the blindness was here, in the config,
+#: which is why the control's anchor is a config rather than a script. The
+#: directive above registers it with scripts/check-negative-controls.py; run
+#: `make negative-controls` on a host with gitleaks to exercise it.
+
 [allowlist]
 description = "False positives from test fixtures and masking regex patterns"
 paths = [
+    # The negative-control fixtures for this very file. They contain a
+    # fabricated AWS key on purpose: the control needs an input the ruleset
+    # REPORTS, and anything the ruleset reports is also reported when it is
+    # sitting in the repository.
+    #
+    # This is not the circular exclusion that issue #246 refuses. A path entry
+    # is matched RELATIVE TO THE SCAN ROOT, and the control scans each case AS
+    # the root - so the fixture is hidden from the repository scan and fully
+    # exposed to the control that needs to see it. It hides bytes this file's
+    # own control authored, never a live path, and the coverage probe in
+    # .woodpecker.yml separately proves the live paths are still scanned.
+    '''^controls/secret-scan-rules/cases/''',
     '''tests/test_creds_masking\.py''',
     '''scripts/secrets-mask\.sh''',
     '''lib/creds/masking\.py''',

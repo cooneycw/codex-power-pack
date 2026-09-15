@@ -99,6 +99,20 @@ DEFAULT_CONTROLS_ROOT = REPO_ROOT / "controls"
 #: several, one per property it is controlled for.
 REGISTRATION_RE = re.compile(r"^#:?\s*NEGATIVE-CONTROL:\s*(?P<path>\S+)\s*$", re.MULTILINE)
 
+#: Where a gate can live, and therefore where a registration can be found.
+#: `scripts/` holds the executable gates; the repository ROOT holds the
+#: configuration gates, which is not a technicality - `.gitleaks.toml` is the
+#: config half of a binary+config gate and the #263 blindness lived entirely in
+#: that half, with the binary working perfectly throughout. A register that can
+#: only see `scripts/` cannot control the gate this repository got wrong.
+#:
+#: Deliberately NOT the whole tree. The directive is plain text, and the files
+#: that quote it most are the ones documenting it - ADR 1002 and this script's
+#: own docstring both contain the literal string. Scanning everything would
+#: turn prose into registrations, which is the failure mode of every text guard
+#: that grew its population instead of choosing it.
+GATE_DIRS = ("scripts",)
+
 GOOD = "GOOD"
 BAD = "BAD"
 
@@ -109,6 +123,17 @@ BLIND = "BLIND"
 INERT = "INERT"
 UNPROVEN = "UNPROVEN"
 UNRESOLVED = "UNRESOLVED"
+
+#: The control could not be RUN here - a tool its manifest declares under
+#: `requires` is not on PATH. It is not UNRESOLVED: UNRESOLVED means the control
+#: ran and the evidence did not settle anything, which is a statement about the
+#: control. This is a statement about the HOST, and collapsing the two reports
+#: a laptop without gitleaks installed as a defect in the control (issue #246).
+#:
+#: It is also not PASS, and never counts toward the proven total. An unrun
+#: control's silence and a working control's green are the same bytes, which is
+#: the whole subject of this file.
+UNAVAILABLE = "UNAVAILABLE"
 
 #: Stands in for an exit code when the invocation could not be executed AT ALL -
 #: a missing interpreter, a permissions error, a timeout. It is not a verdict.
@@ -128,18 +153,27 @@ class Result:
     details: list[str] = field(default_factory=list)
 
 
+def _candidate_gates(root: Path) -> list[Path]:
+    """Files that may carry a registration: the repository root, then GATE_DIRS.
+
+    Non-recursive on purpose - see GATE_DIRS for why the population is chosen
+    rather than swept.
+    """
+    candidates: list[Path] = [p for p in sorted(root.iterdir()) if p.is_file()]
+    for name in GATE_DIRS:
+        directory = root / name
+        if directory.is_dir():
+            candidates.extend(p for p in sorted(directory.iterdir()) if p.is_file())
+    return candidates
+
+
 def discover(root: Path) -> list[tuple[Path, str]]:
-    """Every (gate, control-path) registration under `scripts/`.
+    """Every (gate, control-path) registration in the repository's gate files.
 
     A gate may register more than one control; every directive is returned.
     """
     found: list[tuple[Path, str]] = []
-    scripts_dir = root / "scripts"
-    if not scripts_dir.is_dir():
-        return found
-    for path in sorted(scripts_dir.iterdir()):
-        if not path.is_file():
-            continue
+    for path in _candidate_gates(root):
         try:
             text = path.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError):
@@ -323,6 +357,35 @@ def evaluate(control_dir: Path, gate: Path, root: Path) -> Result:
             res.details.append("anchor bytes are not the ones this control was written against")
             return res
 
+    # -- FIXTURE PRESENCE ---------------------------------------------------- #
+    # Hoisted above REQUIRES, because it is host-independent and the UNAVAILABLE
+    # message CLAIMS it was done. It was not: case existence was checked inside
+    # the DISCRIMINATION loop below, which `requires` returns before reaching -
+    # so deleting a registered fixture read as UNAVAILABLE on any host without
+    # the tool, with the register saying the fixtures had been checked. Found by
+    # Codex review on #246. A verdict is allowed to say "I could not run this";
+    # it is not allowed to claim a check it skipped.
+    for case in cases:
+        if not (control_dir / case["input"]).exists():
+            res.verdict = UNRESOLVED
+            res.details.append(f"case input missing: {case['input']}")
+            return res
+
+    # -- REQUIRES ------------------------------------------------------------ #
+    # After the host-independent checks above - manifest shape, detect_signal
+    # vacuity, fixture presence, anchor provenance - all of which still run on a
+    # machine that cannot execute the gate. A control whose anchor bytes have
+    # drifted is a real finding on every host, and answering "gitleaks is not
+    # installed" first would hide it.
+    missing = [tool for tool in (manifest.get("requires") or []) if shutil.which(tool) is None]
+    if missing:
+        res.verdict = UNAVAILABLE
+        res.details.append(
+            f"not run here: {', '.join(missing)} not on PATH. The manifest, fixtures and anchor "
+            "provenance above were checked; the gate's BEHAVIOUR was not."
+        )
+        return res
+
     # -- DISCRIMINATION ----------------------------------------------------- #
     for case in cases:
         case_path = control_dir / case["input"]
@@ -467,14 +530,42 @@ def run(root: Path, controls_root: Path, strict: bool, list_only: bool) -> int:
     if list_only:
         return 0
 
-    failed = [r for r in results if r.verdict != PASS]
+    unavailable = [r for r in results if r.verdict == UNAVAILABLE]
+    failed = [r for r in results if r.verdict not in (PASS, UNAVAILABLE)]
     for res in results:
         print(f"[{res.verdict}] {res.name}  ({res.gate})")
         for line in res.details:
             print(f"    {line}")
 
-    proven = len(results) - len(failed)
+    # Counted, not derived by subtraction: `len(results) - len(failed)` folded
+    # every non-failure into "proven", which would have reported an UNAVAILABLE
+    # control as one that discriminates.
+    proven = sum(1 for r in results if r.verdict == PASS)
     print(f"\nnegative-controls: {proven}/{len(results)} control(s) discriminate and are proven able to fail")
+
+    if unavailable:
+        # stderr, and named. This is the line that stops a run whose most
+        # security-critical control never executed from reading like a clean one.
+        print(
+            "negative-controls: NOT RUN here - "
+            + ", ".join(f"{r.name}={r.verdict}" for r in unavailable)
+            + ". Their verdicts are UNKNOWN on this host, not clean.",
+            file=sys.stderr,
+        )
+
+    if unavailable and len(unavailable) == len(results):
+        # The empty-run refusal, one step further in. `discover()` already
+        # refuses a run with no registrations; a run where every registration
+        # was skipped produces the same evidence - none - while printing
+        # "0/N control(s) discriminate" and exiting 0.
+        print(
+            "negative-controls: refusing a vacuous pass - every registered control was "
+            "UNAVAILABLE, so nothing was exercised. Install the required tool(s) or run "
+            "this where they exist.",
+            file=sys.stderr,
+        )
+        return 3
+
     if failed:
         print("negative-controls: " + ", ".join(f"{r.name}={r.verdict}" for r in failed), file=sys.stderr)
         return 1
@@ -482,6 +573,16 @@ def run(root: Path, controls_root: Path, strict: bool, list_only: bool) -> int:
         # Nothing further to refuse: UNPROVEN and UNRESOLVED already land in
         # `failed`. --strict exists so the caller can SAY it wants that, and so
         # a future softening has to change this line deliberately.
+        #
+        # UNAVAILABLE is deliberately NOT converted to a failure here. The
+        # register cannot know whether a tool OUGHT to be present: `make verify`
+        # does not depend on `secret-scan`, gitleaks is absent from every image
+        # in this pipeline except the one that cannot run Python, and reddening
+        # verify on that basis would make the honest verdict the one people
+        # remove. What replaces it is the all-UNAVAILABLE refusal above, the
+        # stderr line, and - for the secret gate specifically - the anchor being
+        # re-run natively in CI's gitleaks image, which
+        # tests/test_woodpecker_ci.py asserts is still there.
         return 0
     return 0
 

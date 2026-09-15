@@ -1,0 +1,42 @@
+{
+  "gate": ".gitleaks.toml",
+  "property": "the config yields a RULESET - a known secret must be reported, and a clean fixture must not be",
+  "requires": ["gitleaks"],
+  "invocation": [
+    "gitleaks",
+    "detect",
+    "--source",
+    "{case}",
+    "--no-git",
+    "--config",
+    "{gate}",
+    "--no-banner"
+  ],
+  "good_exit": 0,
+  "detect_signal": "leaks found: [1-9]",
+  "limits": "Establishes that the CONFIG YIELDS RULES. It does NOT establish that the scan SEES THE REPOSITORY: every case here is scanned as its own root, so the allowlist's path entries - which are matched relative to the scan root - cannot apply, and a `tests/.*` exclusion that unscans a live directory would leave this control green. That property is a different instrument: the coverage probe in .woodpecker.yml, which scans the repository itself and requires every committed coverage marker to be reported. A PASS here says the ruleset exists, not that it is pointed at anything.",
+  "cases": [
+    {
+      "name": "planted-secret",
+      "input": "cases/planted-secret",
+      "expect": "BAD",
+      "why": "a fabricated AWS access key. Until 2026-09-15 the production config scored this GOOD - `--config` REPLACES gitleaks' built-in ruleset and the file declared none, so every scan reported 'no leaks found' (issue #263)."
+    },
+    {
+      "name": "no-secret",
+      "input": "cases/no-secret",
+      "expect": "GOOD",
+      "why": "credential-shaped prose with no credential in it. Separates a working ruleset from a scanner wedged at 'found something'."
+    }
+  ],
+  "anchors": [
+    {
+      "kind": "historical",
+      "sha": "efde91f",
+      "origin": ".gitleaks.toml",
+      "path": "anchors/efde91f-gitleaks.toml",
+      "sha256": "8224484855122405caec0d22490b7a06f478b325980dcffcf37bdc69799f821c",
+      "why": "the config as it stood the moment before #263, byte-for-byte from `git show efde91f:.gitleaks.toml`. This is an unusual anchor and deliberately so: the gate is a BINARY PLUS A CONFIG, the binary was working correctly throughout, and the blindness lived entirely in the config half. Measured against zricethezav/gitleaks:v8.18.4 - it reports 'no leaks found' on cases/planted-secret."
+    }
+  ]
+}

@@ -47,6 +47,139 @@ steps:
           exit 1
         fi
         echo "secret-scan probe: scanner detected the known secret - its silence below is meaningful"
+
+        # NEGATIVE CONTROL FOR THE PROBE ABOVE (issue #246). A probe that passes
+        # is evidence only if it could have failed, and "it would fail without
+        # the fix" was a sentence in a commit message rather than something that
+        # runs. This puts the SAME fixture through the config as it stood the
+        # moment before #263 - committed byte-for-byte, sha256-pinned in
+        # controls/secret-scan-rules/control.json - and requires it to MISS.
+        #
+        # Same block as the probe on purpose: both must read the same bytes. A
+        # second fixture could drift from the first, and then "the anchor missed
+        # it" would be a fact about a different input.
+        set +e
+        gitleaks detect --source /tmp/secret-scan-probe --no-git \
+          --config controls/secret-scan-rules/anchors/efde91f-gitleaks.toml \
+          --exit-code "$PROBE_FOUND" >/dev/null 2>&1
+        anchor_rc=$?
+        set -e
+        if [ "$anchor_rc" -ne 0 ]; then
+          echo "secret-scan ANCHOR FAILED (gitleaks exit $anchor_rc, expected 0)." >&2
+          echo "  $PROBE_FOUND = the pre-#263 config DETECTED the probe secret. The probe" >&2
+          echo "        above would then pass against a config with no rules at all," >&2
+          echo "        so it is not evidence of anything." >&2
+          echo "  1   = gitleaks failed on the anchor - it did not scan." >&2
+          exit 1
+        fi
+        echo "secret-scan anchor: the pre-#263 config missed it, so the probe above can fail"
+      - |
+        # COVERAGE PROBE (issue #246). The probe above proves the scanner HAS
+        # RULES. It cannot prove the scanner SEES THE REPOSITORY, and those are
+        # different failures. Measured against this image:
+        #
+        #   catch-all '.*' path exclusion -> probe FAILS (it also matches /tmp)
+        #   targeted 'tests/.*' exclusion -> probe PASSES
+        #   real AWS key planted in tests/ under that config -> "no leaks found"
+        #
+        # The probe's fixture has to live outside the repository so it does not
+        # leak, and that is precisely what stops it testing repository coverage.
+        #
+        # So the coverage question gets a different shape: not a committed
+        # secret - which would need an allowlist entry, and an allowlisted
+        # fixture cannot demonstrate that unallowlisted paths are scanned - but
+        # committed BENIGN MARKERS, scanned with the production config plus one
+        # rule, living only in .gitleaks-coverage-probe.toml, that makes the
+        # marker detectable. Add a path entry that unscans a marked directory
+        # and the marker drops out of this report.
+        MARKER='CXPP-SECRET-SCAN-COVERAGE-MARKER-V1'
+        COVERAGE_FOUND=42
+        # An EXIT trap's last status BECOMES the script's, in both directions, and
+        # both directions were observed here. Unguarded, a cleanup that could not
+        # remove its scratch file turned a step reporting "no leaks found" into
+        # exit 1. Guarded with `|| true`, the trap swallowed a real `exit 1` from
+        # the checks below and the probe could no longer fail at all - the second
+        # one caught by test_coverage_probe_fails_when_a_marked_path_goes_unreported,
+        # which is why that test runs the script instead of reading it.
+        #
+        # So capture the triggering status and hand it back deliberately.
+        # ${TMPDIR:-/tmp}: in CI this is /tmp and the step owns the container.
+        # Outside one, a fixed absolute path is shared state - a leftover report
+        # from an earlier run is what the grep below would read, and it would
+        # report every marked path as unscanned. Observed while testing this.
+        SCRATCH="${TMPDIR:-/tmp}"
+        trap 'rc=$?; rm -f "$SCRATCH/secret-scan-coverage.json" "$SCRATCH/secret-scan-marked" "$SCRATCH/secret-scan-unscanned" 2>/dev/null; exit $rc' EXIT
+        set +e
+        # --no-git, unlike the repository scan below, and the reason is the
+        # PAIRING rather than a preference. The expected set comes from
+        # `git grep` - the working tree - and git mode reports findings from the
+        # COMMITS THAT ADDED THEM. A pure `git mv` of a marker emits a patch with
+        # no added lines, so the scan keeps reporting the OLD path while the
+        # expected set moves to the new one, and a harmless rename reads exactly
+        # like an allowlist exclusion. Measured on a full clone; found by Codex
+        # review on #246. --no-git puts both sides on the current tree.
+        #
+        # Nothing is lost: the property under test is whether an allowlist PATH
+        # entry unscans a path, and path entries are matched identically in both
+        # modes - also measured, `tests/.*` suppresses the same three markers
+        # either way. History coverage is a different question, and one the
+        # repository scan below cannot currently answer either (the clone is
+        # shallow - recorded in the nit store, not fixed here).
+        gitleaks detect --source . --no-git --config .gitleaks-coverage-probe.toml \
+          --report-format json --report-path "$SCRATCH/secret-scan-coverage.json" \
+          --exit-code "$COVERAGE_FOUND" >/dev/null 2>&1
+        coverage_rc=$?
+        set -e
+        if [ "$coverage_rc" -ne "$COVERAGE_FOUND" ]; then
+          echo "secret-scan COVERAGE PROBE FAILED (gitleaks exit $coverage_rc, expected $COVERAGE_FOUND)." >&2
+          echo "  0 = nothing was reported at all, not even a marker. The likely cause" >&2
+          echo "      is that the MARKER ITSELF was allowlisted - the 'fix the control" >&2
+          echo "      rather than the finding' move, which passes the probe above and" >&2
+          echo "      is caught only here. (A globally over-broad regex also lands here," >&2
+          echo "      but the probe above usually fails first, because it suppresses that" >&2
+          echo "      fixture too.)" >&2
+          echo "  1 = gitleaks failed - a missing or unparseable config, not a scan." >&2
+          exit 1
+        fi
+        # The probe config is excluded because gitleaks does not scan the file
+        # passed as --config (measured: the same file IS reported when the
+        # config is loaded from elsewhere), so requiring it would fail always.
+        git grep -l "$MARKER" -- . ':!.gitleaks-coverage-probe.toml' > "$SCRATCH/secret-scan-marked" || true
+        if [ ! -s "$SCRATCH/secret-scan-marked" ]; then
+          echo "secret-scan COVERAGE PROBE FAILED: no coverage markers in the repository." >&2
+          echo "  With nothing marked, every marked path is trivially covered and this" >&2
+          echo "  check passes by having had nothing to look at." >&2
+          exit 1
+        fi
+        : > "$SCRATCH/secret-scan-unscanned"
+        while IFS= read -r marked; do
+          # The two sides escape unusual filenames DIFFERENTLY: git quotes them
+          # (backslash escapes, and non-ASCII under core.quotePath), while Go's
+          # JSON encoder emits \u0026 for & and \u003c for <. Comparing them as
+          # literal strings would then report a file the scanner DID report as
+          # unscanned - a wrong answer dressed as a security finding. Refuse the
+          # comparison instead of guessing at it. Found by Codex review on #246.
+          if printf '%s\n' "$marked" | LC_ALL=C grep -Eq '[^ -~]|["\\<>&]'; then
+            echo "secret-scan COVERAGE PROBE FAILED - cannot compare this path:" >&2
+            echo "    $marked" >&2
+            echo "  git and gitleaks escape this name differently, so a literal match" >&2
+            echo "  would be meaningless in BOTH directions. This is a limit of the" >&2
+            echo "  probe, not a finding about the scan - rename the file, or teach" >&2
+            echo "  this loop to decode both sides." >&2
+            exit 1
+          fi
+          grep -qF "\"File\": \"$marked\"" "$SCRATCH/secret-scan-coverage.json" \
+            || printf '%s\n' "$marked" >> "$SCRATCH/secret-scan-unscanned"
+        done < "$SCRATCH/secret-scan-marked"
+        if [ -s "$SCRATCH/secret-scan-unscanned" ]; then
+          echo "secret-scan COVERAGE PROBE FAILED - marked paths the scan did not report:" >&2
+          sed 's/^/    /' "$SCRATCH/secret-scan-unscanned" >&2
+          echo "  The scan is not examining these paths. Look at [allowlist] paths in" >&2
+          echo "  .gitleaks.toml: an entry there removes a path from every scan, and" >&2
+          echo "  nothing else about the output changes when it does." >&2
+          exit 1
+        fi
+        echo "secret-scan coverage: $(wc -l < "$SCRATCH/secret-scan-marked") marked path(s) reported - the scan reaches them"
       - gitleaks detect --source . --config .gitleaks.toml --verbose
     when:
       - event: [push, pull_request]
