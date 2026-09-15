@@ -280,6 +280,55 @@ _CXPP_WORKTREE_ADAPTATION = (
     " visible sibling `../<repo>-<branch>`; enter with `cd` and clean up with"
     " `git worktree remove`. Never use Claude's hidden worktree directory."
 )
+
+# codex-power-pack#243. Upstream's flow-merge/flow-auto cleanup step falls back to
+# a RAW `git worktree remove ... --force` when the guarded helper is absent. That
+# fallback bypasses every protection the helper exists to provide: it is blocked by
+# git itself only on a LOCKED worktree (git demands `-f -f`), and is completely
+# unguarded for uncommitted work and unpushed commits on an unlocked one.
+#
+# CPP fixed exactly this in merge.md under #899 - "a guard that is absent is
+# indistinguishable from a guard that passed" - and did NOT fix the same line in
+# auto.md, which is still raw on CPP main (claude-power-pack#973). So a future pin
+# bump would IMPORT this line rather than remove it, and that is why the correction
+# lives here in the overlay rather than waiting upstream: the overlay re-applies on
+# every refresh.
+#
+# The refusal text is CPP's, with the install advice adapted to CxPP, where these
+# helpers ship inside the skill package (issue #139) rather than at ~/.claude/scripts.
+_RAW_WORKTREE_FALLBACK = 'git worktree remove "$WORKTREE_PATH" --force'
+
+_RAW_WORKTREE_FALLBACK_MERGE = (
+    'else\n'
+    '    git worktree remove "$WORKTREE_PATH" --force\n'
+    '    git branch -D "$BRANCH" 2>/dev/null || true\n'
+    'fi'
+)
+_CXPP_WORKTREE_FALLBACK_MERGE = (
+    'else\n'
+    '    echo "REFUSING: worktree-remove.sh is missing; not removing'
+    ' $WORKTREE_PATH by hand." >&2\n'
+    '    echo "  Every guard this lane relies on lives in that helper'
+    ' (issue #899)." >&2\n'
+    '    echo "  Reinstall the skill package so'
+    f' {SKILL_DIR_TOKEN}/scripts/worktree-remove.sh is present, then re-run'
+    ' this step." >&2\n'
+    'fi'
+)
+
+_RAW_WORKTREE_FALLBACK_AUTO = (
+    '   git worktree remove "$WORKTREE_PATH" --force\n'
+    '   git branch -D "$BRANCH" 2>/dev/null || true'
+)
+_CXPP_WORKTREE_FALLBACK_AUTO = (
+    '   echo "REFUSING: worktree-remove.sh is missing; not removing'
+    ' $WORKTREE_PATH by hand." >&2\n'
+    '   echo "  Every guard this lane relies on lives in that helper'
+    ' (issue #899)." >&2\n'
+    '   echo "  Reinstall the skill package so'
+    f' {SKILL_DIR_TOKEN}/scripts/worktree-remove.sh is present, then re-run'
+    ' this step." >&2'
+)
 _SKILL_HELPER_PREAMBLE = f"""## Codex installed-skill runtime contract
 
 `{SKILL_DIR_TOKEN}` below means the absolute directory containing this loaded
@@ -900,6 +949,13 @@ def _adapt_flow_text(skill_dir: Path, source_file: Path, text: str) -> str:
         return text
 
     text = text.replace(_GENERIC_WORKTREE_ADAPTATION, _CXPP_WORKTREE_ADAPTATION)
+    # codex-power-pack#243: replace the raw worktree-remove fallback with a
+    # refusal. Verified by _assert_worktree_fallback_removed against the GENERATED
+    # artifact, so a replacement that stops matching fails generation loudly.
+    text = text.replace(
+        _RAW_WORKTREE_FALLBACK_MERGE, _CXPP_WORKTREE_FALLBACK_MERGE
+    )
+    text = text.replace(_RAW_WORKTREE_FALLBACK_AUTO, _CXPP_WORKTREE_FALLBACK_AUTO)
     text = text.replace(".claude/friction.jsonl", ".codex/friction.jsonl")
     text = text.replace(".claude/security.yml", ".codex/security.yml")
 
@@ -2038,7 +2094,50 @@ def _adapted_source_payloads(
         files[rel] = PreparedPayload(text.encode(), source_payload.mode)
     if skill_dir.name == "flow-auto":
         files["scripts/spec_context.py"] = _native_context_payload()
+    _assert_worktree_fallback_removed(skill_dir, files)
     return files
+
+
+def _assert_worktree_fallback_removed(
+    skill_dir: Path, files: dict[str, PreparedPayload]
+) -> None:
+    """Fail generation if the raw worktree-remove fallback survived the overlay.
+
+    codex-power-pack#243. The overlay above is an exact-string replacement against
+    upstream text. If upstream reflows that block by one character, the replacement
+    silently no-ops: generation still succeeds, the drift manifest is re-snapshotted
+    over the un-replaced output, `make codex-skills-check` still reports in sync, and
+    the raw `--force` fallback returns with nothing reporting it.
+
+    That is the same failure shape this issue exists to remove - a guard whose
+    absence is indistinguishable from its success - so the overlay carries a control
+    that reports the OTHER verdict. This asserts against the GENERATED ARTIFACT, not
+    against the source of the replacement: checking that this module contains the
+    replacement string would still pass in exactly the no-op case it exists to catch.
+
+    The negative control is committed in tests/test_worktree_remove_safety.py: it
+    feeds a source whose fallback text does not match and asserts this raises.
+    """
+    if not skill_dir.name.startswith("flow-"):
+        return
+    offenders: list[str] = []
+    for rel, payload in sorted(files.items()):
+        try:
+            text = payload.content.decode()
+        except UnicodeDecodeError:
+            continue
+        occurrences = text.count(_RAW_WORKTREE_FALLBACK)
+        if occurrences:
+            offenders.append(f"{rel} ({occurrences})")
+    if offenders:
+        raise IntegrityError(
+            f"skill {skill_dir.name}: the codex-power-pack#243 worktree-remove"
+            " fallback overlay did not apply; the raw"
+            f" {_RAW_WORKTREE_FALLBACK!r} survives in: {', '.join(offenders)}."
+            " Upstream text has almost certainly reflowed - re-align"
+            " _RAW_WORKTREE_FALLBACK_MERGE / _RAW_WORKTREE_FALLBACK_AUTO with the"
+            " current source instead of removing this check."
+        )
 
 
 def _adapted_source_files(skill_dir: Path) -> dict[str, bytes]:
