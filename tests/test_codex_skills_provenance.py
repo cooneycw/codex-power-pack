@@ -807,23 +807,139 @@ def test_issue_contract_unknown_source_fails_refresh_before_any_publication(
     assert _tree_bytes(root) == before
 
 
-def test_flow_context_raw_witnesses_reproduce_once_before_adaptation(tmp_path: Path) -> None:
-    witness = json.loads((MODULE_PATH.parents[1] / "tests/fixtures/flow-context-source.json").read_text())
+def _flow_context_witnesses() -> dict[str, str]:
+    return json.loads((MODULE_PATH.parents[1] / "tests/fixtures/flow-context-source.json").read_text())
+
+
+def _adapt(tmp_path: Path, raw: bytes) -> dict[str, object]:
     skill = tmp_path / "flow-auto"
-    skill.mkdir()
-    for state, expected in (("before", sync._FLOW_CONTEXT_BEFORE), ("after", sync._FLOW_CONTEXT_AFTER)):
-        raw = witness[state].encode()
-        assert sync._github_contract_source_identity(raw) == expected
-        assert sync._backport_flow_context(skill, "reference.md", raw) == witness["after"].encode()
-        adapted = sync._adapted_source_payloads(skill, {"reference.md": sync.PreparedPayload(raw, 0o644)})
-        assert adapted["reference.md"].content.count(b"**Generated governing context") == 1
-        assert b"speckit-context.py" not in adapted["reference.md"].content
-        assert b"| **Container**" not in adapted["reference.md"].content
-        assert adapted["scripts/spec_context.py"].content == (
-            MODULE_PATH.parents[1] / sync._NATIVE_CONTEXT_REL
-        ).read_bytes()
-        with pytest.raises(sync.IntegrityError, match="unreviewed raw source"):
-            sync._backport_flow_context(skill, "reference.md", raw.replace(b".claude/", b".codex/"))
+    skill.mkdir(parents=True, exist_ok=True)
+    return sync._adapted_source_payloads(skill, {"reference.md": sync.PreparedPayload(raw, 0o644)})
+
+
+def test_flow_context_consumer_replaces_an_upstream_block_that_is_present(tmp_path: Path) -> None:
+    """GREEN arm. The 'after' witness is CPP cb16600, where #858 shipped the block."""
+    witness = _flow_context_witnesses()
+    raw = witness["after"].encode()
+    assert sync._FLOW_CONTEXT_START_MARKER in witness["after"]
+
+    adapted = _adapt(tmp_path, raw)
+
+    content = adapted["reference.md"].content
+    assert content.count(b"**Generated governing context") == 1
+    assert b"speckit-context.py" not in content
+    assert b"| **Container**" not in content
+    assert adapted["scripts/spec_context.py"].content == (
+        MODULE_PATH.parents[1] / sync._NATIVE_CONTEXT_REL
+    ).read_bytes()
+
+
+def test_flow_context_inserts_the_consumer_for_a_pinned_era_source(tmp_path: Path) -> None:
+    """The other era, and a real upstream state rather than a synthetic one.
+
+    The 'before' witness is CPP f64a654 - the pin - which genuinely predates #858
+    and carries no speckit-context block. The retired recipe used to manufacture
+    one here purely so this overlay could delete it again (issue #251); the
+    insert branch reaches the same bytes without the ceremony.
+    """
+    witness = _flow_context_witnesses()
+    assert sync._FLOW_CONTEXT_START_MARKER not in witness["before"]
+
+    adapted = _adapt(tmp_path, witness["before"].encode())
+
+    content = adapted["reference.md"].content
+    assert content.count(b"**Generated governing context") == 1
+    assert b"speckit-context.py" not in content
+
+
+def test_flow_context_refuses_a_source_without_the_overlay_anchor(tmp_path: Path) -> None:
+    """RED arm. The end marker is the single point of failure after #251."""
+    witness = _flow_context_witnesses()
+    damaged = witness["after"].replace(sync._FLOW_CONTEXT_END_MARKER, "2. **Something else:**")
+
+    with pytest.raises(sync.IntegrityError, match="Re-anchor the insertion point"):
+        _adapt(tmp_path, damaged.encode())
+
+
+def test_both_upstream_eras_generate_the_identical_artifact(tmp_path: Path) -> None:
+    """Why retiring the CPP #858 recipe is safe rather than merely tidy.
+
+    The recipe's two deltas both landed in regions the CxPP overlay later
+    replaces - the speckit block inside this overlay's own region, the #835
+    Container row inside the capability contract section that
+    `_adapt_deferred_native_boundaries` rewrites wholesale. So a pre-#858 source
+    and a post-#858 source converge on the same published bytes, which is the
+    property that let the recipe be deleted outright instead of reduced.
+
+    If a future overlay stops replacing one of those regions this test fails,
+    and the two eras start producing different skills - the failure the recipe
+    was nominally guarding against, now actually detected.
+    """
+    witness = _flow_context_witnesses()
+
+    before = _adapt(tmp_path / "b", witness["before"].encode())["reference.md"]
+    after = _adapt(tmp_path / "a", witness["after"].encode())["reference.md"]
+
+    assert before.content == after.content
+
+
+def test_reporting_accepts_an_unreviewed_contract_source_that_publication_refuses(
+    provenance_fixture: tuple[Path, Path, str],
+) -> None:
+    """The #251 split itself, on one source, both verdicts.
+
+    This pins the SPLIT's contract: one source, both verdicts, same bytes.
+
+    It does NOT pin the call site. Removing `review=False` from
+    `_upstream_report` restores the #856 cron failure, and this test would
+    still pass - the end-to-end control for that needs the report fixture in
+    tests/test_codex_skills_report.py, which is outside this change's lane.
+    Recorded so the gap is visible rather than assumed covered.
+
+    Structurally valid means the anchors the transformation needs are intact;
+    unreviewed means the bytes match neither recorded witness. Reporting READS
+    and must accept it. Publication WRITES and must still refuse it.
+    """
+    _, source, _ = provenance_fixture
+    skill = source / "codex/skills/github-issue-create"
+    skill.mkdir(parents=True, exist_ok=True)
+    (skill / "SKILL.md").write_text(
+        "---\nname: github-issue-create\n---\n<!-- GENERATED by claude-power-pack -->\n"
+    )
+    unreviewed = (
+        b"<!-- GENERATED by claude-power-pack -->\n\n"
+        b"Upstream prose that matches neither recorded witness.\n\n"
+        b"- Problem/use case\n- Proposed solution\n\n"
+        b"## Issue Creation Flow\n\nsteps\n"
+    )
+    (skill / "reference.md").write_bytes(unreviewed)
+    # PUBLICATION refuses it - the #195/#204 control, unchanged by the split.
+    with pytest.raises(sync.IntegrityError, match="unreviewed raw source"):
+        sync._adapted_source_payloads(
+            skill, {"reference.md": sync.PreparedPayload(unreviewed, 0o644)}
+        )
+
+    # REPORTING accepts it, and still applies the transformation.
+    adapted = sync._adapted_source_payloads(
+        skill, {"reference.md": sync.PreparedPayload(unreviewed, 0o644)}, review=False
+    )
+    assert sync._GITHUB_CONTRACT_HEADING in adapted["reference.md"].content
+
+
+def test_retired_858_backport_recipe_is_gone() -> None:
+    """Negative membership: the recipe retired in #251 must not drift back.
+
+    A reintroduced recipe would silently re-pin generation to two byte-exact
+    upstream identities, which is the condition that failed every cron run.
+    """
+    for retired in (
+        "_backport_flow_context",
+        "_FLOW_CONTEXT_BEFORE",
+        "_FLOW_CONTEXT_AFTER",
+        "_FLOW_CONTEXT_DELTA",
+        "_FLOW_CONTAINER_ROW",
+    ):
+        assert not hasattr(sync, retired), f"{retired} was retired in issue #251"
 
 
 @pytest.mark.parametrize("damage", ["missing", "symlink", "bytes", "mode", "unknown-reference"])
