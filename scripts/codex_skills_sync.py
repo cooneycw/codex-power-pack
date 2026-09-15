@@ -1664,33 +1664,88 @@ def _github_contract_source_identity(content: bytes) -> tuple[str, str, int]:
     )
 
 
-def _backport_github_issue_contract(skill_dir: Path, rel: str, content: bytes) -> bytes:
-    """Verify raw CPP bytes before any CxPP transformations; never load test evidence."""
+_GITHUB_CONTRACT_ANCHOR = b"## Issue Creation Flow\n"
+_GITHUB_CONTRACT_OLD_BULLETS = b"- Problem/use case\n- Proposed solution\n"
+_GITHUB_CONTRACT_NEW_BULLETS = (
+    b"- Problem/use case (the outcome wanted, and why it matters)\n"
+    b"- Proposed approach (optional, and recorded as revisable)\n"
+    b"- Constraints, each with the rationale behind it (optional)\n"
+)
+
+
+def _backport_github_issue_contract(
+    skill_dir: Path, rel: str, content: bytes, *, review: bool = True
+) -> bytes:
+    """Carry CPP #856's issue-contract wording onto the CxPP surface, era-tolerantly.
+
+    This was the sibling of the CPP #858 recipe retired in issue #251, and it had
+    the identical defect: it recognised exactly two byte-exact upstream identities
+    and raised on anything else, so it blocked the drift cron on every run once
+    upstream moved to a third state. It was MASKED by #858's recipe, which failed
+    forty lines earlier - the issue's "one unowned cause" was one cause hiding
+    another.
+
+    Unlike #858's it cannot simply be retired: 1281 bytes of its output reach the
+    published artifact, measured by disabling this function outright rather than
+    by comparing two calls that both ran it.
+
+    So the identity gate goes and the two edits it guarded become idempotent,
+    which is all the gate was really buying. Both were already text-anchored:
+
+    - the #856 addition is inserted only when absent (still absent upstream)
+    - the expanded bullets replace the old pair only when the old pair is present
+      (upstream has already adopted them, so this is a no-op there)
+
+    Neither edit can double-apply, so re-running is safe and a source anywhere
+    between the pinned era and current upstream converges on the same bytes.
+    """
     if skill_dir.name != "github-issue-create" or rel != "reference.md":
         return content
-    identity = _github_contract_source_identity(content)
-    if identity == _GITHUB_CONTRACT_AFTER:
-        return content
-    if identity != _GITHUB_CONTRACT_BEFORE:
-        raise IntegrityError(
-            "github-issue-create/reference.md: unreviewed raw source for the #856 "
-            "backport; expected CPP f64a654 or #862 8ebef00 witnesses. "
-            "Review and update/retire the bounded recipe before publication."
+
+    if review:
+        # PUBLICATION path. The identity table is a review control, not part of
+        # the transformation below, and issue #251 keeps it here while removing
+        # it from the reporting path. Refusing an unreviewed source before any
+        # CxPP transformation is the #195/#204 threat model: an altered source
+        # must not be able to launder itself into looking equivalent after
+        # generic adaptation. Pinned by
+        # test_issue_contract_unreviewed_raw_source_cannot_be_hidden_by_generic_adaptation
+        # and test_issue_contract_unknown_source_fails_refresh_before_any_publication.
+        identity = _github_contract_source_identity(content)
+        if identity not in (_GITHUB_CONTRACT_BEFORE, _GITHUB_CONTRACT_AFTER):
+            raise IntegrityError(
+                "github-issue-create/reference.md: unreviewed raw source for the "
+                "#856 backport; expected CPP f64a654 or #862 8ebef00 witnesses. "
+                "Review and update the recorded witnesses before publication. "
+                "(Reporting does not take this path - issue #251.)"
+            )
+
+    addition = _GITHUB_CONTRACT_ADDITION.encode()
+    if addition not in content:
+        if _GITHUB_CONTRACT_ANCHOR not in content:
+            raise IntegrityError(
+                "github-issue-create/reference.md: cannot place the CPP #856 "
+                "issue-contract preamble - upstream no longer contains "
+                f"{_GITHUB_CONTRACT_ANCHOR.decode()!r}. Re-anchor the insertion "
+                "point rather than widening this check (issue #251)."
+            )
+        content = content.replace(
+            _GITHUB_CONTRACT_ANCHOR, addition + _GITHUB_CONTRACT_ANCHOR, 1
         )
-    adapted = content.replace(
-        b"## Issue Creation Flow\n",
-        _GITHUB_CONTRACT_ADDITION.encode() + b"## Issue Creation Flow\n",
-        1,
-    ).replace(
-        b"- Problem/use case\n- Proposed solution\n",
-        b"- Problem/use case (the outcome wanted, and why it matters)\n"
-        b"- Proposed approach (optional, and recorded as revisable)\n"
-        b"- Constraints, each with the rationale behind it (optional)\n",
-        1,
-    )
-    if _github_contract_source_identity(adapted) != _GITHUB_CONTRACT_AFTER:
-        raise IntegrityError("#856 backport recipe did not reproduce the reviewed CPP #862 blob")
-    return adapted
+
+    if _GITHUB_CONTRACT_OLD_BULLETS in content:
+        content = content.replace(
+            _GITHUB_CONTRACT_OLD_BULLETS, _GITHUB_CONTRACT_NEW_BULLETS, 1
+        )
+    elif _GITHUB_CONTRACT_NEW_BULLETS not in content:
+        raise IntegrityError(
+            "github-issue-create/reference.md: neither the original nor the "
+            "CPP #856 issue-body bullets are present, so the reviewed contract "
+            "cannot be published - upstream restructured the section "
+            "(issue #251). Re-anchor rather than widen."
+        )
+
+    return content
 
 
 _NATIVE_CONTEXT_REL = ".codex/skills/spec-sync/scripts/spec_context.py"
@@ -1983,6 +2038,8 @@ def _adapt_invocation_text(skill_dir: Path, source_file: Path, text: str) -> str
 def _adapted_source_payloads(
     skill_dir: Path,
     immutable_payloads: dict[str, PreparedPayload] | None = None,
+    *,
+    review: bool = True,
 ) -> dict[str, PreparedPayload]:
     _assert_no_symlinks(skill_dir, label=f"source skill {skill_dir.name}")
     files: dict[str, PreparedPayload] = {}
@@ -2000,7 +2057,9 @@ def _adapted_source_payloads(
         _safe_relative_path(rel, label=f"source skill {skill_dir.name}")
         if skill_dir.name == "evaluate-help" and rel == "scripts/speckit-tasks-to-issues.sh":
             continue
-        raw_content = _backport_github_issue_contract(skill_dir, rel, source_payload.content)
+        raw_content = _backport_github_issue_contract(
+            skill_dir, rel, source_payload.content, review=review
+        )
         try:
             text = raw_content.decode()
         except UnicodeDecodeError:
@@ -2174,6 +2233,7 @@ def _prepare_source_payloads(
     *,
     commit: str | None = None,
     policy: AdoptionPolicy | None = None,
+    review: bool = True,
 ) -> tuple[list[Path], dict[str, dict[str, PreparedPayload]], dict[str, bytes]]:
     source_root = cpp_root / PIN_PULL_SOURCE
     _assert_no_symlinks(source_root, label="source payload")
@@ -2186,7 +2246,7 @@ def _prepare_source_payloads(
     for src_dir in src_dirs:
         _safe_relative_path(src_dir.name, label="source skill directory")
         immutable = immutable_by_skill[src_dir.name] if immutable_by_skill else None
-        payloads = _adapted_source_payloads(src_dir, immutable)
+        payloads = _adapted_source_payloads(src_dir, immutable, review=review)
         if not payloads:
             raise IntegrityError(f"source skill {src_dir.name} has no payload files")
         by_skill[src_dir.name] = payloads
@@ -3061,7 +3121,11 @@ def _upstream_report(
     )
     if not COMMIT_RE.fullmatch(target_skills_tree):
         raise IntegrityError("target codex/skills tree has no immutable SHA-1 identity")
-    _, by_skill, _ = _prepare_source_payloads(cpp_root, commit=ref)
+    # Reporting READS arbitrary upstream and publishes nothing, so it does not
+    # take the publication review gate (issue #251). Blocking the drift report on
+    # an unreviewed source is what made the cron fail every run while leaving the
+    # drift state unknown rather than clean.
+    _, by_skill, _ = _prepare_source_payloads(cpp_root, commit=ref, review=False)
     expected_prepared = {
         f"{skill_name}/{rel}": payload
         for skill_name, payloads in by_skill.items()
