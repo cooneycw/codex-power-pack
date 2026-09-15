@@ -48,7 +48,15 @@ GENERATED_ROOTS = (".codex/skills", "plugins/flow/skills")
 # --- against the PRE-FIX tree to prove these tests actually go red there.
 
 def raw_fallback_sites(root: Path) -> list[str]:
-    """Every generated file under `root` still carrying the raw --force fallback."""
+    """Every generated file under `root` still carrying an executable raw fallback.
+
+    Uses the GENERATOR's own detector rather than a second substring search of its
+    own. Codex re-review of #243 caught this helper still doing the naive
+    `RAW_FALLBACK in text` check after the generator had been corrected - so the
+    artifact scan carried both defects the generator had just shed: it would fire
+    on prose warning against the command, and miss `git  worktree remove ...`.
+    Two detectors for one property drift apart, and the weaker one decides.
+    """
     hits: list[str] = []
     for rel in GENERATED_ROOTS:
         base = root / rel
@@ -56,8 +64,9 @@ def raw_fallback_sites(root: Path) -> list[str]:
             continue
         for path in sorted(base.rglob("*.md")):
             text = path.read_text(encoding="utf-8", errors="replace")
-            if RAW_FALLBACK in text:
-                hits.append(f"{path.relative_to(root)}:{text.count(RAW_FALLBACK)}")
+            for lineno, line in enumerate(text.splitlines(), 1):
+                if sync._DESTRUCTIVE_FALLBACK_RE.match(line.strip()):
+                    hits.append(f"{path.relative_to(root)}:{lineno}")
     return hits
 
 
@@ -271,3 +280,24 @@ def test_deleted_orphan_destroyed_uncommitted_work(tmp_path: Path) -> None:
         "the orphan did NOT destroy uncommitted work; the premise for deleting it"
         " does not hold and this test is no longer evidence of anything"
     )
+
+
+def test_artifact_scan_uses_the_same_detector_as_the_generator(tmp_path: Path) -> None:
+    """The artifact scan must agree with the generator on both edges.
+
+    A scan with its own private notion of "the destructive line" is a second
+    detector for one property; they drift, and the weaker one decides. These two
+    cases are exactly where the naive substring version disagreed.
+    """
+    tree = tmp_path / ".codex" / "skills" / "flow-merge"
+    tree.mkdir(parents=True)
+
+    (tree / "reference.md").write_text(
+        f"Never run `{RAW_FALLBACK}` by hand.\n", encoding="utf-8"
+    )
+    assert raw_fallback_sites(tmp_path) == [], "prose about the hazard is not the hazard"
+
+    (tree / "reference.md").write_text(
+        '    git  worktree remove "$WORKTREE_PATH" --force\n', encoding="utf-8"
+    )
+    assert raw_fallback_sites(tmp_path) != [], "whitespace variant must still be seen"
