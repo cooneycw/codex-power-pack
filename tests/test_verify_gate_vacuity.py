@@ -155,9 +155,17 @@ def test_harness_lint_passes_a_scanned_clean_tree(tmp_path: Path) -> None:
 
 
 def test_harness_lint_catches_construct_mirrored_into_both_copies(tmp_path: Path) -> None:
-    """The LOCAL_SKILL_DIRS case: the construct is in BOTH copies, so package-drift
-    sees no difference and the manifest never hashes it. harness-lint is the only
-    gate left, which is why its vacuous pass mattered."""
+    """POSITIVE control, not a regression test: this passes on the pre-fix script too.
+
+    What it establishes: harness-lint DOES catch a construct that is mirrored
+    byte-for-byte into both copies - the shape a regeneration produces, which
+    package-drift cannot see because it compares the two copies against each other.
+
+    What it does NOT establish: that harness-lint is the SOLE gate to catch it. This
+    case runs harness-lint and nothing else. The cross-gate result in the module
+    docstring - every other gate at exit 0 on that input - was measured separately
+    against a full clone and is not re-derived here. Do not cite this case for it.
+    """
     installed = tmp_path / "installed"
     packaged = tmp_path / "packaged"
     body = "Read CLAUDE.md before starting.\n"
