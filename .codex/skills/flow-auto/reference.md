@@ -937,8 +937,9 @@ Report: `Step 6/9: Finish complete - PR #XX created`
 
    If the helper is not installed (exit 127), fall back to:
    ```bash
-   git worktree remove "$WORKTREE_PATH" --force
-   git branch -D "$BRANCH" 2>/dev/null || true
+   echo "REFUSING: worktree-remove.sh is missing; not removing $WORKTREE_PATH by hand." >&2
+   echo "  Every guard this lane relies on lives in that helper (issue #899)." >&2
+   echo "  Reinstall the skill package so <SKILL_DIR>/scripts/worktree-remove.sh is present, then re-run this step." >&2
    ```
    With no worktree (a feature branch in the main repo), just delete the
    branch: `git branch -D <branch>`.

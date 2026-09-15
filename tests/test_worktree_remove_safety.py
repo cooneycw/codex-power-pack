@@ -1,0 +1,303 @@
+"""Safety contract for worktree removal (codex-power-pack#243).
+
+Two defects are covered here, both of the same class: a guard whose absence is
+indistinguishable from its success.
+
+1. `scripts/worktree-remove.sh` was a 182-line hand-maintained orphan with no #597
+   claim check and no uncommitted-work guard once `--force` was passed - and
+   `--force` is what the ordinary cleanup path passes every time. It is deleted:
+   the eight generated skill copies are the supported path, and a ninth hand-kept
+   version matching neither the pin nor its siblings would be a new divergence.
+
+2. The generated flow-merge / flow-auto references fell back to a RAW
+   `git worktree remove "$WORKTREE_PATH" --force` when the guarded helper was
+   absent. That fallback is blocked by git itself only on a LOCKED worktree (git
+   demands `-f -f`); on an unlocked one it is completely unguarded for uncommitted
+   work and unpushed commits. CPP fixed this in merge.md under #899 and left the
+   same line raw in auto.md (claude-power-pack#973), so a pin bump would import it
+   rather than remove it. The correction therefore lives in CxPP's overlay.
+
+The overlay is an exact-string replacement, so it can silently stop matching when
+upstream reflows. `test_overlay_assertion_fires_*` is the committed negative control
+for that: it feeds text the replacement does NOT match and requires the generator to
+raise. Without it, a no-op overlay and a working one produce identical green runs.
+"""
+
+from __future__ import annotations
+
+import importlib.util
+import subprocess
+from pathlib import Path
+
+import pytest
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+MODULE_PATH = REPO_ROOT / "scripts" / "codex_skills_sync.py"
+_spec = importlib.util.spec_from_file_location("codex_skills_sync", MODULE_PATH)
+assert _spec is not None and _spec.loader is not None
+sync = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(sync)
+
+RAW_FALLBACK = 'git worktree remove "$WORKTREE_PATH" --force'
+CLAIM_MARKER = "flow-worktree-claim.sh"
+
+GENERATED_ROOTS = (".codex/skills", "plugins/flow/skills")
+
+
+# --- helpers parameterized on a tree root, so the identical assertion can be run
+# --- against the PRE-FIX tree to prove these tests actually go red there.
+
+def raw_fallback_sites(root: Path) -> list[str]:
+    """Every generated file under `root` still carrying an executable raw fallback.
+
+    Uses the GENERATOR's own detector rather than a second substring search of its
+    own. Codex re-review of #243 caught this helper still doing the naive
+    `RAW_FALLBACK in text` check after the generator had been corrected - so the
+    artifact scan carried both defects the generator had just shed: it would fire
+    on prose warning against the command, and miss `git  worktree remove ...`.
+    Two detectors for one property drift apart, and the weaker one decides.
+    """
+    hits: list[str] = []
+    for rel in GENERATED_ROOTS:
+        base = root / rel
+        if not base.is_dir():
+            continue
+        for path in sorted(base.rglob("*.md")):
+            text = path.read_text(encoding="utf-8", errors="replace")
+            for lineno, line in enumerate(text.splitlines(), 1):
+                if sync._DESTRUCTIVE_FALLBACK_RE.match(line.strip()):
+                    hits.append(f"{path.relative_to(root)}:{lineno}")
+    return hits
+
+
+def unguarded_remover_scripts(root: Path) -> list[str]:
+    """Every worktree-remove.sh under `root` that lacks the #597 claim check."""
+    offenders: list[str] = []
+    for path in sorted(root.rglob("worktree-remove.sh")):
+        if ".git/" in str(path):
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        if CLAIM_MARKER not in text:
+            offenders.append(str(path.relative_to(root)))
+    return offenders
+
+
+# --- 1. the artifact, not the source -----------------------------------------
+
+def test_generated_skills_carry_no_raw_worktree_fallback() -> None:
+    """The shipped artifact must contain zero raw fallbacks.
+
+    This asserts against generated OUTPUT. Asserting that the overlay source
+    contains the replacement string would pass in exactly the no-op case the
+    overlay exists to prevent.
+    """
+    assert raw_fallback_sites(REPO_ROOT) == []
+
+
+def test_generated_skills_carry_the_refusal_instead() -> None:
+    """Zero raw fallbacks could also mean the block vanished entirely."""
+    found = [
+        str(p.relative_to(REPO_ROOT))
+        for rel in GENERATED_ROOTS
+        for p in sorted((REPO_ROOT / rel).rglob("reference.md"))
+        if "REFUSING: worktree-remove.sh is missing" in p.read_text(encoding="utf-8")
+    ]
+    assert len(found) == 4, f"expected all four reference.md sites, got {found}"
+
+
+# --- 2. the negative control on the overlay ----------------------------------
+
+def _payload(text: str):
+    return sync.PreparedPayload(text.encode(), 0o644)
+
+
+def test_overlay_assertion_fires_when_replacement_stops_matching() -> None:
+    """NEGATIVE CONTROL: a surviving raw fallback must fail generation loudly.
+
+    This is the input that makes the instrument report the OTHER verdict. If this
+    test ever passes without raising, the overlay's guard is blind and a silent
+    no-op after an upstream reflow would ship the raw fallback with nothing
+    reporting it.
+    """
+    files = {"reference.md": _payload(f"prose\n    {RAW_FALLBACK}\n    more\n")}
+    with pytest.raises(sync.IntegrityError) as excinfo:
+        sync._assert_worktree_fallback_removed(Path("flow-merge"), files)
+    assert "reference.md" in str(excinfo.value)
+    assert "did not apply" in str(excinfo.value)
+
+
+def test_overlay_assertion_passes_on_clean_output() -> None:
+    """The control must also be able to report CLEAN, or it is merely always-red."""
+    files = {
+        "reference.md": _payload(
+            f"prose\n    echo {sync._WORKTREE_REFUSAL_MARKER}\n"
+        )
+    }
+    sync._assert_worktree_fallback_removed(Path("flow-merge"), files)
+
+
+@pytest.mark.parametrize(
+    "variant",
+    [
+        pytest.param('git  worktree remove "$WORKTREE_PATH" --force', id="double-space"),
+        pytest.param('git\tworktree remove "$WORKTREE_PATH" --force', id="tab"),
+        pytest.param('git worktree  remove "$WORKTREE_PATH"  --force', id="inner-spaces"),
+        pytest.param("git worktree remove $WORKTREE_PATH --force", id="unquoted"),
+        pytest.param("git worktree remove ${WORKTREE_PATH} --force", id="braced"),
+    ],
+)
+def test_overlay_assertion_catches_whitespace_reflow(variant: str) -> None:
+    """NEGATIVE CONTROL for the hole Codex review of #243 found.
+
+    The guard originally matched one exact string, so a single extra space INSIDE
+    the command defeated the overlay and the check together - the destructive line
+    shipped while the guard reported clean. The first control written for this
+    varied the block's INDENTATION, which left the command string intact, so it
+    proved the guard catches one mutation class and was read as proving the class.
+    These are the inputs that distinguish the two.
+    """
+    files = {
+        "reference.md": _payload(
+            f"    {variant}\n{sync._WORKTREE_REFUSAL_MARKER}\n"
+        )
+    }
+    with pytest.raises(sync.IntegrityError):
+        sync._assert_worktree_fallback_removed(Path("flow-merge"), files)
+
+
+def test_overlay_assertion_ignores_prose_about_the_hazard() -> None:
+    """A non-zero must mean OUR block changed, not that a neighbour wrote docs.
+
+    Documentation warning against the command is not the command. Before the
+    line-anchoring this raised, which would have made good documentation fail the
+    build and trained the next person to widen the check until it saw nothing.
+    """
+    files = {
+        "reference.md": _payload(
+            f'Never run `{RAW_FALLBACK}` by hand.\n'
+            f"{sync._WORKTREE_REFUSAL_MARKER}\n"
+        )
+    }
+    sync._assert_worktree_fallback_removed(Path("flow-merge"), files)
+
+
+def test_overlay_assertion_requires_the_refusal_not_merely_its_absence() -> None:
+    """Absence of the raw string is not presence of the fix.
+
+    A cleanup block upstream deleted outright, or an output that simply lost it,
+    scores zero on a pure absence check - indistinguishable from a correctly
+    applied overlay. The requirement is derived from the SOURCE: `reference.md`
+    carried the fallback upstream, so the output must carry the refusal.
+    """
+    had = frozenset({"reference.md"})
+    with pytest.raises(sync.IntegrityError):
+        sync._assert_worktree_fallback_removed(Path("flow-merge"), {}, had)
+    with pytest.raises(sync.IntegrityError):
+        sync._assert_worktree_fallback_removed(
+            Path("flow-merge"), {"reference.md": _payload("no block at all\n")}, had
+        )
+
+
+def test_overlay_assertion_exempts_skills_whose_source_had_no_block() -> None:
+    """A skill that never carried the block owes no refusal.
+
+    Hardcoding flow-merge/flow-auto here instead would fail every synthetic
+    fixture that legitimately has no cleanup block - which is exactly what it did
+    on first attempt, erroring 53 provenance tests - and would go quietly blind if
+    upstream moved the block to a third skill.
+    """
+    sync._assert_worktree_fallback_removed(
+        Path("flow-merge"), {"reference.md": _payload("no block at all\n")}, frozenset()
+    )
+
+
+def test_overlay_replaces_both_upstream_fallback_shapes() -> None:
+    """flow-merge and flow-auto indent the block differently; cover both."""
+    for raw in (sync._RAW_WORKTREE_FALLBACK_MERGE, sync._RAW_WORKTREE_FALLBACK_AUTO):
+        out = sync._adapt_flow_text(Path("flow-merge"), Path("reference.md"), raw)
+        assert RAW_FALLBACK not in out, f"overlay did not replace: {raw!r}"
+        assert "REFUSING: worktree-remove.sh is missing" in out
+
+
+# --- 3. no unguarded remover survives in the tree ----------------------------
+
+def test_no_worktree_remove_script_lacks_the_claim_check() -> None:
+    """Every remaining copy carries #597. The deleted 182-line orphan did not."""
+    assert unguarded_remover_scripts(REPO_ROOT) == []
+
+
+def test_root_orphan_is_gone() -> None:
+    assert not (REPO_ROOT / "scripts" / "worktree-remove.sh").exists()
+
+
+# --- 4. the deleted orphan really did destroy work ---------------------------
+
+def test_deleted_orphan_destroyed_uncommitted_work(tmp_path: Path) -> None:
+    """Reconstructs the orphan from git history and proves it was a data-loss path.
+
+    This is why the file was deleted rather than kept. It runs entirely inside
+    tmp_path against a disposable fixture repo - never against a real worktree.
+    Skipped, not silently passed, if the pre-deletion blob cannot be read.
+    """
+    fixture = REPO_ROOT / "tests" / "fixtures" / "worktree-remove-prefix-orphan.sh.txt"
+    # Committed rather than read from git history on purpose: a `git show HEAD:`
+    # lookup stops resolving the moment the deletion is committed, and would turn
+    # this into a silent skip - a skipped control is not a control. The fixture is
+    # inert (not executable, and deliberately not named worktree-remove.sh so the
+    # reintroduction scan below does not match it).
+    script = tmp_path / "orphan.sh"
+    script.write_text(fixture.read_text(encoding="utf-8"), encoding="utf-8")
+    script.chmod(0o755)
+
+    main = tmp_path / "repo"
+    main.mkdir()
+    def run(*args: str, cwd: Path = main) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(args, cwd=cwd, capture_output=True, text=True)
+
+    run("git", "init", "-q", ".")
+    run("git", "config", "user.email", "t@t")
+    run("git", "config", "user.name", "t")
+    (main / "tracked.txt").write_text("base\n")
+    run("git", "add", ".")
+    run("git", "commit", "-qm", "init")
+    wt = tmp_path / "wt"
+    run("git", "worktree", "add", "-q", str(wt), "-b", "feature")
+    if not wt.is_dir():
+        pytest.skip("fixture worktree could not be created")
+
+    (wt / "tracked.txt").write_text("PRECIOUS UNCOMMITTED EDIT\n")
+    (wt / "untracked.txt").write_text("PRECIOUS UNTRACKED FILE\n")
+
+    proc = subprocess.run(
+        ["bash", str(script), str(wt), "--force"],
+        cwd=main,
+        capture_output=True,
+        text=True,
+    )
+    # The point is not that it errored - it SUCCEEDED, and that is the defect.
+    assert proc.returncode == 0, f"fixture did not exercise the path: {proc.stderr}"
+    assert not (wt / "untracked.txt").exists(), (
+        "the orphan did NOT destroy uncommitted work; the premise for deleting it"
+        " does not hold and this test is no longer evidence of anything"
+    )
+
+
+def test_artifact_scan_uses_the_same_detector_as_the_generator(tmp_path: Path) -> None:
+    """The artifact scan must agree with the generator on both edges.
+
+    A scan with its own private notion of "the destructive line" is a second
+    detector for one property; they drift, and the weaker one decides. These two
+    cases are exactly where the naive substring version disagreed.
+    """
+    tree = tmp_path / ".codex" / "skills" / "flow-merge"
+    tree.mkdir(parents=True)
+
+    (tree / "reference.md").write_text(
+        f"Never run `{RAW_FALLBACK}` by hand.\n", encoding="utf-8"
+    )
+    assert raw_fallback_sites(tmp_path) == [], "prose about the hazard is not the hazard"
+
+    (tree / "reference.md").write_text(
+        '    git  worktree remove "$WORKTREE_PATH" --force\n', encoding="utf-8"
+    )
+    assert raw_fallback_sites(tmp_path) != [], "whitespace variant must still be seen"
