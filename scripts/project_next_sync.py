@@ -23,12 +23,34 @@ def source_files() -> dict[Path, Path]:
 
 
 def check() -> int:
+    """Verify the mirrored runtime bundle.
+
+    Exit codes: 0 current, 1 drift, 3 nothing to compare (issue #245).
+    """
+    # Derive the guard from the SAME mapping the comparison uses. A second glob
+    # here would drift from source_files()'s is_file() filter, and a `*.py`
+    # directory or dangling symlink would then satisfy the guard while
+    # contributing nothing to compare - reintroducing the vacuous pass through
+    # another door (found by Codex pre-PR review on #245).
+    mapped = source_files()
+    package_modules = [target for target in mapped if target != TARGET_ENTRY]
+    if not package_modules:
+        # source_files() always carries the entry script, so the package modules
+        # are the population this gate exists to compare. With none of them,
+        # TARGET_PACKAGE.glob yields no extras either, and a bundle that has
+        # vanished from BOTH sides reports "current". Measured on #245. Refuse.
+        print(
+            "project-next: refusing a vacuous pass - no source modules under "
+            f"{SOURCE_PACKAGE.relative_to(REPO_ROOT).as_posix()}; nothing was compared.",
+        )
+        return 3
+
     drift = [
         target.relative_to(REPO_ROOT).as_posix()
-        for target, source in source_files().items()
+        for target, source in mapped.items()
         if not target.is_file() or not filecmp.cmp(source, target, shallow=False)
     ]
-    expected = set(source_files())
+    expected = set(mapped)
     extras = sorted(
         path.relative_to(REPO_ROOT).as_posix() for path in TARGET_PACKAGE.glob("*.py") if path not in expected
     )
@@ -38,7 +60,7 @@ def check() -> int:
             print(f"  {path}")
         print("Run: python3 scripts/project_next_sync.py --write")
         return 1
-    print("project-next runtime bundle is current")
+    print(f"project-next runtime bundle is current ({len(mapped)} file(s) compared)")
     return 0
 
 
