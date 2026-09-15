@@ -463,3 +463,54 @@ def test_anchor_crash_is_not_reported_as_a_caught_regression(tmp_path):
     verdict, details = _verdict(tree)
     assert verdict == "UNRESOLVED", f"got {verdict}: {details}"
     assert "cannot be shown to have caught it" in " ".join(details)
+
+
+#: Reports and then deletes content reached THROUGH a link in the case. Copying
+#: the case preserves the link, so the deletion lands on the shared target and
+#: every later invocation sees it clean.
+GATE_CONSUMING_THROUGH_LINK = """#!/usr/bin/env python3
+import sys
+from pathlib import Path
+case = Path(sys.argv[sys.argv.index("--case") + 1])
+trigger = case / "outside" / "trigger"
+if trigger.exists():
+    trigger.unlink()
+    print("fakegate: found something")
+    sys.exit(1)
+print("fakegate: clean")
+sys.exit(0)
+"""
+
+
+def test_a_case_with_a_symlink_escaping_the_fixture_is_refused(tmp_path):
+    """A link out of the case points at SHARED state in every private copy.
+
+    Copying per invocation isolates the fixture's contents, not everything those
+    contents can reach. Gate and anchor here are byte-identical and equally
+    capable; the gate deletes the trigger through the link, the anchor's fresh
+    copy then reaches the same emptied directory, "misses" the bad case, and the
+    control would score PASS while proving nothing.
+
+    The register refuses the fixture instead of guessing: remapping the target
+    into each copy would change what the case means, and following it restores
+    the shared-state failure.
+    """
+    shared = tmp_path / "shared"
+    shared.mkdir()
+    (shared / "trigger").write_text("x")
+
+    tree = _build(
+        tmp_path / "repo",
+        gate_src=GATE_CONSUMING_THROUGH_LINK,
+        anchor_src=GATE_CONSUMING_THROUGH_LINK,
+        bad_has_trigger=False,
+    )
+    for case in ("bad", "good"):
+        (tree / "controls" / "fake-control" / "cases" / case / "outside").symlink_to(shared)
+
+    verdict, details = _verdict(tree)
+    assert verdict != "PASS", f"escaping symlink scored PASS: {details}"
+    assert verdict == "UNRESOLVED", f"got {verdict}: {details}"
+    assert "escaping the fixture" in " ".join(details)
+    # The shared target must be untouched: the register refused before running.
+    assert (shared / "trigger").exists(), "the register mutated shared state outside the fixture"

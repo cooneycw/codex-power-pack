@@ -164,27 +164,86 @@ that everything else was blocked on source changes. That was wrong twice, and
 the counter-model review caught both: it omitted `skill-eval.py` from its own
 table, and it treated "no CLI flag" as "cannot be controlled".
 
-| gate | how a case can be aimed at it |
-|---|---|
-| `harness_lint.py` | **directly** - `--skills-root` |
-| `skill-eval.py deterministic` | **directly** - `--cases` takes a fixture suite |
-| `project_next_sync.py` | **through a committed adapter**. It has only `--check` / `--write`, but its roots are module constants, and `tests/test_verify_gate_vacuity.py` already rebinds `REPO_ROOT` and `SOURCE_PACKAGE` at a scratch tree. A small committed adapter can do the same and be invoked as a subprocess through this register's configurable `invocation` |
-| `codex_skills_sync.py --check` | **not yet** - `--cpp-root` steers the *comparison source*, not the tree under test |
-| `skill_contract_lint.py`, `skill_contract_baseline.py` | **not yet** - `--check` / `--json` / `--write` only, roots from `Path(__file__).resolve().parent.parent` |
+| tier | gates | how a case is aimed |
+|---|---|---|
+| **direct** | `harness_lint.py`, `skill-eval.py deterministic` | a CLI flag - `--skills-root`, `--cases`. Only the gate is under test |
+| **adapter-reachable** | `project_next_sync.py`, `codex_skills_sync.py --check`, `skill_contract_lint.py`, `skill_contract_baseline.py` | their roots are module constants, so a committed adapter can rebind them and be invoked as a subprocess through this register's configurable `invocation` |
 
-The tiers matter because they have different costs and different honesty. A
-direct flag puts only the gate under test. **An adapter puts the adapter under
-test too** - if the adapter rebinds the wrong constant, the control certifies
-the adapter's idea of the gate rather than the gate. That is a real cost and the
-reason an adapter is not simply the answer everywhere; it is still far cheaper
-than changing five gates' interfaces, and it is available today.
+**No gate here is unreachable.** Two earlier drafts of this table said otherwise
+- first that only `harness_lint.py` could be controlled, then that three gates
+were blocked pending a root argument. Both were wrong, and in the same way: they
+read "has no CLI flag" as "cannot be aimed", which is a claim about an interface
+standing in for a claim about the code.
+
+**An adapter puts the adapter inside the control's trust boundary.** If it
+rebinds the wrong constants the control certifies the adapter's idea of the gate
+rather than the gate, and the specific failure is *partial* rebinding: miss one
+and the gate reads a MIXED tree, half scratch and half real repo, producing a
+confident verdict about a state that exists nowhere. It does not fail loudly.
+That is why the tier is named separately rather than folded into direct.
+
+### The adapter cost is the READ SET, and it is not visible in the definitions
+
+The obvious way to size an adapter is to count the module constants derived from
+`Path(__file__)`. **That measurement is wrong in both directions at once**, and
+`project_next_sync.py` shows both errors in one file:
+
+| constant | root-derived? | read by `check()`? |
+|---|---|---|
+| `REPO_ROOT`, `SOURCE_PACKAGE`, `SOURCE_ENTRY` | yes | yes |
+| `PLUGIN_ROOT` | yes | **no** - 0 reads after definition; it exists only to derive the two below |
+| `TARGET_PACKAGE`, `TARGET_ENTRY` | **no** - they descend from `PLUGIN_ROOT` | **yes** - 8 reads between them |
+
+So a root-derived scan over-counts one constant that never needs rebinding and
+misses two that absolutely do. An adapter author working from that scan would
+believe they were complete and would have built exactly the mixed tree described
+above.
+
+The figure that matters for an ADAPTER is the **read set** - the constants the
+code path actually consults - and it is obtainable only by tracing each path.
+**This document deliberately publishes no per-gate read-set numbers**, because
+none has been measured that way. An honest gap beats a fourth revision.
+
+**The definition scan was not an inaccurate measurement; it was an accurate one
+mislabelled.** Counting constants derived from `Path(__file__)` yields the
+*derivation graph*, and the graph is precisely what the other remedy needs. For
+`project_next_sync.py` every read-set member descends from `REPO_ROOT`
+transitively - `TARGET_PACKAGE` and `TARGET_ENTRY` through `PLUGIN_ROOT` - so a
+single `--root` threaded into the derivation makes all of them correct **by
+construction**, and no one needs to know which the code reads. `PLUGIN_ROOT`
+being an unread intermediate stops mattering: it is a node in the graph, and the
+graph is what a flag walks.
+
+So the two remedies need two different measurements, and conflating them is what
+produced three wrong tables: **write an adapter** needs the read set; **add a
+root flag** needs the derivation graph. #259 pursues the flag, because it
+removes the partial-rebind class outright rather than documenting it. Whether
+every gate's graph is fully rooted the way `project_next_sync.py`'s is remains
+unchecked for the other three - a cheap definition-scan question, and one for
+#259's implementation rather than this document.
+
+**Two adapters are already demonstrated, and both are correct** - which is what
+makes the tier credible rather than hopeful.
+`tests/test_verify_gate_vacuity.py:202-206` rebinds exactly the five names
+`check()` reads and skips `PLUGIN_ROOT`, the unread intermediate.
+`tests/test_codex_skills_provenance.py` does the same for `codex_skills_sync.py`,
+rebinding eight constants - `REPO_ROOT`, `SKILLS_ROOT`, `VENDOR_DIR`,
+`MANIFEST_PATH`, `PIN_PATH`, `ADOPTION_POLICY_PATH`, `RETAIN_OVERLAY_ROOT`,
+`PLUGINS_ROOT`. Both authors worked from the read set rather than from the
+definitions.
 
 So the honest statement is not "the bound is unachievable here". It is: two
-gates are directly controllable, one more is reachable through an adapter, and
-the remaining ones need a root argument in their own source - which is a change
-to those gates, outside this issue's lane. Only one control ships in this change
-because the machinery had to exist first; the ceiling is lower than #244's "one
-per load-bearing instrument" but it is not one.
+gates are directly controllable today, four more are reachable through adapters
+whose cost has not yet been measured correctly, and giving those four a root
+argument would remove the hazard entirely. Only one control ships in this change
+because the machinery had to exist first.
+
+**A note on denominators, so this and #259 are not read as contradicting.** ADR
+0008 counts **verdict contracts** - `skill_contract_lint.py` and
+`skill_contract_baseline.py` are its rows 7 and 8, two scripts answering
+different questions. #259 counts **`make verify` members**, where
+`skill-contract-lint` is one target invoking both. Neither is wrong; only
+silence about which is being counted would be.
 
 ### This register is not a coverage map
 
@@ -217,17 +276,16 @@ property per gate reads wider than it measures.
 
 - **Coverage.** One of 32 enumerated contracts has a committed control. The
   binding constraint is gate interfaces, not effort.
-- **The gates that cannot be aimed.** `codex_skills_sync.py --check`,
-  `skill_contract_lint.py` and `skill_contract_baseline.py` each need a root
-  argument in their own source. Tracked separately as an interface issue, not a
-  residual of this one - a structural ceiling on the whole negative-control
+- **The adapter read sets.** Sizing the four adapter-reachable gates means
+  tracing which constants each code path consults. Not done here, and
+  deliberately not guessed. Tracked separately as an interface issue (#259), not
+  a residual of this one - a structural constraint on the whole negative-control
   programme does not belong inside a document about one register.
 - **The controls that are now possible and not yet written.**
   `skill-eval.py deterministic` is directly controllable and unclaimed;
   `project_next_sync.py` is reachable through an adapter and its blindness is
   already measured by #245's battery. Neither is blocked on anything.
-- **`make verify` wiring.** The register is not yet a `make` target - `Makefile`
-  was held by another worker for #251 during this work. Until it is wired, the
-  register is a command someone runs, not a gate that runs itself, and its
-  verdict is not consumed by anything. That is the remaining half of #244's
-  outcome.
+- *(resolved during this change - `make verify` now has a `negative-controls`
+  member, so the register's verdict is consumed by the gate that lets work
+  through. It is therefore itself an instrument under the bound, which is why
+  `tests/test_negative_control_register.py` exists.)*

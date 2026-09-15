@@ -81,6 +81,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -148,6 +149,32 @@ def discover(root: Path) -> list[tuple[Path, str]]:
     return found
 
 
+def _escaping_symlink(case: Path) -> Path | None:
+    """First symlink inside `case` whose target lies outside it, if any.
+
+    Copying a fixture per invocation isolates its CONTENTS, not everything those
+    contents can reach. A link pointing out of the case still points at shared
+    state in every copy, so a gate that repairs content through it mutates the
+    one original and the anchor that runs next sees it clean - the private-copy
+    fix defeated by the thing it was meant to fix. A relative link that escapes
+    also silently means something different once relocated. Found by the second
+    Codex pass on #244.
+    """
+    if not case.is_dir():
+        return None
+    base = case.resolve()
+    for path in case.rglob("*"):
+        if not path.is_symlink():
+            continue
+        target = Path(os.readlink(path))
+        resolved = target if target.is_absolute() else (path.parent / target)
+        try:
+            resolved.resolve().relative_to(base)
+        except ValueError:
+            return path
+    return None
+
+
 def _invoke(invocation: list[str], gate: Path, case: Path, root: Path) -> tuple[int | None, str, str]:
     """Run one invocation against a PRIVATE COPY of the case.
 
@@ -158,6 +185,18 @@ def _invoke(invocation: list[str], gate: Path, case: Path, root: Path) -> tuple[
     mutated itself. Copying per invocation removes the ordering dependency
     rather than testing for it. Found by Codex review on #244.
     """
+    escaping = _escaping_symlink(case)
+    if escaping is not None:
+        # Refused rather than guessed: remapping the target into every private
+        # tree would change what the fixture means, and following it would
+        # reintroduce the shared-state failure.
+        return UNRUNNABLE, "", (
+            f"case contains a symlink escaping the fixture: "
+            f"{escaping.relative_to(case)} -> {os.readlink(escaping)}. "
+            "A link out of the case points at shared state in every copy, so one "
+            "invocation can change what the next one sees."
+        )
+
     with tempfile.TemporaryDirectory(prefix="negctl-") as tmp:
         scratch = Path(tmp) / case.name
         if case.is_dir():
