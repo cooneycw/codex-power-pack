@@ -850,6 +850,15 @@ CONTRACT_IDENTITIES = {
         "2c850e3c88f0674c912482f6dce773e184dfc276",
         "d4bc6b921f0b5e4a909d4e284bf95ae9e5be90ead3f406152cc9c210dcf28382", 3902,
     ),
+    # The source this repository actually pins. `before` predates CPP #856 and
+    # is therefore the committed RED case for _assert_published_issue_contract:
+    # a real upstream state, not a synthetic one, in which the contract section
+    # genuinely is not there.
+    "pinned": (
+        "01b8e13f58218778e93e88c61665eed5eba8fd14",
+        "ebff1e9bd8cac791ec3de87b2523a782641680bc",
+        "85eaa8d1b23b031f1873566b8ddaeba40362ef96f7fa0c1e07be52e7c20e4c50", 3893,
+    ),
 }
 
 
@@ -871,70 +880,80 @@ def _contract_witnesses() -> dict[str, bytes]:
     return result
 
 
-def test_issue_contract_backport_reproduces_upstream_once_before_native_adaptations(tmp_path: Path) -> None:
-    witnesses = _contract_witnesses()
+@pytest.mark.parametrize("state", ["after", "pinned"])
+def test_pinned_source_supplies_the_contract_cxpp_no_longer_backports(state: str) -> None:
+    """The GREEN arm of issue #269's retirement.
+
+    CxPP used to insert CPP #856's contract section itself. Upstream adopted the
+    wording in #862, so at the pinned source the recipe was a byte-for-byte
+    no-op - measured, not assumed: +1235 bytes at CPP f64a654, +0 at 8ebef00 and
+    at 01b8e13. That made deleting it safe, and makes THIS the thing that has to
+    stay true.
+    """
+    content = _contract_witnesses()[state]
+    assert sync._GITHUB_CONTRACT_HEADING in content
+    assert sync._GITHUB_CONTRACT_NEW_BULLETS in content
+
+    published = (MODULE_PATH.parents[1] / ".codex/skills/github-issue-create/reference.md").read_bytes()
+    assert sync._GITHUB_CONTRACT_HEADING in published
+    assert published.count(sync._GITHUB_CONTRACT_HEADING) == 1
+    assert sync._GITHUB_CONTRACT_NEW_BULLETS in published
+
+
+def test_publication_refuses_a_source_that_dropped_the_issue_contract(tmp_path: Path) -> None:
+    """The RED arm, and the condition of the retirement rather than an extra.
+
+    "The recipe is unnecessary" is a claim about ONE pin, and a pin moves. The
+    committed case is CPP f64a654 - the era this repository pinned until #254 -
+    which predates #856 and genuinely lacks the section. Publication must refuse
+    it rather than ship a reference.md missing the contract, which is exactly
+    the silent content loss the retired recipe prevented by accident.
+    """
+    content = _contract_witnesses()["before"]
+    # The case is only a control if it is genuinely negative.
+    assert sync._GITHUB_CONTRACT_HEADING not in content
+    assert sync._GITHUB_CONTRACT_NEW_BULLETS not in content
+
+    skill = tmp_path / "github-issue-create"
+    skill.mkdir()
+    payloads = {"reference.md": sync.PreparedPayload(content, 0o644)}
+    with pytest.raises(sync.IntegrityError, match="no longer carries"):
+        sync._adapted_source_payloads(skill, payloads)
+
+    # REPORTING reads arbitrary upstream and must be able to REPORT a regressed
+    # source rather than fail on it (issue #251). Same bytes, other verdict.
+    adapted = sync._adapted_source_payloads(skill, payloads, review=False)
+    assert sync._GITHUB_CONTRACT_HEADING not in adapted["reference.md"].content
+
+
+def test_the_guard_is_scoped_to_the_one_file_that_carries_the_contract(tmp_path: Path) -> None:
+    """A guard that fires on every skill would be a different, wrong guard."""
+    content = _contract_witnesses()["before"]
+    other = tmp_path / "github-issue-view"
+    other.mkdir()
+    assert sync._adapted_source_payloads(
+        other, {"reference.md": sync.PreparedPayload(content, 0o644)}
+    )["reference.md"].content
+
+    skill = tmp_path / "github-issue-create"
+    skill.mkdir()
+    assert sync._adapted_source_payloads(
+        skill, {"SKILL.md": sync.PreparedPayload(content, 0o644)}
+    )["SKILL.md"].content
+
+
+def test_pinned_era_source_reproduces_the_published_artifact(tmp_path: Path) -> None:
+    """No backport in the path: the pinned bytes adapt straight to what ships."""
+    content = _contract_witnesses()["pinned"]
     skill = tmp_path / "github-issue-create"
     skill.mkdir()
     (skill / "SKILL.md").write_text("---\nname: github-issue-create\n---\n")
-    for state in ("before", "after"):
-        assert sync._backport_github_issue_contract(skill, "reference.md", witnesses[state]) == witnesses["after"]
-        actual = sync._adapted_source_payloads(
-            skill, {"reference.md": sync.PreparedPayload(witnesses[state], 0o644)}
-        )["reference.md"]
-        # Independently expected native edits to the immutable AFTER witness.
-        expected = witnesses["after"].decode().replace("cooneycw/claude-power-pack", '\"$REPO\"')
-        expected = expected.replace(
-            "../../../docs/agents/issue-contract.md",
-            "https://github.com/cooneycw/codex-power-pack/blob/main/docs/agents/issue-contract.md",
-        ).replace("/github-issue-create", "$github-issue-create")
-        expected = expected.replace(
-            "## Issue Creation Flow\n",
-            "If the canonical reference is unavailable, report it and continue otherwise\n"
-            "authorized routine work using known project/user constraints and authority.\n"
-            "Do not invent missing policy or treat a proposal as permission to cross those bounds.\n\n"
-            "## Issue Creation Flow\n",
-        )
-        assert actual == sync.PreparedPayload(expected.encode(), 0o644)
-        assert actual.content.count(b"## What the Body Must Make Legible") == 1
-        published = MODULE_PATH.parent.parent / ".codex/skills/github-issue-create/reference.md"
-        assert published.read_bytes() == actual.content
+    actual = sync._adapted_source_payloads(
+        skill, {"reference.md": sync.PreparedPayload(content, 0o644)}
+    )["reference.md"]
 
-
-@pytest.mark.parametrize("state", ["before", "after"])
-def test_issue_contract_unreviewed_raw_source_cannot_be_hidden_by_generic_adaptation(
-    tmp_path: Path, state: str
-) -> None:
-    content = _contract_witnesses()[state]
-    skill = tmp_path / "github-issue-create"
-    skill.mkdir()
-    # Replacing native-adapted tokens before identity verification used to look
-    # equivalent after generic adaptation. The raw-source guard must still fail.
-    altered = content.replace(b"cooneycw/claude-power-pack", b'"$REPO"')
-    with pytest.raises(sync.IntegrityError, match="unreviewed raw source"):
-        sync._adapted_source_payloads(skill, {"reference.md": sync.PreparedPayload(altered, 0o644)})
-    assert sync._backport_github_issue_contract(skill, "SKILL.md", altered) == altered
-    assert sync._backport_github_issue_contract(tmp_path / "github-issue-view", "reference.md", altered) == altered
-
-
-def test_issue_contract_unknown_source_fails_refresh_before_any_publication(
-    provenance_fixture: tuple[Path, Path, str],
-    capsys: pytest.CaptureFixture[str],
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    root, source, _ = provenance_fixture
-    skill = source / "codex/skills/github-issue-create"
-    skill.mkdir()
-    (skill / "SKILL.md").write_text("---\nname: github-issue-create\n---\n<!-- GENERATED by claude-power-pack -->\n")
-    (skill / "reference.md").write_bytes(_contract_witnesses()["after"] + b"unreviewed source change\n")
-    _git(source, "add", ".")
-    _git(source, "commit", "-q", "-m", "unreviewed github reference")
-    commit = _git(source, "rev-parse", "HEAD")
-    _git(source, "checkout", "-q", "--detach", commit)
-    _install_synthetic_adoption_policy(source, commit, monkeypatch)
-    before = _tree_bytes(root)
-    assert sync.run_refresh(source, commit) != 0
-    assert "unreviewed raw source" in capsys.readouterr().err
-    assert _tree_bytes(root) == before
+    published = MODULE_PATH.parents[1] / ".codex/skills/github-issue-create/reference.md"
+    assert published.read_bytes() == actual.content
 
 
 def _flow_context_witnesses() -> dict[str, str]:
@@ -1018,7 +1037,11 @@ def test_reporting_accepts_an_unreviewed_contract_source_that_publication_refuse
 ) -> None:
     """The #251 split itself, on one source, both verdicts.
 
-    This pins the SPLIT's contract: one source, both verdicts, same bytes.
+    This pins the SPLIT's contract: one source, both verdicts, same bytes. What
+    publication refuses CHANGED in issue #269 - the retired #856 recipe's
+    "unreviewed raw source" identity gate became the contract-present condition
+    - but the split it demonstrates did not, which is why this test moved to the
+    new guard instead of leaving with the old one.
 
     It does NOT pin the call site. Removing `review=False` from
     `_upstream_report` restores the #856 cron failure, and this test would
@@ -1026,9 +1049,8 @@ def test_reporting_accepts_an_unreviewed_contract_source_that_publication_refuse
     tests/test_codex_skills_report.py, which is outside this change's lane.
     Recorded so the gap is visible rather than assumed covered.
 
-    Structurally valid means the anchors the transformation needs are intact;
-    unreviewed means the bytes match neither recorded witness. Reporting READS
-    and must accept it. Publication WRITES and must still refuse it.
+    Reporting READS and must accept a regressed source so the drift cron can
+    report it. Publication WRITES and must refuse it.
     """
     _, source, _ = provenance_fixture
     skill = source / "codex/skills/github-issue-create"
@@ -1043,17 +1065,20 @@ def test_reporting_accepts_an_unreviewed_contract_source_that_publication_refuse
         b"## Issue Creation Flow\n\nsteps\n"
     )
     (skill / "reference.md").write_bytes(unreviewed)
-    # PUBLICATION refuses it - the #195/#204 control, unchanged by the split.
-    with pytest.raises(sync.IntegrityError, match="unreviewed raw source"):
+    # PUBLICATION refuses it - the #195/#204 control, now expressed as the
+    # contract-present condition rather than the retired identity table.
+    with pytest.raises(sync.IntegrityError, match="no longer carries"):
         sync._adapted_source_payloads(
             skill, {"reference.md": sync.PreparedPayload(unreviewed, 0o644)}
         )
 
-    # REPORTING accepts it, and still applies the transformation.
+    # REPORTING accepts it. Nothing inserts the section any more, so the absence
+    # travels through to the report instead of being papered over - which is the
+    # point: drift has to be visible as drift.
     adapted = sync._adapted_source_payloads(
         skill, {"reference.md": sync.PreparedPayload(unreviewed, 0o644)}, review=False
     )
-    assert sync._GITHUB_CONTRACT_HEADING in adapted["reference.md"].content
+    assert sync._GITHUB_CONTRACT_HEADING not in adapted["reference.md"].content
 
 
 def test_absent_adoption_policy_is_an_error_at_every_pin(
