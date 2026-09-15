@@ -1,5 +1,7 @@
 """Regression checks for the post-demolition Woodpecker pipeline."""
 
+import subprocess
+import tomllib
 from pathlib import Path
 
 import yaml
@@ -69,9 +71,15 @@ def test_gitleaks_config_loads_the_default_ruleset() -> None:
     same thing behaviourally but only runs in the gitleaks image; this runs in
     `make verify`, where gitleaks is not installed.
     """
-    config = (REPO_ROOT / ".gitleaks.toml").read_text(encoding="utf-8")
-    assert "[extend]" in config
-    assert "useDefault = true" in config
+    config = tomllib.loads((REPO_ROOT / ".gitleaks.toml").read_text(encoding="utf-8"))
+    # PARSED, not substring-matched. A text search is satisfied by a comment
+    # mentioning [extend], so deleting the real table while leaving the prose
+    # that explains it would keep the guard green - a guard passing on the
+    # documentation of the thing it is guarding.
+    assert config.get("extend", {}).get("useDefault") is True, (
+        "gitleaks --config REPLACES the built-in ruleset; without extend.useDefault "
+        "the scanner has no rules and reports 'no leaks found' on everything (#263)"
+    )
 
 
 def test_required_ci_uses_complete_local_contract_and_exact_pin() -> None:
@@ -150,3 +158,53 @@ def test_pipeline_contains_no_deleted_runtime_image_gates() -> None:
 
     assert "image-security" not in text
     assert "runtime-smoke" not in text
+
+
+def _run_probe_with_stub_gitleaks(tmp_path: Path, exit_code: int) -> int:
+    """Execute the REAL probe against a stub gitleaks returning `exit_code`.
+
+    Behavioural rather than textual. The earlier guards asserted that the probe
+    CONTAINED `-ne 1` and `probe_rc`, which a branch reversed to fail on success
+    also satisfies - the assertion constrained the vocabulary, not the logic.
+    Running it is the only thing that distinguishes them, and a stub costs
+    nothing: no gitleaks, no container, so this runs inside `make verify` where
+    the real binary is absent.
+    """
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir(parents=True)
+    stub = bin_dir / "gitleaks"
+    stub.write_text(f"#!/bin/sh\nexit {exit_code}\n")
+    stub.chmod(0o755)
+    (tmp_path / ".gitleaks.toml").write_text('title = "stub"\n')
+
+    probe = _pipeline()["steps"]["secret-scan"]["commands"][0]
+    return subprocess.run(
+        ["sh", "-c", probe],
+        cwd=tmp_path,
+        env={"PATH": f"{bin_dir}:/usr/bin:/bin", "HOME": str(tmp_path)},
+        capture_output=True,
+        text=True,
+    ).returncode
+
+
+def test_probe_passes_only_when_gitleaks_reports_a_find(tmp_path):
+    """Exit 1 means detected. Nothing else may be read as detection.
+
+    gitleaks exits 1 on a find and 0 on a clean scan, so a probe testing for
+    "non-zero" also accepts 127 (binary missing), 139 (crash) and every other
+    failure - reporting a scanner that never ran as one that works. That is the
+    same rule this repo's negative-control register enforces: a crash is not a
+    detection.
+    """
+    assert _run_probe_with_stub_gitleaks(tmp_path / "found", 1) == 0, (
+        "the probe must PASS when gitleaks reports a find"
+    )
+    assert _run_probe_with_stub_gitleaks(tmp_path / "clean", 0) == 1, (
+        "the probe must FAIL when the scanner detects nothing - an empty ruleset"
+    )
+    assert _run_probe_with_stub_gitleaks(tmp_path / "absent", 127) == 1, (
+        "the probe must FAIL when gitleaks did not run at all, not report success"
+    )
+    assert _run_probe_with_stub_gitleaks(tmp_path / "crash", 139) == 1, (
+        "the probe must FAIL when the scanner crashed, not read the crash as a find"
+    )
