@@ -517,6 +517,54 @@ Execute the approved plan from the Step 3 ELI5 gate:
    `<basename>_*` orphans - the run-wide rule from Step 1, at the point it bites.
 4. **Verify the changes** address all acceptance criteria from the issue.
 
+**When the plan turns out to be wrong (issue #859).** Step 2 explored the codebase
+and Step 3 reviewed the plan against it, so the approval is informed - but writing
+the change can still surface evidence the review did not anticipate. The approval
+fixes the intended OUTCOME, not every detail of how to reach it. Three endings, not
+two:
+
+1. **Revise within the agreed outcome and constraints - no new approval.** A better
+   implementation that reaches the same outcome and respects the same constraints
+   is an ordinary implementation choice, not a deviation. Choosing a different
+   function, structure or library within what was agreed needs no checkpoint and no
+   deviation record; say what you did in the Step 6 summary like any other work.
+2. **Investigate an uncertain assumption, bounded and reversible.** Inside the tool
+   and environment permissions you already have: read the source, run the local
+   checks, prototype on a scratch branch or behind a flag. Bounded and reversible
+   does not mean disposable - a prototype that works may become the implementation,
+   and there is no rule that useful work must be deleted and rewritten because it
+   started as an experiment. Remove the unsafe and provisional parts, not the
+   result.
+3. **Consequential conflict - return to the existing authority.** A change is
+   consequential when it alters promised behaviour, breaks compatibility, or
+   crosses a constraint someone set deliberately. Do NOT implement a flaw you have
+   evidence against, and do NOT quietly redefine success to fit what worked.
+   Present the evidence and a concrete alternative to whoever can agree to it.
+   - Prior approval, or a standing delegation that actually covers this change,
+     IS agreement - re-asking for it is the repeated-checkpoint failure this
+     avoids.
+   - Knowing that an approver exists is not agreement. An authority who has not
+     approved THIS change has not approved it.
+   - Record it briefly once agreed: what changed, why, and what it does to the
+     intended outcome. Only consequential deviations earn a record.
+
+An explicit constraint remains binding even when no rationale is recorded for it
+(see [the issue contract](docs/agents/issue-contract.md)): a missing
+reason is something to surface, never grounds to drop it.
+
+**"No material concern found" is a complete answer.** Most fixes are routine. Do
+not manufacture an alternative, an experiment or a challenge for work that does not
+need one.
+
+**If the change adds or modifies a check, gate, guard, tripwire or allowlist**, ask
+the two questions from
+[the detector contracts](docs/agents/detector-contracts.md) before you
+call it done - does its success message claim more than its input population
+supports, and can a finding tell our thing from a neighbour's - and write the
+answer in as a test rather than a comment. Where the narrow answer is deliberately
+correct, widening is not the remedy: say where the larger question is answered
+instead.
+
 If implementation hits a blocker:
 - Make up to two materially distinct, evidence-driven attempts to resolve it
   locally. Repeating the same failing command or edit does not count as a new
@@ -620,6 +668,68 @@ if [ "$(git rev-list --count HEAD..origin/main)" -gt 0 ]; then
 fi
 ```
 
+**Acceptance accounting (issue #860).** The quality gates above are evidence about
+CHECKS. Before opening the PR, account for what was actually delivered: every
+material acceptance item is demonstrated (name the behavioural test, experiment or
+reviewed observation), revised (give the reason and the agreement it needed), or
+deferred (and still owed). A couple of sentences of prose is enough for a small
+change - there is no required per-item line and no separate artifact. Silence is not
+delivery: an item nobody mentions is unresolved.
+
+Assess the evidence against the CURRENT agreed behaviour. After a #859 revision,
+evidence that satisfied the earlier promise has to be reassessed against the new
+one - sometimes it still suffices, often it does not, and that judgement belongs in
+the report rather than being assumed either way. A revision record on its own is
+never delivery evidence, and
+a revision record on its own is not delivery evidence.
+
+The report stays ordinary prose - there is no field to fill in, and nothing is
+parsed out of it. Carry the judgement into the one place it has to act: the closing
+step sets `ACCEPTANCE_COMPLETE=yes` ONLY when every material item is demonstrated,
+revised with evidence for the revised behaviour, or resolved by a transfer or
+withdrawal that recorded its authority and destination. Anything else - including
+"mostly done" - leaves it unset, and unset cannot close.
+
+**Closing must agree with that judgement.** When the accounting is not complete, the
+selected reference is the non-closing `Refs #N` - in the commit message, the PR title
+and the PR body alike, never `Closes #N` - so the merge cannot close a promise the
+report says was not kept.
+
+Then review whatever will actually become the merge text: the PR title and body, and
+the branch commits where they feed the squash. `gh-pr-merge.sh` passes an explicit
+subject and body derived from the PR (#655), so on that path an older commit's wording
+does not reach the squash - but a plain `gh pr merge --squash` can compose it from the
+commits, and that is when a stale closing reference still matters. Check the sources in
+play rather than rewriting history on the assumption that they always feed it:
+
+```bash
+git log origin/main..HEAD --format=%B
+gh pr view "$PR_NUMBER" --json title,body --jq '.title, .body' 2>/dev/null
+```
+
+Read the closing references there yourself rather than grepping for one spelling -
+the merge helper rejects negated and incidental forms too, and a narrow pattern
+misses exactly the ones that surprise you.
+
+The canonical rule is [the issue contract](docs/agents/issue-contract.md);
+this is where it is executed. Partial delivery stays reviewable and mergeable - the
+disposition changes what CLOSES, not what may merge.
+
+```bash
+# Reference selection (issue #860). Default to a NON-closing reference; a closing one
+# is used only after your own acceptance accounting for THIS issue. Reset it here
+# rather than inheriting a value from an earlier run.
+ACCEPTANCE_COMPLETE=""     # "yes" only when every material item is demonstrated,
+                           # revised with evidence, or resolved by a recorded transfer
+ISSUE_REF="Refs #${ISSUE_NUM}"
+if [[ "$ACCEPTANCE_COMPLETE" == "yes" ]]; then
+    ISSUE_REF="Closes #${ISSUE_NUM}"
+fi
+```
+
+`$ISSUE_REF` then feeds the commit message, the PR title and the PR body, so an
+incomplete accounting cannot publish a closing reference anywhere.
+
 **Collapsing the branch to one commit - the SAFE recipe (issue #657).** Prefer
 NO collapse at all: since #655 the merge helper passes an explicit
 `--subject`/`--body` derived from the PR, so a WIP-first branch squashes with
@@ -635,7 +745,7 @@ merged 2,085-line feature to exactly this on 2026-08-11). The safe shape:
 git reset --soft "$(git merge-base HEAD origin/main)"
 # Before committing, prove the collapse deletes nothing you did not delete:
 git diff --staged --diff-filter=D --name-only   # MUST be empty unless intended
-git commit -m "type(scope): Description (Closes #N)"
+git commit -m "type(scope): Description (${ISSUE_REF})"
 # THEN bring the moved base in:
 git merge --no-edit origin/main
 ```
@@ -705,7 +815,8 @@ git merge --no-edit origin/main
    cannot block what it cannot run).
 
 2. **Commit** - if there are uncommitted changes:
-   - Use conventional commit format: `type(scope): Description (Closes #N)`
+   - Conventional commit format, using the selected reference:
+     `type(scope): Description (${ISSUE_REF})`
    - Include `Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>`
    - **An already-clean tree here is a LEGITIMATE state, not a failure** (issue
      #635): when the stale-base merge above ran, the Step-4 work is already on
@@ -721,10 +832,10 @@ git merge --no-edit origin/main
 
 4. **Create PR** - if no PR exists:
    ```bash
-   gh pr create --title "type(scope): Description (Closes #ISSUE_NUM)" --body "..."
+   gh pr create --title "type(scope): Description (${ISSUE_REF})" --body "..."
    ```
    - If PR already exists, report its URL and continue.
-   - PR body: Summary of changes + test plan + `Closes #N`
+   - PR body: Summary of changes + test plan + `${ISSUE_REF}`
    - Analyze all commits on the branch to draft the summary.
 
 Report: `Step 6/9: Finish complete - PR #XX created`
@@ -932,8 +1043,36 @@ Report: `Step 6/9: Finish complete - PR #XX created`
    destroyed uncommitted work on `flow:auto #5`). Do NOT retry with `--steal` -
    report it and stop, so the user can decide. Almost always it means Step 1
    resumed someone else's checkout; the claim caught it late but correctly.
+
+   **Two further refusals, and `--force` does NOT override either (issue #899).**
+   `--force` says the worktree is busy; it does not say its contents are
+   expendable, and those were the same flag until now:
+
+   | exit | meaning | override |
+   |---|---|---|
+   | 6 | uncommitted work would be destroyed | `--allow-dirty` |
+   | 7 | commits here are on no remote ref | `--allow-unpushed` |
+
+   Both are CORRECT refusals, not flow failures, and neither should be retried
+   with its override reflexively - that is how the #888 guard was lost. Exit 7 in
+   particular means the commits exist nowhere else: push the branch and re-run.
+   Your worktree should be clean and pushed by this point in the run, so either
+   refusal means something earlier did not finish - find that, do not silence
+   this.
    A claim owned by THIS session, or left by a dead one, is released
    automatically and the removal proceeds normally.
+
+   **Exit 5 is the same kind of clean STOP (issue #888):** no claim named this
+   session, but a live process has its working directory inside the worktree AND
+   the worktree holds uncommitted work. A claim only protects a checkout where
+   one was staked - `free`, `unsupported` and `unknown` are not claims - so this
+   is the guard for a session that is genuinely driving the tree without having
+   claimed it. `--force` does NOT override it (Step 7 always passes `--force`, so
+   a guard it silenced would never fire here). Report the printed PIDs and dirty
+   paths and stop; do NOT retry with `--steal`, which kills that session's work -
+   that is the user's call, not the run's. A host with no readable `/proc` prints
+   `WORKTREE_REMOVE_OCCUPANCY: unknown` and falls open, which means unchecked,
+   not clean.
 
    If the helper is not installed (exit 127), fall back to:
    ```bash
@@ -958,10 +1097,22 @@ Report: `Step 6/9: Finish complete - PR #XX created`
 
 6. **Close issue** (if still open):
    ```bash
+   # Set from YOUR acceptance accounting (docs/agents/issue-contract.md). Nothing is
+   # parsed out of the report: a quoted example or a truncated read must never be able
+   # to authorise a close. "yes" only when every material item is demonstrated, revised
+   # WITH evidence, or resolved by a recorded transfer/withdrawal; unset cannot close.
+   # Restate the judgement you reached in Step 6 for THIS issue. It is set here
+   # rather than inherited, so a value left over from earlier work cannot decide it.
+   ACCEPTANCE_COMPLETE=""
+
    if [[ -n "$ISSUE_NUM" ]]; then
        ISSUE_STATE=$(gh issue view "$ISSUE_NUM" --json state --jq '.state' 2>/dev/null)
-       if [[ "$ISSUE_STATE" == "OPEN" ]]; then
-           gh issue close "$ISSUE_NUM" --comment "Closed via $flow-auto - PR #${PR_NUMBER} merged."
+       if [[ "$ACCEPTANCE_COMPLETE" == "yes" ]]; then
+           if [[ "$ISSUE_STATE" == "OPEN" ]]; then
+               gh issue close "$ISSUE_NUM" --comment "Closed via $flow-auto - PR #${PR_NUMBER} merged."
+           fi
+       else
+           echo "Acceptance not recorded complete - leaving #${ISSUE_NUM} open."
        fi
    fi
    ```
@@ -1159,6 +1310,23 @@ Report: `Step 9/9: Deploy complete (verify: {proceed|review|rollback|none})` or
 ---
 
 ### Final Summary
+
+<!-- closing-report-surface -->
+
+**This report follows [the closing-report contract](docs/agents/closing-report-contract.md).**
+Three sections, in this order, and the order is the content:
+
+1. `## TO-DO (owner)` - FIRST and always present. Numbered; each item names the
+   DECISION, not its background. When there is nothing, say `Nothing blocking.`
+   explicitly - an omitted block reads as forgotten, not as none. An FYI is not
+   a TO-DO. The qualifying test and the deliberate exclusions live in the
+   contract; do not restate them here.
+2. `## In plain language` - what was wrong, why it mattered, what is better now,
+   under `$flow-eli5` Section A's EXISTING depth floor. One plain-language
+   standard in this repo, applied at the other end of the run.
+3. `## Evidence` - the status lines below, plus red-case results, gate output,
+   review dispositions and CI. Demoted, never deleted.
+
 
 ```
 Flow Auto Complete

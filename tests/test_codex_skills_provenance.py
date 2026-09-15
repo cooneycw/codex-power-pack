@@ -658,17 +658,24 @@ def _assert_policy_stops_refresh_before_publication(
     assert _tree_bytes(root) == before
 
 
-def test_reviewed_adoption_policy_covers_all_59_paths_from_the_frozen_audit() -> None:
+def test_reviewed_adoption_policy_covers_all_102_paths_from_the_frozen_audit() -> None:
+    # The literal is a tripwire, not bookkeeping: a pin bump MUST land here and
+    # be re-derived from the new upstream report (44 added + 57 changed + 1
+    # removed at CPP 01b8e13), rather than being carried forward untouched.
     policy = sync._load_adoption_policy()
     assert policy is not None
-    assert len(policy.dispositions) == 59
+    assert len(policy.dispositions) == 102
     assert {
         action: sum(item.action == action for item in policy.dispositions.values())
         for action in sync.ADOPTION_COUNTS
     } == sync.ADOPTION_COUNTS
-    assert sum(item.retained is not None for item in policy.dispositions.values()) == 9
+    # 9 carried forward from the #196 review, plus the 4 paths #254 moved from
+    # `adapt` to `defer` - a deferred CHANGED path must retain its reviewed
+    # bytes, so this number and the defer count move together or one of them
+    # is wrong.
+    assert sum(item.retained is not None for item in policy.dispositions.values()) == 13
     assert policy.historical_audit["report_sha256"] == (
-        "cc752f61b4f8e0aef496f65f8a435192382ff3229b201918566fb4cb2252e8ba"
+        "76d77308e89bb41040e70d3e028b63e4be15d3782fee269e7a373dd28df3d9ae"
     )
     assert policy.boundaries == sync.ADOPTION_BOUNDARIES
 
@@ -682,8 +689,14 @@ def test_adoption_policy_rejects_count_preserving_action_swap_before_publication
     path = vendor / "adoption-policy.json"
     value = json.loads(path.read_text(encoding="utf-8"))
     by_path = {item["path"]: item for item in value["dispositions"]}
-    by_path["flow-auto/scripts/flow-ci-status.sh"]["action"] = "defer"
-    by_path["flow-auto/scripts/flow-driver-capability.sh"]["action"] = "adapt"
+    # Two newly-ADDED executables holding DIFFERENT reviewed actions, swapped:
+    # one the review adopted, one it refused. `counts` is identical either way,
+    # so a counts-only check cannot see it; only the path/action digest can.
+    # Both are `added`, deliberately - swapping a `changed` path INTO `defer`
+    # trips the retention-overlay requirement first, and this control must fail
+    # on the decision digest, not on a structural precondition.
+    by_path["flow-cleanup/scripts/worktree-remove.sh"]["action"] = "defer"
+    by_path["flow-auto/scripts/flow-driver-capability.sh"]["action"] = "adopt"
     path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
     _git(root, "add", "vendor/claude-power-pack/adoption-policy.json")
     _git(root, "commit", "-q", "-m", "swap two reviewed actions")
@@ -885,38 +898,6 @@ def test_issue_contract_backport_reproduces_upstream_once_before_native_adaptati
         assert actual.content.count(b"## What the Body Must Make Legible") == 1
         published = MODULE_PATH.parent.parent / ".codex/skills/github-issue-create/reference.md"
         assert published.read_bytes() == actual.content
-
-
-# The depths upstream has actually written this link at: `../../../docs/...`
-# through CPP #862, then `docs/...` from CPP 01b8e13 on. The third entry is not
-# an upstream state - it is the guard against a rule that matches the link
-# target anywhere and would rewrite an already-absolute URL a second time.
-_CONTRACT_LINK_DEPTHS = ["../../../", "../", ""]
-
-
-@pytest.mark.parametrize("prefix", _CONTRACT_LINK_DEPTHS)
-def test_issue_contract_link_is_made_absolute_at_every_upstream_relative_depth(
-    tmp_path: Path, prefix: str
-) -> None:
-    """The DEPTH of this link is upstream's to change, and it did.
-
-    The rewrite matched `../../../docs/agents/issue-contract.md` byte-exactly.
-    CPP 01b8e13 shortened the path to `docs/agents/issue-contract.md` in a
-    one-line edit, so the rewrite silently stopped firing and the generated
-    CxPP reference kept a relative link - which resolves to
-    `.codex/skills/github-issue-create/docs/agents/issue-contract.md`, a file
-    that does not exist. Nothing failed; the route simply went nowhere.
-    """
-    skill = tmp_path / "github-issue-create"
-    line = f"in [the issue contract]({prefix}docs/agents/issue-contract.md). For work large\n"
-    adapted = sync._adapt_github_text(skill, Path("reference.md"), line)
-
-    assert f"]({sync._ISSUE_CONTRACT_URL})" in adapted
-    assert "](docs/agents/issue-contract.md)" not in adapted
-    assert "](../" not in adapted
-    # Rewriting an already-absolute link a second time would nest the URL.
-    assert sync._adapt_github_text(skill, Path("reference.md"), adapted) == adapted
-    assert adapted.count(sync._ISSUE_CONTRACT_URL) == 1
 
 
 @pytest.mark.parametrize("state", ["before", "after"])

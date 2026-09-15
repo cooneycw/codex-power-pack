@@ -54,7 +54,7 @@ If `.codex/cicd.yml` exists but has no `health:` section, the CLI will report "n
 ## Step 3: Run Health Checks
 
 ```bash
-PYTHONPATH="$HOME/Projects/codex-power-pack:$PYTHONPATH" python3 -m lib.cicd health
+PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run --project "$CPP_DIR" python -m lib.cicd health
 ```
 
 ---

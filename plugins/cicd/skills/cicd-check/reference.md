@@ -45,7 +45,7 @@ fi
 If `.codex/cicd.yml` exists, it overrides default required/recommended targets:
 
 ```bash
-PYTHONPATH="$HOME/Projects/codex-power-pack:$PYTHONPATH" python3 -m lib.cicd check
+PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run --project "$CPP_DIR" python -m lib.cicd check
 ```
 
 ---

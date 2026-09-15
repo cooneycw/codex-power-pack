@@ -55,7 +55,7 @@ If `.codex/cicd.yml` exists but has no `smoke_tests:` section, the CLI will repo
 ## Step 3: Run Smoke Tests
 
 ```bash
-PYTHONPATH="$HOME/Projects/codex-power-pack:$PYTHONPATH" python3 -m lib.cicd smoke
+PYTHONPATH="$CPP_DIR:$PYTHONPATH" uv run --project "$CPP_DIR" python -m lib.cicd smoke
 ```
 
 ---
