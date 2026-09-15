@@ -763,7 +763,8 @@ def _marker_violations() -> list[str]:
 def run_check() -> int:
     try:
         pin = read_pin()
-        _load_adoption_policy(required=pin.commit == ADOPTION_TARGET_COMMIT)
+        _assert_pin_matches_adoption_target(pin.commit)
+        _load_adoption_policy()
         expected = read_manifest()
         _assert_destination_tree_safe(SKILLS_ROOT, label="generated skills")
     except IntegrityError as exc:
@@ -2465,7 +2466,27 @@ def _unique_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
     return result
 
 
-def _load_adoption_policy(*, required: bool = True) -> AdoptionPolicy | None:
+def _assert_pin_matches_adoption_target(pin_commit: str) -> None:
+    """The PIN and the reviewed adoption target are updated together (issue #258).
+
+    `ADOPTION_TARGET_COMMIT` is a literal equal to the pinned commit, and nothing
+    enforced that pairing: the two are edited by hand in the same change, and a
+    divergence meant the recorded adoption described a different source than the
+    one pinned. That divergence is loud on the refresh path, where
+    `_validate_policy_source` raises, and was silent on every path that merely
+    consumed the flag derived from it. Say it once, here.
+    """
+    if pin_commit != ADOPTION_TARGET_COMMIT:
+        raise IntegrityError(
+            f"PIN commit {pin_commit} does not match the reviewed adoption target "
+            f"{ADOPTION_TARGET_COMMIT}. A pin bump updates the PIN, this constant "
+            "and vendor/claude-power-pack/adoption-policy.json together; a "
+            "divergence means the recorded adoption describes a different source "
+            "than the one pinned (issue #258)."
+        )
+
+
+def _load_adoption_policy(*, publishing: bool = True) -> AdoptionPolicy | None:
     """Load the reviewed one-time #196 decision from committed Git objects.
 
     Refresh and exact-pin publication never trust working-tree policy or retained
@@ -2474,7 +2495,23 @@ def _load_adoption_policy(*, required: bool = True) -> AdoptionPolicy | None:
     """
     _assert_publication_file_safe(ADOPTION_POLICY_PATH, label="adoption policy")
     if not ADOPTION_POLICY_PATH.is_file():
-        if required:
+        # WHY ABSENCE IS ACCEPTABLE ON ONE PATH AND NOT THE OTHER (issue #258).
+        #
+        # This used to be gated on `required=pin.commit == ADOPTION_TARGET_COMMIT`
+        # - a flag derived from the COINCIDENCE that the reviewed target happens
+        # to equal the current pin. The moment the pin moved, an ABSENT policy
+        # stopped being an error everywhere at once, including on the path that
+        # PUBLISHES: the loader returned None, `_validate_policy_source` was
+        # skipped, and generation proceeded unenforced with nothing saying so.
+        #
+        # The condition is now the OPERATION, which is a stated property rather
+        # than a coincidence. Publishing or validating the pinned tree cannot
+        # proceed without the policy that says what was adopted - absence there
+        # is unknown, never checked-and-fine. Reporting READS an arbitrary
+        # upstream ref and writes nothing, so it degrades to an unenforced read
+        # rather than refusing; that is the same operation split issue #251 drew
+        # through `_prepare_source_payloads`.
+        if publishing:
             raise IntegrityError("adoption policy is missing")
         return None
 
@@ -2810,7 +2847,10 @@ def _validate_reporting_baseline() -> tuple[
     _tracked_file_bytes(head, contract_path, label="report package inventory input")
 
     pin = read_pin()
-    policy = _load_adoption_policy(required=pin.commit == ADOPTION_TARGET_COMMIT)
+    # Reporting READS: it reads the pin only as a baseline for an arbitrary
+    # upstream ref, so neither the pin/target pairing nor the policy's presence
+    # is a precondition here (issue #258).
+    policy = _load_adoption_policy(publishing=False)
     manifest = read_manifest()
     if not manifest:
         raise IntegrityError("report baseline manifest is empty")
@@ -3033,9 +3073,9 @@ def run_pin_check(cpp_root: Path) -> int:
         head, tree = _validate_source_checkout(
             cpp_root, commit=pin.commit, repo=pin.repo
         )
-        policy = _load_adoption_policy(required=pin.commit == ADOPTION_TARGET_COMMIT)
-        if policy is not None:
-            _validate_policy_source(policy, cpp_root, pin.commit, tree)
+        _assert_pin_matches_adoption_target(pin.commit)
+        policy = _load_adoption_policy()
+        _validate_policy_source(policy, cpp_root, pin.commit, tree)
         _, expected_by_skill, _ = _prepare_source_payloads(
             cpp_root, commit=pin.commit, policy=policy
         )
@@ -3088,7 +3128,7 @@ def run_source_check(cpp_root: Path) -> int:
         pin = read_pin()
         policy = None
         if source_head == pin.commit == ADOPTION_TARGET_COMMIT:
-            policy = _load_adoption_policy()
+            policy = _load_adoption_policy(publishing=False)
         _, _, expected = _prepare_source_payloads(cpp_root, policy=policy)
         actual = _current_generated_payloads()
     except IntegrityError as exc:
@@ -3306,12 +3346,14 @@ def run_refresh(cpp_root: Path, ref: str) -> int:
     # Publication spans several directories and is deliberately not described as
     # crash-atomic; this guarantee is specifically about validation failures.
     try:
-        policy = _load_adoption_policy(required=ref == ADOPTION_TARGET_COMMIT)
+        policy = _load_adoption_policy()
         _, source_tree = _validate_source_checkout(
             cpp_root, commit=ref, repo=CPP_REPO_URL
         )
-        if policy is not None:
-            _validate_policy_source(policy, cpp_root, ref, source_tree)
+        # Unconditional since #258: the loader raises rather than returning None,
+        # so there is no longer a path where a refresh publishes without the
+        # policy having been validated against the source it names.
+        _validate_policy_source(policy, cpp_root, ref, source_tree)
         src_dirs, prepared_by_skill, _ = _prepare_source_payloads(
             cpp_root, commit=ref, policy=policy
         )
