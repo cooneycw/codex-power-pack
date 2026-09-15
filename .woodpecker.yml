@@ -12,6 +12,27 @@ steps:
   secret-scan:
     image: zricethezav/gitleaks:v8.18.4
     commands:
+      # POSITIVE CONTROL, and it runs FIRST (issue #263). Until 2026-09-15 this
+      # step scanned with zero rules - `--config` replaces gitleaks' built-in
+      # ruleset and .gitleaks.toml declared none - so it reported "no leaks
+      # found" on everything and CI step 1 passed a repository it had not
+      # examined. A green scan is what the BROKEN state produced, so a green
+      # scan cannot be the evidence that the scanner works.
+      #
+      # Note the inverted test. gitleaks exits NON-ZERO when it finds something,
+      # so this probe must fail when gitleaks SUCCEEDS. Written the natural way
+      # round it would pass in both worlds - an instrument that cannot fail,
+      # inside the fix for an instrument that could not fail.
+      - |
+        mkdir -p /tmp/secret-scan-probe
+        printf 'aws_access_key_id = "AKIA%s"\n' "QYLPT6KZBNXWR3JD" > /tmp/secret-scan-probe/probe.txt
+        if gitleaks detect --source /tmp/secret-scan-probe --no-git --config .gitleaks.toml >/dev/null 2>&1; then
+          echo "secret-scan probe FAILED: the scanner did not detect a known secret." >&2
+          echo "The ruleset is empty or over-excluded; this step's verdict means nothing." >&2
+          exit 1
+        fi
+        echo "secret-scan probe: scanner detected the known secret - its silence below is meaningful"
+        rm -rf /tmp/secret-scan-probe
       - gitleaks detect --source . --config .gitleaks.toml --verbose
     when:
       - event: [push, pull_request]

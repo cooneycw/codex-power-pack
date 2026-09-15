@@ -27,10 +27,47 @@ def test_gitleaks_is_the_first_blocking_ci_step() -> None:
     steps = pipeline["steps"]
     assert next(iter(steps)) == "secret-scan"
     assert steps["secret-scan"]["image"] == "zricethezav/gitleaks:v8.18.4"
-    assert steps["secret-scan"]["commands"] == [
-        "gitleaks detect --source . --config .gitleaks.toml --verbose"
-    ]
+    commands = steps["secret-scan"]["commands"]
+    # The step does exactly two things and the repo scan is still LAST, so a
+    # probe can never be appended after the verdict it is supposed to qualify.
+    assert len(commands) == 2
+    assert commands[-1] == "gitleaks detect --source . --config .gitleaks.toml --verbose"
     assert _events(steps["secret-scan"]) == REQUIRED_EVENTS
+
+
+def test_secret_scan_runs_a_positive_control_before_the_repo_scan() -> None:
+    """Issue #263: a green scan is what the BROKEN scanner produced.
+
+    Until 2026-09-15 this step passed `--config .gitleaks.toml`, which REPLACES
+    gitleaks' built-in ruleset, against a config declaring no rules - so it
+    reported "no leaks found" on everything. The probe makes the step's silence
+    mean something by requiring a known secret to be detected first.
+
+    The assertions below are deliberately about the probe's FAILURE path rather
+    than its text. gitleaks exits NON-ZERO when it finds something, so the probe
+    must fail when gitleaks SUCCEEDS; written the natural way round it would
+    pass in both worlds and be exactly the instrument that cannot fail.
+    """
+    probe = _pipeline()["steps"]["secret-scan"]["commands"][0]
+
+    assert "if gitleaks detect" in probe, "the probe must branch on the INVERTED exit"
+    assert "--source /tmp/secret-scan-probe" in probe, "the probe must scan its own fixture"
+    assert "--config .gitleaks.toml" in probe, "the probe must use the config under test"
+    assert "exit 1" in probe, "the probe must fail the step when detection does not happen"
+
+
+def test_gitleaks_config_loads_the_default_ruleset() -> None:
+    """Issue #263: without this the scanner has no rules at all.
+
+    Cheap, runs everywhere, and catches the specific regression: `--config`
+    replaces the built-in ruleset rather than merging with it, so removing this
+    block silently turns every scan into a pass. The probe above catches the
+    same thing behaviourally but only runs in the gitleaks image; this runs in
+    `make verify`, where gitleaks is not installed.
+    """
+    config = (REPO_ROOT / ".gitleaks.toml").read_text(encoding="utf-8")
+    assert "[extend]" in config
+    assert "useDefault = true" in config
 
 
 def test_required_ci_uses_complete_local_contract_and_exact_pin() -> None:

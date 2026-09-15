@@ -1,5 +1,21 @@
 title = "codex-power-pack gitleaks config"
 
+# WITHOUT THIS BLOCK THE SCANNER HAS NO RULES AT ALL (issue #263).
+#
+# Passing --config REPLACES gitleaks' built-in ruleset; it does not merge with
+# it. This file declared a title and an [allowlist] and nothing else, so every
+# `gitleaks detect --config .gitleaks.toml` run - CI step 1 and `make
+# secret-scan` alike - scanned with zero rules and reported "no leaks found" on
+# anything, including a real AWS access token. Measured against the pinned image
+# zricethezav/gitleaks:v8.18.4: an identical fixture detects as `aws-access-token`
+# under the default ruleset and is silent under this config.
+#
+# The `secret-scan` CI step now runs a positive-control probe before the repo
+# scan for exactly this reason: a green scan is what the broken state produced,
+# so a green scan alone is not evidence the scanner works.
+[extend]
+useDefault = true
+
 [allowlist]
 description = "False positives from test fixtures and masking regex patterns"
 paths = [
@@ -14,4 +30,9 @@ regexes = [
     '''ghp_abc123def456ghi789jkl012mno345pqr678''',
     '''BEGIN OPENSSH PRIVATE KEY.*REDACTED''',
     '''BEGIN RSA PRIVATE KEY.*MIIEpAIBAAKCAQEA''',
+    # Synthetic token in tests/test_plugin_hooks.py, asserting the friction
+    # hook MASKS a secret it is handed. Allowlisted by value rather than by
+    # path deliberately: a path entry would also suppress a real secret later
+    # added to that file, which is the over-broad suppression #263 is about.
+    '''ghp_abcdefghijklmnopqrstuvwxyz123456''',
 ]
