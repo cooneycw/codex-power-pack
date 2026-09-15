@@ -1,5 +1,7 @@
 """Regression checks for the post-demolition Woodpecker pipeline."""
 
+import subprocess
+import tomllib
 from pathlib import Path
 
 import yaml
@@ -27,10 +29,62 @@ def test_gitleaks_is_the_first_blocking_ci_step() -> None:
     steps = pipeline["steps"]
     assert next(iter(steps)) == "secret-scan"
     assert steps["secret-scan"]["image"] == "zricethezav/gitleaks:v8.18.4"
-    assert steps["secret-scan"]["commands"] == [
-        "gitleaks detect --source . --config .gitleaks.toml --verbose"
-    ]
+    commands = steps["secret-scan"]["commands"]
+    # The step does exactly two things and the repo scan is still LAST, so a
+    # probe can never be appended after the verdict it is supposed to qualify.
+    assert len(commands) == 2
+    assert commands[-1] == "gitleaks detect --source . --config .gitleaks.toml --verbose"
     assert _events(steps["secret-scan"]) == REQUIRED_EVENTS
+
+
+def test_secret_scan_runs_a_positive_control_before_the_repo_scan() -> None:
+    """Issue #263: a green scan is what the BROKEN scanner produced.
+
+    Until 2026-09-15 this step passed `--config .gitleaks.toml`, which REPLACES
+    gitleaks' built-in ruleset, against a config declaring no rules - so it
+    reported "no leaks found" on everything. The probe makes the step's silence
+    mean something by requiring a known secret to be detected first.
+
+    The assertions below are deliberately about the probe's FAILURE path rather
+    than its text. gitleaks exits NON-ZERO when it finds something, so the probe
+    must fail when gitleaks SUCCEEDS; written the natural way round it would
+    pass in both worlds and be exactly the instrument that cannot fail.
+    """
+    probe = _pipeline()["steps"]["secret-scan"]["commands"][0]
+
+    # EXACTLY 1, never merely non-zero: gitleaks exits 1 on a find and 0 on a
+    # clean scan, so a non-zero test would also accept 127 (binary absent) and
+    # report a scanner that never ran as one that works.
+    assert "--exit-code" in probe, (
+        "the probe must move a FIND to a distinct status: gitleaks' default find-code "
+        "is 1 and it also exits 1 on a fatal error, so requiring 1 reads a broken "
+        "config as a detection"
+    )
+    assert "probe_rc" in probe, "the probe must capture the exit code, not branch on truthiness"
+    assert "trap " in probe, "the fixture must be removed on every exit path, not just success"
+    assert "--source /tmp/secret-scan-probe" in probe, "the probe must scan its own fixture"
+    assert "--config .gitleaks.toml" in probe, "the probe must use the config under test"
+    assert "exit 1" in probe, "the probe must fail the step when detection does not happen"
+
+
+def test_gitleaks_config_loads_the_default_ruleset() -> None:
+    """Issue #263: without this the scanner has no rules at all.
+
+    Cheap, runs everywhere, and catches the specific regression: `--config`
+    replaces the built-in ruleset rather than merging with it, so removing this
+    block silently turns every scan into a pass. The probe above catches the
+    same thing behaviourally but only runs in the gitleaks image; this runs in
+    `make verify`, where gitleaks is not installed.
+    """
+    config = tomllib.loads((REPO_ROOT / ".gitleaks.toml").read_text(encoding="utf-8"))
+    # PARSED, not substring-matched. A text search is satisfied by a comment
+    # mentioning [extend], so deleting the real table while leaving the prose
+    # that explains it would keep the guard green - a guard passing on the
+    # documentation of the thing it is guarding.
+    assert config.get("extend", {}).get("useDefault") is True, (
+        "gitleaks --config REPLACES the built-in ruleset; without extend.useDefault "
+        "the scanner has no rules and reports 'no leaks found' on everything (#263)"
+    )
 
 
 def test_required_ci_uses_complete_local_contract_and_exact_pin() -> None:
@@ -109,3 +163,58 @@ def test_pipeline_contains_no_deleted_runtime_image_gates() -> None:
 
     assert "image-security" not in text
     assert "runtime-smoke" not in text
+
+
+def _run_probe_with_stub_gitleaks(tmp_path: Path, exit_code: int) -> int:
+    """Execute the REAL probe against a stub gitleaks returning `exit_code`.
+
+    Behavioural rather than textual. The earlier guards asserted that the probe
+    CONTAINED `-ne 1` and `probe_rc`, which a branch reversed to fail on success
+    also satisfies - the assertion constrained the vocabulary, not the logic.
+    Running it is the only thing that distinguishes them, and a stub costs
+    nothing: no gitleaks, no container, so this runs inside `make verify` where
+    the real binary is absent.
+    """
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir(parents=True)
+    stub = bin_dir / "gitleaks"
+    stub.write_text(f"#!/bin/sh\nexit {exit_code}\n")
+    stub.chmod(0o755)
+    (tmp_path / ".gitleaks.toml").write_text('title = "stub"\n')
+
+    probe = _pipeline()["steps"]["secret-scan"]["commands"][0]
+    return subprocess.run(
+        ["sh", "-c", probe],
+        cwd=tmp_path,
+        env={"PATH": f"{bin_dir}:/usr/bin:/bin", "HOME": str(tmp_path)},
+        capture_output=True,
+        text=True,
+    ).returncode
+
+
+def test_probe_passes_only_when_gitleaks_reports_a_find(tmp_path):
+    """Exit 1 means detected. Nothing else may be read as detection.
+
+    gitleaks exits 1 on a find and 0 on a clean scan, so a probe testing for
+    "non-zero" also accepts 127 (binary missing), 139 (crash) and every other
+    failure - reporting a scanner that never ran as one that works. That is the
+    same rule this repo's negative-control register enforces: a crash is not a
+    detection.
+    """
+    assert _run_probe_with_stub_gitleaks(tmp_path / "found", 42) == 0, (
+        "the probe must PASS when gitleaks reports a find at its declared --exit-code"
+    )
+    assert _run_probe_with_stub_gitleaks(tmp_path / "clean", 0) == 1, (
+        "the probe must FAIL when the scanner detects nothing - an empty ruleset"
+    )
+    assert _run_probe_with_stub_gitleaks(tmp_path / "fatal", 1) == 1, (
+        "the probe must FAIL on gitleaks' ERROR status. This is the case a naive "
+        "probe gets wrong: 1 is both the default find-code and the fatal-error "
+        "code, so an unparseable config reads as a successful detection"
+    )
+    assert _run_probe_with_stub_gitleaks(tmp_path / "absent", 127) == 1, (
+        "the probe must FAIL when gitleaks did not run at all, not report success"
+    )
+    assert _run_probe_with_stub_gitleaks(tmp_path / "crash", 139) == 1, (
+        "the probe must FAIL when the scanner crashed, not read the crash as a find"
+    )

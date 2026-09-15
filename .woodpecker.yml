@@ -12,6 +12,41 @@ steps:
   secret-scan:
     image: zricethezav/gitleaks:v8.18.4
     commands:
+      # POSITIVE CONTROL, and it runs FIRST (issue #263). Until 2026-09-15 this
+      # step scanned with zero rules - `--config` replaces gitleaks' built-in
+      # ruleset and .gitleaks.toml declared none - so it reported "no leaks
+      # found" on everything and CI step 1 passed a repository it had not
+      # examined. A green scan is what the BROKEN state produced, so a green
+      # scan cannot be the evidence that the scanner works.
+      #
+      # Note the inverted test. gitleaks exits NON-ZERO when it finds something,
+      # so this probe must fail when gitleaks SUCCEEDS. Written the natural way
+      # round it would pass in both worlds - an instrument that cannot fail,
+      # inside the fix for an instrument that could not fail.
+      - |
+        # gitleaks' DEFAULT find-code is 1, and it also exits 1 on a fatal error
+        # such as an unparseable config. Requiring "1" would therefore read "your
+        # config is broken" as "the secret was detected" - false evidence from
+        # the instrument whose whole job is to make the scan's silence mean
+        # something. --exit-code moves a FIND to a status nothing else uses.
+        PROBE_FOUND=42
+        trap 'rm -rf /tmp/secret-scan-probe' EXIT
+        mkdir -p /tmp/secret-scan-probe
+        printf 'aws_access_key_id = "AKIA%s"\n' "QYLPT6KZBNXWR3JD" > /tmp/secret-scan-probe/probe.txt
+        set +e
+        gitleaks detect --source /tmp/secret-scan-probe --no-git \
+          --config .gitleaks.toml --exit-code "$PROBE_FOUND" >/dev/null 2>&1
+        probe_rc=$?
+        set -e
+        if [ "$probe_rc" -ne "$PROBE_FOUND" ]; then
+          echo "secret-scan probe FAILED (gitleaks exit $probe_rc, expected $PROBE_FOUND)." >&2
+          echo "  0   = the scanner did not detect a known secret; the ruleset is" >&2
+          echo "        empty or over-excluded and this step's verdict means nothing." >&2
+          echo "  1   = gitleaks failed (unparseable config, bad flag) - it did not scan." >&2
+          echo "  127 = gitleaks is not installed in this image." >&2
+          exit 1
+        fi
+        echo "secret-scan probe: scanner detected the known secret - its silence below is meaningful"
       - gitleaks detect --source . --config .gitleaks.toml --verbose
     when:
       - event: [push, pull_request]
