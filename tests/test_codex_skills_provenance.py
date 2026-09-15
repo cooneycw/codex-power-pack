@@ -121,13 +121,115 @@ def _publish_fixture(source: Path, commit: str) -> None:
     assert sync.run_write() == 0
 
 
+def _install_synthetic_adoption_policy(
+    source: Path, commit: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Give the synthetic source a VALID adoption policy (issue #258).
+
+    Publishing and validating paths now require a policy rather than tolerating
+    its absence, so a fixture with no policy no longer represents a legal CxPP
+    state - it represents the state #258 says must fail.
+
+    The `historical_audit` block is reused VERBATIM from the reviewed policy, so
+    `ADOPTION_CHANGE_SET_SHA256` validates unpatched and that assertion stays
+    live here. The disposition map is necessarily empty - the reviewed policy's
+    adopt/adapt paths do not exist in this two-file synthetic tree, and
+    `_apply_adoption_policy` raises on an absent approved payload - so the two
+    digests derived from dispositions are fixture-supplied.
+
+    WHAT STILL VERIFIES THOSE TWO, since a fixture that supplies the value under
+    test verifies nothing: `test_adoption_policy_rejects_count_preserving_action_swap_before_publication`
+    and `test_adoption_policy_rejects_coordinated_retained_payload_change` drive
+    the REAL policy through `_committed_policy_fixture` and are the purpose-built
+    negative controls for exactly these two digests. They do not use this fixture.
+    """
+    real = json.loads(
+        (MODULE_PATH.parents[1] / "vendor/claude-power-pack/adoption-policy.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    adopted = [
+        rel.relative_to(source / "codex" / "skills").as_posix()
+        for rel in sorted((source / "codex" / "skills").rglob("*"))
+        if rel.is_file()
+    ]
+    tree = _git(source, "rev-parse", f"{commit}^{{tree}}")
+    skills_tree = _git(source, "rev-parse", f"{commit}:codex/skills")
+    policy = {
+        "schema_version": 1,
+        "kind": "cxpp-selective-cpp-adoption",
+        "source": {
+            "repo": sync.CPP_REPO_URL,
+            "commit": commit,
+            "tree": tree,
+            "codex_skills_tree": skills_tree,
+        },
+        # The audit's CHANGES must cover the disposition set exactly, and the
+        # dispositions must name paths that exist in this tree - so both describe
+        # the synthetic source. The audit's other fields are copied from the
+        # reviewed policy purely to satisfy their format checks.
+        "historical_audit": dict(
+            real["historical_audit"],
+            changes={"added": sorted(adopted), "changed": [], "removed": []},
+        ),
+        "counts": {"adopt": len(adopted), "adapt": 0, "defer": 0},
+        # The reviewed boundaries VERBATIM, like historical_audit above: the
+        # loader requires `boundaries == ADOPTION_BOUNDARIES`, so copying the
+        # constant keeps that assertion live here instead of patching it away.
+        "boundaries": json.loads(json.dumps(sync.ADOPTION_BOUNDARIES)),
+        "dispositions": [
+            {
+                "path": path,
+                "source_change": "added",
+                "action": "adopt",
+                "owner": "fixture",
+                "reason": "synthetic adopted state for the test fixture",
+                "overlay": None,
+            }
+            for path in sorted(adopted)
+        ],
+    }
+    sync.ADOPTION_POLICY_PATH.write_text(json.dumps(policy, indent=2) + "\n", encoding="utf-8")
+    # COMMIT it in the DESTINATION repo. `_load_adoption_policy` reads the policy's
+    # committed bytes out of REPO_ROOT's HEAD as a hidden-edit guard, so a policy
+    # that exists only in the working tree fails there - and fails with "source
+    # checkout failed git rev-parse validation", which names the wrong repository
+    # entirely. That message is why this fixture looked broken rather than
+    # incomplete; the query is against the destination, not the source.
+    root = sync.REPO_ROOT
+    if not (root / ".git").is_dir():
+        _git(root, "init", "-q", "-b", "main")
+    _git(root, "add", "-A")
+    _git(root, "commit", "-q", "-m", "synthetic adopted state")
+    monkeypatch.setattr(sync, "ADOPTION_TARGET_COMMIT", commit)
+    monkeypatch.setattr(
+        sync, "ADOPTION_COUNTS", {"adopt": len(adopted), "adapt": 0, "defer": 0}
+    )
+    def _digest(value: object) -> str:
+        return hashlib.sha256(
+            json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+
+    monkeypatch.setattr(
+        sync, "ADOPTION_CHANGE_SET_SHA256", _digest(policy["historical_audit"]["changes"])
+    )
+    monkeypatch.setattr(
+        sync, "ADOPTION_DECISIONS_SHA256", _digest({path: "adopt" for path in sorted(adopted)})
+    )
+    monkeypatch.setattr(sync, "ADOPTION_RETAINED_PAYLOADS_SHA256", _digest({}))
+
+
 @pytest.fixture
 def provenance_fixture(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> tuple[Path, Path, str]:
     root = _configure_destination(tmp_path, monkeypatch)
     source, commit = _source_repo(tmp_path)
+    # Publish BEFORE adopting the synthetic policy: `run_write` refuses when the
+    # pin already IS the adoption target (":816"), so the fixture has to lay the
+    # payload down first and only then declare it adopted.
     _publish_fixture(source, commit)
+    _install_synthetic_adoption_policy(source, commit, monkeypatch)
     return root, source, commit
 
 
@@ -255,7 +357,13 @@ def test_exact_pin_rejects_assume_unchanged_forged_source_and_generated_payload(
     payloads = sync._adapted_source_payloads(source_skill)
     sync._write_skill_payload(sync.SKILLS_ROOT / "flow-auto", payloads)
     sync._sync_plugin_payload("flow-auto")
-    assert sync.run_write() == 0
+    # Write the manifest directly rather than via `run_write`. The fixture now
+    # declares an ADOPTED state, and `run_write` correctly refuses to snapshot one
+    # (":816" - adopted manifests may only be written by --refresh). Forging the
+    # manifest is this test's SETUP, not its subject; the subject is that
+    # forged bytes cannot pass the pinned-tree check, which is asserted below and
+    # is unchanged.
+    sync.MANIFEST_PATH.write_text(sync.format_manifest(sync.compute_manifest()))
 
     assert sync.run_pin_check(source) == 1
 
@@ -371,7 +479,7 @@ def test_exact_pin_rejects_extra_plugin_agents_payload_file(
 
 
 def test_validated_refresh_publishes_frozen_payload_and_preserves_local_overlays(
-    provenance_fixture: tuple[Path, Path, str]
+    provenance_fixture: tuple[Path, Path, str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     _, source, _ = provenance_fixture
     metadata = sync.PLUGINS_ROOT / "flow" / "skills" / "flow-auto" / "agents" / "openai.yaml"
@@ -401,6 +509,11 @@ def test_validated_refresh_publishes_frozen_payload_and_preserves_local_overlays
     _git(source, "commit", "-q", "-m", "refreshed CPP source")
     commit = _git(source, "rev-parse", "HEAD")
     _git(source, "checkout", "-q", "--detach", commit)
+    # Re-adopt at the NEW commit. `_validate_policy_source` binds the policy to an
+    # exact source commit and tree, so refreshing to a new source without moving
+    # the policy is the coordinated-update failure #254 is about - here it simply
+    # means the fixture must declare the new source adopted before refreshing it.
+    _install_synthetic_adoption_policy(source, commit, monkeypatch)
 
     assert sync.run_refresh(source, commit) == 0
     assert sync.read_pin().commit == commit
@@ -791,7 +904,9 @@ def test_issue_contract_unreviewed_raw_source_cannot_be_hidden_by_generic_adapta
 
 
 def test_issue_contract_unknown_source_fails_refresh_before_any_publication(
-    provenance_fixture: tuple[Path, Path, str], capsys: pytest.CaptureFixture[str]
+    provenance_fixture: tuple[Path, Path, str],
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     root, source, _ = provenance_fixture
     skill = source / "codex/skills/github-issue-create"
@@ -801,6 +916,8 @@ def test_issue_contract_unknown_source_fails_refresh_before_any_publication(
     _git(source, "add", ".")
     _git(source, "commit", "-q", "-m", "unreviewed github reference")
     commit = _git(source, "rev-parse", "HEAD")
+    _git(source, "checkout", "-q", "--detach", commit)
+    _install_synthetic_adoption_policy(source, commit, monkeypatch)
     before = _tree_bytes(root)
     assert sync.run_refresh(source, commit) != 0
     assert "unreviewed raw source" in capsys.readouterr().err
