@@ -1,0 +1,42 @@
+{
+  "gate": ".gitleaks.toml",
+  "property": "the allowlist suppresses the values it declares and NOTHING ELSE - an undeclared secret at a formerly path-excluded location must still be reported",
+  "requires": ["gitleaks"],
+  "invocation": [
+    "gitleaks",
+    "detect",
+    "--source",
+    "{case}",
+    "--no-git",
+    "--config",
+    "{gate}",
+    "--no-banner"
+  ],
+  "good_exit": 0,
+  "detect_signal": "leaks found: [1-9]",
+  "limits": "Establishes that the allowlist is SCOPED - that it hides the declared values and not the paths they happen to live in. It does NOT establish that each declared value is one we were right to allow: the control cannot tell a synthetic fixture token from a real credential someone decided to declare, and nothing can. That judgement is per-entry and lives in the justifications in tests/test_gitleaks_allowlist.py. It also says nothing about which repository paths are scanned - the cases are scanned as their own root, so the repository's path entries cannot apply. That is the coverage probe's property, in .woodpecker.yml.",
+  "cases": [
+    {
+      "name": "unallowlisted-secret",
+      "input": "cases/unallowlisted-secret",
+      "expect": "BAD",
+      "why": "a fabricated AWS key that is NOT in the allowlist, at scripts/secrets-mask.sh - the exact path a whole-file entry excluded until #264. The path is the point: under the old config this was silently suppressed, which is the exposure #264 removed."
+    },
+    {
+      "name": "allowlisted-value",
+      "input": "cases/allowlisted-value",
+      "expect": "GOOD",
+      "why": "the same path carrying AKIAIOSFODNN7EXAMPLE, which the allowlist does declare. Separates a correctly scoped allowlist from a scanner wedged at 'report everything'."
+    }
+  ],
+  "anchors": [
+    {
+      "kind": "historical",
+      "sha": "87ddf7d",
+      "origin": ".gitleaks.toml",
+      "path": "anchors/87ddf7d-gitleaks.toml",
+      "sha256": "b41496c2230ef53bcb076159529f3e1cdbf109dd44e475e1a34e954924331920",
+      "why": "the config as it stood the moment before #264, byte-for-byte from `git show 87ddf7d:.gitleaks.toml`. It carries the three whole-file path entries, one of which is `scripts/secrets-mask\\.sh` - so it MISSES the unallowlisted secret this control plants there. That is not a hypothetical about what a broad entry could hide: it is the repository's own previous configuration, hiding it, on every run."
+    }
+  ]
+}

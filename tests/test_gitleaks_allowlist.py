@@ -50,27 +50,27 @@ MARKER_NAME = ".secret-scan-coverage"
 #: a path entry is matched relative to the SCAN ROOT, and the control scans each
 #: case as its own root, so the fixture is hidden from the repository scan and
 #: fully visible to the control that needs it.
-FIXTURE_ENTRY_RE = re.compile(r"^\^?controls/[^/]+/cases/")
+#: Matched against the ENTRY TEXT, not against a path, which is why it is not
+#: simply the same pattern: #264 widened the entry itself to
+#: `^controls/[^/]+/cases/`, whose literal text contains a `/`, so a detector
+#: written as `controls/[^/]+/cases/` stopped matching it and the entry read as
+#: a live path needing a coverage marker at a directory named `[^/]+`. A
+#: detector that shares a pattern with the thing it detects will do this again.
+FIXTURE_ENTRY_RE = re.compile(r"^\^?controls/.+/cases/$")
 
 #: Every `[allowlist] paths` entry, and why it is there. Read the module
 #: docstring before adding one: this list records a decision, it does not make
 #: one.
 ALLOWLIST_PATHS: dict[str, str] = {
-    "^controls/secret-scan-rules/cases/": (
-        "negative-control fixtures for this very config. They hold a fabricated AWS key "
-        "because the control needs an input the ruleset REPORTS, and anything the ruleset "
-        "reports is also reported when it sits in the repository."
-    ),
-    r"tests/test_creds_masking\.py": (
-        "test fixtures for the credential masker: the file asserts that masking happens, so it "
-        "necessarily contains the shapes being masked."
-    ),
-    r"scripts/secrets-mask\.sh": (
-        "the masking script itself - it carries the regex patterns it masks WITH, which look "
-        "like the things they match."
-    ),
-    r"lib/creds/masking\.py": (
-        "the masking library, for the same reason as the script above."
+    "^controls/(secret-scan-rules|gitleaks-allowlist-scope)/cases/": (
+        "negative-control fixtures for the two controls that need a real-shaped secret. "
+        "They hold fabricated secrets because a control needs an input the ruleset "
+        "REPORTS, and anything the ruleset reports is also reported when it sits in the "
+        "repository. NAMED, not `[^/]+`: a wildcard also unscans harness-lint-vacuity's "
+        "fixtures and every control added later, and the marker requirement exempts "
+        "fixture entries - so a real secret under any control's cases/ would be "
+        "suppressed with nothing to notice. A third control needing a secret fixture "
+        "adds itself here, which is a reviewed edit."
     ),
 }
 
@@ -78,6 +78,30 @@ ALLOWLIST_PATHS: dict[str, str] = {
 #: against the MATCH (see `regexTarget` below), and they are narrower than a
 #: path entry by construction: a path entry also suppresses a REAL secret added
 #: to that file later, a value entry does not.
+#:
+#: SOLE COVER, all six, measured at 87ddf7d against zricethezav/gitleaks:v8.18.4
+#: by dropping each from the post-#264 config and rescanning the working tree.
+#: None is decorative:
+#:
+#:   AKIAIOSFODNN7EXAMPLE      -> scripts/secrets-mask.sh, tests/test_gitleaks_allowlist.py
+#:   sk-abc123xyz456def789     -> scripts/secrets-mask.sh
+#:   ghp_abc123def456…         -> scripts/secrets-mask.sh, tests/test_gitleaks_allowlist.py
+#:   BEGIN OPENSSH…REDACTED    -> lib/creds/masking.py
+#:   BEGIN RSA…MIIEpAIBAAKCAQEA-> tests/test_creds_masking.py
+#:   "ghp_abcdefghij…"         -> tests/test_plugin_hooks.py
+#:
+#: *** THIS FILE IS ONE OF THE FILES THOSE ENTRIES COVER. ***
+#:
+#: Two of the literals below appear in that list with THIS FILE as a location:
+#: writing them down here made them findings, which the entries then suppress.
+#: So the file that pins the allowlist depends on two of the entries it pins.
+#: It is not vicious - the other three literals match no gitleaks rule and stay
+#: inert - but it has a sharp edge: DELETING A LITERAL HERE AS "REDUNDANT"
+#: CHANGES WHAT THE ALLOWLIST SUPPRESSES, because it removes the finding that
+#: made the entry load-bearing. Re-measure before trimming anything here.
+#: (Introduced by #271; declared rather than worked around, because assembling
+#: the literals at runtime to dodge the scanner is the move this repository
+#: treats as evasion when it hides a real secret.)
 ALLOWLIST_REGEXES: dict[str, str] = {
     "AKIAIOSFODNN7EXAMPLE": "AWS' own documentation placeholder; it is not a key.",
     "sk-abc123xyz456def789": "obviously-synthetic OpenAI-shaped token used in fixtures.",
@@ -115,15 +139,35 @@ def _entry_directory(entry: str) -> str:
     return body.rsplit("/", 1)[0].replace("\\", "")
 
 
-def required_marker_paths() -> set[Path]:
-    """Where a coverage marker must live: the root, plus every LIVE entry's directory.
+#: Directories that carry a coverage marker and must keep it, INDEPENDENT of
+#: whether an allowlist entry currently names them.
+#:
+#: #264 removed the three whole-file path entries, and the derived requirement
+#: below would have silently stopped requiring their markers along with them -
+#: so removing an exclusion would have quietly removed the proof that the
+#: directory is still scanned. That is backwards: the moment an exclusion goes
+#: away is when the coverage evidence matters most, because it is the only thing
+#: that says the removal worked.
+#:
+#: This is a list that FAILS LOUDLY rather than one that narrows: a missing
+#: marker is a red test, never a silently smaller set.
+MARKED_DIRECTORIES: dict[str, str] = {
+    "": "the repository root.",
+    "tests": "path-excluded in whole until #264; the marker is what shows it is scanned again.",
+    "scripts": "same - and it holds the masking script, whose fixtures are now value-scoped.",
+    "lib/creds": "same - the masking library.",
+}
 
-    DERIVED, not listed. A hand-maintained list of marked directories would be
-    one more thing to forget in the same edit that adds the exclusion - and the
-    edit that adds an exclusion is exactly the one that must not be able to go
-    unnoticed.
+
+def required_marker_paths() -> set[Path]:
+    """The committed floor, plus every LIVE allowlist entry's directory.
+
+    Both halves are needed and they fail in opposite directions. The DERIVED
+    half means adding an exclusion for a new directory demands a marker there -
+    the edit that adds an exclusion cannot go unnoticed. The COMMITTED half
+    means removing an exclusion cannot take the marker with it.
     """
-    required = {REPO_ROOT / MARKER_NAME}
+    required = {REPO_ROOT / d / MARKER_NAME for d in MARKED_DIRECTORIES}
     for entry in ALLOWLIST_PATHS:
         if FIXTURE_ENTRY_RE.match(entry):
             continue
@@ -267,3 +311,80 @@ def test_no_allowlist_entry_unscans_a_marked_path() -> None:
             "directories those markers stand for are no longer scanned - and the scan "
             "would keep reporting 'no leaks found' exactly as before"
         )
+
+
+#: A fixture entry's permitted SHAPE: `^controls/<name>/cases/`, or an
+#: alternation of literal names. No regex metacharacter may appear where a
+#: control name goes - that is the whole point of the check, so the names are
+#: restricted to characters that cannot match more than themselves.
+FIXTURE_ENTRY_SHAPE = re.compile(
+    r"^\^controls/(?:([A-Za-z0-9_-]+)|\((?P<alt>[A-Za-z0-9_-]+(?:\|[A-Za-z0-9_-]+)*)\))/cases/$"
+)
+
+
+def _fixture_controls(entry: str) -> list[str]:
+    """The control names a fixture entry exempts, or [] if it is not well shaped."""
+    m = FIXTURE_ENTRY_SHAPE.match(entry)
+    if m is None:
+        return []
+    return (m.group("alt") or m.group(1)).split("|")
+
+
+def test_fixture_entries_do_not_exempt_unrelated_controls() -> None:
+    """A fixture entry must name its controls literally, never wildcard across them.
+
+    #264 first widened the single fixture entry to `^controls/[^/]+/cases/` to
+    avoid two entries differing by one path segment. That traded a real property
+    for readability: the wildcard also unscans every OTHER control's fixtures,
+    including ones added later, and `FIXTURE_ENTRY_RE` deliberately exempts
+    fixture entries from the coverage-marker requirement - so nothing would have
+    noticed. Measured with the pinned image, a fabricated key planted at
+    controls/harness-lint-vacuity/cases/populated-root/planted.txt:
+
+        wildcard entry  -> SILENTLY SUPPRESSED
+        named entry     -> REPORTED
+
+    A real secret suppressed by a change made to REMOVE over-broad suppression.
+
+    The check is on the entry's SHAPE, not on which controls it happens to match
+    today. The first version compared against the controls that currently exist,
+    so `^controls/future-.*/cases/` passed with an empty match set - a zero that
+    could not distinguish "no control is wrongly exempted" from "no control has
+    been added yet", and the wildcard would have become detectable only once
+    someone added one. Both findings are Codex's, on successive review passes.
+    """
+    exempt = [e for e in ALLOWLIST_PATHS if FIXTURE_ENTRY_RE.match(e)]
+    assert exempt, "the fixture-entry class must not vanish silently"
+
+    # Shapes that must be REFUSED, asserted directly so this test cannot become
+    # vacuous by the repository merely having few controls.
+    for bad in (
+        "^controls/[^/]+/cases/",
+        "^controls/.*/cases/",
+        "^controls/future-.*/cases/",
+        "^controls/(secret-scan-rules|future-.*)/cases/",
+        "^controls/(secret-scan-rules|.*)/cases/",
+    ):
+        assert not _fixture_controls(bad), f"{bad!r} must not be accepted as a fixture entry"
+    # ...and the shapes that must be ACCEPTED, so the check is not merely strict.
+    assert _fixture_controls("^controls/secret-scan-rules/cases/") == ["secret-scan-rules"]
+    assert _fixture_controls("^controls/(a-one|b_two)/cases/") == ["a-one", "b_two"]
+
+    controls_root = REPO_ROOT / "controls"
+    for entry in exempt:
+        names = _fixture_controls(entry)
+        assert names, (
+            f"allowlist entry {entry!r} does not name its controls literally. A pattern here "
+            "unscans every control it happens to match, including ones added later, and the "
+            "coverage-marker requirement exempts fixture entries - so nothing would report it"
+        )
+        for name in names:
+            assert (controls_root / name / "cases").is_dir(), (
+                f"fixture entry names {name!r}, which has no controls/{name}/cases/ - the "
+                "entry unscans a path that no control uses"
+            )
+        # Belt and braces: nothing that exists may be exempted without being named.
+        pattern = re.compile(entry)
+        for d in controls_root.iterdir():
+            if d.is_dir() and pattern.search(f"controls/{d.name}/cases/x"):
+                assert d.name in names, f"{entry!r} unscans controls/{d.name}/cases/ unnamed"
