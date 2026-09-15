@@ -1,0 +1,17 @@
+title = "codex-power-pack gitleaks config"
+
+[allowlist]
+description = "False positives from test fixtures and masking regex patterns"
+paths = [
+    '''tests/test_creds_masking\.py''',
+    '''scripts/secrets-mask\.sh''',
+    '''lib/creds/masking\.py''',
+]
+regexTarget = "match"
+regexes = [
+    '''AKIAIOSFODNN7EXAMPLE''',
+    '''sk-abc123xyz456def789''',
+    '''ghp_abc123def456ghi789jkl012mno345pqr678''',
+    '''BEGIN OPENSSH PRIVATE KEY.*REDACTED''',
+    '''BEGIN RSA PRIVATE KEY.*MIIEpAIBAAKCAQEA''',
+]

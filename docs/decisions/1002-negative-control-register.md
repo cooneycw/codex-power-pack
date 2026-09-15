@@ -144,6 +144,9 @@ say that it proves one rule of seven.
 
 ## What shipped, and what the coverage actually is
 
+*(Two controls as of #246; this section describes the first. The second is in
+the amendment at the end of this document.)*
+
 One control: `controls/harness-lint-vacuity/`, for the property "an empty or
 missing skills root must not report success". Its anchor is the real pre-#245
 `harness_lint.py` at `0f0491d`, sha256-pinned, and its blindness is measured on
@@ -289,3 +292,110 @@ property per gate reads wider than it measures.
   member, so the register's verdict is consumed by the gate that lets work
   through. It is therefore itself an instrument under the bound, which is why
   `tests/test_negative_control_register.py` exists.)*
+
+
+---
+
+## Amendment (#246): a configuration gate, and the verdict for "did not run"
+
+Two changes to the register, both forced by the same control: the secret gate.
+
+### The gate population is `scripts/` plus the repository root
+
+`discover()` read `scripts/` only. The gate #263 got wrong is `.gitleaks.toml`,
+and it is not a script - it is the **config half of a binary-plus-config gate**,
+with gitleaks itself working correctly throughout. So the register could not
+control the one gate in this repository that had actually gone blind.
+
+The population is now `scripts/` and the root, non-recursively. It is **chosen,
+not swept**, and the reason is in this file: the literal `#: NEGATIVE-CONTROL:`
+directive appears in this document and in the register's own docstring. A
+register that scanned the whole tree would read its own prose as a registration
+and then report the control it had invented as missing.
+`test_registrations_are_not_swept_out_of_documentation` guards the next widening.
+
+### UNAVAILABLE: a control that did not run is not a control that passed
+
+`controls/secret-scan-rules/` needs gitleaks. No image in this pipeline has both
+gitleaks and Python - the gitleaks image is Alpine with no interpreter, and
+`validate` runs `uv` with no scanner - so the control reports UNAVAILABLE in
+every automatic context, and would have been UNRESOLVED (a finding against the
+control) or a crash without a verdict for it.
+
+UNAVAILABLE is deliberately **not** a failure and **never** counts as proven:
+
+- the proven total is now counted rather than derived by subtracting failures,
+  because subtraction folded "did not run" into "passed";
+- it prints on stderr, naming the control, ending "UNKNOWN on this host, not
+  clean";
+- a run in which **every** control was UNAVAILABLE exits 3 under the same
+  refusal as a run that discovered no registrations at all. Both produce the
+  same evidence - none - and only one of them used to say so.
+
+`--strict` does not convert UNAVAILABLE into a failure. The register cannot know
+whether a tool *ought* to be present, and reddening `make verify` on every
+machine without gitleaks would make the honest verdict the one people delete.
+
+### What shipped: `controls/secret-scan-rules/`
+
+The anchor is a **config**, which is new here and follows from what broke. The
+blind artifact was `.gitleaks.toml` at `efde91f` - the state the moment before
+#263 - committed byte-for-byte and sha256-pinned. Measured, against
+`zricethezav/gitleaks:v8.18.4`:
+
+| run | result |
+|---|---|
+| gate on `cases/planted-secret` | exit 1, "leaks found: 1" - **BAD**, as required |
+| gate on `cases/no-secret` | exit 0 - **GOOD**, as required |
+| anchor on `cases/planted-secret` | exit 0, "no leaks found" - **missed it**, as required |
+| anchor on `cases/no-secret` | exit 0 - agrees, so the demonstration is isolated |
+
+The fixture holds a fabricated AWS key, and therefore needs the one allowlist
+entry in `.gitleaks.toml` that hides a repository path. That is not the circular
+exclusion #246 refuses: **a path entry is matched relative to the scan root**,
+and the control scans each case *as* the root, so the fixture is hidden from the
+repository scan and fully visible to the control that needs to see it.
+
+### What this control does NOT establish, and what does
+
+It establishes that the config yields a **ruleset**. It cannot establish that
+the scan **sees the repository** - every case is scanned as its own root, so the
+allowlist's path entries cannot apply, and a `tests/.*` exclusion that unscans a
+live directory leaves this control green. That property belongs to two other
+instruments, in two languages because no image has both:
+
+- `.woodpecker.yml`'s **coverage probe** scans the repository with the production
+  config plus one marker rule, and requires every committed marker to be
+  reported. It is the real measurement and runs only in the gitleaks image.
+- `tests/test_gitleaks_allowlist.py` re-derives the same property without
+  gitleaks - no declared allowlist entry may match a marker path - and runs in
+  `make verify` on every host.
+
+### Two decisions the counter-model forced, worth keeping
+
+**The coverage probe runs `--no-git` while the repository scan runs git mode.**
+That looks like an inconsistency and is not: it is a PAIRING. The expected set
+comes from `git grep` - the working tree - and git mode reports findings from
+the commits that ADDED them. A pure `git mv` of a marker emits a patch with no
+added lines, so the scan keeps reporting the old path while the expectation
+moves to the new one, and a harmless rename reads exactly like an allowlist
+exclusion. Measured on a full clone. Nothing is lost, because the property under
+test is whether an allowlist PATH entry unscans a path, and path entries are
+matched identically in both modes - `tests/.*` suppresses the same three markers
+either way.
+
+**`[allowlist] stopwords` can only be caught by pinning the config's shape.**
+Measured on the pinned image with one two-credential fixture:
+
+| config | reported |
+|---|---|
+| no stopwords | `aws-access-token`, `github-pat` |
+| `stopwords = ["ghp_"]` | `aws-access-token` only |
+| a config **extending** that one | `aws-access-token`, `github-pat` |
+
+The third row is the point. Stopwords are **not inherited through `[extend]`**,
+so the coverage probe - which extends the production config - would go on
+reporting everything while production quietly stopped. A suppression surface the
+behavioural instrument is structurally blind to leaves only one place to catch
+it, which is why `tests/test_gitleaks_allowlist.py` pins the `[allowlist]` key
+set rather than only its `paths` and `regexes`.

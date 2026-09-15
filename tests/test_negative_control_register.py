@@ -66,6 +66,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import shutil
 import subprocess
 import sys
 from hashlib import sha256
@@ -147,6 +148,7 @@ def _build(
     include_anchor: bool = True,
     anchor_sha_override: str | None = None,
     detect_signal: str = "^fakegate: found something",
+    requires: list[str] | None = None,
 ) -> Path:
     """Lay out a repo-shaped tree: scripts/<gate> registering controls/<control>."""
     (tmp_path / "scripts").mkdir(parents=True, exist_ok=True)
@@ -175,6 +177,8 @@ def _build(
         "detect_signal": detect_signal,
         "cases": cases,
     }
+    if requires is not None:
+        manifest["requires"] = requires
     if include_anchor:
         manifest["anchors"] = [
             {"kind": "historical", "sha": "deadbee", "path": "anchors/blind.py", "sha256": digest}
@@ -208,8 +212,44 @@ def test_the_real_shipped_control_passes():
         check=False,
     )
     assert proc.returncode == 0, proc.stdout + proc.stderr
-    assert "harness-lint-vacuity" in proc.stdout
-    assert "1/1 control(s) discriminate" in proc.stdout
+    assert "[PASS] harness-lint-vacuity" in proc.stdout
+
+
+def test_the_secret_scan_control_is_proven_or_honestly_unavailable():
+    """The #246 control reports a real verdict here and UNKNOWN nowhere else.
+
+    It is the one control in this repository that needs a tool the Python images
+    do not carry, so it is the one that could quietly become a line of output
+    nobody reads. Both branches are asserted rather than one skipped: on a host
+    with gitleaks it must actually discriminate, and on a host without it must
+    say so in a way that cannot be mistaken for a pass.
+    """
+    proc = subprocess.run(
+        [sys.executable, str(REGISTER), "--root", str(REPO_ROOT), "--strict"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    # Host-independent either way: the anchor's bytes are the pre-#263 config,
+    # and a drifted anchor is a finding on every machine.
+    assert "anchor efde91f: provenance verified" in proc.stdout
+
+    if shutil.which("gitleaks"):
+        assert "[PASS] secret-scan-rules" in proc.stdout
+        assert "anchor efde91f: missed planted-secret (blind, as required)" in proc.stdout
+    else:
+        assert "[UNAVAILABLE] secret-scan-rules" in proc.stdout
+        # The loud half. Without it the run exits 0 having printed a fraction
+        # nobody reads as a warning, which is the shape of every silent skip.
+        assert "NOT RUN here" in proc.stderr
+        assert "secret-scan-rules=UNAVAILABLE" in proc.stderr
+        assert "UNKNOWN on this host, not clean" in proc.stderr
+    # Deliberately NOT asserting the repository-wide "N/M" fraction: it moves
+    # when any OTHER control is registered, so a failure here could not
+    # distinguish a regression in THIS control from a neighbour appearing.
+    # test_unavailable_is_not_counted_as_proven owns that property, on isolated
+    # fixtures nothing outside the test can perturb. Found by Codex review on #246.
 
 
 # --------------------------------------------------------------------------- #
@@ -398,6 +438,7 @@ def test_every_verdict_is_reachable(tmp_path):
         "INERT": dict(anchor_src=GATE_SIGHTED),
         "UNPROVEN": dict(include_anchor=False),
         "UNRESOLVED": dict(bad_has_trigger=False),
+        "UNAVAILABLE": dict(requires=["cxpp-no-such-binary-e2f1a7"]),
     }
     observed = set()
     for name, kwargs in scenarios.items():
@@ -514,3 +555,137 @@ def test_a_case_with_a_symlink_escaping_the_fixture_is_refused(tmp_path):
     assert "escaping the fixture" in " ".join(details)
     # The shared target must be untouched: the register refused before running.
     assert (shared / "trigger").exists(), "the register mutated shared state outside the fixture"
+
+
+# --------------------------------------------------------------------------- #
+# UNAVAILABLE, and where a registration can live (#246).
+# --------------------------------------------------------------------------- #
+
+
+def test_unavailable_control_still_has_its_anchor_provenance_checked(tmp_path):
+    """A host that cannot RUN the gate can still catch a drifted anchor.
+
+    The order matters and is the point: manifest shape, detect_signal vacuity,
+    fixture presence and anchor bytes are all host-independent, so they are
+    checked before `requires` is consulted. Answering "gitleaks is not
+    installed" first would hide a finding that is true on every machine.
+
+    NOT a regression test, and it should not be read as one: it passes on the
+    pre-#246 register too, which had no `requires` to order wrongly. What it
+    guards is the future edit that moves the check to the top of `evaluate()`.
+    """
+    tree = _build(tmp_path, requires=["cxpp-no-such-binary-e2f1a7"], anchor_sha_override="00" * 32)
+    verdict, details = _verdict(tree)
+
+    assert verdict == "UNRESOLVED", f"got {verdict}: {details}"
+    assert "not the ones this control was written against" in " ".join(details)
+
+
+def test_unavailable_is_not_counted_as_proven(tmp_path):
+    """The fraction must drop when a control does not run.
+
+    Derived by subtraction - `len(results) - len(failed)` - this read as proven,
+    because UNAVAILABLE is deliberately not a failure. A run where the most
+    security-critical control never executed would have printed the same
+    "1/1 control(s) discriminate" as a run where it passed.
+    """
+    _build(tmp_path, requires=["cxpp-no-such-binary-e2f1a7"])
+    # A second, RUNNABLE control, so the run is not refused as wholly vacuous -
+    # the same fixtures, with `requires` stripped, registered under a second
+    # directive on the same gate.
+    shutil.copytree(tmp_path / "controls" / "fake-control", tmp_path / "controls" / "runnable")
+    runnable = tmp_path / "controls" / "runnable" / "control.json"
+    manifest = json.loads(runnable.read_text())
+    del manifest["requires"]
+    runnable.write_text(json.dumps(manifest))
+    gate = tmp_path / "scripts" / "fakegate.py"
+    gate.write_text("#: NEGATIVE-CONTROL: runnable\n" + gate.read_text())
+
+    proc = subprocess.run(
+        [sys.executable, str(REGISTER), "--root", str(tmp_path), "--strict"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "1/2 control(s) discriminate" in proc.stdout, proc.stdout
+    assert "NOT RUN here" in proc.stderr
+
+
+def test_a_run_where_every_control_was_skipped_is_refused(tmp_path):
+    """The empty-run refusal, one step further in.
+
+    `discover()` already refuses a run with no registrations. A run where every
+    registration was SKIPPED produces exactly the same evidence - none - while
+    printing "0/1 control(s) discriminate" and exiting 0, which is the shape of
+    a green nobody has any reason to distrust.
+    """
+    tree = _build(tmp_path, requires=["cxpp-no-such-binary-e2f1a7"])
+    proc = subprocess.run(
+        [sys.executable, str(REGISTER), "--root", str(tree), "--strict"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert proc.returncode == 3, proc.stdout + proc.stderr
+    assert "refusing a vacuous pass" in proc.stderr
+    assert "every registered control was UNAVAILABLE" in proc.stderr
+
+
+def test_a_configuration_gate_at_the_repository_root_can_register(tmp_path):
+    """#246: the gate this repository got wrong is a CONFIG, not a script.
+
+    gitleaks was working correctly throughout #263; the blindness was entirely
+    in `.gitleaks.toml`, and a register that only reads `scripts/` cannot
+    control it.
+    """
+    mod = _load_register()
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / ".gitleaks.toml").write_text(
+        'title = "x"\n#: NEGATIVE-CONTROL: secret-scan-rules\n[extend]\nuseDefault = true\n'
+    )
+
+    found = mod.discover(tmp_path)
+    assert [(p.name, rel) for p, rel in found] == [(".gitleaks.toml", "secret-scan-rules")]
+
+
+def test_registrations_are_not_swept_out_of_documentation(tmp_path):
+    """The population is CHOSEN, not swept, and this is why.
+
+    The directive is plain text, and the files that quote it most are the ones
+    documenting it - ADR 1002 and the register's own docstring both contain the
+    literal string. A register that scanned the whole tree would read its own
+    prose as a registration and then report the control it invented as missing.
+
+    Also not a regression test: it passes on the pre-#246 register, which could
+    not see outside `scripts/` at all. It guards the NEXT widening, which is the
+    one that would be made by someone who no longer remembers this reason.
+    """
+    mod = _load_register()
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "decisions.md").write_text(
+        "A gate registers by carrying a line like this one:\n\n"
+        "#: NEGATIVE-CONTROL: an-example-from-the-prose\n"
+    )
+
+    assert mod.discover(tmp_path) == []
+
+
+def test_unavailable_does_not_claim_fixture_checks_it_skipped(tmp_path):
+    """A verdict may say "I could not run this". It may not claim a check it skipped.
+
+    The missing-tool branch used to return before the case-existence check,
+    which lived inside the DISCRIMINATION loop - so on a host without the tool,
+    deleting a registered fixture produced UNAVAILABLE with the words "the
+    manifest, fixtures and anchor provenance above were checked". With any other
+    control passing, `--strict` exited 0 and nothing anywhere said the fixture
+    was gone. Found by Codex review on #246.
+    """
+    tree = _build(tmp_path, requires=["cxpp-no-such-binary-e2f1a7"])
+    shutil.rmtree(tree / "controls" / "fake-control" / "cases" / "bad")
+
+    verdict, details = _verdict(tree)
+    assert verdict == "UNRESOLVED", f"got {verdict}: {details}"
+    assert "case input missing: cases/bad" in " ".join(details)
