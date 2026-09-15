@@ -163,7 +163,9 @@ def test_deleted_orphan_destroyed_uncommitted_work(tmp_path: Path) -> None:
 
     main = tmp_path / "repo"
     main.mkdir()
-    run = lambda *a, cwd=main: subprocess.run(a, cwd=cwd, capture_output=True, text=True)
+    def run(*args: str, cwd: Path = main) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(args, cwd=cwd, capture_output=True, text=True)
+
     run("git", "init", "-q", ".")
     run("git", "config", "user.email", "t@t")
     run("git", "config", "user.name", "t")
