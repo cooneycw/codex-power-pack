@@ -1693,133 +1693,6 @@ def _backport_github_issue_contract(skill_dir: Path, rel: str, content: bytes) -
     return adapted
 
 
-# CPP #858 bounded raw-reference adoption. Retire after reviewed source convergence.
-_FLOW_CONTEXT_BEFORE = (
-    "d4b0e860ad51a0ac428f89bfbfa797f5317b6c2c",
-    "a98d6f05d37220a9fee3051c80d4262959ca029fb3e2c9d8b9c1dbd16ba57708",
-    65144,
-)
-_FLOW_CONTEXT_AFTER = (
-    "6ab2e7379284c906d16b722ec977c15a1aebb5e9",
-    "3e76614b58563813bdb3e8a204538ff25632117386223c3e1654ef57a9c4c799",
-    69029,
-)
-_FLOW_CONTEXT_DELTA = [
-    (
-        1209,
-        1209,
-        (
-            b' |\n'
-            b'| **Container** | **yes** - the Bash tool reaches docker/kub'
-            b'ectl/terraform directly, no sandbox denial (issue #835)'
-        ),
-    ),
-    (
-        15864,
-        15864,
-        (
-            b'\n'
-            b'\n'
-            b'   **If the body carries a `speckit-context` block** (issue '
-            b'#858), it is a generated\n'
-            b"   issue and the block is a bounded CACHE of the task's decl"
-            b'ared context - not the\n'
-            b'   authority. Fetch the body to a UNIQUE file, check that th'
-            b'e fetch succeeded, and\n'
-            b'   only then run the checker: a failed `gh` leaves an empty '
-            b'body, and an empty body\n'
-            b'   reports `absent`, which reads exactly like a healthy issu'
-            b'e that simply has no\n'
-            b'   block. A fixed `/tmp` name also collides between concurre'
-            b'nt wave workers.\n'
-            b'\n'
-            b'   ```bash\n'
-            b'   BODY_FILE="$(mktemp -t flow-auto-body-XXXXXX.md)"\n'
-            b'   if ! gh issue view "$ISSUE_NUM" --json body --jq .body > '
-            b'"$BODY_FILE"; then\n'
-            b'       echo "STOP: could not fetch issue #$ISSUE_NUM; not ch'
-            b'ecking context against an empty body."\n'
-            b'       exit 1\n'
-            b'   fi\n'
-            b'   ~/.claude/scripts/speckit-context.py check --body-file "$'
-            b'BODY_FILE" --root .\n'
-            b'   ```\n'
-            b'\n'
-            b'   Helper resolution: `~/.claude/scripts/speckit-context.py`'
-            b' is the stable path\n'
-            b'   (`/flow-repair` installs it). On exit 127 fall back to\n'
-            b'   `${CLAUDE_PLUGIN_ROOT}/scripts/speckit-context.py`, else '
-            b'the CPP-checkout copy.\n'
-            b'   Running inside a generated Codex skill, use the copy bund'
-            b"led in that skill's own\n"
-            b'   `scripts/` directory - never a `scripts/` directory in th'
-            b'e target project, which\n'
-            b'   has no reason to contain CPP tooling.\n'
-            b'\n'
-            b'   Act on `SPECKIT_CONTEXT_STATE`:\n'
-            b'   - `current` - the cache matches its source. Read the **Re'
-            b'ference source** named in\n'
-            b'     the block, including the cross-cutting sections it list'
-            b's, then plan.\n'
-            b'   - `changed-in-scope` / `changed-outside-scope` - source b'
-            b'ytes changed since the\n'
-            b'     issue was written. That is a byte difference, NOT a rul'
-            b'ing that acceptance\n'
-            b'     changed. Read the source, decide whether it matters und'
-            b'er the existing authority\n'
-            b'     model, and say so in the Step 3 report. Newer bytes do '
-            b'not by themselves override\n'
-            b'     a constraint or plan already accepted on the issue; a r'
-            b'ecorded\n'
-            b'     `Acceptance-revision:` line is reported with the versio'
-            b'n it names, and whether it\n'
-            b'     predates the change is part of what you must resolve.\n'
-            b'   - `changed-task` - the task line itself changed: its word'
-            b'ing, or the `[USn]` tag\n'
-            b'     that decides which requirements apply. The cached mappi'
-            b'ng no longer matches the\n'
-            b'     plan, so re-read the task line and its story before pla'
-            b'nning, and treat the\n'
-            b"     block's requirement list as provisional.\n"
-            b'   - `tasks-missing` - the tasks file the block was built fr'
-            b'om is not present under\n'
-            b'     this root. Plan from the issue body and the source if o'
-            b'ne resolves, and report\n'
-            b'     that the task-side mapping could not be re-checked.\n'
-            b'   - `block-edited` / `block-damaged` - someone edited insid'
-            b'e the block, or its\n'
-            b'     boundaries are broken. Treat the block as unreliable, r'
-            b'ead the source directly,\n'
-            b'     and do not refresh it as a side effect of this run.\n'
-            b'   - `source-missing` / `source-unresolved` - no governing s'
-            b'ource could be read. Plan\n'
-            b'     from the issue body, which is the contract in that case'
-            b', and surface any\n'
-            b'     ambiguity that is material to the work rather than tryi'
-            b'ng to resolve everything\n'
-            b'     first.\n'
-            b'   - `absent` - an ordinary issue. Its body IS the contract '
-            b'(see\n'
-            b'     [the issue contract](../../../docs/agents/issue-contrac'
-            b't.md)); no spec, story tag\n'
-            b'     or digest is required and none is owed.\n'
-            b'\n'
-            b"   The block's **Task wording** line is the task's own sente"
-            b'nce, not a ruling: resolve\n'
-            b'   whether it proposes an approach you may replace or restat'
-            b'es a binding constraint\n'
-            b'   against the sections the block names. An **Unresolved** o'
-            b'r **Capped** note means the\n'
-            b'   context is incomplete - never that the task has no constr'
-            b'aints. Apply the same\n'
-            b'   material-ambiguity standard as everywhere else: resolve w'
-            b'hat would change the work,\n'
-            b'   surface the rest in the Step 3 report, and plan from what'
-            b' you have. Missing optional\n'
-            b'   structure is not a gate.'
-        ),
-    ),
-]
 _NATIVE_CONTEXT_REL = ".codex/skills/spec-sync/scripts/spec_context.py"
 _NATIVE_CONTEXT_SHA256 = "935da913c7cea0d727390369ae1484fab2fde0b330e4a289112f12ab674985e3"
 _NATIVE_CONTEXT_MODE = 0o644
@@ -1907,27 +1780,6 @@ _FLOW_CONTEXT_CONSUMER = (
 )
 
 
-def _backport_flow_context(skill_dir: Path, rel: str, content: bytes) -> bytes:
-    if skill_dir.name != "flow-auto" or rel != "reference.md":
-        return content
-    identity = _github_contract_source_identity(content)
-    if identity == _FLOW_CONTEXT_AFTER:
-        return content
-    if identity != _FLOW_CONTEXT_BEFORE:
-        raise IntegrityError(
-            (
-                'flow-auto/reference.md: unreviewed raw source for CPP #858; '
-                'review/update or retire recipe before publication'
-            )
-        )
-    result = content
-    for start, end, replacement in reversed(_FLOW_CONTEXT_DELTA):
-        result = result[:start] + replacement + result[end:]
-    if _github_contract_source_identity(result) != _FLOW_CONTEXT_AFTER:
-        raise IntegrityError("CPP #858 recipe did not reproduce exact reviewed source")
-    return result
-
-
 def _native_context_payload(head: str | None = None) -> PreparedPayload:
     path = REPO_ROOT / _NATIVE_CONTEXT_REL
     _assert_publication_file_safe(path, label="native context source dependency")
@@ -1946,12 +1798,55 @@ def _native_context_payload(head: str | None = None) -> PreparedPayload:
     return PreparedPayload(content, mode)
 
 
+_FLOW_CONTEXT_START_MARKER = "   **If the body carries a `speckit-context` block**"
+_FLOW_CONTEXT_END_MARKER = "2. **Explore the codebase:**"
+
+
 def _adapt_flow_context(skill_dir: Path, rel: str, text: str) -> str:
-    if skill_dir.name == "flow-auto" and rel == "reference.md":
-        start = text.index("   **If the body carries a `speckit-context` block**")
-        end = text.index("2. **Explore the codebase:**", start)
-        text = text[:start] + _FLOW_CONTEXT_CONSUMER + text[end:]
-    return text
+    """Carry the CxPP consumer text into flow-auto/reference.md, era-tolerantly.
+
+    Issue #251 retired the CPP #858 backport recipe, which recognised exactly two
+    byte-exact upstream identities and refused every source that was neither -
+    the condition that failed the drift cron on every run.
+
+    Neither of the two deltas that recipe applied reached the published artifact.
+    The 3767-byte speckit block sat entirely inside the region this function
+    replaces, so it existed only to manufacture a start marker that was deleted a
+    few lines later. The 118-byte CPP #835 Container row sat inside the capability
+    contract section, which `_adapt_deferred_native_boundaries` replaces wholesale
+    for the native surface. Applying both, one, or neither produces byte-identical
+    output, so the recipe is gone rather than reduced.
+
+    What IS load-bearing is this overlay, and it must work for both eras: where
+    upstream ships the speckit block we replace it, and where it does not - the
+    pinned era, which predates #858 - we insert the consumer at the same anchor.
+    One branch, not a source-identity table. The end marker is the single point of
+    failure and says so loudly: a bare ``str.index`` raised a ValueError naming
+    neither the file nor the remedy, and ``main()`` handles ``IntegrityError``
+    only, so it escaped as an unhandled traceback.
+    """
+    if skill_dir.name != "flow-auto" or rel != "reference.md":
+        return text
+
+    end = text.find(_FLOW_CONTEXT_END_MARKER)
+    if end < 0:
+        raise IntegrityError(
+            "flow-auto/reference.md: the anchor for the CxPP governing-context "
+            f"overlay is gone - upstream no longer contains {_FLOW_CONTEXT_END_MARKER!r}. "
+            "Re-anchor the insertion point rather than widening this check "
+            "(issue #251)."
+        )
+
+    start = text.find(_FLOW_CONTEXT_START_MARKER)
+    if start < 0:
+        # Pinned-era source: no speckit block to replace, so insert at the anchor.
+        return text[:end] + _FLOW_CONTEXT_CONSUMER + text[end:]
+    if start > end:
+        raise IntegrityError(
+            "flow-auto/reference.md: the speckit-context block starts after the "
+            "section it should precede; upstream reordered the section (issue #251)."
+        )
+    return text[:start] + _FLOW_CONTEXT_CONSUMER + text[end:]
 
 
 def _adapt_github_text(skill_dir: Path, source_file: Path, text: str) -> str:
@@ -2106,7 +2001,6 @@ def _adapted_source_payloads(
         if skill_dir.name == "evaluate-help" and rel == "scripts/speckit-tasks-to-issues.sh":
             continue
         raw_content = _backport_github_issue_contract(skill_dir, rel, source_payload.content)
-        raw_content = _backport_flow_context(skill_dir, rel, raw_content)
         try:
             text = raw_content.decode()
         except UnicodeDecodeError:
