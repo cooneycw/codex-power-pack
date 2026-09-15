@@ -956,6 +956,39 @@ def test_pinned_era_source_reproduces_the_published_artifact(tmp_path: Path) -> 
     assert published.read_bytes() == actual.content
 
 
+def test_nit_store_example_is_generic_while_the_resolver_table_is_not(tmp_path: Path) -> None:
+    """A concrete store number in a placeholder block misdirects every reader.
+
+    The published step's worked example printed `#864` - claude-power-pack's
+    store - beside `owner/repo` placeholders for everything else, three lines
+    below a resolver that maps each repository correctly. The code was right and
+    the example contradicted it, and a reader follows the example (issue #248).
+
+    The adaptation must reach the EXAMPLE and not the RESOLVER: the mapping
+    table's `claude-power-pack) NIT_STORE=864` is correct and load-bearing, and
+    a rule loose enough to rewrite it would break the resolution the step exists
+    to perform. That is the two-sided property here - fires on one occurrence of
+    864, refuses the other.
+    """
+    published = (
+        MODULE_PATH.parents[1] / ".codex/skills/flow-finish/reference.md"
+    ).read_bytes().decode()
+
+    # The example is generic.
+    assert "stored in the nit store (#<N>)" in published
+    assert "issues/<N>#issuecomment-123456789" in published
+    assert "(#864)" not in published
+    assert "issues/864#" not in published
+
+    # The resolver still names every repository's real store.
+    assert "claude-power-pack) NIT_STORE=864 ;;" in published
+    assert "codex-power-pack)  NIT_STORE=227 ;;" in published
+    assert "kyle)              NIT_STORE=1004 ;;" in published
+
+    # Idempotent: the replacement contains no anchor of its own.
+    assert sync._adapt_nit_store_example(published) == published
+
+
 def _flow_context_witnesses() -> dict[str, str]:
     return json.loads((MODULE_PATH.parents[1] / "tests/fixtures/flow-context-source.json").read_text())
 

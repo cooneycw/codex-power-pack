@@ -1844,6 +1844,28 @@ _RELAYED_DRIVERS_AFTER = (
 )
 
 
+# The nit-store step's worked example prints ONE repository's store number, and
+# the block around it uses `owner/repo` placeholders for everything else. A
+# concrete number there is not "the wrong number for CxPP" - it is a number in a
+# slot the rest of the example keeps generic, and it misdirects a reader in every
+# repository including the one it names. Substituting CxPP's 227 would trade one
+# wrong-for-most-readers value for another (issue #248).
+#
+# The RESOLVER's mapping table is deliberately untouched: `claude-power-pack)
+# NIT_STORE=864` is correct there and must stay. These anchors cannot reach it.
+_NIT_EXAMPLE_SUBSTITUTIONS = (
+    ("stored in the nit store (#864)", "stored in the nit store (#<N>)"),
+    ("issues/864#issuecomment-123456789", "issues/<N>#issuecomment-123456789"),
+)
+
+
+def _adapt_nit_store_example(text: str) -> str:
+    """Keep the nit-store example as generic as the block it sits in (#248)."""
+    for before, after in _NIT_EXAMPLE_SUBSTITUTIONS:
+        text = text.replace(before, after)
+    return text
+
+
 def _adapt_relayed_report_drivers(source_file: Path, text: str) -> str:
     """Name the fenced drivers rather than Claude's slash commands for them.
 
@@ -2017,6 +2039,7 @@ def _adapted_source_payloads(
         text = _adapt_flow_claude_review(skill_dir, source_file, text)
         text = _adapt_github_text(skill_dir, source_file, text)
         text = _adapt_relayed_report_drivers(source_file, text)
+        text = _adapt_nit_store_example(text)
         text = _adapt_codex_runtime_text(skill_dir, source_file, text)
         text = _adapt_invocation_text(skill_dir, source_file, text)
         text = _adapt_deferred_native_boundaries(skill_dir, source_file, text)
