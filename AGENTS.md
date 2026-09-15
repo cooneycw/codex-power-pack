@@ -14,6 +14,13 @@ Use the [canonical issue contract](docs/agents/issue-contract.md) for proportion
 issue-first or full-spec work. Preserve outcomes, binding constraints and existing
 delegated authority; treat proposed approaches as revisable within those bounds.
 
+An instrument needs a committed negative control when its verdict is consumed by
+a decision that will not independently re-derive the fact
+([ADR 0008](docs/decisions/0008-instrument-negative-control-bound.md)). A unit
+test the suite would catch does not; a gate that lets work through does; a check
+read by another session or another repo always does. The terms are defined in
+the [glossary](docs/agents/glossary.md).
+
 ## Project Map
 
 - `AGENTS.md` - canonical Codex instructions
@@ -35,6 +42,8 @@ delegated authority; treat proposed approaches as revisable within those bounds.
 - `templates/config.toml.example` - Codex MCP pointers for host-managed services
 - `docs/HOST_MANAGED.md` - host-owned MCP service inventory and health checks
 - `scripts/` - shell + Python helpers, incl. `codex_skills_sync.py` (pulls + drift-gates `.codex/skills/`), `skill_contract_baseline.py` (reconciles inventory), `skill_contract_lint.py` (blocks semantic incompatibility), and `cxpp-hook-transition.py` (retains reviewed hook roots across plugin upgrade and rollback)
+- `docs/decisions/` - architecture decision records. Numbers MIRROR claude-power-pack's, so `0008` names the same decision in both repos; the directory starts at 0008 and has gaps by design (ADR 0008)
+- `docs/agents/glossary.md` - the defined terms `instrument`, `harness` and `counter-model`; read it before using those words in an issue or a review
 - `docs/skills/` - focused reference docs
 - `docs/skill-contract-baseline.md` - measured Wave 7 source, package, prompt, reference, and gap baseline
 - `docs/skill-evaluation.md` and `docs/skill-evaluation-scorecard.md` - evaluation safety, cadence, release policy, and aggregate results
