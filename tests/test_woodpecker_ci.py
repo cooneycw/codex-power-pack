@@ -55,8 +55,13 @@ def test_secret_scan_runs_a_positive_control_before_the_repo_scan() -> None:
     # EXACTLY 1, never merely non-zero: gitleaks exits 1 on a find and 0 on a
     # clean scan, so a non-zero test would also accept 127 (binary absent) and
     # report a scanner that never ran as one that works.
-    assert '-ne 1' in probe, "the probe must require gitleaks' find-code exactly"
+    assert "--exit-code" in probe, (
+        "the probe must move a FIND to a distinct status: gitleaks' default find-code "
+        "is 1 and it also exits 1 on a fatal error, so requiring 1 reads a broken "
+        "config as a detection"
+    )
     assert "probe_rc" in probe, "the probe must capture the exit code, not branch on truthiness"
+    assert "trap " in probe, "the fixture must be removed on every exit path, not just success"
     assert "--source /tmp/secret-scan-probe" in probe, "the probe must scan its own fixture"
     assert "--config .gitleaks.toml" in probe, "the probe must use the config under test"
     assert "exit 1" in probe, "the probe must fail the step when detection does not happen"
@@ -196,11 +201,16 @@ def test_probe_passes_only_when_gitleaks_reports_a_find(tmp_path):
     same rule this repo's negative-control register enforces: a crash is not a
     detection.
     """
-    assert _run_probe_with_stub_gitleaks(tmp_path / "found", 1) == 0, (
-        "the probe must PASS when gitleaks reports a find"
+    assert _run_probe_with_stub_gitleaks(tmp_path / "found", 42) == 0, (
+        "the probe must PASS when gitleaks reports a find at its declared --exit-code"
     )
     assert _run_probe_with_stub_gitleaks(tmp_path / "clean", 0) == 1, (
         "the probe must FAIL when the scanner detects nothing - an empty ruleset"
+    )
+    assert _run_probe_with_stub_gitleaks(tmp_path / "fatal", 1) == 1, (
+        "the probe must FAIL on gitleaks' ERROR status. This is the case a naive "
+        "probe gets wrong: 1 is both the default find-code and the fatal-error "
+        "code, so an unparseable config reads as a successful detection"
     )
     assert _run_probe_with_stub_gitleaks(tmp_path / "absent", 127) == 1, (
         "the probe must FAIL when gitleaks did not run at all, not report success"

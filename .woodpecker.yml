@@ -24,26 +24,29 @@ steps:
       # round it would pass in both worlds - an instrument that cannot fail,
       # inside the fix for an instrument that could not fail.
       - |
+        # gitleaks' DEFAULT find-code is 1, and it also exits 1 on a fatal error
+        # such as an unparseable config. Requiring "1" would therefore read "your
+        # config is broken" as "the secret was detected" - false evidence from
+        # the instrument whose whole job is to make the scan's silence mean
+        # something. --exit-code moves a FIND to a status nothing else uses.
+        PROBE_FOUND=42
+        trap 'rm -rf /tmp/secret-scan-probe' EXIT
         mkdir -p /tmp/secret-scan-probe
         printf 'aws_access_key_id = "AKIA%s"\n' "QYLPT6KZBNXWR3JD" > /tmp/secret-scan-probe/probe.txt
         set +e
-        gitleaks detect --source /tmp/secret-scan-probe --no-git --config .gitleaks.toml >/dev/null 2>&1
+        gitleaks detect --source /tmp/secret-scan-probe --no-git \
+          --config .gitleaks.toml --exit-code "$PROBE_FOUND" >/dev/null 2>&1
         probe_rc=$?
         set -e
-        # EXACTLY 1, not merely non-zero. gitleaks exits 1 when it finds
-        # something and 0 when it does not, so "non-zero" would also accept 127
-        # (binary missing) and any crash - reporting a scanner that never ran as
-        # a scanner that works. That is the same mistake as reading a crash as a
-        # detection, which this repo's negative-control register refuses by rule.
-        if [ "$probe_rc" -ne 1 ]; then
-          echo "secret-scan probe FAILED (gitleaks exit $probe_rc)." >&2
-          echo "  exit 0  = the scanner did not detect a known secret; the ruleset is empty" >&2
-          echo "            or over-excluded, and this step's verdict means nothing." >&2
-          echo "  other   = the scanner did not run at all." >&2
+        if [ "$probe_rc" -ne "$PROBE_FOUND" ]; then
+          echo "secret-scan probe FAILED (gitleaks exit $probe_rc, expected $PROBE_FOUND)." >&2
+          echo "  0   = the scanner did not detect a known secret; the ruleset is" >&2
+          echo "        empty or over-excluded and this step's verdict means nothing." >&2
+          echo "  1   = gitleaks failed (unparseable config, bad flag) - it did not scan." >&2
+          echo "  127 = gitleaks is not installed in this image." >&2
           exit 1
         fi
         echo "secret-scan probe: scanner detected the known secret - its silence below is meaningful"
-        rm -rf /tmp/secret-scan-probe
       - gitleaks detect --source . --config .gitleaks.toml --verbose
     when:
       - event: [push, pull_request]

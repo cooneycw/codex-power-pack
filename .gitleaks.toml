@@ -34,5 +34,5 @@ regexes = [
     # hook MASKS a secret it is handed. Allowlisted by value rather than by
     # path deliberately: a path entry would also suppress a real secret later
     # added to that file, which is the over-broad suppression #263 is about.
-    '''ghp_abcdefghijklmnopqrstuvwxyz123456''',
+    '''"ghp_abcdefghijklmnopqrstuvwxyz123456"''',
 ]
