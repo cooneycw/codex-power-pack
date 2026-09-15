@@ -119,8 +119,87 @@ def test_overlay_assertion_fires_when_replacement_stops_matching() -> None:
 
 def test_overlay_assertion_passes_on_clean_output() -> None:
     """The control must also be able to report CLEAN, or it is merely always-red."""
-    files = {"reference.md": _payload("prose\n    echo REFUSING ...\n")}
+    files = {
+        "reference.md": _payload(
+            f"prose\n    echo {sync._WORKTREE_REFUSAL_MARKER}\n"
+        )
+    }
     sync._assert_worktree_fallback_removed(Path("flow-merge"), files)
+
+
+@pytest.mark.parametrize(
+    "variant",
+    [
+        pytest.param('git  worktree remove "$WORKTREE_PATH" --force', id="double-space"),
+        pytest.param('git\tworktree remove "$WORKTREE_PATH" --force', id="tab"),
+        pytest.param('git worktree  remove "$WORKTREE_PATH"  --force', id="inner-spaces"),
+        pytest.param("git worktree remove $WORKTREE_PATH --force", id="unquoted"),
+        pytest.param("git worktree remove ${WORKTREE_PATH} --force", id="braced"),
+    ],
+)
+def test_overlay_assertion_catches_whitespace_reflow(variant: str) -> None:
+    """NEGATIVE CONTROL for the hole Codex review of #243 found.
+
+    The guard originally matched one exact string, so a single extra space INSIDE
+    the command defeated the overlay and the check together - the destructive line
+    shipped while the guard reported clean. The first control written for this
+    varied the block's INDENTATION, which left the command string intact, so it
+    proved the guard catches one mutation class and was read as proving the class.
+    These are the inputs that distinguish the two.
+    """
+    files = {
+        "reference.md": _payload(
+            f"    {variant}\n{sync._WORKTREE_REFUSAL_MARKER}\n"
+        )
+    }
+    with pytest.raises(sync.IntegrityError):
+        sync._assert_worktree_fallback_removed(Path("flow-merge"), files)
+
+
+def test_overlay_assertion_ignores_prose_about_the_hazard() -> None:
+    """A non-zero must mean OUR block changed, not that a neighbour wrote docs.
+
+    Documentation warning against the command is not the command. Before the
+    line-anchoring this raised, which would have made good documentation fail the
+    build and trained the next person to widen the check until it saw nothing.
+    """
+    files = {
+        "reference.md": _payload(
+            f'Never run `{RAW_FALLBACK}` by hand.\n'
+            f"{sync._WORKTREE_REFUSAL_MARKER}\n"
+        )
+    }
+    sync._assert_worktree_fallback_removed(Path("flow-merge"), files)
+
+
+def test_overlay_assertion_requires_the_refusal_not_merely_its_absence() -> None:
+    """Absence of the raw string is not presence of the fix.
+
+    A cleanup block upstream deleted outright, or an output that simply lost it,
+    scores zero on a pure absence check - indistinguishable from a correctly
+    applied overlay. The requirement is derived from the SOURCE: `reference.md`
+    carried the fallback upstream, so the output must carry the refusal.
+    """
+    had = frozenset({"reference.md"})
+    with pytest.raises(sync.IntegrityError):
+        sync._assert_worktree_fallback_removed(Path("flow-merge"), {}, had)
+    with pytest.raises(sync.IntegrityError):
+        sync._assert_worktree_fallback_removed(
+            Path("flow-merge"), {"reference.md": _payload("no block at all\n")}, had
+        )
+
+
+def test_overlay_assertion_exempts_skills_whose_source_had_no_block() -> None:
+    """A skill that never carried the block owes no refusal.
+
+    Hardcoding flow-merge/flow-auto here instead would fail every synthetic
+    fixture that legitimately has no cleanup block - which is exactly what it did
+    on first attempt, erroring 53 provenance tests - and would go quietly blind if
+    upstream moved the block to a third skill.
+    """
+    sync._assert_worktree_fallback_removed(
+        Path("flow-merge"), {"reference.md": _payload("no block at all\n")}, frozenset()
+    )
 
 
 def test_overlay_replaces_both_upstream_fallback_shapes() -> None:
