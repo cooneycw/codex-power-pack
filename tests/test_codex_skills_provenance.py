@@ -887,6 +887,38 @@ def test_issue_contract_backport_reproduces_upstream_once_before_native_adaptati
         assert published.read_bytes() == actual.content
 
 
+# The depths upstream has actually written this link at: `../../../docs/...`
+# through CPP #862, then `docs/...` from CPP 01b8e13 on. The third entry is not
+# an upstream state - it is the guard against a rule that matches the link
+# target anywhere and would rewrite an already-absolute URL a second time.
+_CONTRACT_LINK_DEPTHS = ["../../../", "../", ""]
+
+
+@pytest.mark.parametrize("prefix", _CONTRACT_LINK_DEPTHS)
+def test_issue_contract_link_is_made_absolute_at_every_upstream_relative_depth(
+    tmp_path: Path, prefix: str
+) -> None:
+    """The DEPTH of this link is upstream's to change, and it did.
+
+    The rewrite matched `../../../docs/agents/issue-contract.md` byte-exactly.
+    CPP 01b8e13 shortened the path to `docs/agents/issue-contract.md` in a
+    one-line edit, so the rewrite silently stopped firing and the generated
+    CxPP reference kept a relative link - which resolves to
+    `.codex/skills/github-issue-create/docs/agents/issue-contract.md`, a file
+    that does not exist. Nothing failed; the route simply went nowhere.
+    """
+    skill = tmp_path / "github-issue-create"
+    line = f"in [the issue contract]({prefix}docs/agents/issue-contract.md). For work large\n"
+    adapted = sync._adapt_github_text(skill, Path("reference.md"), line)
+
+    assert f"]({sync._ISSUE_CONTRACT_URL})" in adapted
+    assert "](docs/agents/issue-contract.md)" not in adapted
+    assert "](../" not in adapted
+    # Rewriting an already-absolute link a second time would nest the URL.
+    assert sync._adapt_github_text(skill, Path("reference.md"), adapted) == adapted
+    assert adapted.count(sync._ISSUE_CONTRACT_URL) == 1
+
+
 @pytest.mark.parametrize("state", ["before", "after"])
 def test_issue_contract_unreviewed_raw_source_cannot_be_hidden_by_generic_adaptation(
     tmp_path: Path, state: str
