@@ -1043,6 +1043,55 @@ def test_reporting_accepts_an_unreviewed_contract_source_that_publication_refuse
     assert sync._GITHUB_CONTRACT_HEADING in adapted["reference.md"].content
 
 
+def test_absent_adoption_policy_is_an_error_at_every_pin(
+    provenance_fixture: tuple[Path, Path, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """RED case for issue #258: absence must never read as checked-and-fine.
+
+    `_load_adoption_policy` used to take `required=pin.commit ==
+    ADOPTION_TARGET_COMMIT`, so the moment the pin moved off the reviewed target
+    an ABSENT policy stopped being an error: the loader returned None,
+    `_validate_policy_source` was skipped, and generation proceeded unenforced.
+    The control did not weaken gradually - it stopped existing, and nothing said
+    so.
+
+    On the pre-fix code this test FAILS: the loader returns None rather than
+    raising, which is the whole defect. Both halves are asserted, because
+    "it raises now" alone would not distinguish the fix from the policy simply
+    being present.
+    """
+    _, source, _ = provenance_fixture
+    assert sync.ADOPTION_POLICY_PATH.is_file(), "fixture should start adopted"
+
+    # The state a bump creates: the pin is no longer the reviewed target, and the
+    # policy is gone for whatever reason.
+    sync.ADOPTION_POLICY_PATH.unlink()
+    monkeypatch.setattr(sync, "ADOPTION_TARGET_COMMIT", "0" * 40)
+
+    # PUBLISHING refuses. Before the fix this returned None and generation
+    # proceeded unenforced, which is the whole defect.
+    with pytest.raises(sync.IntegrityError, match="adoption policy is missing"):
+        sync._load_adoption_policy()
+
+    # READING degrades to unenforced rather than refusing, and says so by
+    # returning None instead of raising. Both halves are asserted, because
+    # "it raises" alone would not distinguish the fix from a blanket refusal.
+    assert sync._load_adoption_policy(publishing=False) is None
+
+
+def test_pin_and_adoption_target_must_not_diverge() -> None:
+    """The pairing #258 found unenforced, now stated in one place.
+
+    The PIN and ADOPTION_TARGET_COMMIT are edited by hand in the same change and
+    nothing checked that they agreed. Divergence was loud on the refresh path and
+    silent on every path that only consumed the flag derived from it.
+    """
+    sync._assert_pin_matches_adoption_target(sync.ADOPTION_TARGET_COMMIT)
+
+    with pytest.raises(sync.IntegrityError, match="does not match the reviewed adoption target"):
+        sync._assert_pin_matches_adoption_target("0" * 40)
+
+
 def test_retired_858_backport_recipe_is_gone() -> None:
     """Negative membership: the recipe retired in #251 must not drift back.
 

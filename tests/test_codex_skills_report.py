@@ -320,7 +320,7 @@ def test_declared_deferral_is_reported_separately_from_raw_upstream_drift(
     monkeypatch.setattr(
         sync,
         "_load_adoption_policy",
-        lambda *, required=True: policy,
+        lambda *, publishing=True: policy,
     )
     capsys.readouterr()
 
