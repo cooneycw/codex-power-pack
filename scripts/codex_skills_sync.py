@@ -90,35 +90,37 @@ PIN_FIELDS = {"repo", "commit", "pulls"}
 COMMIT_RE = re.compile(r"[0-9a-f]{40}")
 DIGEST_RE = re.compile(r"[0-9a-f]{64}")
 REPORT_TIMESTAMP_RE = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z")
-ADOPTION_TARGET_COMMIT = "f64a654f76ea8d26a33eb33f785f6e1065a823b6"
-ADOPTION_COUNTS = {"adopt": 6, "adapt": 27, "defer": 26}
+ADOPTION_TARGET_COMMIT = "01b8e13f58218778e93e88c61665eed5eba8fd14"
+ADOPTION_COUNTS = {"adopt": 15, "adapt": 47, "defer": 40}
 ADOPTION_AUDIT_IDENTITIES = {
-    "report_sha256": "cc752f61b4f8e0aef496f65f8a435192382ff3229b201918566fb4cb2252e8ba",
-    "generated_at": "2026-09-07T18:37:24Z",
-    "cxpp_commit": "c2deddded086f061fa0f5c4ba27ac250c831c943",
-    "cxpp_tree": "5d099e9df494f83ab0b681038f1365799449b7aa",
-    "baseline_pin_commit": "4726ccf43899ac20ec886e588f1b9faf3da51065",
+    "report_sha256": (
+        "76d77308e89bb41040e70d3e028b63e4be15d3782fee269e7a373dd28df3d9ae"
+    ),
+    "generated_at": "2026-09-15T12:39:39Z",
+    "cxpp_commit": "7d4436217ee70a3f669d16c20c170502e27f98c1",
+    "cxpp_tree": "e10f963052e5c018c9a9fcc6853a4dbf4b963c4b",
+    "baseline_pin_commit": "f64a654f76ea8d26a33eb33f785f6e1065a823b6",
     "baseline_manifest_sha256": (
-        "c0b9908274dc1ebf76338b8a345abb6c98c28acbf9355056786fa6afbbf5d397"
+        "7c49659eece9fb5085844418b74055150a8d831026db4d76059041ce203ef856"
     ),
     "baseline_overlay_sha256": (
-        "ba6c7f5d547f570d495aecf069b75da5ee98e9ef82d82d27f861286b87232a93"
+        "ac74cf01aad717e917e5fe6ca8feda58536465c179129f2fbf0ec972cacfbf34"
     ),
     "baseline_adapted_payload_sha256": (
-        "592b37fae2a81e47b01bc8ac10a72d9ef5cdaa5cd8d98c83848dce5d968f5edb"
+        "97bc64196d17a8300f6bfcf70c3eb3cd52ea6a1147b2333581eb12458109b9df"
     ),
     "target_adapted_payload_sha256": (
-        "df25b2c274a009e4e91339e061bf6563cee1f376a4cde191aaa06989b0d7e7d4"
+        "41720178480d0816b3c0ce510d3e3522e77e2f8a0c9730f9c5c8dcb25fc847f4"
     ),
 }
 ADOPTION_CHANGE_SET_SHA256 = (
-    "b232d95fb3ddc6b3252609f8fa9ddda7a3d921f155d285606f3f8e2030bc817c"
+    "b431ce85204fcae7dbdfe0ea5a1775220c187fd9790409e52295d489ced337ad"
 )
 ADOPTION_DECISIONS_SHA256 = (
-    "6cf7036f98f23df04e9bc7f94393da71e83017ad76503e4d61a99b67b6208beb"
+    "5e0338b625daa5d041cdb7dc52e5857a842c02d69132371f3fb032e3c05b056c"
 )
 ADOPTION_RETAINED_PAYLOADS_SHA256 = (
-    "958d4cecdb59f855e3bc0860c42b50a9c255735cb86a34b58b66755a8bc4904b"
+    "136ac96bdb683e74039af56aaac0d25550d3a1866e91ff4cbf1a2d76bf0a59e3"
 )
 ADOPTION_BOUNDARIES = {
     "excluded_source_skills": ["claude-md-help", "claude-md-lint"],
@@ -1619,8 +1621,11 @@ def _adapt_flow_resolver(text: str) -> str:
     return text
 
 
-# CPP #856 / PR #862 bounded raw-source backport at the unchanged #196 PIN.
-# These are reviewed immutable source identities, not a general fallback policy.
+# CPP #856 / PR #862 bounded raw-source backport. These are reviewed immutable
+# source identities, not a general fallback policy: each entry is an upstream
+# state a human read before it was allowed through publication. A pin bump ADDS
+# the era it pins after reviewing its diff - it never rewrites an older entry,
+# which is a historical fact about what upstream once held.
 _GITHUB_CONTRACT_BEFORE = (
     "32f7905e61b78ec6a6c8b001d2539ac59a691a47",
     "77abab65998d61802f16f33d9935d7f8203b4e1e9a1824aac295489155c0d59a",
@@ -1630,6 +1635,21 @@ _GITHUB_CONTRACT_AFTER = (
     "2c850e3c88f0674c912482f6dce773e184dfc276",
     "d4bc6b921f0b5e4a909d4e284bf95ae9e5be90ead3f406152cc9c210dcf28382",
     3902,
+)
+# CPP 01b8e13, the #254 pin. Reviewed diff against _GITHUB_CONTRACT_AFTER: ONE
+# line, the issue-contract link's relative depth (`../../../docs/...` ->
+# `docs/...`), nine bytes. Nothing else in the file changed. The #856 wording
+# this recipe backports is already present upstream at this era, so both of its
+# edits are no-ops here - see _backport_github_issue_contract.
+_GITHUB_CONTRACT_AT_254_PIN = (
+    "ebff1e9bd8cac791ec3de87b2523a782641680bc",
+    "85eaa8d1b23b031f1873566b8ddaeba40362ef96f7fa0c1e07be52e7c20e4c50",
+    3893,
+)
+_GITHUB_CONTRACT_REVIEWED = (
+    _GITHUB_CONTRACT_BEFORE,
+    _GITHUB_CONTRACT_AFTER,
+    _GITHUB_CONTRACT_AT_254_PIN,
 )
 _GITHUB_CONTRACT_ADDITION = """## What the Body Must Make Legible
 
@@ -1654,6 +1674,14 @@ the issue rather than copying them.
 _ISSUE_CONTRACT_URL = (
     "https://github.com/cooneycw/codex-power-pack/blob/main/docs/agents/issue-contract.md"
 )
+# Upstream writes this link relative to the file, and the DEPTH is upstream's to
+# change: CPP 01b8e13 (#254) shortened `../../../docs/...` to `docs/...` in a
+# one-line edit. The old byte-exact anchor silently stopped firing there and
+# published a relative link that resolves nowhere under `.codex/skills/`, so the
+# depth is matched rather than assumed. `](` anchors it, which is what keeps an
+# already-absolute URL - it also ends in `docs/agents/issue-contract.md` - from
+# matching, so the substitution cannot double-apply.
+_ISSUE_CONTRACT_LINK_RE = re.compile(r"\]\((?:\.\./)*docs/agents/issue-contract\.md\)")
 
 
 def _github_contract_source_identity(content: bytes) -> tuple[str, str, int]:
@@ -1718,10 +1746,11 @@ def _backport_github_issue_contract(
         # test_issue_contract_unreviewed_raw_source_cannot_be_hidden_by_generic_adaptation
         # and test_issue_contract_unknown_source_fails_refresh_before_any_publication.
         identity = _github_contract_source_identity(content)
-        if identity not in (_GITHUB_CONTRACT_BEFORE, _GITHUB_CONTRACT_AFTER):
+        if identity not in _GITHUB_CONTRACT_REVIEWED:
             raise IntegrityError(
                 "github-issue-create/reference.md: unreviewed raw source for the "
-                "#856 backport; expected CPP f64a654 or #862 8ebef00 witnesses. "
+                "#856 backport; expected CPP f64a654, #862 8ebef00 or #254 01b8e13 "
+                "witnesses. "
                 "Review and update the recorded witnesses before publication. "
                 "(Reporting does not take this path - issue #251.)"
             )
@@ -1930,7 +1959,7 @@ def _adapt_github_text(skill_dir: Path, source_file: Path, text: str) -> str:
         return text
     text = text.replace("cooneycw/claude-power-pack", '"$REPO"')
     if skill_dir.name == "github-issue-create" and source_file.name == "reference.md":
-        text = text.replace("../../../docs/agents/issue-contract.md", _ISSUE_CONTRACT_URL)
+        text = _ISSUE_CONTRACT_LINK_RE.sub(f"]({_ISSUE_CONTRACT_URL})", text)
         text = text.replace(
             "## Issue Creation Flow\n",
             "If the canonical reference is unavailable, report it and continue otherwise\n"
@@ -1943,6 +1972,37 @@ def _adapt_github_text(skill_dir: Path, source_file: Path, text: str) -> str:
         marker_end = text.find("\n\n")
         if marker_end != -1:
             text = text[: marker_end + 2] + _GITHUB_REPO_PREAMBLE + text[marker_end + 2 :]
+    return text
+
+
+_RELAYED_DRIVERS_BEFORE = (
+    "`/codex:auto`, `/qwen:auto` and `/gemma:auto` summarise a run a **fenced model**\n"
+    "performed."
+)
+_RELAYED_DRIVERS_AFTER = (
+    "A relayed report summarises a run a **fenced model** (a Codex, Qwen or Gemma\n"
+    "driver) performed."
+)
+
+
+def _adapt_relayed_report_drivers(source_file: Path, text: str) -> str:
+    """Name the fenced drivers rather than Claude's slash commands for them.
+
+    The adopted closing-report contract cites `/codex:auto`, `/qwen:auto` and
+    `/gemma:auto`. None of the three is a CxPP skill, so the namespaced rewriter
+    correctly declines to emit `$codex-auto` - inventing a reference to a skill
+    that does not exist would be worse than leaving the Claude form. The fix is
+    to stop naming host commands at all: the distinction the paragraph draws is
+    about who ran the code, not about which command started it.
+
+    Anchored on the whole sentence and therefore idempotent - the replacement
+    does not contain the anchor. It deliberately removes ALL THREE tokens; the
+    skill-contract scanner only sees `/codex:auto` (its namespace filter drops
+    qwen and gemma) and only under plugins/, so it cannot see this file's
+    flow-auto_codex copy at all.
+    """
+    if source_file.as_posix().endswith("docs/agents/closing-report-contract.md"):
+        text = text.replace(_RELAYED_DRIVERS_BEFORE, _RELAYED_DRIVERS_AFTER)
     return text
 
 
@@ -2100,6 +2160,7 @@ def _adapted_source_payloads(
         text = _adapt_flow_merge_helper(skill_dir, source_file, text)
         text = _adapt_flow_claude_review(skill_dir, source_file, text)
         text = _adapt_github_text(skill_dir, source_file, text)
+        text = _adapt_relayed_report_drivers(source_file, text)
         text = _adapt_codex_runtime_text(skill_dir, source_file, text)
         text = _adapt_invocation_text(skill_dir, source_file, text)
         text = _adapt_deferred_native_boundaries(skill_dir, source_file, text)

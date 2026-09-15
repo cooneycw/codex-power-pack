@@ -218,6 +218,46 @@ however terse the surrounding style. Reports below this density fail the gate.
 - Verdicts **Still needed / Partially addressed / Needs reframing** -> `$flow-auto` pauses for approval - unconditionally - then proceeds to Implement using the approved plan.
 - `$flow-auto` has no bypass for that pause, and neither does any separately reviewed wrapper. `--yes` / `--auto-approve` are recognized only to report that the gate is not skippable; an `eli5: auto-approve` trailer in the issue body or HEAD commit message is not read at all (issue #775). The Step 3 report line therefore has no `auto-granted` value - `granted` or `close recommended` are the only outcomes.
 
+## CPP integration: the same floor governs the CLOSING report (issue #965)
+
+This section is CPP-owned and sits OUTSIDE the vendored core above, like its
+sibling below. It adds no rule to the gate and changes nothing inside the
+markers.
+
+Section A's depth floor - motivation before mechanics, every technical term
+glossed on first use, and the bar that someone who has never seen the codebase
+finishes understanding what is wrong today and what will be better afterward -
+is **the repository's only plain-language standard**, and it governs the
+`## In plain language` section of every closing report as well as this gate.
+
+[The closing-report contract](docs/agents/closing-report-contract.md)
+is canonical for what a run emits when it ENDS. It cites this floor; it does
+not re-author one. Two plain-language standards in one repository would be a
+convention collision, and the point of pointing here is that there is only one.
+
+Note the asymmetry this closes, because it is the whole of #965: the bar below
+applies when an agent wants a **yes**, and until #965 nothing applied when it
+hands the work **back** - the moment the context is largest and the reader's
+attention thinnest.
+
+## CPP integration: challenge the plan, not just its freshness (issue #859)
+
+This section is CPP-owned and sits OUTSIDE the vendored core above. The core asks
+whether the issue is still NEEDED; CPP additionally asks whether it is still RIGHT.
+
+When this gate runs inside `$flow-auto`, Section C also answers: could this
+requirement, or this proposed approach, undermine the intended outcome? Name the
+concern and a concrete alternative if there is one. **"No material concern found"
+is a complete answer** and is expected for most work - this is a question to
+consider, not a quota of objections to fill.
+
+This is the INITIAL approval point. What happens when implementation later surfaces
+evidence the review did not anticipate is Step 4's revision path in
+[auto.md](auto.md). That path adds no blanket gate for ordinary implementation
+choices - those never return here - but it does NOT remove the existing route for a
+consequential change: altering promised behaviour or crossing a deliberate boundary
+still needs agreement from the authority that already holds it.
+
 ## Notes
 
 - This command is the communication and approval checkpoint: intent in the reviewer's language, an honest necessity verdict, and the plan that is about to be executed.

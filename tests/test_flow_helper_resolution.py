@@ -212,7 +212,25 @@ def _merge_stubs(
         'elif [[ "$*" == *"rev-parse refs/remotes/origin/main"* ]]; then printf "%040d\\n" 1; '
         'elif [[ "$*" == *"rev-parse HEAD^{tree}"* ]]; then printf "%040d\\n" 2; '
         'elif [[ "$*" == "rev-parse HEAD" ]]; then printf "%040d\\n" 3; '
-        'elif [[ "$*" == *"merge-base --is-ancestor"* ]]; then exit 1; fi\n'
+        # The LOCAL base is fresh in every scenario here. `base_failure` models
+        # GitHub REJECTING the squash with "Base branch was modified", which is a
+        # race after the pre-check, not local staleness - so it drives the gh stub
+        # and must not also make the local ancestry look stale. The stub used to
+        # answer exit 1 - "origin/main is not an ancestor of HEAD", i.e. the base
+        # moved - to every scenario. The pinned helper only consulted that on the
+        # base-WAIT path after a rejection; CPP 01b8e13 also checks it PRE-merge,
+        # so a blanket stale answer now short-circuits every test to exit 6
+        # before it reaches the behaviour it targets (#254).
+        'elif [[ "$*" == *"merge-base --is-ancestor"* ]]; then exit 0; '
+        # Queries the helper gained between CPP f64a654 and 01b8e13 (#254). The
+        # stub answered none of them, so each fell through the chain and the
+        # helper read silence as an answer. None of these changed its exit
+        # contract - that is byte-identical across the two pins - they are new
+        # QUESTIONS an unextended harness could not answer.
+        'elif [[ "$*" == *"worktree list"* ]]; then :; '            # #848: no sibling holds the branch
+        'elif [[ "$*" == *"config branch."* ]]; then :; '           # #916: record the merged head
+        'elif [[ "$*" == *"ls-remote --exit-code"* ]]; then exit 2; '  # #852: remote branch absent => cleanup ok
+        'fi\n'
         'exit 0\n',
     )
     env = os.environ | {

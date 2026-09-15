@@ -112,6 +112,28 @@ tree before squashing:
 git push origin "$BRANCH"
 ```
 
+**Before merging: make the closing text agree with the accounting.** Review whatever
+will actually become the merge text. `gh-pr-merge.sh` passes an explicit subject and
+body derived from the PR (#655), so on that path an older commit's wording does not
+reach the squash; a plain `gh pr merge --squash` can compose it from the commits, and
+there a stale closing reference still closes the issue. Once the merge has run the
+branch is gone and the close has already happened, so check while it can still be
+changed - and check the sources in play rather than rewriting history on the
+assumption that the commits always feed it:
+
+```bash
+git log origin/main..HEAD --format=%B
+gh pr view "$PR_NUMBER" --json title,body --jq '.title, .body'
+```
+
+If the acceptance accounting is not complete, reword any closing reference to a plain
+mention - `Refs #N`, or "part of #N" - in the commit messages, the PR title and the PR
+body, so nothing in the merge text can close the promise. Do not write a closing
+keyword next to an issue number even as an illustration: `gh-pr-merge.sh` refuses a
+squash whose text carries a negated or incidental closing keyword beside an issue
+number (exits 5 and 7), and that guard cannot tell an example from an instruction. It
+is a backstop, not this decision.
+
 Then merge the PR:
 
 ```bash
@@ -217,9 +239,28 @@ if [[ -f <SKILL_DIR>/scripts/worktree-remove.sh ]]; then
 else
     echo "REFUSING: worktree-remove.sh is missing; not removing $WORKTREE_PATH by hand." >&2
     echo "  Every guard this lane relies on lives in that helper (issue #899)." >&2
-    echo "  Reinstall the skill package so <SKILL_DIR>/scripts/worktree-remove.sh is present, then re-run this step." >&2
+    echo "  Install it with $flow-repair, then re-run this step." >&2
 fi
 ```
+
+**Why the fallback refuses instead of removing (issue #899).** It used to run
+`git worktree remove --force` plus `git branch -D` directly - no claim check, no
+occupancy check, no uncommitted-work check, no unpushed-commits check. Every
+protection this series built is conditional on a file existing at a fixed path,
+and a guard that is absent is indistinguishable from a guard that passed (the
+#823 shape).
+
+This is lower PROBABILITY, not lower SEVERITY, and the two are different axes:
+the consequence is identical to removing a live worktree by hand, and unlike the
+guarded path it applied unconditionally rather than only to unclaimed worktrees.
+
+It is also not hypothetical. In a Kyle session container `~/.claude/scripts` is a
+PER-ENTRY mount, so whether the helper is present depends on the host checkout
+and the mount rather than on anything in this repository - a containerised
+session is exactly where this branch runs.
+
+A leftover worktree is cheap and visible; `$flow-cleanup` and the #887 sweep both
+collect them. Destroyed work is neither.
 
 **Step 5c - Verify working directory is valid:**
 ```bash
@@ -235,12 +276,36 @@ git branch -D "$BRANCH" 2>/dev/null || true
 
 ### Step 6: Close Issue (if linked)
 
+Closing is a decision, not a formality: an issue closes when its promises were kept.
+Account for the material acceptance items first - demonstrated, revised WITH evidence
+for the revised behaviour, or deferred - per
+[the issue contract](docs/agents/issue-contract.md). The report itself stays
+ordinary prose; nothing is parsed out of it.
+
+Carry that judgement into the one place it has to act:
+
 ```bash
+# Set this from YOUR acceptance accounting. There is no machine field in the report
+# and nothing is read out of prose - a quoted example or a truncated fetch must never
+# be able to authorise a close.
+#
+# "yes" ONLY when every material item is demonstrated, revised with evidence for the
+# revised behaviour, or resolved by a transfer/withdrawal that recorded its authority
+# and destination. Anything else - including "not sure" - leaves it unset, and unset
+# cannot close.
+# Reset for THIS issue: $flow-merge can run standalone, and an exported "yes" from
+# earlier work in the same shell must not decide this one.
+ACCEPTANCE_COMPLETE=""
+
 if [[ -n "$ISSUE_NUM" ]]; then
-    # Check if issue is still open (gh pr merge with Closes # may have closed it)
     ISSUE_STATE=$(gh issue view "$ISSUE_NUM" --json state --jq '.state' 2>/dev/null)
-    if [[ "$ISSUE_STATE" == "OPEN" ]]; then
-        gh issue close "$ISSUE_NUM" --comment "Closed via $flow-merge - PR #${PR_NUMBER} merged."
+    if [[ "$ACCEPTANCE_COMPLETE" == "yes" ]]; then
+        if [[ "$ISSUE_STATE" == "OPEN" ]]; then
+            gh issue close "$ISSUE_NUM" --comment "Closed via $flow-merge - PR #${PR_NUMBER} merged."
+        fi
+    else
+        echo "Acceptance not recorded complete - leaving #${ISSUE_NUM} open."
+        echo "Say what remains in a comment on the issue if it is not already clear."
     fi
 fi
 ```
@@ -303,6 +368,28 @@ codify step (do not auto-run):
 Friction retro: this run recorded N friction signal(s). Run $self-improvement-retro
 to codify fixes? [y/N]
 ```
+
+## Closing report
+
+<!-- closing-report-surface -->
+
+`$flow-merge` ends a run standalone, so it owes the owner a closing report just as the
+lifecycle drivers do. **Follow [the closing-report contract](docs/agents/closing-report-contract.md)** -
+canonical there, not restated here.
+
+Three sections, in this order:
+
+1. `## TO-DO (owner)` - FIRST and always present. Numbered; each item names the
+   DECISION, not its background. `Nothing blocking.` stated explicitly when
+   there is nothing, because an omitted block reads as forgotten rather than as
+   none. An FYI is not a TO-DO.
+2. `## In plain language` - what was wrong, why it mattered, what is better now,
+   under `$flow-eli5` Section A's existing depth floor.
+3. `## Evidence` - the merge marker, CI verdict on the merge commit, branch and worktree cleanup results, and the issue's closing state. Demoted, never deleted.
+
+This run ends at the merge, which is often the LAST thing the owner sees on an issue. A deploy or promotion the merge does not perform is a TO-DO item, not an FYI - it is an action reserved to the owner's authority.
+
+---
 
 ## Error Handling
 

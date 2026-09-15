@@ -130,7 +130,7 @@ The helper ends with a machine-readable marker:
 Only run manually if the runner was unavailable:
 
 ```bash
-PYTHONPATH="${HOME}/Projects/claude-power-pack/lib" python3 -m lib.security gate flow_finish
+PYTHONPATH="${HOME}/Projects/claude-power-pack" uv run --project "${HOME}/Projects/claude-power-pack" python -m lib.security gate flow_finish
 ```
 
 - If the gate **fails** (critical findings): **stop and report**. Show findings and remediation.
@@ -200,6 +200,75 @@ BARE (#581 discipline):
 
 **This step never blocks the flow** - it is purely informational.
 
+**Acceptance accounting (issue #860).** The quality gates above are evidence about
+CHECKS. Before opening the PR, account for what was actually delivered: every
+material acceptance item is demonstrated (name the behavioural test, experiment or
+reviewed observation), revised (give the reason and the agreement it needed), or
+deferred (and still owed). A couple of sentences of prose is enough for a small
+change - there is no required per-item line and no separate artifact. Silence is not
+delivery: an item nobody mentions is unresolved.
+
+Assess the evidence against the CURRENT agreed behaviour. After a #859 revision,
+evidence that satisfied the earlier promise has to be reassessed against the new
+one - sometimes it still suffices, often it does not, and that judgement belongs in
+the report rather than being assumed either way. A revision record on its own is
+never delivery evidence, and
+a revision record on its own is not delivery evidence.
+
+The report stays ordinary prose - there is no field to fill in, and nothing is
+parsed out of it. Carry the judgement into the one place it has to act: the closing
+step sets `ACCEPTANCE_COMPLETE=yes` ONLY when every material item is demonstrated,
+revised with evidence for the revised behaviour, or resolved by a transfer or
+withdrawal that recorded its authority and destination. Anything else - including
+"mostly done" - leaves it unset, and unset cannot close.
+
+**Closing must agree with that judgement.** When the accounting is not complete, the
+selected reference is the non-closing `Refs #N` - in the commit message, the PR title
+and the PR body alike, never `Closes #N` - so the merge cannot close a promise the
+report says was not kept.
+
+Then review whatever will actually become the merge text: the PR title and body, and
+the branch commits where they feed the squash. `gh-pr-merge.sh` passes an explicit
+subject and body derived from the PR (#655), so on that path an older commit's wording
+does not reach the squash - but a plain `gh pr merge --squash` can compose it from the
+commits, and that is when a stale closing reference still matters. Check the sources in
+play rather than rewriting history on the assumption that they always feed it:
+
+```bash
+git log origin/main..HEAD --format=%B
+gh pr view "$PR_NUMBER" --json title,body --jq '.title, .body' 2>/dev/null
+```
+
+Read the closing references there yourself rather than grepping for one spelling -
+the merge helper rejects negated and incidental forms too, and a narrow pattern
+misses exactly the ones that surprise you.
+
+The canonical rule is [the issue contract](docs/agents/issue-contract.md);
+this is where it is executed. Partial delivery stays reviewable and mergeable - the
+disposition changes what CLOSES, not what may merge.
+
+**Wording an unresolved report.** Reword closing references to a plain mention -
+`Refs #N`, or "part of #N" - in the commit messages, the PR title and the PR body. Do
+not print a closing keyword beside an issue number even to illustrate what to remove:
+`gh-pr-merge.sh` refuses a squash carrying a negated or incidental closing keyword next
+to an issue number (exits 5 and 7), and it cannot tell an example from an instruction.
+A report that demonstrates the mistake interrupts the merge it was trying to protect.
+
+```bash
+# Reference selection (issue #860). Default to a NON-closing reference; a closing one
+# is used only after your own acceptance accounting for THIS issue. Reset it here
+# rather than inheriting a value from an earlier run.
+ACCEPTANCE_COMPLETE=""     # "yes" only when every material item is demonstrated,
+                           # revised with evidence, or resolved by a recorded transfer
+ISSUE_REF="Refs #${ISSUE_NUM}"
+if [[ "$ACCEPTANCE_COMPLETE" == "yes" ]]; then
+    ISSUE_REF="Closes #${ISSUE_NUM}"
+fi
+```
+
+`$ISSUE_REF` then feeds the commit message, the PR title and the PR body, so an
+incomplete accounting cannot publish a closing reference anywhere.
+
 ### Step 3: Check for Changes
 
 ```bash
@@ -223,7 +292,8 @@ discipline; on exit 127 skip it):
   rule) and re-stage before committing.
 
 - If there are uncommitted changes, help the user commit them using standard git commit workflow.
-- Use conventional commit format: `type(scope): Description (Closes #N)`
+- Conventional commit format, using the selected reference:
+  `type(scope): Description (${ISSUE_REF})`
 - Include `Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>` if Claude helped write the code.
 - **An already-clean tree here is a LEGITIMATE state, not a failure** (issue
   #635): when the Step-1 stale-base merge ran, the work is already on the
@@ -253,7 +323,7 @@ Use standard PR creation:
 
 ```bash
 gh pr create \
-  --title "type(scope): Description (Closes #ISSUE_NUM)" \
+  --title "type(scope): Description (${ISSUE_REF})" \
   --body "## Summary
 - <bullet points>
 
@@ -261,12 +331,66 @@ gh pr create \
 - [ ] Tests pass
 - [ ] Linting passes
 
-Closes #ISSUE_NUM"
+${ISSUE_REF}"
 ```
 
 - Title: Conventional commit style, derived from changes
-- Body: Summary of changes + test plan + `Closes #N`
+- Body: Summary of changes + test plan + `${ISSUE_REF}`
 - Analyze all commits on the branch to draft the summary
+
+### Step 6b: Route Supplemental Findings to the Nit Store
+
+A supplemental finding is anything true and worth fixing that you discovered
+while doing something else: a defect noticed in passing, a rough edge found
+while closing this issue, a contract narrower than its callers assume. Do not
+widen this change to fix it, and do not drop it. Record it.
+
+Resolve the repository's nit store:
+
+```bash
+# Key on the REMOTE, never the directory name. This step always runs from a
+# per-issue worktree (`.../claude-power-pack-issue-865`), so a basename test
+# falls through every time and the explicit mapping below never fires - leaving
+# a full-text search as the only path, which is the opposite of the intent.
+REPO=$(basename -s .git "$(git remote get-url origin 2>/dev/null)")
+[ -n "$REPO" ] || REPO=$(gh repo view --json name -q .name 2>/dev/null)
+
+case "$REPO" in
+    kyle)              NIT_STORE=1004 ;;
+    claude-power-pack) NIT_STORE=864 ;;
+    codex-power-pack)  NIT_STORE=227 ;;
+    *) NIT_STORE=$(gh issue list --search "Nit Store" --state open \
+                     --json number --jq '.[0].number' 2>/dev/null) ;;
+esac
+
+# Never post into an empty number. A finding silently posted nowhere is the
+# exact failure this step exists to prevent, so fail loudly instead.
+if [ -z "$NIT_STORE" ]; then
+    echo "No nit store for '${REPO:-unknown}' - file the finding as a normal issue." >&2
+    exit 1
+fi
+gh issue comment "$NIT_STORE" --body "<one finding>"
+```
+
+`--search` is full text, not an exact title match, so it can select any open
+issue merely mentioning the phrase. It is the last resort, not the normal path;
+if it is what resolved the number, say so in the closing report.
+
+If the repository has no nit store, file the finding as a normal issue instead.
+
+- **One finding per comment.** State the file and line (or the command), what is
+  wrong, why it matters, and which issue or PR you were working when you found
+  it. The comment is the whole record; it is read later without your context.
+- **The store is an inbox, not a backlog.** Comments are reviewed and aggregated
+  into real issues later, so a comment is a disposition, not a fix.
+- **It is not a place to hide a defect that warrants its own ticket now.** A live
+  correctness, security, or data-loss problem gets its own issue, and the closing
+  report says so.
+- **Name what you stored, with the comment link, in the Step 7 output.** A
+  finding recorded but never reported is indistinguishable from one dropped.
+
+Having nothing to store is an ordinary outcome. Do not manufacture a finding to
+fill this step.
 
 ### Step 7: Output
 
@@ -280,14 +404,40 @@ Branch pushed: issue-42-fix-login → origin
 
 PR created: https://github.com/owner/repo/pull/78
   Title: fix(auth): Resolve login redirect loop (Closes #42)
+
+Supplemental findings: 1 stored in the nit store (#864)
+  - scripts/deploy.sh:42 unquoted $PATH expansion
+    https://github.com/owner/repo/issues/864#issuecomment-123456789
 ```
+
+## Closing report
+
+<!-- closing-report-surface -->
+
+`$flow-finish` ends a run standalone, so it owes the owner a closing report just as the
+lifecycle drivers do. **Follow [the closing-report contract](docs/agents/closing-report-contract.md)** -
+canonical there, not restated here.
+
+Three sections, in this order:
+
+1. `## TO-DO (owner)` - FIRST and always present. Numbered; each item names the
+   DECISION, not its background. `Nothing blocking.` stated explicitly when
+   there is nothing, because an omitted block reads as forgotten rather than as
+   none. An FYI is not a TO-DO.
+2. `## In plain language` - what was wrong, why it mattered, what is better now,
+   under `$flow-eli5` Section A's existing depth floor.
+3. `## Evidence` - quality-gate output, the security scan verdict, the commit and push results, the PR URL, and any nit-store comment links. Demoted, never deleted.
+
+This run ends at the PR, so a TO-DO item here is typically a review request, a deferred finding, or a gate that was relaxed to get the branch pushed - not the merge decision, which `$flow-merge` closes.
+
+---
 
 ## Error Handling
 
 - **Lint/test failure:** Stop, show output, ask user to fix
 - **Push failure:** Report error (likely needs `git pull --rebase`)
 - **PR already exists:** Report URL, offer to update
-- **No issue number in branch:** Create PR without `Closes #N` reference
+- **No issue number in branch:** Create PR with no issue reference at all
 - **No Makefile:** Skip quality gates, warn user
 
 ## Notes

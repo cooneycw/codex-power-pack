@@ -117,6 +117,13 @@ EXCLUSION_DECISIONS = {
         "rationale": "Replace: Codex flow packages bundle helpers and do not install Claude stable-path scripts.",
         "replacement": "bundled flow helpers, flow-doctor, and reinstall or cxpp-update",
     },
+    "flow-wave": {
+        "rationale": (
+            "Keep source-only: multi-session wave orchestration is a Claude fleet concern; CxPP packages the "
+            "single-session flow lifecycle and does not own a wave registry or mailbox."
+        ),
+        "replacement": "flow-auto and flow-auto_codex for a single session; no packaged wave orchestration",
+    },
 }
 
 EXCLUSION_OWNER = "Codex Power Pack maintainers"
