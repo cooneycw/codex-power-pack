@@ -58,11 +58,14 @@ HELPERS=(
     flow-stale-check.sh
     flow-worktree-guard.sh
     flow-worktree-claim.sh
+    speckit-context.py
     flow-finish-gate.sh
     gh-pr-merge.sh
     worktree-remove.sh
+    flow-worktree-sweep.sh
     friction-log.sh
     check-ignored-additions.sh
+    lane-serveability-check.sh
     flow-helpers-install.sh
 )
 

@@ -45,7 +45,12 @@
 #           or a test step exited 0 having executed no tests
 #           (issue #621), OR a failed test was re-run against only
 #           its failed ids and PASSED (issue #769 - `warn (rerun
-#           passed: ...)`). Every qualification names the reason.
+#           passed: ...)`), OR a resumed run carried a step's result
+#           from an earlier invocation WITHOUT proof the tree was
+#           unchanged since (issue #804 - `warn (carried, unverified:
+#           ...)`). A carry the runner verified via tree_signature is
+#           NOT a warning - see the #804 note below. Every
+#           qualification names the reason.
 #   skipped no runner AND no Makefile/pyproject gates to run     -> exit 0
 #
 # The #621/#628/#769 qualification exists because this helper is the layer the flow
@@ -61,6 +66,22 @@
 # because this helper invokes whatever CPP checkout is installed. That checkout
 # may predate #769: an unknown env var is ignored, while an unknown argparse flag
 # is a hard error that prevents the quality gate from running at all.
+#
+# #804 - a resumed run and the bare `ok` it must not print silently:
+#   The runner can auto-resume a failed run from its last completed step. That
+#   is correct for a crash (the tree is unchanged) and wrong for a repair (the
+#   fix changed the tree, so the step that would exercise it is exactly the
+#   one the resume skips). The runner now hashes the tree at persist time and
+#   again before honoring a resume: a mismatch discards the stale state and
+#   starts fresh, so a repair-resume can no longer print a bare `ok` while
+#   carrying a stale result. This helper's job is the case the runner cannot
+#   close on its own - no git, or a state file older than this field - where
+#   it still resumes (so a non-git target project does not regress) but marks
+#   the carry unverified. This helper turns that into `warn`, never a bare
+#   `ok`, and warns ONLY on "carried AND NOT verified" - a verified carry
+#   (`tree_verified: true`) is a proven-safe crash-resume, not a warning, and
+#   must stay silent: this fleet's runs get killed and resumed often, and
+#   warning on every legitimate one trains readers to stop reading the line.
 #
 # Env (test hooks - unset in normal use):
 #   FLOW_GATE_CPP_DIR   override the CPP checkout path (set empty to force
@@ -86,7 +107,7 @@ for arg in "$@"; do
         --plan=*) PLAN="${arg#--plan=}" ;;
         --check-summary) MODE="check-summary" ;;
         --help|-h)
-            sed -n '2,69p' "$0" | sed 's/^# \{0,1\}//'
+            sed -n '2,90p' "$0" | sed 's/^# \{0,1\}//'
             exit 0
             ;;
         *)
@@ -209,9 +230,26 @@ if [[ "$RUNNER_OK" -eq 1 ]]; then
     # the array-opening bracket so the scalar "skipped": <n> INSIDE the #621
     # "tests" object is not mistaken for the array (json.dumps(indent=2) always
     # multi-lines the array).
+    #
+    # The alternation below IS the gate list for this helper, and it decides the
+    # reported verdict - the "skipped" array carries every skipped step, gate or
+    # not, so it has to be filtered to gates here. That makes it a SECOND copy of
+    # lib/cicd/steps.py's GATE_STEP_IDS, in a language that cannot import it, and
+    # the copies drifted (issue #890): `security_scan` was added to the Python
+    # set while this regex still listed three names, so the id reached the JSON
+    # array, was filtered out here, and the marker still said `ok`. Keep them
+    # equal; tests/test_flow_finish_gate.py::test_gate_filter_matches_GATE_STEP_IDS
+    # parses this line and fails when they differ.
     SKIPPED_GATES=$(sed -n '/"skipped": \[/,/\]/p' "$RUNNER_JSON" 2>/dev/null \
-        | grep -oE '"(lint|test|typecheck)"' | tr -d '"' | tr '\n' ' ' | sed 's/ *$//')
-    # Pull ids only from #769 entries whose outcome is "passed". The runner's
+        | grep -oE '"(lint|test|typecheck|security_scan)"' | tr -d '"' | tr '\n' ' ' | sed 's/ *$//')
+    # Pull ids only from #769 entries whose outcome is "passed-in-isolation" -
+    # the token the runner records for a re-run that greened when the failed ids
+    # ran alone. It was "passed" until issue #900; the rename is the point, since
+    # passing alone is the signature of a flake AND of an order-dependent real
+    # failure, so the record must not claim the first. This match is ANCHORED, so
+    # it does not silently keep working on the old token: a drift between the two
+    # stops RERUN_PASSED being emitted and the marker reverts to `ok`, which is
+    # #900's exact symptom. tests/test_runner.py pins both directions. The runner's
     # json.dumps(indent=2) shape gives the top-level array and each entry stable
     # indentation, so this small state machine stays readable without jq (which
     # is absent from the validate container). Failed/inconclusive entries are
@@ -235,7 +273,7 @@ if [[ "$RUNNER_OK" -eq 1 ]]; then
             ids = ids (ids ? " " : "") id
             next
         }
-        in_entry && /^      "outcome": "passed"[,]?$/ { passed = 1; next }
+        in_entry && /^      "outcome": "passed-in-isolation"[,]?$/ { passed = 1; next }
         in_entry && /^    \}[,]?$/ {
             if (passed && ids) {
                 print ids
@@ -243,6 +281,26 @@ if [[ "$RUNNER_OK" -eq 1 ]]; then
             in_entry = 0
         }
     ' "$RUNNER_JSON" 2>/dev/null | tr '\n' ' ' | sed 's/ *$//')
+    # A step killed by its own budget is NOT a step that failed (issue #812).
+    # The runner emits it as a distinct top-level field; read it before the
+    # JSON is removed. Anchored on the field name rather than on the error
+    # prose, which is the string-matching that would drift.
+    TIMED_OUT_STEP=$(sed -n 's/^  "timed_out_step": "\([^"]*\)",\?$/\1/p' \
+        "$RUNNER_JSON" 2>/dev/null | head -1)
+    TIMED_OUT_AFTER=$(sed -n 's/^  "timed_out_after": \([0-9]*\),\?$/\1/p' \
+        "$RUNNER_JSON" 2>/dev/null | head -1)
+    # A resumed run may carry a step's result from an earlier invocation
+    # (issue #838 follow-up) - fine when the runner PROVED the tree hadn't
+    # changed since (issue #804, tree_verified), unverifiable otherwise. Same
+    # bracket-anchored array pull as SKIPPED_GATES above; step ids are free-
+    # form (not limited to lint/test/typecheck the way gates are), so match
+    # any quoted token instead of the fixed alternation.
+    CARRIED=$(sed -n '/"carried_from_previous_run": \[/,/\]/p' "$RUNNER_JSON" 2>/dev/null \
+        | grep -v ':' | grep -oE '"[^"]+"' | tr -d '"' | tr '\n' ' ' | sed 's/ *$//')
+    TREE_VERIFIED=0
+    if grep -q '"tree_verified": true' "$RUNNER_JSON" 2>/dev/null; then
+        TREE_VERIFIED=1
+    fi
     rm -f "$RUNNER_JSON"
     # Print the #769 evidence before verdict precedence is applied: a later
     # failing step or skipped gates are more serious, but must not erase a flake
@@ -256,6 +314,18 @@ if [[ "$RUNNER_OK" -eq 1 ]]; then
             verdict "warn (skipped gates: $SKIPPED_GATES)"
             exit 0
         fi
+        # A carried step is fine when the runner PROVED the tree hadn't
+        # changed (tree_verified) - that is a genuine crash-resume, and
+        # warning on it would fire on every ordinary killed-and-resumed run
+        # in this fleet, training readers to ignore the line (issue #804).
+        # Warn ONLY when something was carried AND that proof is missing -
+        # no git, or a state file older than the tree_signature field - which
+        # is exactly the case this helper, not the runner, has to catch.
+        if [[ -n "$CARRIED" && "$TREE_VERIFIED" -ne 1 ]]; then
+            echo "WARNING: step(s) carried a result from an earlier invocation WITHOUT proof the tree was unchanged since: $CARRIED. This gate did not verify those steps against the current tree - do not read as 'safe to merge' until you know why verification was unavailable (issue #804)." >&2
+            verdict "warn (carried, unverified: $CARRIED)"
+            exit 0
+        fi
         if [[ -n "$RERUN_PASSED_IDS" ]]; then
             RERUN_COUNT=$(awk '{ print NF }' <<< "$RERUN_PASSED_IDS")
             echo "WARNING: $RERUN_COUNT test(s) FAILED on the first attempt and PASSED when re-run against only their failed ids (issue #769): $RERUN_PASSED_IDS. The flow is not stopped - but this run is NOT a clean pass: either these are the documented host-state flakes, or you have a real intermittent failure. Never summarize this run as \"tests passed\"." >&2
@@ -263,12 +333,45 @@ if [[ "$RUNNER_OK" -eq 1 ]]; then
             exit 0
         fi
         if [[ "$QUALIFIED" -eq 1 ]]; then
-            echo "WARNING: the gate passed but the runner QUALIFIED it (see \"warnings\" above) - a test step exited 0 without executing any tests (issue #621). Do not read this as 'safe to merge' until you know why." >&2
+            # Do NOT name a single cause here (issue #939). QUALIFIED is set by
+            # the mere PRESENCE of "warnings" in the runner JSON, and that
+            # collection carries three different findings: #621 "exited 0 having
+            # executed no tests", #838 "SOME invocation executed nothing while
+            # the total looked healthy", and #939 "no summary could be parsed
+            # from either stream, so the result is UNKNOWN" - and any kind
+            # added later. Only the first means no tests executed; the list is
+            # illustrative and deliberately NOT repeated in the message, since
+            # a message that enumerates causes goes stale the moment a fourth
+            # is added. For #939 the suite may have run
+            # thousands, and failing to RECOGNIZE a summary establishes nothing
+            # about what ran. This line asserted #621 for all of them - a gate
+            # stating a fact it had not established, which is the defect class
+            # the runner-side fix addresses one layer down.
+            #
+            # #838 already falsified it before #939 widened the collection. The
+            # reason that went unnoticed for the whole life of #838 is that no
+            # test asserted anything about this sentence; the property is now
+            # pinned in tests/test_flow_finish_gate.py rather than the wording.
+            echo "WARNING: the gate passed but the runner QUALIFIED it (see \"warnings\" above) - at least one test step's result is not a clean pass, and the warnings state which. Do not read this as 'safe to merge' until you know why." >&2
             verdict warn
             exit 0
         fi
         verdict ok
         exit 0
+    fi
+    if [[ -n "$TIMED_OUT_STEP" ]]; then
+        # Distinguished from a test failure deliberately. A reader told
+        # "FAILED" debugs a suite that never finished; the useful facts are
+        # that the step ran out of budget, that this says NOTHING about
+        # whether it would have passed, and how to give it more. Still exit 1:
+        # an unfinished gate has not shown the tree is good.
+        echo "TIMEOUT: step '$TIMED_OUT_STEP' was killed after ${TIMED_OUT_AFTER:-its}s - it did NOT fail, it did not finish." >&2
+        echo "  This proves nothing about the tree either way. Do not triage the tests; they were still running." >&2
+        echo "  A suite grows every merge and no constant tracks that, so this budget will need raising again:" >&2
+        echo "        CPP_GATE_TEST_TIMEOUT=<seconds> <re-run the gate>" >&2
+        echo "  If it times out at a budget far above the suite's real cost, suspect a hang rather than growth (issue #812)." >&2
+        verdict "fail (timeout: $TIMED_OUT_STEP after ${TIMED_OUT_AFTER:-?}s)"
+        exit 1
     fi
     verdict fail
     exit 1
@@ -283,6 +386,13 @@ echo "NOTE: deterministic runner unavailable ($REASON); using Makefile fallback.
 RAN=0
 FAILED=0
 SKIPPED_GATES=""
+# What actually executed, and by which route (issue #808). The marker alone
+# cannot distinguish a repo where this fallback IS the gate from one where it
+# is a fraction of it, and a reader should not have to infer coverage from an
+# absence of complaints.
+RAN_GATES=""
+UNRUN_AGGREGATE=""
+AGGREGATE_TARGET=""
 RERUN_PASSED_IDS=""
 UV_OK=0
 command -v uv >/dev/null 2>&1 && UV_OK=1
@@ -310,6 +420,7 @@ run_fallback_gate() {
     local id="$1" uvargs="$2" token="$3"
     if grep -q "^${id}:" Makefile 2>/dev/null; then
         echo "flow-finish-gate: running fallback gate 'make ${id}'"
+        RAN_GATES="${RAN_GATES:+$RAN_GATES }make ${id}"
         if [[ "$id" == "test" && "$RERUN_ENABLED" == "1" ]]; then
             local first_output gate_exit failed_ids failed_count
             first_output=$(mktemp "${TMPDIR:-/tmp}/flow-finish-gate-test.XXXXXX")
@@ -336,6 +447,7 @@ run_fallback_gate() {
         RAN=1
     elif [[ "$UV_OK" -eq 1 ]] && grep -q "${token}" pyproject.toml 2>/dev/null; then
         echo "flow-finish-gate: running fallback gate 'uv run --extra dev ${uvargs}' (no '${id}' Makefile target)"
+        RAN_GATES="${RAN_GATES:+$RAN_GATES }uv:${id}"
         if [[ "$id" == "test" && "$RERUN_ENABLED" == "1" ]]; then
             local first_output gate_exit failed_ids failed_count
             first_output=$(mktemp "${TMPDIR:-/tmp}/flow-finish-gate-test.XXXXXX")
@@ -368,6 +480,55 @@ run_fallback_gate() {
     fi
 }
 
+# Find a Makefile target whose prerequisites are a SUPERSET of the three gates
+# this fallback knows (issue #808). Such a target is the repo's real gate, and
+# running three of its nine prerequisites while reporting `ok` is a true
+# statement about a fraction of the gate presented as a verdict on the tree.
+#
+# Derived from the Makefile rather than a hardcoded name like `verify` or
+# `check`: a list of names someone has to remember to extend is the enumeration
+# this whole ticket is about. The test is structural - does a target depend on
+# at least two of lint/test/typecheck AND on something else we did not run.
+#
+# Line continuations are joined first: this repo's own `verify` spans four
+# lines, so a line-at-a-time scan would see one prerequisite and miss five.
+detect_aggregate_gate() {
+    [[ -f Makefile ]] || return 0
+    awk '
+        # Join backslash continuations into one logical line.
+        { line = line $0
+          if (line ~ /\\$/) { sub(/\\$/, " ", line); next }
+          print line; line = "" }
+        END { if (line != "") print line }
+    ' Makefile 2>/dev/null | awk -F: '
+        # Special targets (.PHONY, .DEFAULT_GOAL) list gate names as DATA, not
+        # as prerequisites - .PHONY names every phony target in the file, so it
+        # trivially "depends on" lint, test and typecheck and matched first.
+        # Caught by running the detector against this repo rather than a
+        # fixture: the real Makefile has a .PHONY line and a synthetic one
+        # would not have.
+        /^\./ { next }
+        /^[a-zA-Z0-9_-]+[[:space:]]*:[^=]/ {
+            target = $1
+            gsub(/[[:space:]]/, "", target)
+            deps = $2
+            known = 0; extra = ""
+            n = split(deps, parts, /[[:space:]]+/)
+            for (i = 1; i <= n; i++) {
+                d = parts[i]
+                if (d == "") continue
+                if (d == "lint" || d == "test" || d == "typecheck") { known++ }
+                else { extra = extra (extra == "" ? "" : " ") d }
+            }
+            # Two of the three, plus at least one we would not have run.
+            if (known >= 2 && extra != "") {
+                print target "\t" extra
+                exit
+            }
+        }
+    '
+}
+
 if [[ -f Makefile || -f pyproject.toml ]]; then
     run_fallback_gate lint "ruff check ." "ruff"
     run_fallback_gate test "pytest" "pytest"
@@ -375,6 +536,22 @@ if [[ -f Makefile || -f pyproject.toml ]]; then
     # runs it too - otherwise a repo that degrades here gets the same
     # local-green-then-CI-red the runner plan had before #617.
     run_fallback_gate typecheck "mypy ." "mypy"
+fi
+
+# Report what actually executed, before any verdict (issue #808). A reader
+# should be able to see the coverage rather than infer it from the absence of a
+# complaint.
+if [[ -n "$RAN_GATES" ]]; then
+    echo "flow-finish-gate: gates executed: $RAN_GATES"
+fi
+
+# Does this repo define a larger gate we did not run?
+if [[ "$RAN" -gt 0 ]]; then
+    _aggregate="$(detect_aggregate_gate)"
+    if [[ -n "$_aggregate" ]]; then
+        AGGREGATE_TARGET="${_aggregate%%$'\t'*}"
+        UNRUN_AGGREGATE="${_aggregate#*$'\t'}"
+    fi
 fi
 
 if [[ "$RAN" -eq 0 && -z "$SKIPPED_GATES" ]]; then
@@ -397,6 +574,14 @@ fi
 if [[ -n "$SKIPPED_GATES" ]]; then
     echo "WARNING: quality gates did NOT run: $SKIPPED_GATES (no Makefile target and no runnable tool). This gate proved nothing about those checks - do not read as 'safe to merge' (issue #628)." >&2
     verdict "warn (skipped gates: $SKIPPED_GATES)"
+    exit 0
+fi
+if [[ -n "$UNRUN_AGGREGATE" ]]; then
+    # Same sentence as #628's, for the same reason: this gate proved nothing
+    # about those checks. The difference is only how they came to be unrun -
+    # #628's could not run, these were never looked for.
+    echo "WARNING: this repo's 'make $AGGREGATE_TARGET' also runs: $UNRUN_AGGREGATE. Those did NOT run here - the fallback knows only lint/test/typecheck. This gate proved nothing about them; run 'make $AGGREGATE_TARGET' for the repo's full gate (issue #808)." >&2
+    verdict "warn (not run by fallback: $UNRUN_AGGREGATE)"
     exit 0
 fi
 if [[ -n "$RERUN_PASSED_IDS" ]]; then
