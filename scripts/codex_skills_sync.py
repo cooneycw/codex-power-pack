@@ -1665,6 +1665,11 @@ def _github_contract_source_identity(content: bytes) -> tuple[str, str, int]:
 
 
 _GITHUB_CONTRACT_ANCHOR = b"## Issue Creation Flow\n"
+# Presence is detected by the section HEADING, not by the whole block being
+# byte-identical (Codex review, issue #251): upstream editing one word of the
+# preamble would otherwise read as "absent" and get a SECOND copy inserted,
+# leaving two contract sections whose wording could conflict.
+_GITHUB_CONTRACT_HEADING = b"## What the Body Must Make Legible"
 _GITHUB_CONTRACT_OLD_BULLETS = b"- Problem/use case\n- Proposed solution\n"
 _GITHUB_CONTRACT_NEW_BULLETS = (
     b"- Problem/use case (the outcome wanted, and why it matters)\n"
@@ -1721,7 +1726,7 @@ def _backport_github_issue_contract(
             )
 
     addition = _GITHUB_CONTRACT_ADDITION.encode()
-    if addition not in content:
+    if _GITHUB_CONTRACT_HEADING not in content:
         if _GITHUB_CONTRACT_ANCHOR not in content:
             raise IntegrityError(
                 "github-issue-create/reference.md: cannot place the CPP #856 "
@@ -1734,8 +1739,12 @@ def _backport_github_issue_contract(
         )
 
     if _GITHUB_CONTRACT_OLD_BULLETS in content:
+        # EVERY occurrence, not the first (Codex review, issue #251). Replacing
+        # only the first is not idempotent when upstream carries the pair twice:
+        # pass one leaves old=1/new=1 and pass two gives old=0/new=2, so the
+        # same source yields different bytes depending on how often it is run.
         content = content.replace(
-            _GITHUB_CONTRACT_OLD_BULLETS, _GITHUB_CONTRACT_NEW_BULLETS, 1
+            _GITHUB_CONTRACT_OLD_BULLETS, _GITHUB_CONTRACT_NEW_BULLETS
         )
     elif _GITHUB_CONTRACT_NEW_BULLETS not in content:
         raise IntegrityError(
@@ -1883,7 +1892,23 @@ def _adapt_flow_context(skill_dir: Path, rel: str, text: str) -> str:
     if skill_dir.name != "flow-auto" or rel != "reference.md":
         return text
 
-    end = text.find(_FLOW_CONTEXT_END_MARKER)
+    # Bound the end-marker search (Codex review, issue #251). The retired code
+    # searched from the start marker; searching the whole document instead lets
+    # an unrelated EARLIER occurrence sit before the speckit block and trip the
+    # reorder branch - a guard that cannot tell "our section moved" from "a
+    # neighbour added a heading". Where the start marker exists, search after it.
+    # Where it does not, the marker must be unambiguous rather than guessed at.
+    start = text.find(_FLOW_CONTEXT_START_MARKER)
+    if start < 0 and text.count(_FLOW_CONTEXT_END_MARKER) > 1:
+        raise IntegrityError(
+            "flow-auto/reference.md: the CxPP governing-context overlay anchor "
+            f"{_FLOW_CONTEXT_END_MARKER!r} occurs "
+            f"{text.count(_FLOW_CONTEXT_END_MARKER)} times and there is no "
+            "speckit-context block to disambiguate which one bounds the "
+            "section. Re-anchor on an unambiguous marker rather than guessing "
+            "(issue #251)."
+        )
+    end = text.find(_FLOW_CONTEXT_END_MARKER, start if start >= 0 else 0)
     if end < 0:
         raise IntegrityError(
             "flow-auto/reference.md: the anchor for the CxPP governing-context "
@@ -1892,15 +1917,9 @@ def _adapt_flow_context(skill_dir: Path, rel: str, text: str) -> str:
             "(issue #251)."
         )
 
-    start = text.find(_FLOW_CONTEXT_START_MARKER)
     if start < 0:
         # Pinned-era source: no speckit block to replace, so insert at the anchor.
         return text[:end] + _FLOW_CONTEXT_CONSUMER + text[end:]
-    if start > end:
-        raise IntegrityError(
-            "flow-auto/reference.md: the speckit-context block starts after the "
-            "section it should precede; upstream reordered the section (issue #251)."
-        )
     return text[:start] + _FLOW_CONTEXT_CONSUMER + text[end:]
 
 
