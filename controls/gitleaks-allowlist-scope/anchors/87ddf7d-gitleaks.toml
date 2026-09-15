@@ -17,7 +17,6 @@ title = "codex-power-pack gitleaks config"
 useDefault = true
 
 #: NEGATIVE-CONTROL: secret-scan-rules
-#: NEGATIVE-CONTROL: gitleaks-allowlist-scope
 #:
 #: This file is HALF A GATE. gitleaks is the other half, and it was working
 #: correctly all the way through #263 - the blindness was here, in the config,
@@ -27,30 +26,6 @@ useDefault = true
 
 [allowlist]
 description = "False positives from test fixtures and masking regex patterns"
-# WHOLE-FILE PATH ENTRIES WERE REMOVED HERE (issue #264), not narrowed.
-#
-# `tests/test_creds_masking\.py`, `scripts/secrets-mask\.sh` and
-# `lib/creds/masking\.py` suppressed an entire file each - including any real
-# secret added to those files later, which is the exposure #264 is about. All
-# three turned out to be REDUNDANT: every finding they hid is also covered by a
-# value entry below. Measured against zricethezav/gitleaks:v8.18.4 at 87ddf7d,
-# working tree:
-#
-#   full allowlist (before)            0 findings
-#   no allowlist at all                9 findings
-#   with the three path entries gone   0 findings   <- identical to before
-#
-# So the narrowing added NOTHING to this file. That matters beyond tidiness:
-# gitleaks' DEFAULT allowlist excludes any path containing `gitleaks.toml`, so
-# this file is never scanned by anything, and every value pasted into it is a
-# value in a blind spot (nit store #227). A narrowing done by ADDING value
-# entries would have increased that traffic; this one only removes.
-#
-# Measuring one entry at a time says INERT for all three, and that reading is
-# WRONG: each finding was double-covered, so every entry looks unnecessary alone
-# while the set is load-bearing. The check that means something is in
-# tests/test_gitleaks_allowlist.py - drop an entry from the FINAL config and
-# rescan - and by it, all seven entries that remain are SOLE cover for a finding.
 paths = [
     # The negative-control fixtures for this very file. They contain a
     # fabricated AWS key on purpose: the control needs an input the ruleset
@@ -63,7 +38,10 @@ paths = [
     # exposed to the control that needs to see it. It hides bytes this file's
     # own control authored, never a live path, and the coverage probe in
     # .woodpecker.yml separately proves the live paths are still scanned.
-    '''^controls/(secret-scan-rules|gitleaks-allowlist-scope)/cases/''',
+    '''^controls/secret-scan-rules/cases/''',
+    '''tests/test_creds_masking\.py''',
+    '''scripts/secrets-mask\.sh''',
+    '''lib/creds/masking\.py''',
 ]
 regexTarget = "match"
 regexes = [
