@@ -1621,56 +1621,6 @@ def _adapt_flow_resolver(text: str) -> str:
     return text
 
 
-# CPP #856 / PR #862 bounded raw-source backport. These are reviewed immutable
-# source identities, not a general fallback policy: each entry is an upstream
-# state a human read before it was allowed through publication. A pin bump ADDS
-# the era it pins after reviewing its diff - it never rewrites an older entry,
-# which is a historical fact about what upstream once held.
-_GITHUB_CONTRACT_BEFORE = (
-    "32f7905e61b78ec6a6c8b001d2539ac59a691a47",
-    "77abab65998d61802f16f33d9935d7f8203b4e1e9a1824aac295489155c0d59a",
-    2667,
-)
-_GITHUB_CONTRACT_AFTER = (
-    "2c850e3c88f0674c912482f6dce773e184dfc276",
-    "d4bc6b921f0b5e4a909d4e284bf95ae9e5be90ead3f406152cc9c210dcf28382",
-    3902,
-)
-# CPP 01b8e13, the #254 pin. Reviewed diff against _GITHUB_CONTRACT_AFTER: ONE
-# line, the issue-contract link's relative depth (`../../../docs/...` ->
-# `docs/...`), nine bytes. Nothing else in the file changed. The #856 wording
-# this recipe backports is already present upstream at this era, so both of its
-# edits are no-ops here - see _backport_github_issue_contract.
-_GITHUB_CONTRACT_AT_254_PIN = (
-    "ebff1e9bd8cac791ec3de87b2523a782641680bc",
-    "85eaa8d1b23b031f1873566b8ddaeba40362ef96f7fa0c1e07be52e7c20e4c50",
-    3893,
-)
-_GITHUB_CONTRACT_REVIEWED = (
-    _GITHUB_CONTRACT_BEFORE,
-    _GITHUB_CONTRACT_AFTER,
-    _GITHUB_CONTRACT_AT_254_PIN,
-)
-_GITHUB_CONTRACT_ADDITION = """## What the Body Must Make Legible
-
-Whatever the type, the body an agent later implements from is a contract. Write it so
-a reader can tell these apart: the intended **outcome** and why it matters, the
-**constraints** that bound it and the rationale behind each, the **acceptance** that
-shows the outcome was reached, any **proposed approach** (a revisable hypothesis, not
-an order), and **assumptions** worth checking.
-
-These are distinctions, not required headings. A routine bug report that says what
-broke, what should happen instead, and how to reproduce it has already satisfied the
-contract; do not pad it with an invented proposed solution or assumptions nobody
-holds. Keep a suggested fix phrased as a suggestion, so an implementer who finds a
-better one is free to use it and report the substitution.
-
-The canonical definition, the outcome-versus-proposal test, and worked examples are
-in [the issue contract](../../../docs/agents/issue-contract.md). For work large
-enough to warrant a specification, reference the spec and the sections that govern
-the issue rather than copying them.
-
-"""
 _ISSUE_CONTRACT_URL = (
     "https://github.com/cooneycw/codex-power-pack/blob/main/docs/agents/issue-contract.md"
 )
@@ -1684,108 +1634,17 @@ _ISSUE_CONTRACT_URL = (
 _ISSUE_CONTRACT_LINK_RE = re.compile(r"\]\((?:\.\./)*docs/agents/issue-contract\.md\)")
 
 
-def _github_contract_source_identity(content: bytes) -> tuple[str, str, int]:
-    header = b"blob " + str(len(content)).encode() + b"\0"
-    return (
-        hashlib.sha1(header + content, usedforsecurity=False).hexdigest(),
-        hashlib.sha256(content).hexdigest(),
-        len(content),
-    )
-
-
-_GITHUB_CONTRACT_ANCHOR = b"## Issue Creation Flow\n"
-# Presence is detected by the section HEADING, not by the whole block being
-# byte-identical (Codex review, issue #251): upstream editing one word of the
-# preamble would otherwise read as "absent" and get a SECOND copy inserted,
-# leaving two contract sections whose wording could conflict.
+# CPP #856's issue-body contract, which upstream now SUPPLIES rather than CxPP
+# backporting it. These two literals used to describe what the retired recipe
+# INSERTED; they now describe what a pinned source must already contain, and
+# _assert_published_issue_contract is what turns that from an observation about
+# today's pin into a condition on every pin (issue #269).
 _GITHUB_CONTRACT_HEADING = b"## What the Body Must Make Legible"
-_GITHUB_CONTRACT_OLD_BULLETS = b"- Problem/use case\n- Proposed solution\n"
 _GITHUB_CONTRACT_NEW_BULLETS = (
     b"- Problem/use case (the outcome wanted, and why it matters)\n"
     b"- Proposed approach (optional, and recorded as revisable)\n"
     b"- Constraints, each with the rationale behind it (optional)\n"
 )
-
-
-def _backport_github_issue_contract(
-    skill_dir: Path, rel: str, content: bytes, *, review: bool = True
-) -> bytes:
-    """Carry CPP #856's issue-contract wording onto the CxPP surface, era-tolerantly.
-
-    This was the sibling of the CPP #858 recipe retired in issue #251, and it had
-    the identical defect: it recognised exactly two byte-exact upstream identities
-    and raised on anything else, so it blocked the drift cron on every run once
-    upstream moved to a third state. It was MASKED by #858's recipe, which failed
-    forty lines earlier - the issue's "one unowned cause" was one cause hiding
-    another.
-
-    Unlike #858's it cannot simply be retired: 1281 bytes of its output reach the
-    published artifact, measured by disabling this function outright rather than
-    by comparing two calls that both ran it.
-
-    So the identity gate goes and the two edits it guarded become idempotent,
-    which is all the gate was really buying. Both were already text-anchored:
-
-    - the #856 addition is inserted only when absent (still absent upstream)
-    - the expanded bullets replace the old pair only when the old pair is present
-      (upstream has already adopted them, so this is a no-op there)
-
-    Neither edit can double-apply, so re-running is safe and a source anywhere
-    between the pinned era and current upstream converges on the same bytes.
-    """
-    if skill_dir.name != "github-issue-create" or rel != "reference.md":
-        return content
-
-    if review:
-        # PUBLICATION path. The identity table is a review control, not part of
-        # the transformation below, and issue #251 keeps it here while removing
-        # it from the reporting path. Refusing an unreviewed source before any
-        # CxPP transformation is the #195/#204 threat model: an altered source
-        # must not be able to launder itself into looking equivalent after
-        # generic adaptation. Pinned by
-        # test_issue_contract_unreviewed_raw_source_cannot_be_hidden_by_generic_adaptation
-        # and test_issue_contract_unknown_source_fails_refresh_before_any_publication.
-        identity = _github_contract_source_identity(content)
-        if identity not in _GITHUB_CONTRACT_REVIEWED:
-            raise IntegrityError(
-                "github-issue-create/reference.md: unreviewed raw source for the "
-                "#856 backport; expected CPP f64a654, #862 8ebef00 or #254 01b8e13 "
-                "witnesses. "
-                "Review and update the recorded witnesses before publication. "
-                "(Reporting does not take this path - issue #251.)"
-            )
-
-    addition = _GITHUB_CONTRACT_ADDITION.encode()
-    if _GITHUB_CONTRACT_HEADING not in content:
-        if _GITHUB_CONTRACT_ANCHOR not in content:
-            raise IntegrityError(
-                "github-issue-create/reference.md: cannot place the CPP #856 "
-                "issue-contract preamble - upstream no longer contains "
-                f"{_GITHUB_CONTRACT_ANCHOR.decode()!r}. Re-anchor the insertion "
-                "point rather than widening this check (issue #251)."
-            )
-        content = content.replace(
-            _GITHUB_CONTRACT_ANCHOR, addition + _GITHUB_CONTRACT_ANCHOR, 1
-        )
-
-    if _GITHUB_CONTRACT_OLD_BULLETS in content:
-        # EVERY occurrence, not the first (Codex review, issue #251). Replacing
-        # only the first is not idempotent when upstream carries the pair twice:
-        # pass one leaves old=1/new=1 and pass two gives old=0/new=2, so the
-        # same source yields different bytes depending on how often it is run.
-        content = content.replace(
-            _GITHUB_CONTRACT_OLD_BULLETS, _GITHUB_CONTRACT_NEW_BULLETS
-        )
-    elif _GITHUB_CONTRACT_NEW_BULLETS not in content:
-        raise IntegrityError(
-            "github-issue-create/reference.md: neither the original nor the "
-            "CPP #856 issue-body bullets are present, so the reviewed contract "
-            "cannot be published - upstream restructured the section "
-            "(issue #251). Re-anchor rather than widen."
-        )
-
-    return content
-
 
 _NATIVE_CONTEXT_REL = ".codex/skills/spec-sync/scripts/spec_context.py"
 _NATIVE_CONTEXT_SHA256 = "935da913c7cea0d727390369ae1484fab2fde0b330e4a289112f12ab674985e3"
@@ -2137,11 +1996,8 @@ def _adapted_source_payloads(
         _safe_relative_path(rel, label=f"source skill {skill_dir.name}")
         if skill_dir.name == "evaluate-help" and rel == "scripts/speckit-tasks-to-issues.sh":
             continue
-        raw_content = _backport_github_issue_contract(
-            skill_dir, rel, source_payload.content, review=review
-        )
         try:
-            text = raw_content.decode()
+            text = source_payload.content.decode()
         except UnicodeDecodeError:
             files[rel] = source_payload
             continue
@@ -2168,7 +2024,49 @@ def _adapted_source_payloads(
     if skill_dir.name == "flow-auto":
         files["scripts/spec_context.py"] = _native_context_payload()
     _assert_worktree_fallback_removed(skill_dir, files, frozenset(_sources_with_fallback))
+    if review:
+        _assert_published_issue_contract(skill_dir, files)
     return files
+
+
+def _assert_published_issue_contract(
+    skill_dir: Path, files: dict[str, PreparedPayload]
+) -> None:
+    """Require the pinned source to carry the contract CxPP no longer backports.
+
+    Retiring the #856 recipe (issue #269) is sound only while upstream supplies
+    the section itself. At CPP 01b8e13 it does - the recipe was a byte-for-byte
+    no-op there, and load-bearing at the pin before it (+1235 bytes). That is a
+    fact about one pin, and a pin is a thing that moves.
+
+    Without this, a later bump onto a source that lost the section would publish
+    a reference.md missing it and nothing would say so - the same silent
+    content-loss the recipe existed to prevent, just relocated.
+
+    PUBLICATION only. Reporting reads arbitrary upstream and must be able to
+    REPORT a regressed source rather than fail on it (issue #251), which is why
+    the caller gates this on `review`.
+    """
+    if skill_dir.name != "github-issue-create":
+        return
+    payload = files.get("reference.md")
+    if payload is None:
+        return
+    missing = [
+        label
+        for label, marker in (
+            ("the contract section heading", _GITHUB_CONTRACT_HEADING),
+            ("the expanded issue-body bullets", _GITHUB_CONTRACT_NEW_BULLETS),
+        )
+        if marker not in payload.content
+    ]
+    if missing:
+        raise IntegrityError(
+            "github-issue-create/reference.md: the pinned source no longer "
+            f"carries {' and '.join(missing)}. CxPP retired the CPP #856 "
+            "backport in issue #269 because upstream supplies this section; "
+            "a source that does not must be reviewed, not published."
+        )
 
 
 def _assert_worktree_fallback_removed(
