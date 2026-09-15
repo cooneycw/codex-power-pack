@@ -1664,162 +1664,99 @@ def _github_contract_source_identity(content: bytes) -> tuple[str, str, int]:
     )
 
 
-def _backport_github_issue_contract(skill_dir: Path, rel: str, content: bytes) -> bytes:
-    """Verify raw CPP bytes before any CxPP transformations; never load test evidence."""
+_GITHUB_CONTRACT_ANCHOR = b"## Issue Creation Flow\n"
+# Presence is detected by the section HEADING, not by the whole block being
+# byte-identical (Codex review, issue #251): upstream editing one word of the
+# preamble would otherwise read as "absent" and get a SECOND copy inserted,
+# leaving two contract sections whose wording could conflict.
+_GITHUB_CONTRACT_HEADING = b"## What the Body Must Make Legible"
+_GITHUB_CONTRACT_OLD_BULLETS = b"- Problem/use case\n- Proposed solution\n"
+_GITHUB_CONTRACT_NEW_BULLETS = (
+    b"- Problem/use case (the outcome wanted, and why it matters)\n"
+    b"- Proposed approach (optional, and recorded as revisable)\n"
+    b"- Constraints, each with the rationale behind it (optional)\n"
+)
+
+
+def _backport_github_issue_contract(
+    skill_dir: Path, rel: str, content: bytes, *, review: bool = True
+) -> bytes:
+    """Carry CPP #856's issue-contract wording onto the CxPP surface, era-tolerantly.
+
+    This was the sibling of the CPP #858 recipe retired in issue #251, and it had
+    the identical defect: it recognised exactly two byte-exact upstream identities
+    and raised on anything else, so it blocked the drift cron on every run once
+    upstream moved to a third state. It was MASKED by #858's recipe, which failed
+    forty lines earlier - the issue's "one unowned cause" was one cause hiding
+    another.
+
+    Unlike #858's it cannot simply be retired: 1281 bytes of its output reach the
+    published artifact, measured by disabling this function outright rather than
+    by comparing two calls that both ran it.
+
+    So the identity gate goes and the two edits it guarded become idempotent,
+    which is all the gate was really buying. Both were already text-anchored:
+
+    - the #856 addition is inserted only when absent (still absent upstream)
+    - the expanded bullets replace the old pair only when the old pair is present
+      (upstream has already adopted them, so this is a no-op there)
+
+    Neither edit can double-apply, so re-running is safe and a source anywhere
+    between the pinned era and current upstream converges on the same bytes.
+    """
     if skill_dir.name != "github-issue-create" or rel != "reference.md":
         return content
-    identity = _github_contract_source_identity(content)
-    if identity == _GITHUB_CONTRACT_AFTER:
-        return content
-    if identity != _GITHUB_CONTRACT_BEFORE:
-        raise IntegrityError(
-            "github-issue-create/reference.md: unreviewed raw source for the #856 "
-            "backport; expected CPP f64a654 or #862 8ebef00 witnesses. "
-            "Review and update/retire the bounded recipe before publication."
+
+    if review:
+        # PUBLICATION path. The identity table is a review control, not part of
+        # the transformation below, and issue #251 keeps it here while removing
+        # it from the reporting path. Refusing an unreviewed source before any
+        # CxPP transformation is the #195/#204 threat model: an altered source
+        # must not be able to launder itself into looking equivalent after
+        # generic adaptation. Pinned by
+        # test_issue_contract_unreviewed_raw_source_cannot_be_hidden_by_generic_adaptation
+        # and test_issue_contract_unknown_source_fails_refresh_before_any_publication.
+        identity = _github_contract_source_identity(content)
+        if identity not in (_GITHUB_CONTRACT_BEFORE, _GITHUB_CONTRACT_AFTER):
+            raise IntegrityError(
+                "github-issue-create/reference.md: unreviewed raw source for the "
+                "#856 backport; expected CPP f64a654 or #862 8ebef00 witnesses. "
+                "Review and update the recorded witnesses before publication. "
+                "(Reporting does not take this path - issue #251.)"
+            )
+
+    addition = _GITHUB_CONTRACT_ADDITION.encode()
+    if _GITHUB_CONTRACT_HEADING not in content:
+        if _GITHUB_CONTRACT_ANCHOR not in content:
+            raise IntegrityError(
+                "github-issue-create/reference.md: cannot place the CPP #856 "
+                "issue-contract preamble - upstream no longer contains "
+                f"{_GITHUB_CONTRACT_ANCHOR.decode()!r}. Re-anchor the insertion "
+                "point rather than widening this check (issue #251)."
+            )
+        content = content.replace(
+            _GITHUB_CONTRACT_ANCHOR, addition + _GITHUB_CONTRACT_ANCHOR, 1
         )
-    adapted = content.replace(
-        b"## Issue Creation Flow\n",
-        _GITHUB_CONTRACT_ADDITION.encode() + b"## Issue Creation Flow\n",
-        1,
-    ).replace(
-        b"- Problem/use case\n- Proposed solution\n",
-        b"- Problem/use case (the outcome wanted, and why it matters)\n"
-        b"- Proposed approach (optional, and recorded as revisable)\n"
-        b"- Constraints, each with the rationale behind it (optional)\n",
-        1,
-    )
-    if _github_contract_source_identity(adapted) != _GITHUB_CONTRACT_AFTER:
-        raise IntegrityError("#856 backport recipe did not reproduce the reviewed CPP #862 blob")
-    return adapted
+
+    if _GITHUB_CONTRACT_OLD_BULLETS in content:
+        # EVERY occurrence, not the first (Codex review, issue #251). Replacing
+        # only the first is not idempotent when upstream carries the pair twice:
+        # pass one leaves old=1/new=1 and pass two gives old=0/new=2, so the
+        # same source yields different bytes depending on how often it is run.
+        content = content.replace(
+            _GITHUB_CONTRACT_OLD_BULLETS, _GITHUB_CONTRACT_NEW_BULLETS
+        )
+    elif _GITHUB_CONTRACT_NEW_BULLETS not in content:
+        raise IntegrityError(
+            "github-issue-create/reference.md: neither the original nor the "
+            "CPP #856 issue-body bullets are present, so the reviewed contract "
+            "cannot be published - upstream restructured the section "
+            "(issue #251). Re-anchor rather than widen."
+        )
+
+    return content
 
 
-# CPP #858 bounded raw-reference adoption. Retire after reviewed source convergence.
-_FLOW_CONTEXT_BEFORE = (
-    "d4b0e860ad51a0ac428f89bfbfa797f5317b6c2c",
-    "a98d6f05d37220a9fee3051c80d4262959ca029fb3e2c9d8b9c1dbd16ba57708",
-    65144,
-)
-_FLOW_CONTEXT_AFTER = (
-    "6ab2e7379284c906d16b722ec977c15a1aebb5e9",
-    "3e76614b58563813bdb3e8a204538ff25632117386223c3e1654ef57a9c4c799",
-    69029,
-)
-_FLOW_CONTEXT_DELTA = [
-    (
-        1209,
-        1209,
-        (
-            b' |\n'
-            b'| **Container** | **yes** - the Bash tool reaches docker/kub'
-            b'ectl/terraform directly, no sandbox denial (issue #835)'
-        ),
-    ),
-    (
-        15864,
-        15864,
-        (
-            b'\n'
-            b'\n'
-            b'   **If the body carries a `speckit-context` block** (issue '
-            b'#858), it is a generated\n'
-            b"   issue and the block is a bounded CACHE of the task's decl"
-            b'ared context - not the\n'
-            b'   authority. Fetch the body to a UNIQUE file, check that th'
-            b'e fetch succeeded, and\n'
-            b'   only then run the checker: a failed `gh` leaves an empty '
-            b'body, and an empty body\n'
-            b'   reports `absent`, which reads exactly like a healthy issu'
-            b'e that simply has no\n'
-            b'   block. A fixed `/tmp` name also collides between concurre'
-            b'nt wave workers.\n'
-            b'\n'
-            b'   ```bash\n'
-            b'   BODY_FILE="$(mktemp -t flow-auto-body-XXXXXX.md)"\n'
-            b'   if ! gh issue view "$ISSUE_NUM" --json body --jq .body > '
-            b'"$BODY_FILE"; then\n'
-            b'       echo "STOP: could not fetch issue #$ISSUE_NUM; not ch'
-            b'ecking context against an empty body."\n'
-            b'       exit 1\n'
-            b'   fi\n'
-            b'   ~/.claude/scripts/speckit-context.py check --body-file "$'
-            b'BODY_FILE" --root .\n'
-            b'   ```\n'
-            b'\n'
-            b'   Helper resolution: `~/.claude/scripts/speckit-context.py`'
-            b' is the stable path\n'
-            b'   (`/flow-repair` installs it). On exit 127 fall back to\n'
-            b'   `${CLAUDE_PLUGIN_ROOT}/scripts/speckit-context.py`, else '
-            b'the CPP-checkout copy.\n'
-            b'   Running inside a generated Codex skill, use the copy bund'
-            b"led in that skill's own\n"
-            b'   `scripts/` directory - never a `scripts/` directory in th'
-            b'e target project, which\n'
-            b'   has no reason to contain CPP tooling.\n'
-            b'\n'
-            b'   Act on `SPECKIT_CONTEXT_STATE`:\n'
-            b'   - `current` - the cache matches its source. Read the **Re'
-            b'ference source** named in\n'
-            b'     the block, including the cross-cutting sections it list'
-            b's, then plan.\n'
-            b'   - `changed-in-scope` / `changed-outside-scope` - source b'
-            b'ytes changed since the\n'
-            b'     issue was written. That is a byte difference, NOT a rul'
-            b'ing that acceptance\n'
-            b'     changed. Read the source, decide whether it matters und'
-            b'er the existing authority\n'
-            b'     model, and say so in the Step 3 report. Newer bytes do '
-            b'not by themselves override\n'
-            b'     a constraint or plan already accepted on the issue; a r'
-            b'ecorded\n'
-            b'     `Acceptance-revision:` line is reported with the versio'
-            b'n it names, and whether it\n'
-            b'     predates the change is part of what you must resolve.\n'
-            b'   - `changed-task` - the task line itself changed: its word'
-            b'ing, or the `[USn]` tag\n'
-            b'     that decides which requirements apply. The cached mappi'
-            b'ng no longer matches the\n'
-            b'     plan, so re-read the task line and its story before pla'
-            b'nning, and treat the\n'
-            b"     block's requirement list as provisional.\n"
-            b'   - `tasks-missing` - the tasks file the block was built fr'
-            b'om is not present under\n'
-            b'     this root. Plan from the issue body and the source if o'
-            b'ne resolves, and report\n'
-            b'     that the task-side mapping could not be re-checked.\n'
-            b'   - `block-edited` / `block-damaged` - someone edited insid'
-            b'e the block, or its\n'
-            b'     boundaries are broken. Treat the block as unreliable, r'
-            b'ead the source directly,\n'
-            b'     and do not refresh it as a side effect of this run.\n'
-            b'   - `source-missing` / `source-unresolved` - no governing s'
-            b'ource could be read. Plan\n'
-            b'     from the issue body, which is the contract in that case'
-            b', and surface any\n'
-            b'     ambiguity that is material to the work rather than tryi'
-            b'ng to resolve everything\n'
-            b'     first.\n'
-            b'   - `absent` - an ordinary issue. Its body IS the contract '
-            b'(see\n'
-            b'     [the issue contract](../../../docs/agents/issue-contrac'
-            b't.md)); no spec, story tag\n'
-            b'     or digest is required and none is owed.\n'
-            b'\n'
-            b"   The block's **Task wording** line is the task's own sente"
-            b'nce, not a ruling: resolve\n'
-            b'   whether it proposes an approach you may replace or restat'
-            b'es a binding constraint\n'
-            b'   against the sections the block names. An **Unresolved** o'
-            b'r **Capped** note means the\n'
-            b'   context is incomplete - never that the task has no constr'
-            b'aints. Apply the same\n'
-            b'   material-ambiguity standard as everywhere else: resolve w'
-            b'hat would change the work,\n'
-            b'   surface the rest in the Step 3 report, and plan from what'
-            b' you have. Missing optional\n'
-            b'   structure is not a gate.'
-        ),
-    ),
-]
 _NATIVE_CONTEXT_REL = ".codex/skills/spec-sync/scripts/spec_context.py"
 _NATIVE_CONTEXT_SHA256 = "935da913c7cea0d727390369ae1484fab2fde0b330e4a289112f12ab674985e3"
 _NATIVE_CONTEXT_MODE = 0o644
@@ -1907,27 +1844,6 @@ _FLOW_CONTEXT_CONSUMER = (
 )
 
 
-def _backport_flow_context(skill_dir: Path, rel: str, content: bytes) -> bytes:
-    if skill_dir.name != "flow-auto" or rel != "reference.md":
-        return content
-    identity = _github_contract_source_identity(content)
-    if identity == _FLOW_CONTEXT_AFTER:
-        return content
-    if identity != _FLOW_CONTEXT_BEFORE:
-        raise IntegrityError(
-            (
-                'flow-auto/reference.md: unreviewed raw source for CPP #858; '
-                'review/update or retire recipe before publication'
-            )
-        )
-    result = content
-    for start, end, replacement in reversed(_FLOW_CONTEXT_DELTA):
-        result = result[:start] + replacement + result[end:]
-    if _github_contract_source_identity(result) != _FLOW_CONTEXT_AFTER:
-        raise IntegrityError("CPP #858 recipe did not reproduce exact reviewed source")
-    return result
-
-
 def _native_context_payload(head: str | None = None) -> PreparedPayload:
     path = REPO_ROOT / _NATIVE_CONTEXT_REL
     _assert_publication_file_safe(path, label="native context source dependency")
@@ -1946,12 +1862,65 @@ def _native_context_payload(head: str | None = None) -> PreparedPayload:
     return PreparedPayload(content, mode)
 
 
+_FLOW_CONTEXT_START_MARKER = "   **If the body carries a `speckit-context` block**"
+_FLOW_CONTEXT_END_MARKER = "2. **Explore the codebase:**"
+
+
 def _adapt_flow_context(skill_dir: Path, rel: str, text: str) -> str:
-    if skill_dir.name == "flow-auto" and rel == "reference.md":
-        start = text.index("   **If the body carries a `speckit-context` block**")
-        end = text.index("2. **Explore the codebase:**", start)
-        text = text[:start] + _FLOW_CONTEXT_CONSUMER + text[end:]
-    return text
+    """Carry the CxPP consumer text into flow-auto/reference.md, era-tolerantly.
+
+    Issue #251 retired the CPP #858 backport recipe, which recognised exactly two
+    byte-exact upstream identities and refused every source that was neither -
+    the condition that failed the drift cron on every run.
+
+    Neither of the two deltas that recipe applied reached the published artifact.
+    The 3767-byte speckit block sat entirely inside the region this function
+    replaces, so it existed only to manufacture a start marker that was deleted a
+    few lines later. The 118-byte CPP #835 Container row sat inside the capability
+    contract section, which `_adapt_deferred_native_boundaries` replaces wholesale
+    for the native surface. Applying both, one, or neither produces byte-identical
+    output, so the recipe is gone rather than reduced.
+
+    What IS load-bearing is this overlay, and it must work for both eras: where
+    upstream ships the speckit block we replace it, and where it does not - the
+    pinned era, which predates #858 - we insert the consumer at the same anchor.
+    One branch, not a source-identity table. The end marker is the single point of
+    failure and says so loudly: a bare ``str.index`` raised a ValueError naming
+    neither the file nor the remedy, and ``main()`` handles ``IntegrityError``
+    only, so it escaped as an unhandled traceback.
+    """
+    if skill_dir.name != "flow-auto" or rel != "reference.md":
+        return text
+
+    # Bound the end-marker search (Codex review, issue #251). The retired code
+    # searched from the start marker; searching the whole document instead lets
+    # an unrelated EARLIER occurrence sit before the speckit block and trip the
+    # reorder branch - a guard that cannot tell "our section moved" from "a
+    # neighbour added a heading". Where the start marker exists, search after it.
+    # Where it does not, the marker must be unambiguous rather than guessed at.
+    start = text.find(_FLOW_CONTEXT_START_MARKER)
+    if start < 0 and text.count(_FLOW_CONTEXT_END_MARKER) > 1:
+        raise IntegrityError(
+            "flow-auto/reference.md: the CxPP governing-context overlay anchor "
+            f"{_FLOW_CONTEXT_END_MARKER!r} occurs "
+            f"{text.count(_FLOW_CONTEXT_END_MARKER)} times and there is no "
+            "speckit-context block to disambiguate which one bounds the "
+            "section. Re-anchor on an unambiguous marker rather than guessing "
+            "(issue #251)."
+        )
+    end = text.find(_FLOW_CONTEXT_END_MARKER, start if start >= 0 else 0)
+    if end < 0:
+        raise IntegrityError(
+            "flow-auto/reference.md: the anchor for the CxPP governing-context "
+            f"overlay is gone - upstream no longer contains {_FLOW_CONTEXT_END_MARKER!r}. "
+            "Re-anchor the insertion point rather than widening this check "
+            "(issue #251)."
+        )
+
+    if start < 0:
+        # Pinned-era source: no speckit block to replace, so insert at the anchor.
+        return text[:end] + _FLOW_CONTEXT_CONSUMER + text[end:]
+    return text[:start] + _FLOW_CONTEXT_CONSUMER + text[end:]
 
 
 def _adapt_github_text(skill_dir: Path, source_file: Path, text: str) -> str:
@@ -2088,6 +2057,8 @@ def _adapt_invocation_text(skill_dir: Path, source_file: Path, text: str) -> str
 def _adapted_source_payloads(
     skill_dir: Path,
     immutable_payloads: dict[str, PreparedPayload] | None = None,
+    *,
+    review: bool = True,
 ) -> dict[str, PreparedPayload]:
     _assert_no_symlinks(skill_dir, label=f"source skill {skill_dir.name}")
     files: dict[str, PreparedPayload] = {}
@@ -2105,8 +2076,9 @@ def _adapted_source_payloads(
         _safe_relative_path(rel, label=f"source skill {skill_dir.name}")
         if skill_dir.name == "evaluate-help" and rel == "scripts/speckit-tasks-to-issues.sh":
             continue
-        raw_content = _backport_github_issue_contract(skill_dir, rel, source_payload.content)
-        raw_content = _backport_flow_context(skill_dir, rel, raw_content)
+        raw_content = _backport_github_issue_contract(
+            skill_dir, rel, source_payload.content, review=review
+        )
         try:
             text = raw_content.decode()
         except UnicodeDecodeError:
@@ -2280,6 +2252,7 @@ def _prepare_source_payloads(
     *,
     commit: str | None = None,
     policy: AdoptionPolicy | None = None,
+    review: bool = True,
 ) -> tuple[list[Path], dict[str, dict[str, PreparedPayload]], dict[str, bytes]]:
     source_root = cpp_root / PIN_PULL_SOURCE
     _assert_no_symlinks(source_root, label="source payload")
@@ -2292,7 +2265,7 @@ def _prepare_source_payloads(
     for src_dir in src_dirs:
         _safe_relative_path(src_dir.name, label="source skill directory")
         immutable = immutable_by_skill[src_dir.name] if immutable_by_skill else None
-        payloads = _adapted_source_payloads(src_dir, immutable)
+        payloads = _adapted_source_payloads(src_dir, immutable, review=review)
         if not payloads:
             raise IntegrityError(f"source skill {src_dir.name} has no payload files")
         by_skill[src_dir.name] = payloads
@@ -3167,7 +3140,11 @@ def _upstream_report(
     )
     if not COMMIT_RE.fullmatch(target_skills_tree):
         raise IntegrityError("target codex/skills tree has no immutable SHA-1 identity")
-    _, by_skill, _ = _prepare_source_payloads(cpp_root, commit=ref)
+    # Reporting READS arbitrary upstream and publishes nothing, so it does not
+    # take the publication review gate (issue #251). Blocking the drift report on
+    # an unreviewed source is what made the cron fail every run while leaving the
+    # drift state unknown rather than clean.
+    _, by_skill, _ = _prepare_source_payloads(cpp_root, commit=ref, review=False)
     expected_prepared = {
         f"{skill_name}/{rel}": payload
         for skill_name, payloads in by_skill.items()

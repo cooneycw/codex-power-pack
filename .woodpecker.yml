@@ -54,7 +54,24 @@ steps:
     when:
       - event: [push, pull_request]
 
-  # Complete upstream drift is advisory evidence, not a failed integrity gate.
+  # Three-state contract, and a red here does NOT mean drift (issue #251).
+  #
+  #   report ran, any amount of drift -> exit 0, CODEX_UPSTREAM_REPORT: ok,
+  #       and a REPORT_JSON evidence artifact. Drift is advisory evidence, not
+  #       a failed integrity gate, and it never reddens this step.
+  #   report could NOT run (resolution, provenance or adaptation) -> exit 2,
+  #       CODEX_UPSTREAM_REPORT: fail, and deliberately NO REPORT_JSON. That is
+  #       a real failure and SHOULD be red: the drift state is then UNKNOWN,
+  #       not clean, and an unscanned state must never read as a scanned one.
+  #
+  # So do not silence this step to stop the red - `failure: ignore` here would
+  # convert "we do not know" into "nothing to see", which is the one outcome
+  # this step exists to prevent. Fix the cause; the log names it.
+  # Both verdicts are pinned in tests/test_codex_skills_report.py, notably
+  # test_complete_drift_is_stable_successful_data_and_never_mutates (exit 0 on
+  # drift) and test_source_identity_failure_is_not_a_successful_drift_report
+  # (exit 2, no artifact).
+  #
   # The named cron itself is configured separately in Woodpecker repository
   # settings; this filter cannot create or schedule it.
   codex-skills-upstream-report:
