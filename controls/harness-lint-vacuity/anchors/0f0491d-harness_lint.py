@@ -15,12 +15,6 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-#: NEGATIVE-CONTROL: harness-lint-vacuity
-#: The committed case that makes this gate report the other verdict, with the
-#: pre-#245 script as the blind anchor that proves the case is load-bearing.
-#: Scoped to the VACUITY property by its detect_signal; the construct rules are
-#: not controlled here (issue #244, ADR 1002).
-
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_SKILLS_ROOT = REPO_ROOT / ".codex" / "skills"
 DEFAULT_ALLOWLIST = REPO_ROOT / ".codex" / "harness-lint-allowlist.txt"
@@ -244,11 +238,6 @@ def lint_skills(skills_root: Path = DEFAULT_SKILLS_ROOT, allowlist_path: Path = 
 
 
 def run_check(skills_root: Path = DEFAULT_SKILLS_ROOT, allowlist_path: Path = DEFAULT_ALLOWLIST) -> int:
-    """Lint the skills tree.
-
-    Exit codes: 0 clean, 1 findings, 2 invalid allowlist, 3 nothing to scan
-    (issue #245 - an empty or missing root is refused rather than reported as a pass).
-    """
     try:
         findings = lint_skills(skills_root=skills_root, allowlist_path=allowlist_path)
     except ValueError as exc:
@@ -270,27 +259,7 @@ def run_check(skills_root: Path = DEFAULT_SKILLS_ROOT, allowlist_path: Path = DE
         )
         return 1
 
-    scanned = _markdown_files(skills_root)
-    if not scanned:
-        # A gate that reports "passed" having examined nothing is indistinguishable
-        # from one that examined everything and found it clean (issue #245). For the
-        # LOCAL_SKILL_DIRS skills - excluded from the generated manifest, so their
-        # CONTENT is never hashed - this lint is the only gate that reads them, so a
-        # vacuous pass here is not caught anywhere downstream.
-        root = skills_root.resolve()
-        if not root.is_dir():
-            cause = f"skills root does not exist: {root}"
-        else:
-            cause = f"skills root has no markdown in any skill directory: {root}"
-        print(f"harness-lint: refusing a vacuous pass - {cause}", file=sys.stderr)
-        print(
-            "Nothing was examined, so this run proves nothing. Point --skills-root at a"
-            " populated tree, or retire this gate deliberately - do not let it report success.",
-            file=sys.stderr,
-        )
-        return 3
-
-    print(f"harness-lint: {len(scanned)} markdown file(s) passed")
+    print(f"harness-lint: {len(_markdown_files(skills_root))} markdown file(s) passed")
     return 0
 
 

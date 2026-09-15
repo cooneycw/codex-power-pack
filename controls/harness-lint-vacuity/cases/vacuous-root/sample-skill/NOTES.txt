@@ -1,0 +1,2 @@
+Deliberately not markdown. This skill directory contains no .md file, so
+the lint has nothing to examine here.

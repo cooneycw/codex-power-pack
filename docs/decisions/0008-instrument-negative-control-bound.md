@@ -125,10 +125,11 @@ lands at 0007 in both repositories rather than 0002-here/0007-there.
 **What would move this back, and what the wrong repair would be (#242).** The
 signal is CxPP authoring an **original** decision that has no CPP counterpart:
 mirrored numbering has no slot for it. The answer then is a separate CxPP-local
-range - not renumbering. Renumbering would break every cross-repo citation the
-scheme exists to enable, which is the property being bought; a session tidying
-this directory into a contiguous sequence would be destroying the decision, not
-maintaining it.
+range - **that range is 1001 and up, sequential**, opening at 1001 (#251's
+decision record) with 1002 (#244's) next - not renumbering. Renumbering would
+break every cross-repo citation the scheme exists to enable, which is the
+property being bought; a session tidying this directory into a contiguous
+sequence would be destroying the decision, not maintaining it.
 
 ## The enumeration
 

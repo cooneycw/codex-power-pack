@@ -1,0 +1,40 @@
+{
+  "gate": "scripts/harness_lint.py",
+  "property": "refuses a vacuous pass - an empty or missing skills root must not report success",
+  "invocation": [
+    "python3",
+    "{gate}",
+    "--check",
+    "--skills-root",
+    "{case}",
+    "--allowlist",
+    "/dev/null"
+  ],
+  "good_exit": 0,
+  "detect_signal": "^harness-lint: refusing a vacuous pass",
+  "limits": "Covers the VACUITY property only: an empty or missing skills root must not report success. It does NOT establish that harness-lint still detects unadapted Claude-only constructs - the 0f0491d anchor CATCHES those (exit 1, identical to the current gate), so they cannot be anchored against it and need their own control. A PASS here says one rule of seven is proven, not that the gate is sound.",
+  "cases": [
+    {
+      "name": "vacuous-root",
+      "input": "cases/vacuous-root",
+      "expect": "BAD",
+      "why": "a skill directory carrying no markdown. Nothing is examined, so a pass here would prove nothing."
+    },
+    {
+      "name": "populated-root",
+      "input": "cases/populated-root",
+      "expect": "GOOD",
+      "why": "one clean markdown file. Separates a working gate from one wedged at refuse."
+    }
+  ],
+  "anchors": [
+    {
+      "kind": "historical",
+      "sha": "0f0491d",
+      "origin": "scripts/harness_lint.py",
+      "path": "anchors/0f0491d-harness_lint.py",
+      "sha256": "a961d845fbfc68125e0734fcb24d907044bae3bfb207d2187f5c96a9014644e9",
+      "why": "the pre-#245 gate. Measured blind on the vacuous root: exit 0, 'harness-lint: 0 markdown file(s) passed'."
+    }
+  ]
+}

@@ -72,6 +72,7 @@ desktop.ini
 !plugins/**/.codex-plugin/plugin.json
 !docs/architecture/c4-model.json
 !docs/architecture/c4-manifest.json
+!controls/**/control.json
 .codex/security.yml
 node_modules/
 .codex/settings*.json
