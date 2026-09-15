@@ -26,9 +26,20 @@ steps:
       - |
         mkdir -p /tmp/secret-scan-probe
         printf 'aws_access_key_id = "AKIA%s"\n' "QYLPT6KZBNXWR3JD" > /tmp/secret-scan-probe/probe.txt
-        if gitleaks detect --source /tmp/secret-scan-probe --no-git --config .gitleaks.toml >/dev/null 2>&1; then
-          echo "secret-scan probe FAILED: the scanner did not detect a known secret." >&2
-          echo "The ruleset is empty or over-excluded; this step's verdict means nothing." >&2
+        set +e
+        gitleaks detect --source /tmp/secret-scan-probe --no-git --config .gitleaks.toml >/dev/null 2>&1
+        probe_rc=$?
+        set -e
+        # EXACTLY 1, not merely non-zero. gitleaks exits 1 when it finds
+        # something and 0 when it does not, so "non-zero" would also accept 127
+        # (binary missing) and any crash - reporting a scanner that never ran as
+        # a scanner that works. That is the same mistake as reading a crash as a
+        # detection, which this repo's negative-control register refuses by rule.
+        if [ "$probe_rc" -ne 1 ]; then
+          echo "secret-scan probe FAILED (gitleaks exit $probe_rc)." >&2
+          echo "  exit 0  = the scanner did not detect a known secret; the ruleset is empty" >&2
+          echo "            or over-excluded, and this step's verdict means nothing." >&2
+          echo "  other   = the scanner did not run at all." >&2
           exit 1
         fi
         echo "secret-scan probe: scanner detected the known secret - its silence below is meaningful"

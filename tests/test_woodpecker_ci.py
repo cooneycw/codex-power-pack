@@ -50,7 +50,11 @@ def test_secret_scan_runs_a_positive_control_before_the_repo_scan() -> None:
     """
     probe = _pipeline()["steps"]["secret-scan"]["commands"][0]
 
-    assert "if gitleaks detect" in probe, "the probe must branch on the INVERTED exit"
+    # EXACTLY 1, never merely non-zero: gitleaks exits 1 on a find and 0 on a
+    # clean scan, so a non-zero test would also accept 127 (binary absent) and
+    # report a scanner that never ran as one that works.
+    assert '-ne 1' in probe, "the probe must require gitleaks' find-code exactly"
+    assert "probe_rc" in probe, "the probe must capture the exit code, not branch on truthiness"
     assert "--source /tmp/secret-scan-probe" in probe, "the probe must scan its own fixture"
     assert "--config .gitleaks.toml" in probe, "the probe must use the config under test"
     assert "exit 1" in probe, "the probe must fail the step when detection does not happen"
