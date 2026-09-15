@@ -1654,6 +1654,14 @@ the issue rather than copying them.
 _ISSUE_CONTRACT_URL = (
     "https://github.com/cooneycw/codex-power-pack/blob/main/docs/agents/issue-contract.md"
 )
+# Upstream writes this link relative to the file, and the DEPTH is upstream's to
+# change: CPP 01b8e13 shortened `../../../docs/...` to `docs/...` in a one-line
+# edit. The byte-exact anchor this replaced then stopped firing silently and
+# published a relative link that resolves nowhere under `.codex/skills/`, so the
+# depth is matched rather than assumed. `](` anchors it, which is what keeps an
+# already-absolute URL - it also ends in `docs/agents/issue-contract.md` - from
+# matching, so the substitution cannot double-apply.
+_ISSUE_CONTRACT_LINK_RE = re.compile(r"\]\((?:\.\./)*docs/agents/issue-contract\.md\)")
 
 
 def _github_contract_source_identity(content: bytes) -> tuple[str, str, int]:
@@ -1930,7 +1938,7 @@ def _adapt_github_text(skill_dir: Path, source_file: Path, text: str) -> str:
         return text
     text = text.replace("cooneycw/claude-power-pack", '"$REPO"')
     if skill_dir.name == "github-issue-create" and source_file.name == "reference.md":
-        text = text.replace("../../../docs/agents/issue-contract.md", _ISSUE_CONTRACT_URL)
+        text = _ISSUE_CONTRACT_LINK_RE.sub(f"]({_ISSUE_CONTRACT_URL})", text)
         text = text.replace(
             "## Issue Creation Flow\n",
             "If the canonical reference is unavailable, report it and continue otherwise\n"
