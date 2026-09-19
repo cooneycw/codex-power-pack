@@ -1,0 +1,19 @@
+{
+  "branch": "issue-282-make-the-test-baseline-reproducible-across-scanner",
+  "counts": {
+    "accepted": 8,
+    "deferred": 1,
+    "rejected": 1
+  },
+  "implementer": "codex",
+  "issue": "282",
+  "passes": 1,
+  "recorded_at": "2026-09-19T12:44:22Z",
+  "red_cases": {
+    "already_covered": 1,
+    "proposed": 12
+  },
+  "reviewer": "claude-code/default-model-id-not-exposed",
+  "schema": 1,
+  "status": "ran"
+}

@@ -14,6 +14,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from ..fixture_policy import POLICY_PATH, FixturePolicy, InvalidFixturePolicy, load_fixture_policy
 from ..models import Finding, ScanResult, Severity
 
 # High-confidence secret patterns (low false-positive rate)
@@ -119,19 +120,33 @@ def scan(project_root: str) -> ScanResult:
     result = ScanResult()
     root = Path(project_root)
     files_scanned = 0
+    fixture_matches = 0
+    try:
+        policy = load_fixture_policy(root, {p[1] for p in SECRET_PATTERNS + ASSIGNMENT_PATTERNS})
+    except InvalidFixturePolicy as exc:
+        # A concrete blocker, not errors-only: existing flow gates inspect findings.
+        result.findings.append(Finding(
+            id="INVALID_FIXTURE_POLICY", severity=Severity.CRITICAL,
+            title="Native secret fixture policy is invalid", file_path=POLICY_PATH,
+            why=str(exc), fix="Repair the exact fixture policy; no exceptions were applied.",
+        ))
+        policy = FixturePolicy(root)
 
     for file_path in _find_source_files(root):
-        files_scanned += 1
         try:
-            content = file_path.read_text(errors="ignore")
+            content = file_path.read_text(encoding="utf-8", errors="ignore")
         except OSError:
             continue
+        files_scanned += 1
 
-        rel_path = str(file_path.relative_to(root))
+        rel_path = file_path.relative_to(root).as_posix()
 
         # Check high-confidence patterns
         for pattern, finding_id, title, why in SECRET_PATTERNS:
             for match in re.finditer(pattern, content):
+                if policy.matches(rel_path, finding_id, match.group()):
+                    fixture_matches += 1
+                    continue
                 line_num = content[: match.start()].count("\n") + 1
                 matched = match.group()
                 masked = matched[:4] + "*" * min(16, len(matched) - 4)
@@ -153,6 +168,9 @@ def scan(project_root: str) -> ScanResult:
         # Check assignment patterns
         for pattern, finding_id, title, why in ASSIGNMENT_PATTERNS:
             for match in re.finditer(pattern, content, re.IGNORECASE):
+                if policy.matches(rel_path, finding_id, match.group()):
+                    fixture_matches += 1
+                    continue
                 line_num = content[: match.start()].count("\n") + 1
                 result.findings.append(
                     Finding(
@@ -167,9 +185,11 @@ def scan(project_root: str) -> ScanResult:
                     )
                 )
 
-    if files_scanned and not result.findings:
-        result.passed.append(f"No secrets found in {files_scanned} source files")
-    elif not files_scanned:
+    result.passed.append(
+        f"Native secrets: {files_scanned} source files examined; "
+        f"{fixture_matches} reviewed fixture match(es) excepted"
+    )
+    if not files_scanned:
         result.skipped.append("No source files found to scan")
 
     return result

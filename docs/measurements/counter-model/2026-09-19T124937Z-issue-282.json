@@ -1,0 +1,10 @@
+{
+  "branch": "issue-282-make-the-test-baseline-reproducible-across-scanner",
+  "implementer": "codex",
+  "issue": "282",
+  "recorded_at": "2026-09-19T12:49:37Z",
+  "reviewer": null,
+  "schema": 1,
+  "skip_reason": "reviewer-unavailable",
+  "status": "skipped"
+}
