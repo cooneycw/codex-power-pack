@@ -241,6 +241,17 @@ scanner against known-vulnerable/clean inputs, and retains Bandit source analysi
 See the [dependency-audit contract](docs/security/dependency-audit.md) for scope,
 tool prerequisites, controls, and clean/finding/unknown outcomes.
 
+`make verify` includes `make native-secret-scan`, a working-tree native check
+with exact, reviewed synthetic-fixture exceptions. Exceptions bind a file path,
+finding type and matched-value fingerprint; they never exclude an entire file.
+The native finish gate uses the same policy and reports exception counts.
+See [native fixture policy and control evidence](docs/security/native-secret-fixtures.md).
+
+For complete local negative-control verification, use the CI-tested gitleaks
+8.18.4 binary on PATH. The unchanged red fixture is not detected by 8.30.1 in the
+measured environment; another installed version is not a proven substitute.
+Reproducible provisioning and early version diagnostics remain tracked in #282.
+
 The plugin marketplace modernization wave is gated by
 `docs/security/threat-model.md`. Epics C, D, and E must not merge implementation
 PRs until the owner records sign-off on issue #69.

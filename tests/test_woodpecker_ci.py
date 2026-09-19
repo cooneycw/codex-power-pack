@@ -95,6 +95,9 @@ def test_required_ci_uses_complete_local_contract_and_exact_pin() -> None:
     assert _events(steps["validate"]) == REQUIRED_EVENTS
     assert steps["validate"]["commands"][-1] == "make verify"
     assert "git make" in "\n".join(steps["validate"]["commands"])
+    makefile = (REPO_ROOT / "Makefile").read_text()
+    verify = next(line for line in makefile.splitlines() if line.startswith("verify:"))
+    assert "native-secret-scan" in verify.split()[1:]
 
     pin_step = steps["codex-skills-pin-integrity"]
     assert _events(pin_step) == REQUIRED_EVENTS

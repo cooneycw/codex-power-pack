@@ -69,8 +69,9 @@ ALLOWLIST_PATHS: dict[str, str] = {
         "repository. NAMED, not `[^/]+`: a wildcard also unscans harness-lint-vacuity's "
         "fixtures and every control added later, and the marker requirement exempts "
         "fixture entries - so a real secret under any control's cases/ would be "
-        "suppressed with nothing to notice. A third control needing a secret fixture "
-        "adds itself here, which is a reviewed edit."
+        "suppressed with nothing to notice. A third control needing path-based cover "
+        "adds itself here, which is a reviewed edit. A control reusing only already-reviewed "
+        "value entries needs no path exclusion (native-secret-fixture-scope, #282)."
     ),
 }
 
@@ -82,6 +83,11 @@ ALLOWLIST_PATHS: dict[str, str] = {
 #: SOLE COVER, all six, measured at 87ddf7d against zricethezav/gitleaks:v8.18.4
 #: by dropping each from the post-#264 config and rescanning the working tree.
 #: None is decorative:
+#:
+#: Additional current locations (#282): the AWS and GitHub synthetic sentinels
+#: also occur in controls/native-secret-fixture-scope/cases/*/settings.cfg.
+#: They reuse these value entries, not a new path exemption. The table below is
+#: the original 87ddf7d measurement, not a current exhaustive location census.
 #:
 #:   AKIAIOSFODNN7EXAMPLE      -> scripts/secrets-mask.sh, tests/test_gitleaks_allowlist.py
 #:   sk-abc123xyz456def789     -> scripts/secrets-mask.sh

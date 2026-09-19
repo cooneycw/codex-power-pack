@@ -1,0 +1,19 @@
+{
+  "branch": "issue-286-upgrade-the-three-locked-dependencies-exposed-by-2",
+  "counts": {
+    "accepted": 0,
+    "deferred": 0,
+    "rejected": 0
+  },
+  "implementer": "codex",
+  "issue": "286",
+  "passes": 1,
+  "recorded_at": "2026-09-19T11:54:47Z",
+  "red_cases": {
+    "already_covered": 1,
+    "proposed": 4
+  },
+  "reviewer": "claude-code/default-model-id-not-exposed",
+  "schema": 1,
+  "status": "ran"
+}
