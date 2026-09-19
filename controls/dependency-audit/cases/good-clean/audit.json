@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "source": "uv.lock",
+  "requirements": "iniconfig==2.3.0\n",
+  "returncode": 0,
+  "report": {"dependencies": [{"name": "iniconfig", "version": "2.3.0", "vulns": []}]}
+}

@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "source": "uv.lock",
+  "requirements": "pyyaml==5.1\n",
+  "returncode": 1,
+  "report": {"dependencies": [{"name": "pyyaml", "version": "5.1", "vulns": [{"id": "PYSEC-2020-96", "fix_versions": ["5.3.1"]}]}]}
+}

@@ -236,6 +236,11 @@ make verify
 
 ## Security Design
 
+`make dep-audit` checks the declared locked dependency population, proves the
+scanner against known-vulnerable/clean inputs, and retains Bandit source analysis.
+See the [dependency-audit contract](docs/security/dependency-audit.md) for scope,
+tool prerequisites, controls, and clean/finding/unknown outcomes.
+
 The plugin marketplace modernization wave is gated by
 `docs/security/threat-model.md`. Epics C, D, and E must not merge implementation
 PRs until the owner records sign-off on issue #69.

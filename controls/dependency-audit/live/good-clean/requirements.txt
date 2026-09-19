@@ -1,0 +1,2 @@
+# If this pin gains an advisory, the live probe must fail until reviewed.
+iniconfig==2.3.0

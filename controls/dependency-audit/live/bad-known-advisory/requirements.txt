@@ -1,0 +1,2 @@
+# Advisory query only; never install this historical vulnerable package.
+pyyaml==5.1
