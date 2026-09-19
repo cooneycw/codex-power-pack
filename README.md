@@ -236,6 +236,11 @@ make verify
 
 ## Security Design
 
+`make dep-audit` checks the declared locked dependency population, proves the
+scanner against known-vulnerable/clean inputs, and retains Bandit source analysis.
+See the [dependency-audit contract](docs/security/dependency-audit.md) for scope,
+tool prerequisites, controls, and clean/finding/unknown outcomes.
+
 `make verify` includes `make native-secret-scan`, a working-tree native check
 with exact, reviewed synthetic-fixture exceptions. Exceptions bind a file path,
 finding type and matched-value fingerprint; they never exclude an entire file.

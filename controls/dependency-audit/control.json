@@ -1,0 +1,21 @@
+{
+  "gate": "scripts/dependency-audit.py",
+  "property": "advisories and missing package-version evidence cannot produce a clean verdict",
+  "invocation": ["python3", "{gate}", "--from-capture", "{case}"],
+  "good_exit": 0,
+  "detect_signal": "DEP-AUDIT-(FINDING|UNKNOWN):",
+  "limits": "Offline interpretation only: does not prove lock discovery, export selection, advisory-feed reachability or live scanner invocation. Unit regressions cover discovery/export; make dep-audit runs nonempty known-vulnerable and clean live probes before the real population. UNKNOWN is a refusal, not an advisory finding.",
+  "cases": [
+    {"name": "advisory", "input": "cases/bad-advisory/audit.json", "expect": "BAD", "why": "known advisory cannot clear"},
+    {"name": "clean", "input": "cases/good-clean/audit.json", "expect": "GOOD", "why": "complete nonempty clean population must clear"},
+    {"name": "incomplete", "input": "cases/bad-incomplete/audit.json", "expect": "BAD", "why": "missing declared version cannot clear"}
+  ],
+  "anchors": [{
+    "kind": "constructed",
+    "sha": "constructed-blind",
+    "origin": "deliberate always-clean mutation",
+    "path": "anchors/constructed-blind.py",
+    "sha256": "16a5372af4676344e66af0cecba0374983710bffa864c9f31a8cfb4185953c87",
+    "why": "ignores both advisories and coverage; the BAD controls must falsify this blindness"
+  }]
+}

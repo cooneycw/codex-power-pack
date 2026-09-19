@@ -73,6 +73,7 @@ desktop.ini
 !docs/architecture/c4-model.json
 !docs/architecture/c4-manifest.json
 !controls/**/control.json
+!controls/dependency-audit/cases/*/audit.json
 .codex/security.yml
 node_modules/
 .codex/settings*.json

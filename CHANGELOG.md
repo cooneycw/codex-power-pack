@@ -23,6 +23,13 @@
 
 ### Changed
 
+- Dependency auditing now checks owned locks with all extras/groups and explicit
+  root requirements, discloses unaudited independent manifests, and fails closed
+  on incomplete evidence. The live scanner probe runs before the audit; Bandit
+  still runs on advisory failures. The security adapter no longer audits its
+  ambient environment and findings name their actual dependency source, which
+  may require review of existing path-scoped suppressions (#278).
+
 - Versioned all plugin payloads as `0.3.0+codex.20260906121706` for the new
   project skill package (#185).
 

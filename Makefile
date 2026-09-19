@@ -105,9 +105,13 @@ secret-scan:
 	gitleaks detect --source . --config .gitleaks.toml --verbose
 
 dep-audit:
-	uv export --format requirements-txt --no-hashes > /tmp/requirements.txt
-	pip-audit -r /tmp/requirements.txt
-	bandit -r lib scripts -ll --quiet --skip B104,B108,B310,B602
+	@audit_status=0; \
+	python3 scripts/dependency-audit.py --selftest && \
+	python3 scripts/dependency-audit.py || audit_status=$$?; \
+	bandit -r lib scripts -ll --quiet --skip B104,B108,B310,B602; \
+	bandit_status=$$?; \
+	if [ "$$audit_status" -ne 0 ]; then exit "$$audit_status"; fi; \
+	exit "$$bandit_status"
 
 ## Utilities
 

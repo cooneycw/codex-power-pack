@@ -1,104 +1,58 @@
-"""External tool adapter: pip-audit.
-
-Checks Python dependencies for known vulnerabilities (CVEs).
-Auto-detected: only runs if pip-audit is installed.
-"""
+"""Project-bound pip-audit adapter; never audit the scanner's environment."""
 
 from __future__ import annotations
 
-import json
 import shutil
-import subprocess
 from pathlib import Path
 
+from .. import dependency_audit as core
 from ..models import Finding, ScanResult, Severity
 
 
 def is_available() -> bool:
-    """Check if pip-audit is installed."""
     return shutil.which("pip-audit") is not None
 
 
-def _is_python_project(project_root: str) -> bool:
-    """Check if this is a Python project."""
-    root = Path(project_root)
-    return any(
-        (root / f).exists()
-        for f in ("pyproject.toml", "setup.py", "setup.cfg", "requirements.txt", "Pipfile")
-    )
-
-
 def scan(project_root: str) -> ScanResult:
-    """Run pip-audit on the project."""
     result = ScanResult()
-
-    if not _is_python_project(project_root):
-        result.skipped.append("pip-audit (not a Python project)")
+    root = Path(project_root).resolve()
+    try:
+        sources = core.discover(root)
+        excluded = core.excluded_manifests(root, sources)
+    except core.Unknown as exc:
+        indicators = ("pyproject.toml", "setup.py", "setup.cfg", "requirements.txt", "Pipfile", "uv.lock")
+        nonpython = root.is_dir() and not any((root / name).exists() for name in indicators)
+        if nonpython and str(exc).startswith("no supported"):
+            result.skipped.append("pip-audit (not a Python project)")
+        else:
+            result.errors.append(f"pip-audit UNKNOWN: {exc}")
         return result
-
-    if not is_available():
+    for source in excluded:
         result.skipped.append(
-            "pip-audit not installed (run `uv pip install pip-audit` "
-            "for Python dependency CVE scanning)"
+            f"pip-audit outside locked/root-requirements scope: {source.relative_to(root)} (not audited)"
         )
-        return result
-
-    cmd = ["pip-audit", "--format", "json", "--progress-spinner", "off"]
-
-    # Use requirements file if available
-    root = Path(project_root)
-    req_file = root / "requirements.txt"
-    if req_file.exists():
-        cmd.extend(["--requirement", str(req_file)])
-
-    try:
-        proc = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            cwd=project_root,
-            timeout=120,
-        )
-    except subprocess.TimeoutExpired:
-        result.errors.append("pip-audit timed out after 120 seconds")
-        return result
-    except FileNotFoundError:
-        result.skipped.append("pip-audit not found")
-        return result
-
-    # Parse JSON output
-    try:
-        data = json.loads(proc.stdout) if proc.stdout.strip() else {}
-    except json.JSONDecodeError:
-        if proc.returncode != 0:
-            result.errors.append(f"pip-audit failed: {proc.stderr[:200]}")
-        return result
-
-    vulns = data.get("dependencies", [])
-    vuln_count = 0
-
-    for dep in vulns:
-        for vuln in dep.get("vulns", []):
-            vuln_count += 1
-            vuln_id = vuln.get("id", "UNKNOWN")
-            fix_version = vuln.get("fix_versions", [])
-            fix_str = f"Upgrade to {', '.join(fix_version)}" if fix_version else "No fix available yet"
-
-            result.findings.append(
-                Finding(
-                    id="PIP_AUDIT_" + vuln_id.replace("-", "_"),
-                    severity=Severity.HIGH,
-                    title=f"Vulnerable dependency: {dep['name']} ({vuln_id})",
-                    file_path="requirements.txt" if req_file.exists() else "pyproject.toml",
-                    why=f"{vuln.get('description', 'Known vulnerability in this package version.')}",
-                    fix=fix_str,
-                    command=f"uv pip install --upgrade {dep['name']}" if fix_version else None,
-                    time_estimate="~5 minutes",
-                    scanner="pip-audit",
-                )
+    for source in sources:
+        relative = str(source.relative_to(root))
+        try:
+            evidence = core.audit(relative, core.population(source), root)
+        except core.Unknown as exc:
+            result.errors.append(f"pip-audit UNKNOWN ({relative}): {exc}")
+            continue
+        for dep, vuln in evidence.findings:
+            fixes = vuln.get("fix_versions", [])
+            result.findings.append(Finding(
+                id="PIP_AUDIT_" + vuln["id"].replace("-", "_"),
+                severity=Severity.HIGH,
+                title=f"Vulnerable dependency: {dep['name']} {dep['version']} ({vuln['id']})",
+                file_path=relative,
+                why=vuln.get("description", "Known vulnerability in this package version."),
+                fix=f"Upgrade the declared dependency and regenerate its lock: {', '.join(fixes)}"
+                    if fixes else "No fix available yet",
+                scanner="pip-audit",
+            ))
+        if not evidence.findings:
+            result.passed.append(
+                f"pip-audit {relative}: examined {len(evidence.packages)} all-platform registry package versions; "
+                + ("no known advisories" if evidence.packages else "explicitly dependency-free")
             )
-
-    if not vuln_count:
-        result.passed.append("No dependency vulnerabilities found (pip-audit)")
-
     return result
