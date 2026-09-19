@@ -73,6 +73,9 @@ def cmd_gate(args: argparse.Namespace) -> int:
     result = scan_quick(args.path, config)
     passed, messages = check_gate(result, args.gate_name, config)
 
+    for summary in result.passed:
+        if summary.startswith("Native secrets:"):
+            print(summary)
     for msg in messages:
         print(msg)
 
