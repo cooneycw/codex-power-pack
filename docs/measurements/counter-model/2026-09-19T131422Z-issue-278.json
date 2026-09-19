@@ -1,0 +1,10 @@
+{
+  "branch": "issue-278-audit-the-actual-locked-dependency-population-the",
+  "implementer": "codex",
+  "issue": "278",
+  "recorded_at": "2026-09-19T13:14:22Z",
+  "reviewer": null,
+  "schema": 1,
+  "skip_reason": "reviewer-unavailable",
+  "status": "skipped"
+}
