@@ -4,6 +4,10 @@
 
 ### Added
 
+- Added exact, reviewed native-secret fixture exceptions with visible counts,
+  fail-closed policy validation, and a same-file additional-secret control.
+  `make verify` now includes the native secret scan (partial delivery of #282).
+
 - Added the explicit-only `$codex-wayfinder` project skill, adapted from Matt
   Pocock's MIT-licensed Wayfinder, with local Markdown tracking, session-safe
   same-host claims, deterministic behavior cases, and a starter decision map for

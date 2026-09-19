@@ -1,0 +1,8 @@
+# Exact reviewed synthetic matches only; see docs/security/native-secret-fixtures.md.
+version = 1
+
+[[fixtures]]
+path = "settings.cfg"
+finding_id = "AWS_ACCESS_KEY"
+sha256 = "1a5d44a2dca19669d72edf4c4f1c27c4c1ca4b4408fbb17f6ce4ad452d78ddb3"
+reason = "Reviewed documentation placeholder; the second sentinel is intentionally not excepted."

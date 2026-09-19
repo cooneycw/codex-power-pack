@@ -1,0 +1,80 @@
+# Exact reviewed synthetic matches only; see docs/security/native-secret-fixtures.md.
+version = 1
+
+[[fixtures]]
+path = "tests/test_masked_read.py"
+finding_id = "HARDCODED_PASSWORD"
+sha256 = "67204dc178b67c1764914ba6e37d49c27c32a72d82a1ef7df3f5785df5ff5b71"
+reason = "Source-code concatenation in the masked-read canary; matched syntax is not a stored password (#282)."
+
+[[fixtures]]
+path = "tests/test_gitleaks_allowlist.py"
+finding_id = "AWS_ACCESS_KEY"
+sha256 = "1a5d44a2dca19669d72edf4c4f1c27c4c1ca4b4408fbb17f6ce4ad452d78ddb3"
+reason = "Reviewed documentation-placeholder and synthetic-token declarations already pinned by the gitleaks policy tests (#264/#271)."
+
+[[fixtures]]
+path = "tests/test_gitleaks_allowlist.py"
+finding_id = "GITHUB_PAT"
+sha256 = "e9c13750cebaeb32ecfd5e40278b9e5205ea1352fd6791f5e7983ef48f806722"
+reason = "Reviewed documentation-placeholder and synthetic-token declarations already pinned by the gitleaks policy tests (#264/#271)."
+
+[[fixtures]]
+path = "tests/test_plugin_hooks.py"
+finding_id = "HARDCODED_SECRET"
+sha256 = "4336f3d023c9f92054654281a0dd56385d673edb2978b22d96b7803e73dcffbb"
+reason = "Reviewed synthetic hook canary assignments; tests prove masking and minimized friction capture (#282)."
+
+[[fixtures]]
+path = "tests/test_plugin_hooks.py"
+finding_id = "HARDCODED_SECRET"
+sha256 = "ebf7f85f283c2f87634d657c304bd863a81104a8d172e4c291a687220b01bc45"
+reason = "Reviewed synthetic hook canary assignments; tests prove masking and minimized friction capture (#282)."
+
+[[fixtures]]
+path = "controls/gitleaks-allowlist-scope/control.json"
+finding_id = "AWS_ACCESS_KEY"
+sha256 = "1a5d44a2dca19669d72edf4c4f1c27c4c1ca4b4408fbb17f6ce4ad452d78ddb3"
+reason = "Documentation placeholder named by the existing allowlist control; preserve its literal and provenance (#264)."
+
+[[fixtures]]
+path = "controls/secret-scan-rules/anchors/efde91f-gitleaks.toml"
+finding_id = "AWS_ACCESS_KEY"
+sha256 = "1a5d44a2dca19669d72edf4c4f1c27c4c1ca4b4408fbb17f6ce4ad452d78ddb3"
+reason = "Synthetic values in immutable historical scanner-config anchor; preserve original bytes (#246)."
+
+[[fixtures]]
+path = "controls/secret-scan-rules/anchors/efde91f-gitleaks.toml"
+finding_id = "GITHUB_PAT"
+sha256 = "e9c13750cebaeb32ecfd5e40278b9e5205ea1352fd6791f5e7983ef48f806722"
+reason = "Synthetic values in immutable historical scanner-config anchor; preserve original bytes (#246)."
+
+[[fixtures]]
+path = "controls/gitleaks-allowlist-scope/anchors/87ddf7d-gitleaks.toml"
+finding_id = "AWS_ACCESS_KEY"
+sha256 = "1a5d44a2dca19669d72edf4c4f1c27c4c1ca4b4408fbb17f6ce4ad452d78ddb3"
+reason = "Synthetic values in immutable historical allowlist anchor; preserve original bytes (#264)."
+
+[[fixtures]]
+path = "controls/gitleaks-allowlist-scope/anchors/87ddf7d-gitleaks.toml"
+finding_id = "GITHUB_PAT"
+sha256 = "e9c13750cebaeb32ecfd5e40278b9e5205ea1352fd6791f5e7983ef48f806722"
+reason = "Synthetic values in immutable historical allowlist anchor; preserve original bytes (#264)."
+
+[[fixtures]]
+path = "controls/native-secret-fixture-scope/cases/known-fixture/settings.cfg"
+finding_id = "AWS_ACCESS_KEY"
+sha256 = "1a5d44a2dca19669d72edf4c4f1c27c4c1ca4b4408fbb17f6ce4ad452d78ddb3"
+reason = "Committed synthetic control input. Isolated case policy permits only its first sentinel; never a directory exclusion."
+
+[[fixtures]]
+path = "controls/native-secret-fixture-scope/cases/extra-secret/settings.cfg"
+finding_id = "AWS_ACCESS_KEY"
+sha256 = "1a5d44a2dca19669d72edf4c4f1c27c4c1ca4b4408fbb17f6ce4ad452d78ddb3"
+reason = "Committed synthetic control input. Isolated case policy permits only its first sentinel; never a directory exclusion."
+
+[[fixtures]]
+path = "controls/native-secret-fixture-scope/cases/extra-secret/settings.cfg"
+finding_id = "GITHUB_PAT"
+sha256 = "e9c13750cebaeb32ecfd5e40278b9e5205ea1352fd6791f5e7983ef48f806722"
+reason = "Committed synthetic control input. Isolated case policy permits only its first sentinel; never a directory exclusion."

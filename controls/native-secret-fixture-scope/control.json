@@ -1,0 +1,21 @@
+{
+  "gate": "scripts/native-secret-scan.py",
+  "property": "an exact fixture exception must not hide a different token in the same file",
+  "invocation": ["python3", "{gate}", "--root", "{case}"],
+  "good_exit": 0,
+  "detect_signal": "^native-secret-scan: finding GITHUB_PAT at settings\\.cfg:",
+  "limits": "Proves the same-file additional-token property of native fixture exceptions, not history, all detectors, all policy validation, or gitleaks. The anchor is a synthetic path-only matcher mutation against the current real scanner, not a historical scanner revision.",
+  "cases": [
+    {"name": "known-fixture", "input": "cases/known-fixture", "expect": "GOOD", "why": "One reviewed synthetic sentinel with an exact exception."},
+    {"name": "extra-secret", "input": "cases/extra-secret", "expect": "BAD", "why": "An additional synthetic token in the same file has no matching exception."}
+  ],
+  "anchors": [
+    {
+      "kind": "synthetic",
+      "sha": "path-only-mutant-v1",
+      "path": "anchors/path-only-native-scan.py",
+      "sha256": "63e2226c638000958dc83e7f63ade56a15072e1eed6952f6480f66f3009b430d",
+      "why": "Runs the real scanner with only its exact matcher replaced by whole-file acceptance; must miss the bad case and agree on the good case."
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-.PHONY: test lint format typecheck verify build update_docs clean help secret-scan dep-audit \
+.PHONY: test lint format typecheck verify build update_docs clean help secret-scan native-secret-scan dep-audit \
 	codex-skills codex-skills-check codex-skills-refresh codex-skills-currency-check harness-lint \
 	codex-skills-pin-check codex-skills-upstream-report project-next-check project-next-sync skill-contract-lint skill-eval-check skill-eval-live \
 	release-validate
@@ -88,7 +88,7 @@ codex-skills-pin-check:
 
 ## Verification gate (runs all quality checks)
 
-verify: lint test typecheck codex-skills-check harness-lint skill-contract-lint project-next-check skill-eval-check negative-controls
+verify: native-secret-scan lint test typecheck codex-skills-check harness-lint skill-contract-lint project-next-check skill-eval-check negative-controls
 
 ## Documentation (used by /flow:auto and /flow:finish)
 
@@ -97,6 +97,9 @@ update_docs:
 	@echo "Review AGENTS.md and README.md for accuracy"
 
 ## Security scanning
+
+native-secret-scan:
+	python3 scripts/native-secret-scan.py --root .
 
 secret-scan:
 	gitleaks detect --source . --config .gitleaks.toml --verbose
@@ -128,6 +131,7 @@ help:
 	@echo "  make release-validate   - Validate isolated profiles/upgrades (CANDIDATE_REF= ROLLBACK_REF=)"
 	@echo "  make build       - Build distribution packages"
 	@echo "  make verify      - Run all quality checks"
+	@echo "  make native-secret-scan - Scan current source with exact reviewed fixture exceptions (not history)"
 	@echo ""
 	@echo "Codex skills (generated from claude-power-pack):"
 	@echo "  make codex-skills-check   - Drift gate for .codex/skills/"

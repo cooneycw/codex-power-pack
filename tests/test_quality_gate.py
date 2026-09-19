@@ -10,6 +10,7 @@ def test_verify_composes_every_required_local_quality_gate() -> None:
     verify = next(line for line in makefile.splitlines() if line.startswith("verify:"))
 
     assert verify.split()[1:] == [
+        "native-secret-scan",
         "lint",
         "test",
         "typecheck",

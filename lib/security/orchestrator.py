@@ -130,7 +130,9 @@ def _apply_suppressions(result: ScanResult, config: SecurityConfig) -> None:
     result.findings = [
         f
         for f in original
-        if not any(s.matches(f) for s in config.suppressions)
+        # Invalid fixture policy is an execution-integrity failure, not a
+        # credential finding that can be dispositioned by the legacy policy.
+        if f.id == "INVALID_FIXTURE_POLICY" or not any(s.matches(f) for s in config.suppressions)
     ]
 
     suppressed_count = len(original) - len(result.findings)
